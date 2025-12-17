@@ -1,0 +1,22 @@
+/.idea/
+/Lottery.iml
+/lottery-application/lottery-application.iml
+/lottery-common/lottery-common.iml
+/lottery-domain/lottery-domain.iml
+/lottery-infrastructure/lottery-infrastructure.iml
+/lottery-interfaces/lottery-interfaces.iml
+/lottery-rpc/lottery-rpc.iml
+
+
+# Maven
+**/target/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Logs
+*.log
+logs/
