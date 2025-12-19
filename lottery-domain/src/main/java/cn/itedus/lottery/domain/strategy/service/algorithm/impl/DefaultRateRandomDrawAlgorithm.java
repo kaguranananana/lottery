@@ -2,13 +2,14 @@ package cn.itedus.lottery.domain.strategy.service.algorithm.impl;
 
 import cn.itedus.lottery.domain.strategy.model.vo.AwardRateInfo;
 import cn.itedus.lottery.domain.strategy.service.algorithm.BaseAlgorithm;
+import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.List;
 
-
+@Component("defaultRateRandomDrawAlgorithm")
 public class DefaultRateRandomDrawAlgorithm extends BaseAlgorithm {
 
     @Override
