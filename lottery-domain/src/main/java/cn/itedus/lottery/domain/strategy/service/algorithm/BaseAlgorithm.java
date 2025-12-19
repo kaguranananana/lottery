@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class BaseAlgorithm implements  IDrawAlgorithm{
+public abstract class BaseAlgorithm implements  IDrawAlgorithm{
 
     // 斐波那契散列增量
     private final int HASH_INCREMENT = 0x61c88647;
