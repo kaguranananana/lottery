@@ -24,6 +24,11 @@ public class BaseAlgorithmTest {
         public List<AwardRateInfo> getAwardRateInfoList(Long strategyId) {
             return awardRateInfoMap.get(strategyId);
         }
+
+        @Override
+        public String randomDraw(Long strategyId, List<String> excludeAwardIds) {
+            return "";
+        }
     }
 
     @Test
