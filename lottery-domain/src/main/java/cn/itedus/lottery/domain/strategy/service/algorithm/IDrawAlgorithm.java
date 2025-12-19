@@ -22,5 +22,12 @@ public interface IDrawAlgorithm {
      */
     boolean isExistRateTuple(Long strategyId);
 
+    /**
+     *
+     * @param strategyId 策略id
+     * @param excludeAwardIds 排除掉已经不能作为抽奖的奖品id
+     * @return 抽奖结果
+     */
+    String randomDraw(Long strategyId, List<String> excludeAwardIds);
 
 }
