@@ -59,7 +59,11 @@ public class BaseAlgorithm implements  IDrawAlgorithm{
         return rateTupleMap.containsKey(strategyId);
     }
 
-
+    /**
+     * 斐波那契散列
+     * @param val
+     * @return
+     */
     protected int hashIdx(int val) {
         int hashCode = val * HASH_INCREMENT + HASH_INCREMENT;
         return hashCode & (RATE_TUPLE_LENGTH - 1);
