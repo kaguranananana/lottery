@@ -11,4 +11,14 @@ import java.util.List;
 public interface IStrategyDetailDao {
 
     List<StrategyDetail> queryStrategyDetailList(Long strategyId);
+
+    List<String> queryNoStockStrategyAwardList(Long strategyId);
+
+    /**
+     * 扣减库存
+     * @param req
+     * @return
+     */
+    int deductStock(StrategyDetail req);
+
 }
