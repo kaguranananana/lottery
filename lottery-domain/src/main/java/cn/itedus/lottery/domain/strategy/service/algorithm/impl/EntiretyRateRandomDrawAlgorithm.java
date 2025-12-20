@@ -14,45 +14,41 @@ public class EntiretyRateRandomDrawAlgorithm extends BaseAlgorithm {
 
     @Override
     public String randomDraw(Long strategyId, List<String> excludeAwardIds) {
-        // 排除掉不在抽奖范围之内的奖品id的集合
-        BigDecimal differenceDenominator = BigDecimal.ZERO;
-        List<AwardRateInfo> differenceAwardRateList = new ArrayList<>();
         List<AwardRateInfo> awardRateInfos = awardRateInfoMap.get(strategyId);
+        // 记得在BaseAlgorithm或Support里先填充这个Map
+        if (null == awardRateInfos) {
+            return null;
+        }
 
-        for (AwardRateInfo awardRateInfo : awardRateInfos) {
-            String awardId = awardRateInfo.getAwardId();
-            if (excludeAwardIds.contains(awardId)) {
-                continue;
+        // 1. 计算当前可用奖品的总概率分母
+        BigDecimal totalRate = BigDecimal.ZERO;
+        List<AwardRateInfo> activeAwards = new ArrayList<>();
+        for (AwardRateInfo res : awardRateInfos) {
+            if (excludeAwardIds.contains(res.getAwardId())) continue;
+            activeAwards.add(res);
+            totalRate = totalRate.add(res.getAwardRate());
+        }
+
+        if (activeAwards.isEmpty()) return null;
+        if (activeAwards.size() == 1) return activeAwards.get(0).getAwardId();
+
+        // 2. 生成随机采样点 (0, totalRate]
+        // 使用 double 比较比转成 1-100 整数更精确
+        double random = new SecureRandom().nextDouble();
+
+        // 3. 概率区间累加算法 (CDF 采样)
+        BigDecimal cursor = BigDecimal.ZERO;
+        for (AwardRateInfo award : activeAwards) {
+            // 计算当前奖品在剩余奖品池中的相对概率区间
+            // 比如 A:0.2, B:0.3 -> A区间[0, 0.4], B区间(0.4, 1.0]
+            BigDecimal relativeRate = award.getAwardRate().divide(totalRate, 4, BigDecimal.ROUND_HALF_UP);
+            cursor = cursor.add(relativeRate);
+
+            if (random <= cursor.doubleValue()) {
+                return award.getAwardId();
             }
-            differenceAwardRateList.add(awardRateInfo);
-            differenceDenominator = differenceDenominator.add(awardRateInfo.getAwardRate());
         }
 
-        // 前置判断
-        if (differenceAwardRateList.size() == 0) {
-            return "";
-        }
-        if (differenceAwardRateList.size() == 1) {
-            return differenceAwardRateList.get(0).getAwardId();
-        }
-        // 获取随机概率值
-        SecureRandom secureRandom = new SecureRandom();
-        int randomVal = secureRandom.nextInt(100) + 1;
-
-
-        // 循环获取奖品
-        String awardId = "";
-        int cursor = 0;
-        for (AwardRateInfo awardRateInfo : differenceAwardRateList) {
-            int rateVal = awardRateInfo.getAwardRate().divide(differenceDenominator, 2, BigDecimal.ROUND_UP).multiply(new BigDecimal(100)).intValue();
-            if (rateVal <= (rateVal + cursor)) {
-                awardId = awardRateInfo.getAwardId();
-                break;
-            }
-            cursor += rateVal;
-        }
-
-        // 返回中奖结果
-        return awardId;
+        return null;
     }
 }
