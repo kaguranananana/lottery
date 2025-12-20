@@ -33,4 +33,37 @@ public class Constants {
 
     }
 
+    /**
+     * 抽奖策略模式: 总体概率, 单项概率
+     */
+    public enum StrategyMode {
+
+        SINGLE(1, "单项概率"),
+        ENTIRETY(2, "总体概率");
+
+        private Integer code;
+        private String info;
+
+        StrategyMode(Integer code, String info) {
+            this.code = code;
+            this.info = info;
+        }
+
+        public Integer getCode() {
+            return code;
+        }
+
+        public void setCode(Integer code) {
+            this.code = code;
+        }
+
+        public String getInfo() {
+            return info;
+        }
+
+        public void setInfo(String info) {
+            this.info = info;
+        }
+    }
+
 }
