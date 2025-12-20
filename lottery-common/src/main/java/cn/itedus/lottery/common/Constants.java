@@ -66,4 +66,37 @@ public class Constants {
         }
     }
 
+    public enum DrawState {
+
+        FAIL(0, "未中奖"),
+
+        SUCCESS(1, "已中奖"),
+
+        Cover(2, "兜底奖品");
+
+        private Integer code;
+        private String info;
+
+        DrawState(Integer code,String info ) {
+            this.info = info;
+            this.code = code;
+        }
+
+        public Integer getCode() {
+            return code;
+        }
+
+        public void setCode(Integer code) {
+            this.code = code;
+        }
+
+        public String getInfo() {
+            return info;
+        }
+
+        public void setInfo(String info) {
+            this.info = info;
+        }
+    }
+
 }
