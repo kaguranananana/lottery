@@ -1,7 +1,9 @@
 package cn.itedus.lottery.domain.strategy.service.draw;
 
 
+import cn.itedus.lottery.common.Constants;
 import cn.itedus.lottery.domain.strategy.service.algorithm.IDrawAlgorithm;
+import org.yaml.snakeyaml.scanner.Constant;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -20,8 +22,8 @@ public class DrawConfig {
 
     @PostConstruct
     public void init() {
-        drawAlgorithmGroup.put(1, singleRateRandomDrawAlgorithm);
-        drawAlgorithmGroup.put(2, entiretyRateRandomDrawAlgorithm);
+        drawAlgorithmGroup.put(Constants.StrategyMode.SINGLE.getCode(), singleRateRandomDrawAlgorithm);
+        drawAlgorithmGroup.put(Constants.StrategyMode.ENTIRETY.getCode(), entiretyRateRandomDrawAlgorithm);
 
     }
 }
