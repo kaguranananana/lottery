@@ -16,12 +16,12 @@ public class DrawConfig {
     @Resource
     private IDrawAlgorithm singleRateRandomDrawAlgorithm;
 
-    protected static Map<Integer, IDrawAlgorithm> drawAlgorithmMap = new ConcurrentHashMap<>();
+    protected static Map<Integer, IDrawAlgorithm> drawAlgorithmGroup = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void init() {
-        drawAlgorithmMap.put(1, singleRateRandomDrawAlgorithm);
-        drawAlgorithmMap.put(2, entiretyRateRandomDrawAlgorithm);
+        drawAlgorithmGroup.put(1, singleRateRandomDrawAlgorithm);
+        drawAlgorithmGroup.put(2, entiretyRateRandomDrawAlgorithm);
 
     }
 }

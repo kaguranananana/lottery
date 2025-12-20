@@ -13,7 +13,7 @@ public class DrawBase extends DrawConfig {
         if (strategyMode != 1) {
             return ;
         }
-        IDrawAlgorithm drawAlgorithm = drawAlgorithmMap.get(strategyMode);
+        IDrawAlgorithm drawAlgorithm = drawAlgorithmGroup.get(strategyMode);
         boolean existRateTuple = drawAlgorithm.isExistRateTuple(strategyId);
         if (existRateTuple) {
             return;

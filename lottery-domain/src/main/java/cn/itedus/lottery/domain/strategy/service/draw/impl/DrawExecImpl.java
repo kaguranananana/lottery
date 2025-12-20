@@ -42,7 +42,7 @@ public class DrawExecImpl extends DrawBase implements IDrawExec {
         checkAndInitRateData(req.getStrategyId(), strategy.getStrategyMode(), strategyDetailList);
 
         // 根据策略模式抽奖
-        IDrawAlgorithm drawAlgorithm = drawAlgorithmMap.get(strategy.getStrategyMode());
+        IDrawAlgorithm drawAlgorithm = drawAlgorithmGroup.get(strategy.getStrategyMode());
         String awardId = drawAlgorithm.randomDraw(req.getStrategyId(), new ArrayList<>());
 
         //获取奖品信息
