@@ -12,7 +12,7 @@ public interface IDrawAlgorithm {
      * @param strategyId 策略id
      * @param awardRateInfoList 奖品概率配置集合
      */
-    void initRateTuple(Long strategyId, List<AwardRateInfo> awardRateInfoList, Integer strategyMode);
+    void initRateTuple(Long strategyId, List<AwardRateInfo> awardRateInfoList);
 
 
     /**

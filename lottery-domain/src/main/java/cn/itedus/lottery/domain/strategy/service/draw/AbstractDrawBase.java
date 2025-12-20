@@ -54,7 +54,7 @@ public abstract class AbstractDrawBase extends DrawStrategySupport implements ID
             awardRateInfoList.add(new AwardRateInfo(strategyDetail.getAwardId(), strategyDetail.getAwardRate()));
         }
 
-        drawAlgorithm.initRateTuple(strategyId, awardRateInfoList, strategyMode);
+        drawAlgorithm.initRateTuple(strategyId, awardRateInfoList);
     }
 
 
