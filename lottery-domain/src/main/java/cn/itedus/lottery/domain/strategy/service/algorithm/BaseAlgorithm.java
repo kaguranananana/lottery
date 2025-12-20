@@ -1,5 +1,6 @@
 package cn.itedus.lottery.domain.strategy.service.algorithm;
 
+import cn.itedus.lottery.common.Constants;
 import cn.itedus.lottery.domain.strategy.model.vo.AwardRateInfo;
 
 import java.math.BigDecimal;
@@ -25,9 +26,13 @@ public abstract class BaseAlgorithm implements  IDrawAlgorithm{
 
 
     @Override
-    public void initRateTuple(Long strategyId, List<AwardRateInfo> awardRateInfoList) {
+    public void initRateTuple(Long strategyId, List<AwardRateInfo> awardRateInfoList, Integer strategyMode) {
         // 存储对应策略的奖品配置信息
         awardRateInfoMap.put(strategyId, awardRateInfoList);
+
+        if (!Constants.StrategyMode.SINGLE.getCode().equals(strategyMode)) {
+            return ;
+        }
 
         // 获取或创建对应策略的概率数组
         String[] rateTuple = rateTupleMap.computeIfAbsent(strategyId, k -> new String[RATE_TUPLE_LENGTH]);

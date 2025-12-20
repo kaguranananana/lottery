@@ -38,10 +38,12 @@ public abstract class AbstractDrawBase extends DrawStrategySupport implements ID
     protected abstract List<String> queryExcludeAwardIds(Long strategyId);
 
 
+
+
+
+
     public void checkAndInitRateData(Long strategyId, Integer strategyMode, List<StrategyDetail> strategyDetailList) {
-        if (!Constants.StrategyMode.SINGLE.getCode().equals(strategyMode)) {
-            return ;
-        }
+
         IDrawAlgorithm drawAlgorithm = drawAlgorithmGroup.get(strategyMode);
         boolean existRateTuple = drawAlgorithm.isExistRateTuple(strategyId);
         if (existRateTuple) {
@@ -51,7 +53,8 @@ public abstract class AbstractDrawBase extends DrawStrategySupport implements ID
         for (StrategyDetail strategyDetail : strategyDetailList) {
             awardRateInfoList.add(new AwardRateInfo(strategyDetail.getAwardId(), strategyDetail.getAwardRate()));
         }
-        drawAlgorithm.initRateTuple(strategyId, awardRateInfoList);
+
+        drawAlgorithm.initRateTuple(strategyId, awardRateInfoList, strategyMode);
     }
 
 
