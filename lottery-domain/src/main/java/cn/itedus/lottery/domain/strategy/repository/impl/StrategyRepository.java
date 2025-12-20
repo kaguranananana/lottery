@@ -8,11 +8,13 @@ import cn.itedus.lottery.infrastructure.dao.IStrategyDetailDao;
 import cn.itedus.lottery.infrastructure.po.Award;
 import cn.itedus.lottery.infrastructure.po.Strategy;
 import cn.itedus.lottery.infrastructure.po.StrategyDetail;
+import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
 import java.util.Collections;
 import java.util.List;
 
+@Repository
 public class StrategyRepository implements IStrategyRepository {
 
     @Resource
