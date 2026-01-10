@@ -99,4 +99,38 @@ public class Constants {
         }
     }
 
+    /**
+     * 发奖状态 : 0 等待发奖, 1 发奖成功, 2 发奖失败
+     */
+    public enum AwardState {
+
+        WAIT(0, "等待发奖"),
+        SUCCESS(0, "发奖成功"),
+        FAILURE(2, "发奖失败");
+
+        private Integer code;
+        private String info;
+
+        AwardState(Integer code, String info) {
+            this.code = code;
+            this.info = info;
+        }
+
+        public Integer getCode() {
+            return code;
+        }
+
+        public void setCode(Integer code) {
+            this.code = code;
+        }
+
+        public String getInfo() {
+            return info;
+        }
+
+        public void setInfo(String info) {
+            this.info = info;
+        }
+    }
+
 }
