@@ -9,8 +9,15 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
 mybatis:
-  mapper-locations: classpath:/mybatis/mapper/*.xml
-  config-location:  classpath:/mybatis/config/mybatis-config.xml
+  # 1. 对应你 XML 里的 <package name="...po"/>
+  type-aliases-package: cn.itedus.lottery.infrastructure.po
+  # 2. 告诉 MyBatis 去哪里找 SQL 文件
+  mapper-locations: classpath:mybatis/mapper/*.xml
+  configuration:
+    # 3. 开启我们之前讨论的驼峰转换（之前 XML 里没有，现在正好加上）
+    map-underscore-to-camel-case: true
+    # 4. 打印 SQL 日志（调试神器，建议开启）
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
 
 # Dubbo 广播方式配置
 dubbo:
