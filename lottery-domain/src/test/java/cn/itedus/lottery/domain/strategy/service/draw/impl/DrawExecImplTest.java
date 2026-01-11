@@ -4,12 +4,12 @@ import cn.itedus.lottery.common.Constants;
 import cn.itedus.lottery.domain.strategy.model.aggregates.StrategyRich;
 import cn.itedus.lottery.domain.strategy.model.req.DrawReq;
 import cn.itedus.lottery.domain.strategy.model.res.DrawResult;
+import cn.itedus.lottery.domain.strategy.model.vo.AwardBriefVO;
 import cn.itedus.lottery.domain.strategy.model.vo.AwardRateInfo;
+import cn.itedus.lottery.domain.strategy.model.vo.StrategyBriefVO;
+import cn.itedus.lottery.domain.strategy.model.vo.StrategyDetailBriefVO;
 import cn.itedus.lottery.domain.strategy.repository.IStrategyRepository;
 import cn.itedus.lottery.domain.strategy.service.algorithm.IDrawAlgorithm;
-import cn.itedus.lottery.infrastructure.po.Award;
-import cn.itedus.lottery.infrastructure.po.Strategy;
-import cn.itedus.lottery.infrastructure.po.StrategyDetail;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -65,19 +65,19 @@ public class DrawExecImplTest {
     }
 
     private StrategyRich buildStrategyRich() {
-        Strategy strategy = new Strategy();
+        StrategyBriefVO strategy = new StrategyBriefVO();
         strategy.setStrategyId(strategyId);
         strategy.setStrategyMode(Constants.StrategyMode.SINGLE.getCode());
 
-        List<StrategyDetail> detailList = new ArrayList<>();
+        List<StrategyDetailBriefVO> detailList = new ArrayList<>();
 
-        StrategyDetail d1 = new StrategyDetail();
+        StrategyDetailBriefVO d1 = new StrategyDetailBriefVO();
         d1.setStrategyId(strategyId);
         d1.setAwardId("A001");
         d1.setAwardRate(new BigDecimal("0.50"));
         detailList.add(d1);
 
-        StrategyDetail d2 = new StrategyDetail();
+        StrategyDetailBriefVO d2 = new StrategyDetailBriefVO();
         d2.setStrategyId(strategyId);
         d2.setAwardId("B001");
         d2.setAwardRate(new BigDecimal("0.50"));
@@ -86,15 +86,15 @@ public class DrawExecImplTest {
         return new StrategyRich(strategyId, strategy, detailList);
     }
 
-    private Map<String, Award> buildAwardMap() {
-        Map<String, Award> map = new HashMap<>();
+    private Map<String, AwardBriefVO> buildAwardMap() {
+        Map<String, AwardBriefVO> map = new HashMap<>();
 
-        Award a1 = new Award();
+        AwardBriefVO a1 = new AwardBriefVO();
         a1.setAwardId("A001");
         a1.setAwardName("测试奖品A");
         map.put("A001", a1);
 
-        Award a2 = new Award();
+        AwardBriefVO a2 = new AwardBriefVO();
         a2.setAwardId("B001");
         a2.setAwardName("测试奖品B");
         map.put("B001", a2);
@@ -115,7 +115,7 @@ public class DrawExecImplTest {
 
     private static class FakeStrategyRepository implements IStrategyRepository {
         private StrategyRich strategyRich;
-        private Map<String, Award> awardInfo = new HashMap<>();
+        private Map<String, AwardBriefVO> awardInfo = new HashMap<>();
         private boolean deductStockSuccess = true;
         private List<String> noStockAwardIds = Collections.emptyList();
 
@@ -123,7 +123,7 @@ public class DrawExecImplTest {
             this.strategyRich = strategyRich;
         }
 
-        void setAwardInfo(Map<String, Award> awardInfo) {
+        void setAwardInfo(Map<String, AwardBriefVO> awardInfo) {
             this.awardInfo = awardInfo;
         }
 
@@ -137,7 +137,7 @@ public class DrawExecImplTest {
         }
 
         @Override
-        public Award queryAwardInfo(String awardId) {
+        public AwardBriefVO queryAwardInfo(String awardId) {
             return awardInfo.get(awardId);
         }
 

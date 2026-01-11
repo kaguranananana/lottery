@@ -3,7 +3,6 @@ package cn.itedus.lottery.domain.strategy.service.draw;
 
 import cn.itedus.lottery.common.Constants;
 import cn.itedus.lottery.domain.strategy.service.algorithm.IDrawAlgorithm;
-import org.yaml.snakeyaml.scanner.Constant;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -13,7 +12,7 @@ import java.util.concurrent.ConcurrentHashMap;
 public class DrawConfig {
 
     @Resource
-    private IDrawAlgorithm  entiretyRateRandomDrawAlgorithm;
+    private IDrawAlgorithm entiretyRateRandomDrawAlgorithm;
 
     @Resource
     private IDrawAlgorithm singleRateRandomDrawAlgorithm;

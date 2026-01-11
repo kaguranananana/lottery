@@ -8,12 +8,7 @@
         <version>1.0-SNAPSHOT</version>
     </parent>
     <dependencies>
-        <dependency>
-            <groupId>cn.itedus.lottery</groupId>
-            <artifactId>lottery-infrastructure</artifactId>
-            <version>1.0-SNAPSHOT</version>
-            <scope>compile</scope>
-        </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -32,6 +27,23 @@
             <version>1.0-SNAPSHOT</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+        </dependency>
+
+        <!-- domain 层当前仍使用了 Spring stereotype 注解（@Service/@Component），需提供编译期依赖 -->
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context</artifactId>
+        </dependency>
+
+        <!-- JDK9+ 下 javax.annotation 不再默认提供，显式引入以支持 @Resource/@PostConstruct -->
+        <dependency>
+            <groupId>javax.annotation</groupId>
+            <artifactId>javax.annotation-api</artifactId>
+        </dependency>
+
     </dependencies>
     <modelVersion>4.0.0</modelVersion>
 
