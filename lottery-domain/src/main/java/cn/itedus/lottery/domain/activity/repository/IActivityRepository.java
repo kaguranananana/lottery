@@ -1,5 +1,6 @@
 package cn.itedus.lottery.domain.activity.repository;
 
+import cn.itedus.lottery.common.Constants;
 import cn.itedus.lottery.domain.activity.model.vo.ActivityVO;
 import cn.itedus.lottery.domain.activity.model.vo.AwardVO;
 import cn.itedus.lottery.domain.activity.model.vo.StrategyDetailVO;
@@ -38,5 +39,14 @@ public interface IActivityRepository {
      * @param strategyDetailList
      */
     void addStrategyDetailList(List<StrategyDetailVO> strategyDetailList);
+
+    /**
+     * 变更活动状态（状态流转核心能力）。
+     *
+     * @param activityId  活动ID
+     * @param beforeState 变更前状态
+     * @param afterState  变更后状态
+     */
+    boolean alterStatus(Long activityId, Enum<Constants.ActivityState> beforeState, Constants.ActivityState afterState);
 
 }

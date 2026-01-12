@@ -18,4 +18,11 @@
         WHERE activity_id = #{activityId}
     </select>
 
+    <update id="alterState">
+        UPDATE activity
+        SET state = #{afterState}, update_time = now()
+        WHERE activity_id = #{activityId}
+          AND state = #{beforeState}
+    </update>
+
 </mapper>

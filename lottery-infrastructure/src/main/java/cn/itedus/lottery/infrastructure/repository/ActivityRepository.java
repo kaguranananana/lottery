@@ -1,5 +1,6 @@
 package cn.itedus.lottery.infrastructure.repository;
 
+import cn.itedus.lottery.common.Constants;
 import cn.itedus.lottery.domain.activity.model.vo.ActivityVO;
 import cn.itedus.lottery.domain.activity.model.vo.AwardVO;
 import cn.itedus.lottery.domain.activity.model.vo.StrategyDetailVO;
@@ -14,6 +15,7 @@ import cn.itedus.lottery.infrastructure.po.Award;
 import cn.itedus.lottery.infrastructure.po.Strategy;
 import cn.itedus.lottery.infrastructure.po.StrategyDetail;
 import org.springframework.beans.BeanUtils;
+import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -24,6 +26,7 @@ import java.util.List;
  * @author：anontokyo
  * @date: 2026/1/12
  */
+@Repository
 public class ActivityRepository implements IActivityRepository {
 
 
@@ -74,5 +77,11 @@ public class ActivityRepository implements IActivityRepository {
         }
         strategyDetailDao.insertList(req);
 
+    }
+
+    @Override
+    public boolean alterStatus(Long activityId, Enum<Constants.ActivityState> beforeState, Constants.ActivityState afterState) {
+        int count = activityDao.alterState(activityId, ((Constants.ActivityState) beforeState).getCode(), afterState.getCode());
+        return count == 1;
     }
 }
