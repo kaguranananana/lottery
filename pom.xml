@@ -30,6 +30,14 @@
         <version>2.3.5.RELEASE</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
+    <dependencies>
+        <dependency>
+            <groupId>cn.bugstack.middleware</groupId>
+            <artifactId>db-router-spring-boot-starter</artifactId>
+            <version>1.0.4</version>
+        </dependency>
+
+    </dependencies>
 
     <build>
         <plugins>
