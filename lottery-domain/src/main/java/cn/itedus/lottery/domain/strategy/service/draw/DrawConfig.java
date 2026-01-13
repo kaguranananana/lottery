@@ -9,6 +9,12 @@ import javax.annotation.Resource;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * @description:
+ * @author：anontokyo
+ * @date: 2026/1/12
+ */
+
 public class DrawConfig {
 
     @Resource

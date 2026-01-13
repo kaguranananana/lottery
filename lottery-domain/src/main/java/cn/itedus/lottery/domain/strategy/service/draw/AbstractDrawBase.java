@@ -16,6 +16,12 @@ import org.slf4j.Logger;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * @description:
+ * @author：anontokyo
+ * @date: 2026/1/12
+ */
+
 public abstract class AbstractDrawBase extends DrawStrategySupport implements IDrawExec {
 
     private Logger logger = LoggerFactory.getLogger(AbstractDrawBase.class);

@@ -8,6 +8,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * @description:
+ * @author：anontokyo
+ * @date: 2026/1/12
+ */
+
 public abstract class BaseAlgorithm implements  IDrawAlgorithm{
 
     // strategyId -> rateTuple 存储指定抽奖策略的奖品概率散列结果

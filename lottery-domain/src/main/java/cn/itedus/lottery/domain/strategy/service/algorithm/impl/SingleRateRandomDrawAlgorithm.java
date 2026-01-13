@@ -8,6 +8,12 @@ import java.math.BigDecimal;
 import java.security.SecureRandom;
 import java.util.List;
 
+/**
+ * @description:
+ * @author：anontokyo
+ * @date: 2026/1/12
+ */
+
 
 @Component("singleRateRandomDrawAlgorithm")
 public class SingleRateRandomDrawAlgorithm extends BaseAlgorithm {

@@ -5,6 +5,12 @@ import cn.itedus.lottery.domain.strategy.model.vo.AwardBriefVO;
 
 import java.util.List;
 
+/**
+ * @description:
+ * @author：anontokyo
+ * @date: 2026/1/12
+ */
+
 public interface IStrategyRepository {
     StrategyRich queryStrategyRich(Long strategyId);
 

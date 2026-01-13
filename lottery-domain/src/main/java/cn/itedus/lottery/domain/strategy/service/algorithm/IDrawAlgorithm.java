@@ -5,6 +5,12 @@ import cn.itedus.lottery.domain.strategy.model.vo.AwardRateInfo;
 
 import java.util.List;
 
+/**
+ * @description:
+ * @author：anontokyo
+ * @date: 2026/1/12
+ */
+
 public interface IDrawAlgorithm {
 
     /**
