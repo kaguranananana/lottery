@@ -10,10 +10,8 @@ import javax.annotation.PostConstruct;
 
 /**
  * @description: hutool 工具包下的雪花算法，15位雪花算法推荐：https://github.com/yitter/idgenerator/blob/master/Java/source/src/main/java/com/github/yitter/core/SnowWorkerM1.java
- * @author: 小傅哥，微信：fustack
- * @date: 2021/9/20
- * @github: https://github.com/fuzhengwei
- * @Copyright: 公众号：bugstack虫洞栈 | 博客：https://bugstack.cn - 沉淀、分享、成长，让自己和他人都能有所收获！
+ * @author：anontokyo
+ * @date: 2026/1/12
  */
 @Component
 public class SnowFlake implements IIdGenerator {

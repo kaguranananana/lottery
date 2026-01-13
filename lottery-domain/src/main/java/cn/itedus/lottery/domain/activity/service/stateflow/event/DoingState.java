@@ -6,11 +6,9 @@ import cn.itedus.lottery.domain.activity.service.stateflow.AbstractState;
 import org.springframework.stereotype.Component;
 
 /**
- * @description: 运行(活动中)状态
- * @author: 小傅哥，微信：fustack
- * @date: 2021/9/12
- * @github: https://github.com/fuzhengwei
- * @Copyright: 公众号：bugstack虫洞栈 | 博客：https://bugstack.cn - 沉淀、分享、成长，让自己和他人都能有所收获！
+ * @description: 运行状态
+ * @author：anontokyo
+ * @date: 2026/1/12
  */
 @Component
 public class DoingState extends AbstractState {

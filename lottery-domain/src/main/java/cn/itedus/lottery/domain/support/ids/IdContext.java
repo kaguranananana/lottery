@@ -12,10 +12,8 @@ import java.util.Map;
 
 /**
  * @description: Id 策略模式上下文配置「在正式的完整的系统架构中，ID 的生成会有单独的服务来完成，其他服务来调用 ID 生成接口即可」
- * @author: 小傅哥，微信：fustack
- * @date: 2021/9/20
- * @github: https://github.com/fuzhengwei
- * @Copyright: 公众号：bugstack虫洞栈 | 博客：https://bugstack.cn - 沉淀、分享、成长，让自己和他人都能有所收获！
+ * @author：anontokyo
+ * @date: 2026/1/12
  */
 @Configuration
 public class IdContext {
