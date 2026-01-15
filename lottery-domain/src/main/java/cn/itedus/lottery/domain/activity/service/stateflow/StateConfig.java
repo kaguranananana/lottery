@@ -2,7 +2,6 @@ package cn.itedus.lottery.domain.activity.service.stateflow;
 
 import cn.itedus.lottery.common.Constants;
 import cn.itedus.lottery.domain.activity.service.stateflow.event.*;
-import com.sun.xml.internal.bind.v2.runtime.reflect.opt.Const;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;

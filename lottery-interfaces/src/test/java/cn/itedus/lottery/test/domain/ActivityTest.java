@@ -1,4 +1,4 @@
-package cn.itedus.lottery.test;
+package cn.itedus.lottery.test.domain;
 
 import cn.itedus.lottery.common.Constants;
 import cn.itedus.lottery.domain.activity.model.aggregates.ActivityConfigRich;
