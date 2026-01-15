@@ -24,7 +24,7 @@ import java.util.Map;
  * @Copyright: 公众号：bugstack虫洞栈 | 博客：https://bugstack.cn - 沉淀、分享、成长，让自己和他人都能有所收获！
  */
 @RunWith(SpringRunner.class)
-@SpringBootTest
+@SpringBootTest(classes = cn.itedus.lottery.LotteryApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class UserStrategyExportDaoTest {
 
     private Logger logger = LoggerFactory.getLogger(UserStrategyExportDaoTest.class);
