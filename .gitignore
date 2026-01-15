@@ -20,3 +20,5 @@
 # Logs
 *.log
 logs/
+
+.vscode
