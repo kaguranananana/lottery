@@ -23,13 +23,14 @@ import java.util.Date;
 @SpringBootTest
 public class UserTakeActivityDaoTest {
 
-    private Logger logger = LoggerFactory.getLogger(ActivityDaoTest.class);
+    private Logger logger = LoggerFactory.getLogger(UserTakeActivityDaoTest.class);
 
     @Resource
     private IUserTakeActivityDao userTakeActivityDao;
 
     @Test
     public void test_insert() {
+        logger.info("开始测试用户领取活动数据插入");
         UserTakeActivity userTakeActivity = new UserTakeActivity();
         userTakeActivity.setuId("Uhdgkw766120d"); // 1库：Ukdli109op89oi 2库：Ukdli109op811d
         userTakeActivity.setTakeId(121019889410L);
@@ -40,6 +41,7 @@ public class UserTakeActivityDaoTest {
         userTakeActivity.setUuid("Uhdgkw766120d");
 
         userTakeActivityDao.insert(userTakeActivity);
+        logger.info("用户领取活动数据插入完成");
     }
 
 }

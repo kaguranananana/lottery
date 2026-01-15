@@ -1,7 +1,5 @@
 package cn.itedus.lottery.infrastructure.dao;
 
-
-import cn.itedus.lottery.infrastructure.po.Strategy;
 import cn.itedus.lottery.infrastructure.po.StrategyDetail;
 import org.apache.ibatis.annotations.Mapper;
 
@@ -22,6 +20,7 @@ public interface IStrategyDetailDao {
 
     /**
      * 扣减库存
+     * 
      * @param req
      * @return
      */
