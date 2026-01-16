@@ -2,6 +2,7 @@ package cn.itedus.lottery.infrastructure.repository;
 
 import cn.itedus.lottery.common.Constants;
 import cn.itedus.lottery.domain.activity.model.vo.ActivityVO;
+import cn.itedus.lottery.domain.activity.model.vo.AlterStateVO;
 import cn.itedus.lottery.domain.activity.model.vo.AwardVO;
 import cn.itedus.lottery.domain.activity.model.vo.StrategyDetailVO;
 import cn.itedus.lottery.domain.activity.model.vo.StrategyVO;
@@ -81,7 +82,12 @@ public class ActivityRepository implements IActivityRepository {
 
     @Override
     public boolean alterStatus(Long activityId, Enum<Constants.ActivityState> beforeState, Constants.ActivityState afterState) {
-        int count = activityDao.alterState(activityId, ((Constants.ActivityState) beforeState).getCode(), afterState.getCode());
+        AlterStateVO alterStateVO = new AlterStateVO(
+                activityId,
+                ((Constants.ActivityState) beforeState).getCode(),
+                afterState.getCode()
+        );
+        int count = activityDao.alterState(alterStateVO);
         return count == 1;
     }
 }

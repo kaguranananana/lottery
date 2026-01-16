@@ -18,7 +18,7 @@
         WHERE activity_id = #{activityId}
     </select>
 
-    <update id="alterState">
+    <update id="alterState" parameterType="cn.itedus.lottery.domain.activity.model.vo.AlterStateVO">
         UPDATE activity
         SET state = #{afterState}, update_time = now()
         WHERE activity_id = #{activityId}
