@@ -1,10 +1,8 @@
 package cn.itedus.lottery.domain.activity.repository;
 
 import cn.itedus.lottery.common.Constants;
-import cn.itedus.lottery.domain.activity.model.vo.ActivityVO;
-import cn.itedus.lottery.domain.activity.model.vo.AwardVO;
-import cn.itedus.lottery.domain.activity.model.vo.StrategyDetailVO;
-import cn.itedus.lottery.domain.activity.model.vo.StrategyVO;
+import cn.itedus.lottery.domain.activity.model.req.PartakeReq;
+import cn.itedus.lottery.domain.activity.model.vo.*;
 
 import java.util.List;
 
@@ -49,4 +47,7 @@ public interface IActivityRepository {
      */
     boolean alterStatus(Long activityId, Enum<Constants.ActivityState> beforeState, Constants.ActivityState afterState);
 
+    ActivityBillVO queryActivityBill(PartakeReq req);
+
+    int substractionActivityStock(Long activityId);
 }

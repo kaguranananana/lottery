@@ -1,9 +1,19 @@
 package cn.itedus.lottery.domain.activity.service.partake;
 
+import cn.itedus.lottery.domain.activity.model.req.PartakeReq;
+import cn.itedus.lottery.domain.activity.model.res.PartakeResult;
+
 /**
- * @description:
+ * @description: 抽奖活动参与接口
  * @author：anontokyo
  * @date: 2026/1/12
  */
 public interface IActivityPartake {
+
+    /**
+     * 参与活动
+     * @param req
+     * @return
+     */
+    PartakeResult doPartake(PartakeReq req);
 }
