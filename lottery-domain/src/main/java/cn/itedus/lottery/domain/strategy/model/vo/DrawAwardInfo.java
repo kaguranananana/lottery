@@ -1,5 +1,7 @@
 package cn.itedus.lottery.domain.strategy.model.vo;
 
+import java.util.Date;
+
 /**
  * @description: 中奖奖品信息
  * @author：anontokyo
@@ -8,6 +10,7 @@ package cn.itedus.lottery.domain.strategy.model.vo;
 
 
 public class DrawAwardInfo {
+
 
     /**
      * 奖品ID
@@ -29,6 +32,20 @@ public class DrawAwardInfo {
      */
     private String awardContent;
 
+    /**
+     * 策略方式（1:单项概率、2:总体概率）
+     */
+    private Integer strategyMode;
+
+    /**
+     * 发放奖品方式（1:即时、2:定时[含活动结束]、3:人工）
+     */
+    private Integer grantType;
+    /**
+     * 发奖时间
+     */
+    private Date grantDate;
+
     public DrawAwardInfo() {
     }
 
@@ -37,6 +54,17 @@ public class DrawAwardInfo {
         this.awardType = awardType;
         this.awardName = awardName;
         this.awardContent = awardContent;
+    }
+
+    public DrawAwardInfo(String awardId, Integer awardType, String awardName, String awardContent,
+                         Integer strategyMode, Integer grantType, Date grantDate) {
+        this.awardId = awardId;
+        this.awardType = awardType;
+        this.awardName = awardName;
+        this.awardContent = awardContent;
+        this.strategyMode = strategyMode;
+        this.grantType = grantType;
+        this.grantDate = grantDate;
     }
 
     public String getAwardId() {
@@ -69,5 +97,29 @@ public class DrawAwardInfo {
 
     public void setAwardContent(String awardContent) {
         this.awardContent = awardContent;
+    }
+
+    public Integer getStrategyMode() {
+        return strategyMode;
+    }
+
+    public void setStrategyMode(Integer strategyMode) {
+        this.strategyMode = strategyMode;
+    }
+
+    public Integer getGrantType() {
+        return grantType;
+    }
+
+    public void setGrantType(Integer grantType) {
+        this.grantType = grantType;
+    }
+
+    public Date getGrantDate() {
+        return grantDate;
+    }
+
+    public void setGrantDate(Date grantDate) {
+        this.grantDate = grantDate;
     }
 }
