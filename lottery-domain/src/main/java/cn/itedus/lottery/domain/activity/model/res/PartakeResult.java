@@ -13,6 +13,19 @@ public class PartakeResult extends Result {
      */
     private Long strategyId;
 
+    /**
+     * 活动领取id
+     */
+    private Long takeId;
+
+    public Long getTakeId() {
+        return takeId;
+    }
+
+    public void setTakeId(Long takeId) {
+        this.takeId = takeId;
+    }
+
     public Long getStrategyId() {
         return strategyId;
     }

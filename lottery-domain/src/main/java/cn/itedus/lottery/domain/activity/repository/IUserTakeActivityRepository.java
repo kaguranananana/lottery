@@ -2,6 +2,7 @@ package cn.itedus.lottery.domain.activity.repository;
 
 import cn.itedus.lottery.domain.activity.model.req.PartakeReq;
 import cn.itedus.lottery.domain.activity.model.vo.ActivityBillVO;
+import cn.itedus.lottery.domain.activity.model.vo.UserTakeActivityVO;
 
 import java.util.Date;
 
@@ -20,4 +21,7 @@ public interface IUserTakeActivityRepository {
     int subtractionLeftCount(ActivityBillVO bill);
 
     void takeActivity(ActivityBillVO bill, Date partakeDate, Long takeId);
+
+    UserTakeActivityVO queryNoConsumedTakeActivityOrder(Long activityId, String uId);
+
 }

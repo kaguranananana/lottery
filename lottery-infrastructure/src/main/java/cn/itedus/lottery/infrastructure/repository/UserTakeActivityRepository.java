@@ -1,7 +1,9 @@
 package cn.itedus.lottery.infrastructure.repository;
 
+import cn.itedus.lottery.common.Constants;
 import cn.itedus.lottery.domain.activity.model.req.PartakeReq;
 import cn.itedus.lottery.domain.activity.model.vo.ActivityBillVO;
+import cn.itedus.lottery.domain.activity.model.vo.UserTakeActivityVO;
 import cn.itedus.lottery.domain.activity.repository.IUserTakeActivityRepository;
 import cn.itedus.lottery.infrastructure.dao.IUserTakeActivityCountDao;
 import cn.itedus.lottery.infrastructure.dao.IUserTakeActivityDao;
@@ -61,10 +63,33 @@ public class UserTakeActivityRepository  implements IUserTakeActivityRepository 
         } else {
             userTakeActivity.setTakeCount(bill.getTakeCount() - bill.getUserTakeLeftCount() + 1);
         }
-
+        userTakeActivity.setStrategyId(bill.getStrategyId());
+        userTakeActivity.setState(Constants.TaskState.NO_USED.getCode());
         String uuid = bill.getuId() + "_" + bill.getActivityId() + "_" + userTakeActivity.getTakeCount();
         userTakeActivity.setUuid(uuid);
 
         userTakeActivityDao.insert(userTakeActivity);
+    }
+
+    @Override
+    public UserTakeActivityVO queryNoConsumedTakeActivityOrder(Long activityId, String uId) {
+        // 用于查询
+        UserTakeActivity userTakeActivity = new UserTakeActivity();
+        userTakeActivity.setuId(uId);
+        userTakeActivity.setActivityId(activityId);
+        UserTakeActivity noConsumedTakeActivityOrder = userTakeActivityDao.queryNoConsumedTakeActivityOrder(userTakeActivity);
+        // 没有查询刀符合的领取单, 直接返回null;
+        if (null == noConsumedTakeActivityOrder) {
+            return null;
+        }
+
+        UserTakeActivityVO userTakeActivityVO = new UserTakeActivityVO();
+        userTakeActivityVO.setActivityId(noConsumedTakeActivityOrder.getActivityId());
+        userTakeActivityVO.setTakeId(noConsumedTakeActivityOrder.getTakeId());
+        userTakeActivityVO.setStrategyId(noConsumedTakeActivityOrder.getStrategyId());
+        userTakeActivityVO.setState(noConsumedTakeActivityOrder.getState());
+
+
+        return userTakeActivityVO;
     }
 }
