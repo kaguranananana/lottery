@@ -5,6 +5,7 @@ import cn.itedus.lottery.common.Constants;
 import cn.itedus.lottery.common.Result;
 import cn.itedus.lottery.domain.activity.model.req.PartakeReq;
 import cn.itedus.lottery.domain.activity.model.vo.ActivityBillVO;
+import cn.itedus.lottery.domain.activity.model.vo.DrawOrderVO;
 import cn.itedus.lottery.domain.activity.model.vo.UserTakeActivityVO;
 import cn.itedus.lottery.domain.activity.repository.IUserTakeActivityRepository;
 import cn.itedus.lottery.domain.activity.service.partake.BaseActivityPartake;
@@ -115,4 +116,32 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
         return userTakeActivityRepository.queryNoConsumedTakeActivityOrder(activityId, uId);
     }
 
+    @Override
+    public Result recordDrawOrder(DrawOrderVO drawOrder) {
+        try {
+            dbRouter.doRouter(drawOrder.getuId());
+            return transactionTemplate.execute(status -> {
+                try {
+                    // 锁定活动领取记录
+                   int lockCount = userTakeActivityRepository.lockTakeActivity(drawOrder.getuId(), drawOrder.getActivityId(), drawOrder.getTakeId());
+                   if (lockCount == 0) {
+                       status.setRollbackOnly();
+                       logger.error("记录中奖单，个人参与活动抽奖已消耗完 activityId：{} uId：{}", drawOrder.getActivityId(), drawOrder.getuId());
+                       return Result.buildResult(Constants.ResponseCode.NO_UPDATE);
+                   }
+
+                   // 保存抽奖信息
+                    userTakeActivityRepository.saveUserStrategyExport(drawOrder);
+                } catch (DuplicateKeyException e) {
+                    status.setRollbackOnly();
+                    logger.error("记录中奖单，唯一索引冲突 activityId：{} uId：{}", drawOrder.getActivityId(), drawOrder.getuId(), e);
+                    return Result.buildResult(Constants.ResponseCode.INDEX_DUP);
+                }
+
+                return Result.buildSuccessResult();
+            });
+        } finally {
+            dbRouter.clear();
+        }
+    }
 }
