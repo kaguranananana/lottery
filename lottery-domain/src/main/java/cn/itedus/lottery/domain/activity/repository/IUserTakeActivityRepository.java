@@ -31,4 +31,7 @@ public interface IUserTakeActivityRepository {
      * @param drawOrder
      */
     void saveUserStrategyExport(DrawOrderVO drawOrder);
+
+    void updateInvoiceMqState(String uId, Long orderId, Integer mqState);
+
 }

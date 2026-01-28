@@ -62,6 +62,10 @@ public class DrawOrderVO {
      * 奖品内容「文字描述、Key、码」
      */
     private String awardContent;
+    /**
+     * 消息发送状态（0未发送、1发送成功、2发送失败）
+     */
+    private Integer mqState;
 
     public String getuId() {
         return uId;
@@ -167,6 +171,14 @@ public class DrawOrderVO {
         this.awardContent = awardContent;
     }
 
+    public Integer getMqState() {
+        return mqState;
+    }
+
+    public void setMqState(Integer mqState) {
+        this.mqState = mqState;
+    }
+
     @Override
     public String toString() {
         return "DrawOrderVO{" +
@@ -183,6 +195,7 @@ public class DrawOrderVO {
                 ", awardType=" + awardType +
                 ", awardName='" + awardName + '\'' +
                 ", awardContent='" + awardContent + '\'' +
+                ", mqState=" + mqState +
                 '}';
     }
 

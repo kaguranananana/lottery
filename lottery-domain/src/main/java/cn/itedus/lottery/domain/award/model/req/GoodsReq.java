@@ -13,7 +13,7 @@ public class GoodsReq {
     private String uId;
 
     /** 抽奖单号 ID */
-    private String orderId;
+    private Long orderId;
 
     /** 奖品ID */
     private String awardId;
@@ -34,24 +34,38 @@ public class GoodsReq {
     /** 扩展信息，用于一些个性商品发放所需要的透传字段内容 */
     private String extInfo;
 
+    public GoodsReq(String awardContent, String awardId, String awardName, String extInfo, Long orderId, ShippingAddress shippingAddress, String uId) {
+        this.awardContent = awardContent;
+        this.awardId = awardId;
+        this.awardName = awardName;
+        this.extInfo = extInfo;
+        this.orderId = orderId;
+        this.shippingAddress = shippingAddress;
+        this.uId = uId;
+    }
+
     public GoodsReq() {
     }
 
-    public GoodsReq(String uId, String orderId, String awardId, String awardName, String awardContent) {
+    public GoodsReq(String uId, Long orderId, String awardId) {
         this.uId = uId;
         this.orderId = orderId;
         this.awardId = awardId;
-        this.awardName = awardName;
-        this.awardContent = awardContent;
     }
 
-    public GoodsReq(String uId, String orderId, String awardId, String awardName, String awardContent, ShippingAddress shippingAddress) {
-        this.uId = uId;
-        this.orderId = orderId;
+    public GoodsReq(String uId, String number, String awardId, String awardName, String awardContent) {
+        this.awardContent = awardContent;
         this.awardId = awardId;
         this.awardName = awardName;
-        this.awardContent = awardContent;
-        this.shippingAddress = shippingAddress;
+        this.uId = uId;
+    }
+
+    public Long getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(Long orderId) {
+        this.orderId = orderId;
     }
 
     public String getuId() {
@@ -62,13 +76,7 @@ public class GoodsReq {
         this.uId = uId;
     }
 
-    public String getOrderId() {
-        return orderId;
-    }
 
-    public void setOrderId(String orderId) {
-        this.orderId = orderId;
-    }
 
     public String getAwardId() {
         return awardId;

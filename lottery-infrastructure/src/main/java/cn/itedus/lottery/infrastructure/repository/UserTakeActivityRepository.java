@@ -123,6 +123,16 @@ public class UserTakeActivityRepository  implements IUserTakeActivityRepository 
         userStrategyExport.setAwardName(drawOrder.getAwardName());
         userStrategyExport.setAwardContent(drawOrder.getAwardContent());
         userStrategyExport.setUuid(String.valueOf(drawOrder.getOrderId()));
+        userStrategyExport.setMqState(drawOrder.getMqState());
         userStrategyExportDao.insert(userStrategyExport);
+    }
+
+    @Override
+    public void updateInvoiceMqState(String uId, Long orderId, Integer mqState) {
+        UserStrategyExport userStrategyExport = new UserStrategyExport();
+        userStrategyExport.setuId(uId);
+        userStrategyExport.setOrderId(orderId);
+        userStrategyExport.setMqState(mqState);
+        userStrategyExportDao.updateInvoiceMqState(userStrategyExport);
     }
 }
