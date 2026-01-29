@@ -2,7 +2,7 @@ package cn.itedus.lottery.test.application;
 
 import cn.itedus.lottery.application.mq.producer.KafkaProducer;
 import cn.itedus.lottery.common.Constants;
-import cn.itedus.lottery.domain.activity.model.vo.InVoiceVO;
+import cn.itedus.lottery.domain.activity.model.vo.InvoiceVO;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -24,7 +24,7 @@ public class KafkaProducerTest {
     @Test
     public void test_send() throws InterruptedException {
 
-        InVoiceVO invoice = new InVoiceVO();
+        InvoiceVO invoice = new InvoiceVO();
         invoice.setuId("fustack");
         invoice.setOrderId(1444540456057864192L);
         invoice.setAwardId("3");

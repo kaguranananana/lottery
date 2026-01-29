@@ -1,7 +1,7 @@
 package cn.itedus.lottery.application.mq.consumer;
 
 import cn.itedus.lottery.common.Constants;
-import cn.itedus.lottery.domain.activity.model.vo.InVoiceVO;
+import cn.itedus.lottery.domain.activity.model.vo.InvoiceVO;
 import cn.itedus.lottery.domain.award.model.req.GoodsReq;
 import cn.itedus.lottery.domain.award.model.res.DistributionRes;
 import cn.itedus.lottery.domain.award.service.factory.DistributionGoodsFactory;
@@ -46,16 +46,16 @@ public class LotteryInvoiceListener {
         // 处理MQ消息
         try {
             // 转换mq对象
-            InVoiceVO inVoiceVO = JSON.parseObject((String)message.get(), InVoiceVO.class);
+            InvoiceVO invoiceVO = JSON.parseObject((String)message.get(), InvoiceVO.class);
 
             // 获取发送奖品工厂, 执行发奖
-            IDistributionGoods distributionGoodsService = distributionGoodsFactory.getDistributionGoodsService(inVoiceVO.getAwardType());
-            DistributionRes distributionRes = distributionGoodsService.doDistribution(new GoodsReq(inVoiceVO.getuId(), inVoiceVO.getOrderId(), inVoiceVO.getAwardId()));
+            IDistributionGoods distributionGoodsService = distributionGoodsFactory.getDistributionGoodsService(invoiceVO.getAwardType());
+            DistributionRes distributionRes = distributionGoodsService.doDistribution(new GoodsReq(invoiceVO.getuId(), invoiceVO.getOrderId(), invoiceVO.getAwardId()));
 
             Assert.isTrue(Constants.AwardState.SUCCESS.getCode().equals(distributionRes.getCode()), distributionRes.getInfo());
 
             // 打印日志
-            logger.info("消费MQ消息，完成 topic：{} bizId：{} 发奖结果：{}", topic, inVoiceVO.getuId(), JSON.toJSONString(distributionRes));
+            logger.info("消费MQ消息，完成 topic：{} bizId：{} 发奖结果：{}", topic, invoiceVO.getuId(), JSON.toJSONString(distributionRes));
 
             // 消费信息完成
             ack.acknowledge();

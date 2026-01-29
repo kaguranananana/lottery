@@ -7,7 +7,7 @@ import cn.itedus.lottery.domain.award.model.vo.ShippingAddress;
  * @author：anontokyo
  * @date: 2026/1/29
  */
-public class InVoiceVO {
+public class InvoiceVO {
 
     /** 用户ID */
     private String uId;
@@ -102,7 +102,7 @@ public class InVoiceVO {
 
     @Override
     public String toString() {
-        return "InVoiceVO{" +
+        return "InvoiceVO{" +
                 "awardContent='" + awardContent + '\'' +
                 ", uId='" + uId + '\'' +
                 ", orderId=" + orderId +

@@ -10,7 +10,7 @@ import cn.itedus.lottery.common.Result;
 import cn.itedus.lottery.domain.activity.model.vo.DrawOrderVO;
 import cn.itedus.lottery.domain.activity.model.req.PartakeReq;
 import cn.itedus.lottery.domain.activity.model.res.PartakeResult;
-import cn.itedus.lottery.domain.activity.model.vo.InVoiceVO;
+import cn.itedus.lottery.domain.activity.model.vo.InvoiceVO;
 import cn.itedus.lottery.domain.activity.service.partake.IActivityPartake;
 import cn.itedus.lottery.domain.rule.model.req.DecisionMatterReq;
 import cn.itedus.lottery.domain.rule.model.res.EngineResult;
@@ -79,19 +79,19 @@ public class ActivityProcessImpl implements IActivityProcess {
 
 
         // 发送MQ, 触发抽奖流程
-        InVoiceVO inVoiceVO = buildInvoice(drawOrderVO);
-        ListenableFuture<SendResult<String, Object>> future = kafkaProducer.sendLotteryInvoice(inVoiceVO);
+        InvoiceVO invoiceVO = buildInvoice(drawOrderVO);
+        ListenableFuture<SendResult<String, Object>> future = kafkaProducer.sendLotteryInvoice(invoiceVO);
         future.addCallback(new ListenableFutureCallback<SendResult<String, Object>>() {
 
             @Override
             public void onSuccess(SendResult<String, Object> stringObjectSendResult) {
                 // 成功, 更新user_strategy_export.mq_state = 1
-                activityPartake.updateInvoiceMqState(inVoiceVO.getuId(), inVoiceVO.getOrderId(),  Constants.MQState.COMPLETE.getCode());
+                activityPartake.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(),  Constants.MQState.COMPLETE.getCode());
             }
 
             @Override
             public void onFailure(Throwable throwable) {
-                activityPartake.updateInvoiceMqState(inVoiceVO.getuId(), inVoiceVO.getOrderId(), Constants.MQState.FAIL.getCode());
+                activityPartake.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(), Constants.MQState.FAIL.getCode());
             }
         });
 
@@ -99,8 +99,8 @@ public class ActivityProcessImpl implements IActivityProcess {
                 drawAwardInfo);
     }
 
-    private InVoiceVO buildInvoice(DrawOrderVO drawOrderVO) {
-        InVoiceVO invoiceVO = new InVoiceVO();
+    private InvoiceVO buildInvoice(DrawOrderVO drawOrderVO) {
+        InvoiceVO invoiceVO = new InvoiceVO();
         invoiceVO.setuId(drawOrderVO.getuId());
         invoiceVO.setOrderId(drawOrderVO.getOrderId());
         invoiceVO.setAwardId(drawOrderVO.getAwardId());
