@@ -5,6 +5,8 @@ import cn.bugstack.middleware.db.router.annotation.DBRouterStrategy;
 import cn.itedus.lottery.infrastructure.po.UserStrategyExport;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.List;
+
 /**
  * @description:
  * @author：anontokyo
@@ -41,4 +43,6 @@ public interface IUserStrategyExportDao {
      */
     @DBRouter
     void updateInvoiceMqState(UserStrategyExport userStrategyExport);
+
+    List<UserStrategyExport> scanInvoiceMqState();
 }

@@ -1,15 +1,23 @@
 package cn.itedus.lottery.application.worker;
 
+import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
+import cn.itedus.lottery.application.mq.producer.KafkaProducer;
 import cn.itedus.lottery.common.Constants;
 import cn.itedus.lottery.common.Result;
 import cn.itedus.lottery.domain.activity.model.vo.ActivityVO;
+import cn.itedus.lottery.domain.activity.model.vo.InvoiceVO;
 import cn.itedus.lottery.domain.activity.service.deploy.IActivityDeploy;
+import cn.itedus.lottery.domain.activity.service.partake.IActivityPartake;
 import cn.itedus.lottery.domain.activity.service.stateflow.IStateHandler;
 import com.alibaba.fastjson.JSON;
+import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Component;
+import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.util.concurrent.ListenableFutureCallback;
 
 import javax.annotation.Resource;
 import java.util.Date;
@@ -31,6 +39,14 @@ public class LotteryXxlJob {
     @Resource
     private IStateHandler stateHandler;
 
+    @Resource
+    private IDBRouterStrategy dbRouter;
+
+    @Resource
+    private IActivityPartake activityPartake;
+
+    @Resource
+    private KafkaProducer kafkaProducer;
 
     @XxlJob("lotteryActivityStateJobHandler")
     public void lotteryActivityStateJobHandler() throws Exception {
@@ -73,4 +89,67 @@ public class LotteryXxlJob {
     }
 
 
+    @XxlJob("lotteryOrderMQStateJobHandler")
+    public void lotteryOrderMQStateJobHandler() {
+        // 验证参数
+        String jobParam = XxlJobHelper.getJobParam();
+        if (jobParam == null) {
+            logger.info("扫描用户抽奖奖品发放MQ状态[Table = 2*4] 错误 params is null");
+            return;
+        }
+
+        String[] params = jobParam.split(",");
+        logger.info("扫描用户抽奖奖品发放MQ状态[Table = 2*4] 开始 params：{}", JSON.toJSONString(params));
+
+        if (params.length == 0) {
+            logger.info("扫描用户抽奖奖品发放MQ状态[Table = 2*4] 结束 params is null");
+            return;
+        }
+
+        // 获取分库分表配置下的分表数
+        int tbCount = dbRouter.tbCount();
+
+        // 循环获取指定扫描库
+        for (String param : params) {
+            // 获取当前任务扫描的指定分库
+            int dbCount = Integer.parseInt(param);
+
+            if (dbCount > dbRouter.dbCount()) {
+                logger.info("扫描用户抽奖奖品发放MQ状态[Table = 2*4] 结束 dbCount not exist");
+                continue;
+            }
+
+            // 循环扫描对应表
+            for (int i = 0; i < tbCount; i++) {
+
+                //  扫描表数据
+                List<InvoiceVO> invoiceVOList = activityPartake.scanInvoiceMqState(dbCount, i);
+                logger.info("扫描用户抽奖奖品发放MQ状态[Table = 2*4] 扫描库：{} 扫描表：{} 扫描数：{}", dbCount, i, invoiceVOList.size());
+
+                // 补偿MQ消息
+                for (InvoiceVO invoiceVO : invoiceVOList) {
+
+                    ListenableFuture<SendResult<String, Object>> future = kafkaProducer.sendLotteryInvoice(invoiceVO);
+                    future.addCallback(new ListenableFutureCallback<SendResult<String, Object>>() {
+
+                        @Override
+                        public void onSuccess(SendResult<String, Object> stringObjectSendResult) {
+                            // MQ 消息发送完成，更新数据库表 user_strategy_export.mq_state = 1
+                            activityPartake.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(), Constants.MQState.COMPLETE.getCode());
+                        }
+
+                        @Override
+                        public void onFailure(Throwable throwable) {
+                            // MQ 消息发送失败，更新数据库表 user_strategy_export.mq_state = 2 【等待定时任务扫码补偿MQ消息】
+                            activityPartake.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(), Constants.MQState.FAIL.getCode());
+                        }
+
+                    });
+                }
+
+            }
+
+        }
+        logger.info("扫描用户抽奖奖品发放MQ状态[Table = 2*4] 完成 param：{}", JSON.toJSONString(params));
+    }
 }

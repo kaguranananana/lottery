@@ -2,9 +2,11 @@ package cn.itedus.lottery.domain.activity.repository;
 
 import cn.itedus.lottery.domain.activity.model.vo.ActivityBillVO;
 import cn.itedus.lottery.domain.activity.model.vo.DrawOrderVO;
+import cn.itedus.lottery.domain.activity.model.vo.InvoiceVO;
 import cn.itedus.lottery.domain.activity.model.vo.UserTakeActivityVO;
 
 import java.util.Date;
+import java.util.List;
 
 /**
  * @description:
@@ -34,4 +36,5 @@ public interface IUserTakeActivityRepository {
 
     void updateInvoiceMqState(String uId, Long orderId, Integer mqState);
 
+    List<InvoiceVO> scanInvoiceMqState();
 }
