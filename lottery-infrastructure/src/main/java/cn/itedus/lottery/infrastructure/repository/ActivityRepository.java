@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -114,5 +115,23 @@ public class ActivityRepository implements IActivityRepository {
     @Override
     public int substractionActivityStock(Long activityId) {
         return activityDao.substractionActivityStock(activityId);
+    }
+
+    @Override
+    public List<ActivityVO> scanToDoActivityList(Long id) {
+        List<Activity> activityList = activityDao.scanToDoActivityList(id);
+        List<ActivityVO> activityVOList = new ArrayList<>(activityList.size());
+        for (Activity activity : activityList) {
+            ActivityVO activityVO = new ActivityVO();
+            activityVO.setId(activity.getId());
+            activityVO.setActivityId(activity.getActivityId());
+            activityVO.setActivityName(activity.getActivityName());
+            activityVO.setBeginDateTime(activity.getBeginDateTime());
+            activityVO.setEndDateTime(activity.getEndDateTime());
+            activityVO.setState(activity.getState());
+            activityVO.setCreator(activity.getCreator());
+            activityVOList.add(activityVO);
+        }
+        return activityVOList;
     }
 }

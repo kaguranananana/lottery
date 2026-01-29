@@ -50,4 +50,11 @@ public interface IActivityRepository {
     ActivityBillVO queryActivityBill(PartakeReq req);
 
     int substractionActivityStock(Long activityId);
+
+    /**
+     * 扫描待处理的活动列表
+     * @param id
+     * @return
+     */
+    List<ActivityVO> scanToDoActivityList(Long id);
 }

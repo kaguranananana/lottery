@@ -16,6 +16,7 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
+import java.util.Collections;
 import java.util.List;
 
 
@@ -66,5 +67,10 @@ public class ActivityDeployImpl implements IActivityDeploy {
     public void updateActivity(ActivityConfigReq req) {
         // TODO: 非核心功能, 后续补充
 
+    }
+
+    @Override
+    public List<ActivityVO> scanToDoActivityList(Long id) {
+        return activityRepository.scanToDoActivityList(id);
     }
 }

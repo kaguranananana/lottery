@@ -4,6 +4,8 @@ import cn.itedus.lottery.domain.activity.model.vo.AlterStateVO;
 import cn.itedus.lottery.infrastructure.po.Activity;
 import org.apache.ibatis.annotations.Mapper;
 
+import java.util.List;
+
 /**
  * @description:
  * @author：anontokyo
@@ -22,4 +24,6 @@ public interface IActivityDao {
    int alterState(AlterStateVO alterStateVO);
 
     int substractionActivityStock(Long activityId);
+
+    List<Activity> scanToDoActivityList(Long id);
 }
