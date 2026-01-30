@@ -1,6 +1,6 @@
 package cn.itedus.lottery.rpc.activity.deploy;
 
-import cn.itedus.lottery.rpc.activity.deploy.req.ActivityReq;
+import cn.itedus.lottery.rpc.activity.deploy.req.ActivityPageReq;
 import cn.itedus.lottery.rpc.activity.deploy.res.ActivityRes;
 
 /**
@@ -12,8 +12,8 @@ import cn.itedus.lottery.rpc.activity.deploy.res.ActivityRes;
  *  * 2. 更新活动
  *  * 3. 查询活动
  */
-public interface IActivityBooth {
+public interface ILotteryActivityDeploy {
 
-    ActivityRes queryActivityById(ActivityReq req);
+    ActivityRes queryActivityListByPageForErp(ActivityPageReq req);
 
 }

@@ -1,6 +1,8 @@
 package cn.itedus.lottery.domain.activity.repository;
 
 import cn.itedus.lottery.common.Constants;
+import cn.itedus.lottery.domain.activity.model.aggregates.ActivityInfoLimitPageRich;
+import cn.itedus.lottery.domain.activity.model.req.ActivityInfoLimitPageReq;
 import cn.itedus.lottery.domain.activity.model.req.PartakeReq;
 import cn.itedus.lottery.domain.activity.model.res.StockResult;
 import cn.itedus.lottery.domain.activity.model.vo.*;
@@ -62,5 +64,7 @@ public interface IActivityRepository {
     StockResult substractionActivityStockByRedis(String uId, Long activityId, Integer stockCount);
 
     void recoverActivityCacheStockByRedis(String stockKey);
+
+    ActivityInfoLimitPageRich queryActivityInfoLimitPage(ActivityInfoLimitPageReq req);
 
 }

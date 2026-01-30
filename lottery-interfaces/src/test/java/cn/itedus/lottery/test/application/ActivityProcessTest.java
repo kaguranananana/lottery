@@ -1,8 +1,8 @@
 package cn.itedus.lottery.test.application;
 
-import cn.itedus.lottery.application.process.IActivityProcess;
-import cn.itedus.lottery.application.process.req.DrawProcessReq;
-import cn.itedus.lottery.application.process.res.DrawProcessResult;
+import cn.itedus.lottery.application.process.draw.IActivityDrawProcess;
+import cn.itedus.lottery.application.process.draw.req.DrawProcessReq;
+import cn.itedus.lottery.application.process.draw.res.DrawProcessResult;
 import com.alibaba.fastjson.JSON;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -25,7 +25,7 @@ public class ActivityProcessTest {
     private Logger logger = LoggerFactory.getLogger(ActivityProcessTest.class);
 
     @Resource
-    private IActivityProcess activityProcess;
+    private IActivityDrawProcess activityProcess;
 
     @Test
     public void test_doDrawProcess() {

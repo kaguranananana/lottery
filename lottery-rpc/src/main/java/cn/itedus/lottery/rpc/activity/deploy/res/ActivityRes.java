@@ -1,9 +1,10 @@
 package cn.itedus.lottery.rpc.activity.deploy.res;
 
 import cn.itedus.lottery.common.Result;
-import cn.itedus.lottery.rpc.activity.deploy.dto.ActivityDto;
+import cn.itedus.lottery.rpc.activity.deploy.dto.ActivityDTO;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * @description:
@@ -13,7 +14,8 @@ import java.io.Serializable;
 public class ActivityRes implements Serializable {
 
     private Result result;
-    private ActivityDto activity;
+    private Long count;
+    private List<ActivityDTO> activityDTOList;
 
     public ActivityRes() {
     }
@@ -22,9 +24,10 @@ public class ActivityRes implements Serializable {
         this.result = result;
     }
 
-    public ActivityRes(Result result, ActivityDto activity) {
+    public ActivityRes(Result result, Long count, List<ActivityDTO> activityDTOList) {
         this.result = result;
-        this.activity = activity;
+        this.count = count;
+        this.activityDTOList = activityDTOList;
     }
 
     public Result getResult() {
@@ -35,12 +38,20 @@ public class ActivityRes implements Serializable {
         this.result = result;
     }
 
-    public ActivityDto getActivity() {
-        return activity;
+    public Long getCount() {
+        return count;
     }
 
-    public void setActivity(ActivityDto activity) {
-        this.activity = activity;
+    public void setCount(Long count) {
+        this.count = count;
+    }
+
+    public List<ActivityDTO> getActivityDTOList() {
+        return activityDTOList;
+    }
+
+    public void setActivityDTOList(List<ActivityDTO> activityDTOList) {
+        this.activityDTOList = activityDTOList;
     }
 
 }

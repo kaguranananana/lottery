@@ -1,10 +1,10 @@
-package cn.itedus.lottery.application.process.impl;
+package cn.itedus.lottery.application.process.draw.impl;
 
 import cn.itedus.lottery.application.mq.producer.KafkaProducer;
-import cn.itedus.lottery.application.process.IActivityProcess;
-import cn.itedus.lottery.application.process.req.DrawProcessReq;
-import cn.itedus.lottery.application.process.res.DrawProcessResult;
-import cn.itedus.lottery.application.process.res.RuleQuantificationCrowdResult;
+import cn.itedus.lottery.application.process.draw.IActivityDrawProcess;
+import cn.itedus.lottery.application.process.draw.req.DrawProcessReq;
+import cn.itedus.lottery.application.process.draw.res.DrawProcessResult;
+import cn.itedus.lottery.application.process.draw.res.RuleQuantificationCrowdResult;
 import cn.itedus.lottery.common.Constants;
 import cn.itedus.lottery.common.Result;
 import cn.itedus.lottery.domain.activity.model.vo.ActivityPartakeRecordVO;
@@ -35,7 +35,7 @@ import java.util.Map;
  * @date: 2026/1/22
  */
 @Service
-public class ActivityProcessImpl implements IActivityProcess {
+public class ActivityProcessImpl implements IActivityDrawProcess {
 
     @Resource
     private IActivityPartake activityPartake;

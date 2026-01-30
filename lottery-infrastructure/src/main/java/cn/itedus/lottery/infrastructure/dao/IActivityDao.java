@@ -1,5 +1,6 @@
 package cn.itedus.lottery.infrastructure.dao;
 
+import cn.itedus.lottery.domain.activity.model.req.ActivityInfoLimitPageReq;
 import cn.itedus.lottery.domain.activity.model.vo.AlterStateVO;
 import cn.itedus.lottery.infrastructure.po.Activity;
 import org.apache.ibatis.annotations.Mapper;
@@ -28,4 +29,9 @@ public interface IActivityDao {
     List<Activity> scanToDoActivityList(Long id);
 
     void updateActivityStock(Activity activity);
+
+    Long queryActivityInfoCount(ActivityInfoLimitPageReq req);
+
+    List<Activity> queryActivityInfoList(ActivityInfoLimitPageReq req);
+
 }

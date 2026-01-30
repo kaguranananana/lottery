@@ -1,9 +1,9 @@
 package cn.itedus.lottery.interfaces.facade;
 
-import cn.itedus.lottery.application.process.IActivityProcess;
-import cn.itedus.lottery.application.process.req.DrawProcessReq;
-import cn.itedus.lottery.application.process.res.DrawProcessResult;
-import cn.itedus.lottery.application.process.res.RuleQuantificationCrowdResult;
+import cn.itedus.lottery.application.process.draw.IActivityDrawProcess;
+import cn.itedus.lottery.application.process.draw.req.DrawProcessReq;
+import cn.itedus.lottery.application.process.draw.res.DrawProcessResult;
+import cn.itedus.lottery.application.process.draw.res.RuleQuantificationCrowdResult;
 import cn.itedus.lottery.common.Constants;
 import cn.itedus.lottery.common.Result;
 import cn.itedus.lottery.domain.rule.model.req.DecisionMatterReq;
@@ -38,7 +38,7 @@ public class LotteryActivityBooth implements ILotteryActivityBooth {
     private Logger logger = LoggerFactory.getLogger(LotteryActivityBooth.class);
 
     @Resource
-    private IActivityProcess activityProcess;
+    private IActivityDrawProcess activityProcess;
 
     @Resource
     private AwardMapping awardMapping;
