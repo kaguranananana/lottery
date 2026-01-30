@@ -1,4 +1,4 @@
-package cn.itedus.lottery.rpc.req;
+package cn.itedus.lottery.rpc.activity.deploy.req;
 
 import java.io.Serializable;
 

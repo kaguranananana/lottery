@@ -1,4 +1,4 @@
-package cn.itedus.lottery.rpc.dto;
+package cn.itedus.lottery.rpc.activity.deploy.dto;
 
 import java.io.Serializable;
 import java.util.Date;

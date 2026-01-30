@@ -1,8 +1,8 @@
-package cn.itedus.lottery.rpc;
+package cn.itedus.lottery.rpc.activity.booth;
 
-import cn.itedus.lottery.rpc.req.DrawReq;
-import cn.itedus.lottery.rpc.req.QuantificationDrawReq;
-import cn.itedus.lottery.rpc.res.DrawRes;
+import cn.itedus.lottery.rpc.activity.booth.req.DrawReq;
+import cn.itedus.lottery.rpc.activity.booth.req.QuantificationDrawReq;
+import cn.itedus.lottery.rpc.activity.booth.res.DrawRes;
 
 /**
  * @description: 抽奖活动展台接口

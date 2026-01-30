@@ -1,7 +1,7 @@
-package cn.itedus.lottery.rpc.res;
+package cn.itedus.lottery.rpc.activity.deploy.res;
 
 import cn.itedus.lottery.common.Result;
-import cn.itedus.lottery.rpc.dto.ActivityDto;
+import cn.itedus.lottery.rpc.activity.deploy.dto.ActivityDto;
 
 import java.io.Serializable;
 

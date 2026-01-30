@@ -4,10 +4,10 @@ import cn.itedus.lottery.common.Constants;
 import cn.itedus.lottery.common.Result;
 import cn.itedus.lottery.infrastructure.dao.IActivityDao;
 import cn.itedus.lottery.infrastructure.po.Activity;
-import cn.itedus.lottery.rpc.IActivityBooth;
-import cn.itedus.lottery.rpc.dto.ActivityDto;
-import cn.itedus.lottery.rpc.req.ActivityReq;
-import cn.itedus.lottery.rpc.res.ActivityRes;
+import cn.itedus.lottery.rpc.activity.deploy.IActivityBooth;
+import cn.itedus.lottery.rpc.activity.deploy.dto.ActivityDto;
+import cn.itedus.lottery.rpc.activity.deploy.req.ActivityReq;
+import cn.itedus.lottery.rpc.activity.deploy.res.ActivityRes;
 import org.apache.dubbo.config.annotation.Service;
 
 import javax.annotation.Resource;

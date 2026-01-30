@@ -1,7 +1,7 @@
-package cn.itedus.lottery.rpc;
+package cn.itedus.lottery.rpc.activity.deploy;
 
-import cn.itedus.lottery.rpc.req.ActivityReq;
-import cn.itedus.lottery.rpc.res.ActivityRes;
+import cn.itedus.lottery.rpc.activity.deploy.req.ActivityReq;
+import cn.itedus.lottery.rpc.activity.deploy.res.ActivityRes;
 
 /**
  * @description:
