@@ -28,6 +28,12 @@
         UPDATE activity SET stock_surplus_count = stock_surplus_count - 1
         WHERE activity_id = #{activityId} AND stock_surplus_count > 0
     </update>
+    <update id="updateActivityStock">
+        UPDATE activity SET stock_surplus_count = #{stockSurplusCount}
+        WHERE activity_id = #{activityId} AND stock_surplus_count > #{stockSurplusCount}
+    </update>
+
+
     <select id="scanToDoActivityList" resultType="cn.itedus.lottery.infrastructure.po.Activity">
         SELECT activity_id, activity_name, begin_date_time, end_date_time, state, creator
         FROM activity

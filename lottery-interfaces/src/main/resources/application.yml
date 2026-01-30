@@ -9,6 +9,19 @@ server:
 #    driver-class-name: com.mysql.cj.jdbc.Driver
 
 spring:
+  redis:
+    host: 39.97.56.150
+    port: 6379
+    password:  # 如果你的Redis设置了密码，请在这里填写密码；如果没有密码，保持为空或删除这一行
+    database: 0
+    timeout: 5000
+    jedis:
+      pool:
+        max-active: 8
+        max-wait: -1ms
+        max-idle: 8
+        min-idle: 0
+
   kafka:
     # Kafka服务器地址
     bootstrap-servers: localhost:9092

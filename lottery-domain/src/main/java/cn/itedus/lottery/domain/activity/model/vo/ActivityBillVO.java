@@ -34,6 +34,9 @@ public class ActivityBillVO {
     /** 剩余可领取次数 */
     private Integer userTakeLeftCount;
 
+    /** 库存 */
+    private Integer stockCount;
+
     public String getuId() {
         return uId;
     }
@@ -114,6 +117,14 @@ public class ActivityBillVO {
         this.userTakeLeftCount = userTakeLeftCount;
     }
 
+    public Integer getStockCount() {
+        return stockCount;
+    }
+
+    public void setStockCount(Integer stockCount) {
+        this.stockCount = stockCount;
+    }
+
     @Override
     public String toString() {
         return "ActivityBillVO{" +
@@ -122,6 +133,7 @@ public class ActivityBillVO {
                 ", activityName='" + activityName + '\'' +
                 ", beginDateTime=" + beginDateTime +
                 ", endDateTime=" + endDateTime +
+                ", stockCount=" + stockCount +
                 ", stockSurplusCount=" + stockSurplusCount +
                 ", state=" + state +
                 ", takeCount=" + takeCount +

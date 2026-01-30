@@ -7,6 +7,7 @@ import cn.itedus.lottery.application.process.res.DrawProcessResult;
 import cn.itedus.lottery.application.process.res.RuleQuantificationCrowdResult;
 import cn.itedus.lottery.common.Constants;
 import cn.itedus.lottery.common.Result;
+import cn.itedus.lottery.domain.activity.model.vo.ActivityPartakeRecordVO;
 import cn.itedus.lottery.domain.activity.model.vo.DrawOrderVO;
 import cn.itedus.lottery.domain.activity.model.req.PartakeReq;
 import cn.itedus.lottery.domain.activity.model.res.PartakeResult;
@@ -56,9 +57,22 @@ public class ActivityProcessImpl implements IActivityProcess {
 
         // 领取活动
         PartakeResult partakeResult = activityPartake.doPartake(new PartakeReq(req.getuId(), req.getActivityId()));
-        if (!Constants.ResponseCode.SUCCESS.getCode().equals(partakeResult.getCode())) {
+        if (!Constants.ResponseCode.SUCCESS.getCode().equals(partakeResult.getCode()) && !Constants.ResponseCode.NOT_CONSUMED_TAKE.getCode().equals(partakeResult.getCode())) {
             return new DrawProcessResult(partakeResult.getCode(), partakeResult.getInfo());
         }
+
+        // 首次领取活动成功, 发送MQ消息
+        if (Constants.ResponseCode.SUCCESS.getCode().equals(partakeResult.getCode())) {
+            ActivityPartakeRecordVO activityPartakeRecord = new ActivityPartakeRecordVO();
+            activityPartakeRecord.setuId(req.getuId());
+            activityPartakeRecord.setActivityId(req.getActivityId());
+            activityPartakeRecord.setStockCount(partakeResult.getStockCount());
+            activityPartakeRecord.setStockSurplusCount(partakeResult.getStockSurplusCount());
+
+            // 发送MQ消息
+            kafkaProducer.sendLotteryActivityPartakeRecord(activityPartakeRecord);
+        }
+
         Long strategyId = partakeResult.getStrategyId();
         Long takeId = partakeResult.getTakeId();
 

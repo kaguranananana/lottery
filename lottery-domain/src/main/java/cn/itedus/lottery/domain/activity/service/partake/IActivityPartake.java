@@ -3,6 +3,7 @@ package cn.itedus.lottery.domain.activity.service.partake;
 import cn.itedus.lottery.common.Result;
 import cn.itedus.lottery.domain.activity.model.req.PartakeReq;
 import cn.itedus.lottery.domain.activity.model.res.PartakeResult;
+import cn.itedus.lottery.domain.activity.model.vo.ActivityPartakeRecordVO;
 import cn.itedus.lottery.domain.activity.model.vo.DrawOrderVO;
 import cn.itedus.lottery.domain.activity.model.vo.InvoiceVO;
 
@@ -44,4 +45,10 @@ public interface IActivityPartake {
      * @return
      */
     List<InvoiceVO> scanInvoiceMqState(int dbCount, int tbCount);
+
+    /**
+     * 更新活动库存
+     * @param activityPartakeRecordVO
+     */
+    void updateActivityStock(ActivityPartakeRecordVO activityPartakeRecordVO);
 }

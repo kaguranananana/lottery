@@ -4,6 +4,7 @@ import cn.itedus.lottery.common.Constants;
 import cn.itedus.lottery.common.Result;
 import cn.itedus.lottery.domain.activity.model.req.PartakeReq;
 import cn.itedus.lottery.domain.activity.model.res.PartakeResult;
+import cn.itedus.lottery.domain.activity.model.res.StockResult;
 import cn.itedus.lottery.domain.activity.model.vo.ActivityBillVO;
 import cn.itedus.lottery.domain.activity.model.vo.UserTakeActivityVO;
 import cn.itedus.lottery.domain.support.ids.IIdGenerator;
@@ -27,7 +28,7 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
         // 1. 查询是否存在未执行抽奖领取活动单【user_take_activity 存在 state = 0，领取了但抽奖过程失败的，可以直接返回领取结果继续抽奖】
         UserTakeActivityVO userTakeActivityVO = this.queryNoConsumedTakeActivityOrder(req.getActivityId(), req.getuId());
         if (null != userTakeActivityVO) {
-            return buildPartakeResult(userTakeActivityVO.getStrategyId(), userTakeActivityVO.getTakeId());
+            return buildPartakeResult(userTakeActivityVO.getStrategyId(), userTakeActivityVO.getTakeId(), Constants.ResponseCode.NOT_CONSUMED_TAKE);
         }
 
         // 2. 查询活动账单
@@ -39,27 +40,45 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
             return new PartakeResult(checkResult.getCode(), checkResult.getInfo());
         }
 
-        // 4. 扣减活动库存【目前为直接对配置库中的 lottery.activity 直接操作表扣减库存，后续优化为Redis扣减】
-        Result subtractionActivityResult = this.substractionActivityStock(req);
+        // 扣减活动库存, 通过Redis
+        StockResult subtractionActivityResult = this.substractionActivityStockByRedis(req.getuId(), req.getActivityId(), activityBillVO.getStockCount());
         if (!Constants.ResponseCode.SUCCESS.getCode().equals(subtractionActivityResult.getCode())) {
+            this.recoverActivityCacheStockByRedis(subtractionActivityResult.getStockKey());
             return new PartakeResult(subtractionActivityResult.getCode(), subtractionActivityResult.getInfo());
         }
+
 
         // 5. 插入领取活动信息【个人用户把活动信息写入到用户表】
         Long takeId = idGeneratorMap.get(Constants.Ids.SnowFlake).nextId();
         Result grabResult = this.grabActivity(req, activityBillVO, takeId);
         if (!Constants.ResponseCode.SUCCESS.getCode().equals(grabResult.getCode())) {
+            this.recoverActivityCacheStockByRedis(subtractionActivityResult.getStockKey());
             return new PartakeResult(grabResult.getCode(), grabResult.getInfo());
         }
 
-        return buildPartakeResult(activityBillVO.getStrategyId(), takeId);
+        this.recoverActivityCacheStockByRedis(subtractionActivityResult.getStockKey());
+
+        return buildPartakeResult(activityBillVO.getStrategyId(), takeId, activityBillVO.getStockCount(), subtractionActivityResult.getStockSurplusCount(), Constants.ResponseCode.SUCCESS);
     }
+
+    protected abstract void recoverActivityCacheStockByRedis(String stockKey);
+
+
+    protected abstract StockResult substractionActivityStockByRedis(String uId, Long activityId, Integer stockCount);
 
     protected abstract UserTakeActivityVO queryNoConsumedTakeActivityOrder(Long activityId, String s);
 
-    private PartakeResult buildPartakeResult(Long strategyId, Long takeId) {
-        // 封装结果 返回策略ID, 用于继续完成抽奖步骤
-        PartakeResult partakeResult = new PartakeResult(Constants.ResponseCode.SUCCESS.getCode(), Constants.ResponseCode.SUCCESS.getInfo());
+    private PartakeResult buildPartakeResult(Long strategyId, Long takeId, Integer stockCount, Integer stockSurplusCount, Constants.ResponseCode code) {
+        PartakeResult partakeResult = new PartakeResult(code.getCode(), code.getInfo());
+        partakeResult.setStrategyId(strategyId);
+        partakeResult.setTakeId(takeId);
+        partakeResult.setStockCount(stockCount);
+        partakeResult.setStockSurplusCount(stockSurplusCount);
+        return partakeResult;
+    }
+
+    private PartakeResult buildPartakeResult(Long strategyId, Long takeId, Constants.ResponseCode code) {
+        PartakeResult partakeResult = new PartakeResult(code.getCode(), code.getInfo());
         partakeResult.setStrategyId(strategyId);
         partakeResult.setTakeId(takeId);
         return partakeResult;

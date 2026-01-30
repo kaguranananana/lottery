@@ -2,10 +2,14 @@ package cn.itedus.lottery.infrastructure.repository;
 
 import cn.itedus.lottery.common.Constants;
 import cn.itedus.lottery.domain.activity.model.req.PartakeReq;
+import cn.itedus.lottery.domain.activity.model.res.StockResult;
 import cn.itedus.lottery.domain.activity.model.vo.*;
 import cn.itedus.lottery.domain.activity.repository.IActivityRepository;
 import cn.itedus.lottery.infrastructure.dao.*;
 import cn.itedus.lottery.infrastructure.po.*;
+import cn.itedus.lottery.infrastructure.utils.RedisUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Repository;
 
@@ -22,6 +26,8 @@ import java.util.List;
 @Repository
 public class ActivityRepository implements IActivityRepository {
 
+    private Logger logger = LoggerFactory.getLogger(ActivityRepository.class);
+
     @Resource
     private IActivityDao activityDao;
 
@@ -36,6 +42,9 @@ public class ActivityRepository implements IActivityRepository {
 
     @Resource
     private IUserTakeActivityCountDao userTakeActivityCountDao;
+
+    @Resource
+    private RedisUtil redisUtil;
 
     @Override
     public void addActivity(ActivityVO activity) {
@@ -104,6 +113,7 @@ public class ActivityRepository implements IActivityRepository {
         activityBillVO.setBeginDateTime(activity.getBeginDateTime());
         activityBillVO.setEndDateTime(activity.getEndDateTime());
         activityBillVO.setTakeCount(activity.getTakeCount());
+        activityBillVO.setStockCount(activity.getStockCount());
         activityBillVO.setStockSurplusCount(activity.getStockSurplusCount());
         activityBillVO.setStrategyId(activity.getStrategyId());
         activityBillVO.setState(activity.getState());
@@ -133,5 +143,38 @@ public class ActivityRepository implements IActivityRepository {
             activityVOList.add(activityVO);
         }
         return activityVOList;
+    }
+
+    @Override
+    public StockResult substractionActivityStockByRedis(String uId, Long activityId, Integer stockCount) {
+        // 获取抽奖活动库存key
+        String stockKey = Constants.RedisKey.KEY_LOTTERY_ACTIVITY_STOCK_COUNT(activityId);
+
+        // 扣减库存
+        Integer stockUsedCount = (int)redisUtil.incr(stockKey, 1);
+
+        // 超出库存判断, 进行恢复初始库存
+        if (stockUsedCount > stockCount) {
+            redisUtil.decr(stockKey, 1);
+            return new StockResult(Constants.ResponseCode.OUT_OF_STOCK.getCode(), Constants.ResponseCode.OUT_OF_STOCK.getInfo());
+        }
+
+        String stockTokenKey = Constants.RedisKey.KEY_LOTTERY_ACTIVITY_STOCK_COUNT_TOKEN(activityId, stockUsedCount);
+
+        // 使用Redis.setNx 加上一个分布式锁
+        boolean lockToken = redisUtil.setNx(stockTokenKey, 350L);
+
+        if (!lockToken) {
+            logger.info("抽奖活动{}用户秒杀{}扣减库存，分布式锁失败：{}", activityId, uId, stockTokenKey);
+            return new StockResult(Constants.ResponseCode.ERR_TOKEN.getCode(), Constants.ResponseCode.ERR_TOKEN.getInfo());
+        }
+
+        return new StockResult(Constants.ResponseCode.SUCCESS.getCode(), Constants.ResponseCode.SUCCESS.getInfo(), stockTokenKey, stockCount - stockUsedCount);
+
+    }
+
+    @Override
+    public void recoverActivityCacheStockByRedis(String stockKey) {
+        redisUtil.del(stockKey);
     }
 }

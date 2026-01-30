@@ -2,6 +2,7 @@ package cn.itedus.lottery.domain.activity.repository;
 
 import cn.itedus.lottery.common.Constants;
 import cn.itedus.lottery.domain.activity.model.req.PartakeReq;
+import cn.itedus.lottery.domain.activity.model.res.StockResult;
 import cn.itedus.lottery.domain.activity.model.vo.*;
 
 import java.util.List;
@@ -57,4 +58,9 @@ public interface IActivityRepository {
      * @return
      */
     List<ActivityVO> scanToDoActivityList(Long id);
+
+    StockResult substractionActivityStockByRedis(String uId, Long activityId, Integer stockCount);
+
+    void recoverActivityCacheStockByRedis(String stockKey);
+
 }
