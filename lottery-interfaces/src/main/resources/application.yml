@@ -136,7 +136,7 @@ xxl:
       # 执行器名称（唯一，在调度中心配置）
       appname: lottery-job
       # 执行器注册地址（为空则自动获取）
-      address:
+      address: http://127.0.0.1:9999
       # 执行器IP（为空则自动获取）
       ip:
       # 执行器端口（调度中心通过此端口调用）
@@ -146,4 +146,4 @@ xxl:
       # 日志保留天数
       logretentiondays: 30
     # 访问令牌（调度中心和执行器要一致）
-    accessToken: lottery-dev-token
+    accessToken:
