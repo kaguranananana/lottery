@@ -10,9 +10,9 @@ server:
 
 spring:
   redis:
-    host: 39.97.56.150
+    host: localhost
     port: 6379
-    password:  # 如果你的Redis设置了密码，请在这里填写密码；如果没有密码，保持为空或删除这一行
+    password: 060214.yjx # 如果你的Redis设置了密码，请在这里填写密码；如果没有密码，保持为空或删除这一行
     database: 0
     timeout: 5000
     jedis:
@@ -82,17 +82,17 @@ mini-db-router:
       list: db01,db02
       db00:
         driver-class-name: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://127.0.0.1:3306/lottery?useUnicode=true&serverTimezone=Asia/Shanghai
+        url: jdbc:mysql://127.0.0.1:13306/lottery?useUnicode=true&serverTimezone=Asia/Shanghai
         username: root
         password: root
       db01:
         driver-class-name: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://127.0.0.1:3306/lottery_01?useUnicode=true&serverTimezone=Asia/Shanghai
+        url: jdbc:mysql://127.0.0.1:13306/lottery_01?useUnicode=true&serverTimezone=Asia/Shanghai
         username: root
         password: root
       db02:
         driver-class-name: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://127.0.0.1:3306/lottery_02?useUnicode=true&serverTimezone=Asia/Shanghai
+        url: jdbc:mysql://127.0.0.1:13306/lottery_02?useUnicode=true&serverTimezone=Asia/Shanghai
         username: root
         password: root
 
@@ -127,7 +127,7 @@ xxl:
   job:
     admin:
       # 调度中心地址（多个用逗号分隔）
-      addresses: http://127.0.0.1:7397/xxl-job-admin
+      addresses: http://localhost:7397/xxl-job-admin
     executor:
       # 执行器名称（唯一，在调度中心配置）
       appname: lottery-job
@@ -142,4 +142,4 @@ xxl:
       # 日志保留天数
       logretentiondays: 30
     # 访问令牌（调度中心和执行器要一致）
-    accessToken:
+    accessToken: lottery-dev-token
