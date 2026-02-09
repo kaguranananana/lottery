@@ -1,6 +1,7 @@
 package cn.itedus.lottery.infrastructure.repository;
 
 import cn.itedus.lottery.domain.rule.model.aggregates.TreeRuleRich;
+import cn.itedus.lottery.domain.rule.model.vo.RuleCriteriaVO;
 import cn.itedus.lottery.domain.rule.model.vo.TreeNodeLineVO;
 import cn.itedus.lottery.domain.rule.model.vo.TreeNodeVO;
 import cn.itedus.lottery.domain.rule.model.vo.TreeRootVO;
@@ -90,6 +91,33 @@ public class RuleRepository implements IRuleRepository {
         treeRuleRich.setTreeNodeMap(treeNodeMap);
 
         return treeRuleRich;
+    }
+
+    @Override
+    public List<TreeRootVO> queryRuleTreeList() {
+        List<RuleTree> ruleTreeList = ruleTreeDao.queryRuleTreeList();
+        List<TreeRootVO> treeRootVOList = new ArrayList<>();
+        for (RuleTree ruleTree : ruleTreeList) {
+            TreeRootVO treeRootVO = new TreeRootVO();
+            treeRootVO.setTreeId(ruleTree.getId());
+            treeRootVO.setTreeName(ruleTree.getTreeName());
+            treeRootVO.setTreeRootNodeId(ruleTree.getTreeRootNodeId());
+            treeRootVOList.add(treeRootVO);
+        }
+        return treeRootVOList;
+    }
+
+    @Override
+    public List<RuleCriteriaVO> queryRuleCriteria() {
+        List<RuleTreeNode> ruleTreeNodeList = ruleTreeNodeDao.queryDistinctRuleKeys();
+        List<RuleCriteriaVO> criteriaVOList = new ArrayList<>();
+        for (RuleTreeNode node : ruleTreeNodeList) {
+            RuleCriteriaVO criteriaVO = new RuleCriteriaVO();
+            criteriaVO.setRuleKey(node.getRuleKey());
+            criteriaVO.setRuleDesc(node.getRuleDesc());
+            criteriaVOList.add(criteriaVO);
+        }
+        return criteriaVOList;
     }
 
 }

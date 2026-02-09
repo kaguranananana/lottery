@@ -18,25 +18,28 @@ public interface IActivityRepository {
 
     /**
      * 添加活动配置
+     * 
      * @param activity
      */
     void addActivity(ActivityVO activity);
 
     /**
      * 添加奖品配置信息
+     * 
      * @param awardList
      */
     void addAward(List<AwardVO> awardList);
 
-
     /**
      * 添加策略配置
+     * 
      * @param strategy
      */
     void addStrategy(StrategyVO strategy);
 
     /**
      * 添加策略明细配置
+     * 
      * @param strategyDetailList
      */
     void addStrategyDetailList(List<StrategyDetailVO> strategyDetailList);
@@ -56,6 +59,7 @@ public interface IActivityRepository {
 
     /**
      * 扫描待处理的活动列表
+     * 
      * @param id
      * @return
      */
@@ -66,5 +70,12 @@ public interface IActivityRepository {
     void recoverActivityCacheStockByRedis(String stockKey);
 
     ActivityInfoLimitPageRich queryActivityInfoLimitPage(ActivityInfoLimitPageReq req);
+
+    /**
+     * 查询运行中的活动列表
+     * 
+     * @return 运行中的活动列表
+     */
+    List<ActivityVO> queryRunningActivityList();
 
 }

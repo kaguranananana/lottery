@@ -21,4 +21,11 @@ public interface IRuleTreeNodeDao {
      */
     List<RuleTreeNode> queryRuleTreeNodeList(Long treeId);
 
+    /**
+     * 查询所有不同的规则键（去重）
+     * 
+     * @return 规则节点列表（包含不同的规则键）
+     */
+    List<RuleTreeNode> queryDistinctRuleKeys();
+
 }

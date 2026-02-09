@@ -3,7 +3,10 @@ package cn.itedus.lottery.test.interfaces;
 import cn.itedus.lottery.rpc.activity.booth.ILotteryActivityBooth;
 import cn.itedus.lottery.rpc.activity.booth.req.DrawReq;
 import cn.itedus.lottery.rpc.activity.booth.req.QuantificationDrawReq;
+import cn.itedus.lottery.rpc.activity.booth.res.ActivityListRes;
 import cn.itedus.lottery.rpc.activity.booth.res.DrawRes;
+import cn.itedus.lottery.rpc.activity.booth.res.RuleCriteriaRes;
+import cn.itedus.lottery.rpc.activity.booth.res.RuleTreeListRes;
 import com.alibaba.fastjson.JSON;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -111,6 +114,44 @@ public class LotteryActivityBoothTest {
 
         logger.info("请求参数：{}", JSON.toJSONString(req));
         logger.info("测试结果：{}", JSON.toJSONString(drawRes));
+    }
+
+    // ============== 新增查询接口测试 ==============
+
+    /**
+     * 测试查询运行中的活动列表
+     * 
+     * 预期返回：活动100001~100004（state=5且在有效期内）
+     */
+    @Test
+    public void test_queryRunningActivityList() {
+        ActivityListRes res = lotteryActivityBooth.queryRunningActivityList();
+
+        logger.info("运行中活动列表：{}", JSON.toJSONString(res));
+    }
+
+    /**
+     * 测试查询规则树列表
+     * 
+     * 预期返回：规则树ID=2110081902
+     */
+    @Test
+    public void test_queryRuleTreeList() {
+        RuleTreeListRes res = lotteryActivityBooth.queryRuleTreeList();
+
+        logger.info("规则树列表：{}", JSON.toJSONString(res));
+    }
+
+    /**
+     * 测试查询量化准则
+     * 
+     * 预期返回：userGender（用户性别）、userAge（用户年龄）
+     */
+    @Test
+    public void test_queryRuleCriteria() {
+        RuleCriteriaRes res = lotteryActivityBooth.queryRuleCriteria();
+
+        logger.info("量化准则：{}", JSON.toJSONString(res));
     }
 
 }

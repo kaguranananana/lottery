@@ -17,4 +17,10 @@
         WHERE tree_id = #{treeId}
     </select>
 
+    <select id="queryDistinctRuleKeys" resultMap="ruleTreeNodeMap">
+        SELECT DISTINCT rule_key, rule_desc
+        FROM rule_tree_node
+        WHERE node_type = 1 AND rule_key IS NOT NULL
+    </select>
+
 </mapper>

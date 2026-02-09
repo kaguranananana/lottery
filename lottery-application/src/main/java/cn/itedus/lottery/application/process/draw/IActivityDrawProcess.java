@@ -3,7 +3,12 @@ package cn.itedus.lottery.application.process.draw;
 import cn.itedus.lottery.application.process.draw.req.DrawProcessReq;
 import cn.itedus.lottery.application.process.draw.res.DrawProcessResult;
 import cn.itedus.lottery.application.process.draw.res.RuleQuantificationCrowdResult;
+import cn.itedus.lottery.domain.activity.model.vo.ActivityVO;
 import cn.itedus.lottery.domain.rule.model.req.DecisionMatterReq;
+import cn.itedus.lottery.domain.rule.model.vo.RuleCriteriaVO;
+import cn.itedus.lottery.domain.rule.model.vo.TreeRootVO;
+
+import java.util.List;
 
 /**
  * @description: 活动抽奖流程编排接口
@@ -28,4 +33,25 @@ public interface IActivityDrawProcess {
      * @return 决策结果（包含活动ID）
      */
     RuleQuantificationCrowdResult doRuleQuantificationCrowd(DecisionMatterReq req);
+
+    /**
+     * 查询运行中的活动列表
+     * 
+     * @return 活动列表
+     */
+    List<ActivityVO> queryRunningActivityList();
+
+    /**
+     * 查询规则树列表
+     * 
+     * @return 规则树列表
+     */
+    List<TreeRootVO> queryRuleTreeList();
+
+    /**
+     * 查询量化准则（决策因子）
+     * 
+     * @return 准则列表
+     */
+    List<RuleCriteriaVO> queryRuleCriteria();
 }

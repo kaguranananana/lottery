@@ -85,4 +85,12 @@
         ORDER BY id DESC
         LIMIT #{pageBegin}, #{pageEnd}
     </select>
+
+    <select id="queryRunningActivityList" resultMap="activityMap">
+        SELECT activity_id, activity_name, activity_desc, begin_date_time, end_date_time, state
+        FROM activity
+        WHERE state = 5 AND begin_date_time &lt;= NOW() AND end_date_time &gt;= NOW()
+        ORDER BY activity_id
+    </select>
+
 </mapper>

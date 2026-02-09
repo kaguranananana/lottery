@@ -86,12 +86,12 @@ public class ActivityRepository implements IActivityRepository {
     }
 
     @Override
-    public boolean alterStatus(Long activityId, Enum<Constants.ActivityState> beforeState, Constants.ActivityState afterState) {
+    public boolean alterStatus(Long activityId, Enum<Constants.ActivityState> beforeState,
+            Constants.ActivityState afterState) {
         AlterStateVO alterStateVO = new AlterStateVO(
                 activityId,
                 ((Constants.ActivityState) beforeState).getCode(),
-                afterState.getCode()
-        );
+                afterState.getCode());
         int count = activityDao.alterState(alterStateVO);
         return count == 1;
     }
@@ -105,7 +105,8 @@ public class ActivityRepository implements IActivityRepository {
         UserTakeActivityCount userTakeActivityCountReq = new UserTakeActivityCount();
         userTakeActivityCountReq.setuId(req.getuId());
         userTakeActivityCountReq.setActivityId(req.getActivityId());
-        UserTakeActivityCount userTakeActivityCount = userTakeActivityCountDao.queryUserTakeActivityCount(userTakeActivityCountReq);
+        UserTakeActivityCount userTakeActivityCount = userTakeActivityCountDao
+                .queryUserTakeActivityCount(userTakeActivityCountReq);
 
         // 封装结果信息
         ActivityBillVO activityBillVO = new ActivityBillVO();
@@ -120,7 +121,8 @@ public class ActivityRepository implements IActivityRepository {
         activityBillVO.setStrategyId(activity.getStrategyId());
         activityBillVO.setState(activity.getState());
         // 用户首次参与活动，userTakeLeftCount 为 null；否则为剩余次数
-        activityBillVO.setUserTakeLeftCount(null == userTakeActivityCount ? null : userTakeActivityCount.getLeftCount());
+        activityBillVO
+                .setUserTakeLeftCount(null == userTakeActivityCount ? null : userTakeActivityCount.getLeftCount());
         return activityBillVO;
     }
 
@@ -153,12 +155,13 @@ public class ActivityRepository implements IActivityRepository {
         String stockKey = Constants.RedisKey.KEY_LOTTERY_ACTIVITY_STOCK_COUNT(activityId);
 
         // 扣减库存
-        Integer stockUsedCount = (int)redisUtil.incr(stockKey, 1);
+        Integer stockUsedCount = (int) redisUtil.incr(stockKey, 1);
 
         // 超出库存判断, 进行恢复初始库存
         if (stockUsedCount > stockCount) {
             redisUtil.decr(stockKey, 1);
-            return new StockResult(Constants.ResponseCode.OUT_OF_STOCK.getCode(), Constants.ResponseCode.OUT_OF_STOCK.getInfo());
+            return new StockResult(Constants.ResponseCode.OUT_OF_STOCK.getCode(),
+                    Constants.ResponseCode.OUT_OF_STOCK.getInfo());
         }
 
         String stockTokenKey = Constants.RedisKey.KEY_LOTTERY_ACTIVITY_STOCK_COUNT_TOKEN(activityId, stockUsedCount);
@@ -168,10 +171,12 @@ public class ActivityRepository implements IActivityRepository {
 
         if (!lockToken) {
             logger.info("抽奖活动{}用户秒杀{}扣减库存，分布式锁失败：{}", activityId, uId, stockTokenKey);
-            return new StockResult(Constants.ResponseCode.ERR_TOKEN.getCode(), Constants.ResponseCode.ERR_TOKEN.getInfo());
+            return new StockResult(Constants.ResponseCode.ERR_TOKEN.getCode(),
+                    Constants.ResponseCode.ERR_TOKEN.getInfo());
         }
 
-        return new StockResult(Constants.ResponseCode.SUCCESS.getCode(), Constants.ResponseCode.SUCCESS.getInfo(), stockTokenKey, stockCount - stockUsedCount);
+        return new StockResult(Constants.ResponseCode.SUCCESS.getCode(), Constants.ResponseCode.SUCCESS.getInfo(),
+                stockTokenKey, stockCount - stockUsedCount);
 
     }
 
@@ -193,5 +198,22 @@ public class ActivityRepository implements IActivityRepository {
         }
 
         return new ActivityInfoLimitPageRich(count, activityVOList);
+    }
+
+    @Override
+    public List<ActivityVO> queryRunningActivityList() {
+        List<Activity> activityList = activityDao.queryRunningActivityList();
+        List<ActivityVO> activityVOList = new ArrayList<>();
+        for (Activity activity : activityList) {
+            ActivityVO activityVO = new ActivityVO();
+            activityVO.setActivityId(activity.getActivityId());
+            activityVO.setActivityName(activity.getActivityName());
+            activityVO.setActivityDesc(activity.getActivityDesc());
+            activityVO.setBeginDateTime(activity.getBeginDateTime());
+            activityVO.setEndDateTime(activity.getEndDateTime());
+            activityVO.setState(activity.getState());
+            activityVOList.add(activityVO);
+        }
+        return activityVOList;
     }
 }
