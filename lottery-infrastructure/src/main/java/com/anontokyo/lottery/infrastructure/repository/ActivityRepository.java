@@ -170,6 +170,9 @@ public class ActivityRepository implements IActivityRepository {
 
         if (!lockToken) {
             logger.info("抽奖活动{}用户秒杀{}扣减库存，分布式锁失败：{}", activityId, uId, stockTokenKey);
+            // Bug修复：setNx失败说明该库存位已被占用，此时主计数key已incr但没有decr
+            // 需要将主计数回退，否则该库存位被永久空耗，等效于少卖一个
+            redisUtil.decr(stockKey, 1);
             return new StockResult(Constants.ResponseCode.ERR_TOKEN.getCode(),
                     Constants.ResponseCode.ERR_TOKEN.getInfo());
         }

@@ -94,6 +94,8 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
 
                     // 插入领取活动信息
                     userTakeActivityRepository.takeActivity(bill, partake.getPartakeDate(), takeId);
+
+
                 } catch (DuplicateKeyException e) {
                     transactionStatus.setRollbackOnly();
                     logger.error("领取活动，唯一索引冲突 activityId：{} uId：{}", partake.getActivityId(), partake.getuId(), e);
