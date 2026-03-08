@@ -99,7 +99,7 @@ mini-db-router:
 
 mybatis:
   # 1. 对应你 XML 里的 <package name="...po"/>
-  type-aliases-package: cn.itedus.lottery.infrastructure.po
+  type-aliases-package: com.anontokyo.lottery.infrastructure.po
   # 2. 告诉 MyBatis 去哪里找 SQL 文件
   mapper-locations: classpath:mybatis/mapper/*.xml
   configuration:
@@ -123,7 +123,7 @@ dubbo:
     name: dubbo
     port: -1
   scan:
-    base-packages: cn.itedus.lottery.rpc
+    base-packages: com.anontokyo.lottery.rpc
 
 
 # XXL-JOB配置

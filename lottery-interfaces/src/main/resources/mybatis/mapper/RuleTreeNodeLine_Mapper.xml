@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.itedus.lottery.infrastructure.dao.IRuleTreeNodeLineDao">
+<mapper namespace="com.anontokyo.lottery.infrastructure.dao.IRuleTreeNodeLineDao">
 
-    <resultMap id="ruleTreeNodeLineMap" type="cn.itedus.lottery.infrastructure.po.RuleTreeNodeLine">
+    <resultMap id="ruleTreeNodeLineMap" type="com.anontokyo.lottery.infrastructure.po.RuleTreeNodeLine">
         <id column="id" property="id"/>
         <result column="tree_id" property="treeId"/>
         <result column="node_id_from" property="nodeIdFrom"/>

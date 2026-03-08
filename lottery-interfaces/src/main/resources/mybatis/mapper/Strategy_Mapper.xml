@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="cn.itedus.lottery.infrastructure.dao.IStrategyDao">
+<mapper namespace="com.anontokyo.lottery.infrastructure.dao.IStrategyDao">
     <insert id="insert" parameterType="strategy">
         INSERT INTO strategy(strategy_id, strategy_desc, strategy_mode, grant_type,
                              grant_date, ext_info, create_time, update_time)
@@ -9,7 +9,7 @@
     </insert>
 
 
-    <select id="queryStrategy" parameterType="java.lang.Long" resultType="cn.itedus.lottery.infrastructure.po.Strategy">
+    <select id="queryStrategy" parameterType="java.lang.Long" resultType="com.anontokyo.lottery.infrastructure.po.Strategy">
         SELECT
             id, strategy_id, strategy_desc, strategy_mode, grant_type,
             grant_date, ext_info , create_time, update_time
