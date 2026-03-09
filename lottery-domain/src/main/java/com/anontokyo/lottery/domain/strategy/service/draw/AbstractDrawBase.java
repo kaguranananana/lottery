@@ -33,13 +33,15 @@ public abstract class AbstractDrawBase extends DrawStrategySupport implements ID
         StrategyBriefVO strategy = strategyRich.getStrategy();
 
         // 校验抽奖策略是否已经初始化到内存
-        this.checkAndInitRateData(strategy.getStrategyId(), strategy.getStrategyMode(), strategyRich.getStrategyDetailList());
+        this.checkAndInitRateData(strategy.getStrategyId(), strategy.getStrategyMode(),
+                strategyRich.getStrategyDetailList());
 
         // 获取不在抽奖范围之内的列表, 包括:列表为空, 风控策略, 临时调整
         List<String> excludeAwardIds = this.queryExcludeAwardIds(req.getStrategyId());
 
         // 执行抽奖算法
-        String awardId = this.drawAlgorithm(req.getStrategyId(), drawAlgorithmGroup.get(strategy.getStrategyMode()), excludeAwardIds);
+        String awardId = this.drawAlgorithm(req.getStrategyId(), drawAlgorithmGroup.get(strategy.getStrategyMode()),
+                excludeAwardIds);
 
         // 包装中奖结果
         return buildDrawResult(req.getuId(), req.getStrategyId(), awardId, strategy);
@@ -47,11 +49,13 @@ public abstract class AbstractDrawBase extends DrawStrategySupport implements ID
 
     protected abstract List<String> queryExcludeAwardIds(Long strategyId);
 
-    public void checkAndInitRateData(Long strategyId, Integer strategyMode, List<StrategyDetailBriefVO> strategyDetailList) {
+    public void checkAndInitRateData(Long strategyId, Integer strategyMode,
+            List<StrategyDetailBriefVO> strategyDetailList) {
 
         IDrawAlgorithm drawAlgorithm = drawAlgorithmGroup.get(strategyMode);
-        boolean existRateTuple = drawAlgorithm.isExistRateTuple(strategyId);
-        if (existRateTuple) {
+
+        // 已初始化则跳过（两种算法模式都适用的懒加载判断）
+        if (drawAlgorithm.isInitialized(strategyId)) {
             return;
         }
 
@@ -60,11 +64,11 @@ public abstract class AbstractDrawBase extends DrawStrategySupport implements ID
             awardRateInfoList.add(new AwardRateInfo(strategyDetail.getAwardId(), strategyDetail.getAwardRate()));
         }
 
-        drawAlgorithm.initRateTuple(strategyId, awardRateInfoList);
+        drawAlgorithm.initRateData(strategyId, awardRateInfoList);
     }
 
     protected abstract String drawAlgorithm(Long strategyId, IDrawAlgorithm drawAlgorithm,
-                                            List<String> excludeAwardIds);
+            List<String> excludeAwardIds);
 
     private DrawResult buildDrawResult(String uId, Long strategyId, String awardId, StrategyBriefVO strategy) {
         if (awardId == null) {
@@ -73,7 +77,8 @@ public abstract class AbstractDrawBase extends DrawStrategySupport implements ID
         }
 
         AwardBriefVO award = super.queryAwardInfoById(awardId);
-        DrawAwardInfo drawAwardInfo = new DrawAwardInfo(award.getAwardId(), award.getAwardType(), award.getAwardName(), award.getAwardContent());
+        DrawAwardInfo drawAwardInfo = new DrawAwardInfo(award.getAwardId(), award.getAwardType(), award.getAwardName(),
+                award.getAwardContent());
 
         // 设置策略相关字段
         drawAwardInfo.setStrategyMode(strategy.getStrategyMode());

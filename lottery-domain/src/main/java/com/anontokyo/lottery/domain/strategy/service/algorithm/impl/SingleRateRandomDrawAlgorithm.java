@@ -14,22 +14,21 @@ import java.util.List;
  * @date: 2026/1/12
  */
 
-
 @Component("singleRateRandomDrawAlgorithm")
 public class SingleRateRandomDrawAlgorithm extends BaseAlgorithm {
 
     // 斐波那契散列增量
     private final int HASH_INCREMENT = 0x61c88647;
 
-    //数组初始化长度
-    private final int RATE_TUPLE_LENGTH =128;
+    // 数组初始化长度
+    private final int RATE_TUPLE_LENGTH = 128;
 
     @Override
-    public void initRateTuple(Long strategyId, List<AwardRateInfo> awardRateInfoList) {
+    public void initRateData(Long strategyId, List<AwardRateInfo> awardRateInfoList) {
         // 1. 先调用父类方法，把 awardRateInfoMap 填充了
-        super.initRateTuple(strategyId, awardRateInfoList);
+        super.initRateData(strategyId, awardRateInfoList);
 
-        // 2. ✨ 特化逻辑：计算散列表（元组）
+        // 2. 特化逻辑：构建斐波那契散列表用于 O(1) 概率查找
         String[] rateTuple = rateTupleMap.computeIfAbsent(strategyId, k -> new String[RATE_TUPLE_LENGTH]);
         int cursor = 0;
         for (AwardRateInfo awardRateInfo : awardRateInfoList) {
@@ -60,6 +59,7 @@ public class SingleRateRandomDrawAlgorithm extends BaseAlgorithm {
 
     /**
      * 斐波那契散列
+     * 
      * @param val
      * @return
      */
