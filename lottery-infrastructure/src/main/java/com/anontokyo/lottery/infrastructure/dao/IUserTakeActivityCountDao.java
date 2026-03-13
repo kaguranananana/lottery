@@ -20,7 +20,7 @@ public interface IUserTakeActivityCountDao {
     UserTakeActivityCount queryUserTakeActivityCount(UserTakeActivityCount userTakeActivityCountReq);
 
 
-    void insert(UserTakeActivityCount userTakeActivityCount);
+    int insert(UserTakeActivityCount userTakeActivityCount);
 
     int updateLeftCount(UserTakeActivityCount userTakeActivityCount);
 }

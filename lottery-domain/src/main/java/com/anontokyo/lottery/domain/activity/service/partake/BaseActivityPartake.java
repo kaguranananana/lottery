@@ -27,7 +27,7 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
 
         // 1. 查询是否存在未执行抽奖领取活动单【user_take_activity 存在 state =
         // 0，领取了但抽奖过程失败的，可以直接返回领取结果继续抽奖】
-        UserTakeActivityVO userTakeActivityVO = this.queryNoConsumedTakeActivityOrder(req.getActivityId(),
+        UserTakeActivityVO userTakeActivityVO = this.queryNoConsumedTakeActivityOrderFromCache(req.getActivityId(),
                 req.getuId());
         if (null != userTakeActivityVO) {
             return buildPartakeResult(userTakeActivityVO.getStrategyId(), userTakeActivityVO.getTakeId(),
@@ -43,22 +43,36 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
             return new PartakeResult(checkResult.getCode(), checkResult.getInfo());
         }
 
-        // 扣减活动库存, 通过Redis
-        // Bug修复：Redis扣减失败时(OUT_OF_STOCK/ERR_TOKEN)，stockKey为null，不应调用recover；
-        // 两种失败情况已在substractionActivityStockByRedis内部各自处理了decr回退
-        StockResult subtractionActivityResult = this.substractionActivityStockByRedis(req.getuId(), req.getActivityId(),
-                activityBillVO.getStockCount());
+        // 扣减活动库存，Redis 中维护的是剩余量，首次 miss 会按当前 DB 剩余量回填。
+        StockResult subtractionActivityResult = this.substractionActivityStockByRedis(req.getuId(), req.getActivityId());
         if (!Constants.ResponseCode.SUCCESS.getCode().equals(subtractionActivityResult.getCode())) {
             return new PartakeResult(subtractionActivityResult.getCode(), subtractionActivityResult.getInfo());
         }
 
-        // 提前释放 token 锁，只调一次
+        // 当前实现不再使用库存 token 锁，保留空实现以兼容原有抽象。
         this.recoverActivityCacheStockByRedis(subtractionActivityResult.getStockKey());
 
         // 5. 插入领取活动信息【个人用户把活动信息写入到用户表】
         Long takeId = idGeneratorMap.get(Constants.Ids.SnowFlake).nextId();
-        Result grabResult = this.grabActivity(req, activityBillVO, takeId);
+        Result grabResult;
+        try {
+            grabResult = this.grabActivity(req, activityBillVO, takeId);
+        } catch (Exception e) {
+            // rollback one occupied stock slot when grab phase throws.
+            this.recoverActivityStockByRedis(req.getActivityId());
+            throw e;
+        }
         if (!Constants.ResponseCode.SUCCESS.getCode().equals(grabResult.getCode())) {
+            // rollback one occupied stock slot when grab phase returns failure code.
+            this.recoverActivityStockByRedis(req.getActivityId());
+            if (isGrabConflict(grabResult.getCode())) {
+                UserTakeActivityVO noConsumedTakeActivityOrder = this.queryNoConsumedTakeActivityOrder(
+                        req.getActivityId(), req.getuId());
+                if (null != noConsumedTakeActivityOrder) {
+                    return buildPartakeResult(noConsumedTakeActivityOrder.getStrategyId(),
+                            noConsumedTakeActivityOrder.getTakeId(), Constants.ResponseCode.NOT_CONSUMED_TAKE);
+                }
+            }
             return new PartakeResult(grabResult.getCode(), grabResult.getInfo());
         }
 
@@ -68,7 +82,11 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
 
     protected abstract void recoverActivityCacheStockByRedis(String stockKey);
 
-    protected abstract StockResult substractionActivityStockByRedis(String uId, Long activityId, Integer stockCount);
+    protected abstract void recoverActivityStockByRedis(Long activityId);
+
+    protected abstract StockResult substractionActivityStockByRedis(String uId, Long activityId);
+
+    protected abstract UserTakeActivityVO queryNoConsumedTakeActivityOrderFromCache(Long activityId, String uId);
 
     protected abstract UserTakeActivityVO queryNoConsumedTakeActivityOrder(Long activityId, String s);
 
@@ -94,5 +112,10 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
     protected abstract Result substractionActivityStock(PartakeReq req);
 
     protected abstract Result checkActivityBill(PartakeReq partake, ActivityBillVO bill);
+
+    private boolean isGrabConflict(String code) {
+        return Constants.ResponseCode.INDEX_DUP.getCode().equals(code)
+                || Constants.ResponseCode.NO_UPDATE.getCode().equals(code);
+    }
 
 }

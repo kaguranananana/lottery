@@ -31,6 +31,11 @@ public interface IActivityPartake {
     Result recordDrawOrder(DrawOrderVO drawOrderVO);
 
     /**
+     * Consume the take-activity order without persisting a draw award order.
+     */
+    Result consumeTakeActivity(String uId, Long activityId, Long takeId);
+
+    /**
      * 更新发货单MQ消息
      * @param uId
      * @param orderId

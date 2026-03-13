@@ -1,8 +1,15 @@
 package com.anontokyo.lottery.infrastructure.repository;
 
+import com.alibaba.fastjson.JSON;
 import com.anontokyo.lottery.common.Constants;
-import com.anontokyo.lottery.domain.activity.model.vo.*;
+import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
+import com.anontokyo.lottery.domain.activity.model.vo.ActivityPartakeRecordVO;
+import com.anontokyo.lottery.domain.activity.model.vo.DrawOrderVO;
+import com.anontokyo.lottery.domain.activity.model.vo.InvoiceVO;
+import com.anontokyo.lottery.domain.activity.model.vo.UserTakeActivityVO;
 import com.anontokyo.lottery.domain.activity.repository.IUserTakeActivityRepository;
+import com.anontokyo.lottery.infrastructure.cache.CacheConfigProperties;
+import com.anontokyo.lottery.infrastructure.cache.TwoLevelCacheService;
 import com.anontokyo.lottery.infrastructure.dao.IActivityDao;
 import com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao;
 import com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityCountDao;
@@ -11,6 +18,9 @@ import com.anontokyo.lottery.infrastructure.po.Activity;
 import com.anontokyo.lottery.infrastructure.po.UserStrategyExport;
 import com.anontokyo.lottery.infrastructure.po.UserTakeActivity;
 import com.anontokyo.lottery.infrastructure.po.UserTakeActivityCount;
+import com.anontokyo.lottery.infrastructure.utils.RedisUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
@@ -19,12 +29,15 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * @description:
- * @author：anontokyo
+ * @description: user take activity repository
+ * @author: anontokyo
  * @date: 2026/1/17
  */
 @Repository
-public class UserTakeActivityRepository  implements IUserTakeActivityRepository {
+public class UserTakeActivityRepository implements IUserTakeActivityRepository {
+
+    private Logger logger = LoggerFactory.getLogger(UserTakeActivityRepository.class);
+
     @Resource
     private IActivityDao activityDao;
 
@@ -33,27 +46,33 @@ public class UserTakeActivityRepository  implements IUserTakeActivityRepository 
 
     @Resource
     private IUserTakeActivityDao userTakeActivityDao;
+
     @Resource
     private IUserStrategyExportDao userStrategyExportDao;
 
+    @Resource
+    private RedisUtil redisUtil;
+
+    @Resource
+    private CacheConfigProperties cacheConfigProperties;
+
+    @Resource
+    private TwoLevelCacheService twoLevelCacheService;
+
     @Override
     public int subtractionLeftCount(ActivityBillVO bill) {
-        if (null == bill.getUserTakeLeftCount()) { // 首次参与
-            // 插入记录, 初始剩余次数 = 总次数 - 1
-            UserTakeActivityCount userTakeActivityCount = new UserTakeActivityCount();
-            userTakeActivityCount.setuId(bill.getuId());
-            userTakeActivityCount.setActivityId(bill.getActivityId());
-            userTakeActivityCount.setTotalCount(bill.getTakeCount());
-            userTakeActivityCount.setLeftCount(bill.getTakeCount() - 1);
-            userTakeActivityCountDao.insert(userTakeActivityCount);
+        UserTakeActivityCount userTakeActivityCount = new UserTakeActivityCount();
+        userTakeActivityCount.setuId(bill.getuId());
+        userTakeActivityCount.setActivityId(bill.getActivityId());
+        userTakeActivityCount.setTotalCount(bill.getTakeCount());
+        userTakeActivityCount.setLeftCount(bill.getTakeCount() - 1);
+
+        // write-first: try first-take insert, fallback to atomic decrement.
+        int insertCount = userTakeActivityCountDao.insert(userTakeActivityCount);
+        if (insertCount == 1) {
             return 1;
-        } else {
-            // 非首次参与
-            UserTakeActivityCount userTakeActivityCount = new UserTakeActivityCount();
-            userTakeActivityCount.setuId(bill.getuId());
-            userTakeActivityCount.setActivityId(bill.getActivityId());
-            return userTakeActivityCountDao.updateLeftCount(userTakeActivityCount);
         }
+        return userTakeActivityCountDao.updateLeftCount(userTakeActivityCount);
     }
 
     @Override
@@ -64,39 +83,52 @@ public class UserTakeActivityRepository  implements IUserTakeActivityRepository 
         userTakeActivity.setActivityId(bill.getActivityId());
         userTakeActivity.setActivityName(bill.getActivityName());
         userTakeActivity.setTakeDate(partakeDate);
-
-        if (null == bill.getUserTakeLeftCount()) {
-            userTakeActivity.setTakeCount(1);
-        } else {
-            userTakeActivity.setTakeCount(bill.getTakeCount() - bill.getUserTakeLeftCount() + 1);
-        }
         userTakeActivity.setStrategyId(bill.getStrategyId());
         userTakeActivity.setState(Constants.TaskState.NO_USED.getCode());
-        String uuid = bill.getuId() + "_" + bill.getActivityId() + "_" + userTakeActivity.getTakeCount();
+        String uuid = bill.getuId() + "_" + bill.getActivityId() + "_" + takeId;
         userTakeActivity.setUuid(uuid);
 
         userTakeActivityDao.insert(userTakeActivity);
+        cacheNoConsumedTakeActivityOrder(userTakeActivity);
+    }
+
+    @Override
+    public UserTakeActivityVO queryNoConsumedTakeActivityOrderFromCache(Long activityId, String uId) {
+        String cacheKey = Constants.RedisKey.KEY_LOTTERY_USER_TAKE_NO_CONSUMED(activityId, uId);
+        try {
+            String cacheValue = redisUtil.get(cacheKey);
+            if (cacheValue != null && cacheValue.length() > 0) {
+                return JSON.parseObject(cacheValue, UserTakeActivityVO.class);
+            }
+        } catch (Exception e) {
+            logger.warn("query no consumed order cache failed, cacheKey:{}", cacheKey, e);
+        }
+        return null;
     }
 
     @Override
     public UserTakeActivityVO queryNoConsumedTakeActivityOrder(Long activityId, String uId) {
-        // 用于查询
+        String cacheKey = Constants.RedisKey.KEY_LOTTERY_USER_TAKE_NO_CONSUMED(activityId, uId);
+        UserTakeActivityVO cachedOrder = queryNoConsumedTakeActivityOrderFromCache(activityId, uId);
+        if (cachedOrder != null) {
+            return cachedOrder;
+        }
+
         UserTakeActivity userTakeActivity = new UserTakeActivity();
         userTakeActivity.setuId(uId);
         userTakeActivity.setActivityId(activityId);
         UserTakeActivity noConsumedTakeActivityOrder = userTakeActivityDao.queryNoConsumedTakeActivityOrder(userTakeActivity);
-        // 没有查询刀符合的领取单, 直接返回null;
         if (null == noConsumedTakeActivityOrder) {
             return null;
         }
 
-        UserTakeActivityVO userTakeActivityVO = new UserTakeActivityVO();
-        userTakeActivityVO.setActivityId(noConsumedTakeActivityOrder.getActivityId());
-        userTakeActivityVO.setTakeId(noConsumedTakeActivityOrder.getTakeId());
-        userTakeActivityVO.setStrategyId(noConsumedTakeActivityOrder.getStrategyId());
-        userTakeActivityVO.setState(noConsumedTakeActivityOrder.getState());
-
-
+        UserTakeActivityVO userTakeActivityVO = buildUserTakeActivityVO(noConsumedTakeActivityOrder);
+        try {
+            redisUtil.setWithExpire(cacheKey, JSON.toJSONString(userTakeActivityVO),
+                    cacheConfigProperties.getNoConsumedOrderRedisTtlSeconds());
+        } catch (Exception e) {
+            logger.warn("set no consumed order cache failed, cacheKey:{}", cacheKey, e);
+        }
         return userTakeActivityVO;
     }
 
@@ -106,7 +138,15 @@ public class UserTakeActivityRepository  implements IUserTakeActivityRepository 
         userTakeActivity.setuId(uId);
         userTakeActivity.setActivityId(activityId);
         userTakeActivity.setTakeId(takeId);
-        return userTakeActivityDao.lockTakeActivity(userTakeActivity);
+        int lockCount = userTakeActivityDao.lockTakeActivity(userTakeActivity);
+        if (lockCount > 0) {
+            try {
+                redisUtil.delStringKey(Constants.RedisKey.KEY_LOTTERY_USER_TAKE_NO_CONSUMED(activityId, uId));
+            } catch (Exception e) {
+                logger.warn("delete no consumed order cache failed, uId:{} activityId:{}", uId, activityId, e);
+            }
+        }
+        return lockCount;
     }
 
     @Override
@@ -140,9 +180,7 @@ public class UserTakeActivityRepository  implements IUserTakeActivityRepository 
 
     @Override
     public List<InvoiceVO> scanInvoiceMqState() {
-        // 查询发送MQ失败和超时30分钟，未发送MQ的数据
         List<UserStrategyExport> userStrategyExportList = userStrategyExportDao.scanInvoiceMqState();
-        // 转换对象
         List<InvoiceVO> invoiceVOList = new ArrayList<>(userStrategyExportList.size());
         for (UserStrategyExport userStrategyExport : userStrategyExportList) {
             InvoiceVO invoiceVO = new InvoiceVO();
@@ -163,5 +201,28 @@ public class UserTakeActivityRepository  implements IUserTakeActivityRepository 
         activity.setActivityId(activityPartakeRecordVO.getActivityId());
         activity.setStockSurplusCount(activityPartakeRecordVO.getStockSurplusCount());
         activityDao.updateActivityStock(activity);
+        twoLevelCacheService
+                .evictActivityCache(Constants.RedisKey.KEY_LOTTERY_CACHE_ACTIVITY(activityPartakeRecordVO.getActivityId()));
+    }
+
+    private void cacheNoConsumedTakeActivityOrder(UserTakeActivity userTakeActivity) {
+        UserTakeActivityVO userTakeActivityVO = buildUserTakeActivityVO(userTakeActivity);
+        String cacheKey = Constants.RedisKey.KEY_LOTTERY_USER_TAKE_NO_CONSUMED(userTakeActivity.getActivityId(),
+                userTakeActivity.getuId());
+        try {
+            redisUtil.setWithExpire(cacheKey, JSON.toJSONString(userTakeActivityVO),
+                    cacheConfigProperties.getNoConsumedOrderRedisTtlSeconds());
+        } catch (Exception e) {
+            logger.warn("cache no consumed order failed, cacheKey:{}", cacheKey, e);
+        }
+    }
+
+    private UserTakeActivityVO buildUserTakeActivityVO(UserTakeActivity userTakeActivity) {
+        UserTakeActivityVO userTakeActivityVO = new UserTakeActivityVO();
+        userTakeActivityVO.setActivityId(userTakeActivity.getActivityId());
+        userTakeActivityVO.setTakeId(userTakeActivity.getTakeId());
+        userTakeActivityVO.setStrategyId(userTakeActivity.getStrategyId());
+        userTakeActivityVO.setState(userTakeActivity.getState());
+        return userTakeActivityVO;
     }
 }

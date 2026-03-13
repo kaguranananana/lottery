@@ -13,7 +13,7 @@
 
 
     <insert id="insert">
-        INSERT INTO user_take_activity_count
+        INSERT IGNORE INTO user_take_activity_count
             ( u_id, activity_id, total_count, left_count, create_time, update_time )
         VALUES
             ( #{uId}, #{activityId}, #{totalCount}, #{leftCount}, now(), now() )

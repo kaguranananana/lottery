@@ -21,6 +21,8 @@ public interface IUserTakeActivityRepository {
 
     void takeActivity(ActivityBillVO bill, Date partakeDate, Long takeId);
 
+    UserTakeActivityVO queryNoConsumedTakeActivityOrderFromCache(Long activityId, String uId);
+
     UserTakeActivityVO queryNoConsumedTakeActivityOrder(Long activityId, String uId);
 
     int lockTakeActivity(String uId, Long activityId, Long takeId);

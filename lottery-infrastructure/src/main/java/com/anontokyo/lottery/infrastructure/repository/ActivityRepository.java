@@ -7,6 +7,7 @@ import com.anontokyo.lottery.domain.activity.model.req.PartakeReq;
 import com.anontokyo.lottery.domain.activity.model.res.StockResult;
 import com.anontokyo.lottery.domain.activity.model.vo.*;
 import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
+import com.anontokyo.lottery.infrastructure.cache.TwoLevelCacheService;
 import com.anontokyo.lottery.infrastructure.dao.*;
 import com.anontokyo.lottery.infrastructure.po.*;
 import com.anontokyo.lottery.infrastructure.utils.RedisUtil;
@@ -17,7 +18,9 @@ import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @description:
@@ -42,16 +45,17 @@ public class ActivityRepository implements IActivityRepository {
     private IStrategyDetailDao strategyDetailDao;
 
     @Resource
-    private IUserTakeActivityCountDao userTakeActivityCountDao;
+    private RedisUtil redisUtil;
 
     @Resource
-    private RedisUtil redisUtil;
+    private TwoLevelCacheService twoLevelCacheService;
 
     @Override
     public void addActivity(ActivityVO activity) {
         Activity req = new Activity();
         BeanUtils.copyProperties(activity, req);
         activityDao.insert(req);
+        twoLevelCacheService.evictActivityCache(Constants.RedisKey.KEY_LOTTERY_CACHE_ACTIVITY(activity.getActivityId()));
     }
 
     @Override
@@ -63,6 +67,9 @@ public class ActivityRepository implements IActivityRepository {
             req.add(award);
         }
         awardDao.insertList(req);
+        for (AwardVO awardVO : awardList) {
+            twoLevelCacheService.evictAwardCache(Constants.RedisKey.KEY_LOTTERY_CACHE_AWARD(awardVO.getAwardId()));
+        }
     }
 
     @Override
@@ -70,17 +77,26 @@ public class ActivityRepository implements IActivityRepository {
         Strategy req = new Strategy();
         BeanUtils.copyProperties(strategy, req);
         strategyDao.insert(req);
+        twoLevelCacheService
+                .evictStrategyRichCache(Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_RICH(strategy.getStrategyId()));
+        redisUtil.delStringKey(Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_NO_STOCK_AWARD(strategy.getStrategyId()));
     }
 
     @Override
     public void addStrategyDetailList(List<StrategyDetailVO> strategyDetailList) {
         List<StrategyDetail> req = new ArrayList<>();
+        Set<Long> strategyIds = new HashSet<>();
         for (StrategyDetailVO strategyDetailVO : strategyDetailList) {
             StrategyDetail strategyDetail = new StrategyDetail();
             BeanUtils.copyProperties(strategyDetailVO, strategyDetail);
             req.add(strategyDetail);
+            strategyIds.add(strategyDetailVO.getStrategyId());
         }
         strategyDetailDao.insertList(req);
+        for (Long strategyId : strategyIds) {
+            twoLevelCacheService.evictStrategyRichCache(Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_RICH(strategyId));
+            redisUtil.delStringKey(Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_NO_STOCK_AWARD(strategyId));
+        }
 
     }
 
@@ -92,22 +108,18 @@ public class ActivityRepository implements IActivityRepository {
                 ((Constants.ActivityState) beforeState).getCode(),
                 afterState.getCode());
         int count = activityDao.alterState(alterStateVO);
+        if (count == 1) {
+            twoLevelCacheService.evictActivityCache(Constants.RedisKey.KEY_LOTTERY_CACHE_ACTIVITY(activityId));
+        }
         return count == 1;
     }
-
     @Override
     public ActivityBillVO queryActivityBill(PartakeReq req) {
-        // 查询活动信息
-        Activity activity = activityDao.queryActivityById(req.getActivityId());
+        Activity activity = twoLevelCacheService.getActivityCache(
+                Constants.RedisKey.KEY_LOTTERY_CACHE_ACTIVITY(req.getActivityId()),
+                Activity.class,
+                () -> activityDao.queryActivityById(req.getActivityId()));
 
-        // 查询领取次数
-        UserTakeActivityCount userTakeActivityCountReq = new UserTakeActivityCount();
-        userTakeActivityCountReq.setuId(req.getuId());
-        userTakeActivityCountReq.setActivityId(req.getActivityId());
-        UserTakeActivityCount userTakeActivityCount = userTakeActivityCountDao
-                .queryUserTakeActivityCount(userTakeActivityCountReq);
-
-        // 封装结果信息
         ActivityBillVO activityBillVO = new ActivityBillVO();
         activityBillVO.setuId(req.getuId());
         activityBillVO.setActivityId(req.getActivityId());
@@ -119,15 +131,16 @@ public class ActivityRepository implements IActivityRepository {
         activityBillVO.setStockSurplusCount(activity.getStockSurplusCount());
         activityBillVO.setStrategyId(activity.getStrategyId());
         activityBillVO.setState(activity.getState());
-        // 用户首次参与活动，userTakeLeftCount 为 null；否则为剩余次数
-        activityBillVO
-                .setUserTakeLeftCount(null == userTakeActivityCount ? null : userTakeActivityCount.getLeftCount());
         return activityBillVO;
     }
 
     @Override
     public int substractionActivityStock(Long activityId) {
-        return activityDao.substractionActivityStock(activityId);
+        int count = activityDao.substractionActivityStock(activityId);
+        if (count > 0) {
+            twoLevelCacheService.evictActivityCache(Constants.RedisKey.KEY_LOTTERY_CACHE_ACTIVITY(activityId));
+        }
+        return count;
     }
 
     @Override
@@ -149,42 +162,44 @@ public class ActivityRepository implements IActivityRepository {
     }
 
     @Override
-    public StockResult substractionActivityStockByRedis(String uId, Long activityId, Integer stockCount) {
-        // 获取抽奖活动库存key
+    public StockResult substractionActivityStockByRedis(String uId, Long activityId) {
         String stockKey = Constants.RedisKey.KEY_LOTTERY_ACTIVITY_STOCK_COUNT(activityId);
-
-        // 扣减库存
-        Integer stockUsedCount = (int) redisUtil.incr(stockKey, 1);
-
-        // 超出库存判断, 进行恢复初始库存
-        if (stockUsedCount > stockCount) {
-            redisUtil.decr(stockKey, 1);
+        long currentStockSurplusCount = initActivityStockIfAbsent(activityId, stockKey);
+        if (currentStockSurplusCount <= 0) {
             return new StockResult(Constants.ResponseCode.OUT_OF_STOCK.getCode(),
                     Constants.ResponseCode.OUT_OF_STOCK.getInfo());
         }
 
-        String stockTokenKey = Constants.RedisKey.KEY_LOTTERY_ACTIVITY_STOCK_COUNT_TOKEN(activityId, stockUsedCount);
-
-        // 使用Redis.setNx 加上一个分布式锁
-        boolean lockToken = redisUtil.setNx(stockTokenKey, 350L);
-
-        if (!lockToken) {
-            logger.info("抽奖活动{}用户秒杀{}扣减库存，分布式锁失败：{}", activityId, uId, stockTokenKey);
-            // Bug修复：setNx失败说明该库存位已被占用，此时主计数key已incr但没有decr
-            // 需要将主计数回退，否则该库存位被永久空耗，等效于少卖一个
-            redisUtil.decr(stockKey, 1);
-            return new StockResult(Constants.ResponseCode.ERR_TOKEN.getCode(),
-                    Constants.ResponseCode.ERR_TOKEN.getInfo());
+        long stockSurplusCount = redisUtil.decr(stockKey, 1);
+        if (stockSurplusCount < 0) {
+            redisUtil.incr(stockKey, 1);
+            return new StockResult(Constants.ResponseCode.OUT_OF_STOCK.getCode(),
+                    Constants.ResponseCode.OUT_OF_STOCK.getInfo());
         }
 
         return new StockResult(Constants.ResponseCode.SUCCESS.getCode(), Constants.ResponseCode.SUCCESS.getInfo(),
-                stockTokenKey, stockCount - stockUsedCount);
+                null, (int) stockSurplusCount);
 
     }
 
     @Override
     public void recoverActivityCacheStockByRedis(String stockKey) {
-        redisUtil.del(stockKey);
+        // remaining-stock model no longer uses token keys
+    }
+
+    @Override
+    public void recoverActivityStockByRedis(Long activityId) {
+        String stockKey = Constants.RedisKey.KEY_LOTTERY_ACTIVITY_STOCK_COUNT(activityId);
+        try {
+            long stockSurplusCount = redisUtil.incr(stockKey, 1);
+            if (stockSurplusCount < 0) {
+                redisUtil.decr(stockKey, 1);
+                logger.warn("recover activity stock by redis got negative value, activityId:{} key:{}", activityId,
+                        stockKey);
+            }
+        } catch (Exception e) {
+            logger.error("recover activity stock by redis failed, activityId:{} key:{}", activityId, stockKey, e);
+        }
     }
 
     @Override
@@ -217,5 +232,33 @@ public class ActivityRepository implements IActivityRepository {
             activityVOList.add(activityVO);
         }
         return activityVOList;
+    }
+
+    private long initActivityStockIfAbsent(Long activityId, String stockKey) {
+        try {
+            String cacheValue = redisUtil.get(stockKey);
+            if (cacheValue != null && cacheValue.length() > 0) {
+                return Long.parseLong(cacheValue);
+            }
+        } catch (Exception e) {
+            logger.warn("read activity stock from redis failed, activityId:{} key:{}", activityId, stockKey, e);
+        }
+
+        Activity activity = activityDao.queryActivityById(activityId);
+        long stockSurplusCount = activity == null || activity.getStockSurplusCount() == null ? 0L
+                : activity.getStockSurplusCount();
+        try {
+            boolean initialized = redisUtil.setIfAbsent(stockKey, String.valueOf(stockSurplusCount));
+            if (initialized) {
+                return stockSurplusCount;
+            }
+            String latestValue = redisUtil.get(stockKey);
+            if (latestValue != null && latestValue.length() > 0) {
+                return Long.parseLong(latestValue);
+            }
+        } catch (Exception e) {
+            logger.warn("init activity stock in redis failed, activityId:{} key:{}", activityId, stockKey, e);
+        }
+        return stockSurplusCount;
     }
 }

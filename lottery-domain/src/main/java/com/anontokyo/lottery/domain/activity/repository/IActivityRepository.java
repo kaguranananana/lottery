@@ -65,9 +65,11 @@ public interface IActivityRepository {
      */
     List<ActivityVO> scanToDoActivityList(Long id);
 
-    StockResult substractionActivityStockByRedis(String uId, Long activityId, Integer stockCount);
+    StockResult substractionActivityStockByRedis(String uId, Long activityId);
 
     void recoverActivityCacheStockByRedis(String stockKey);
+
+    void recoverActivityStockByRedis(Long activityId);
 
     ActivityInfoLimitPageRich queryActivityInfoLimitPage(ActivityInfoLimitPageReq req);
 

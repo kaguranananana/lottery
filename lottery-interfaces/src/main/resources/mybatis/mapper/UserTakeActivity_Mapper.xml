@@ -23,13 +23,16 @@
          take_count, strategy_id, state, uuid, create_time, update_time)
         VALUES
         (#{uId}, #{takeId}, #{activityId}, #{activityName}, #{takeDate},
-         #{takeCount}, #{strategyId}, #{state}, #{uuid}, now(), now())
+         (SELECT total_count - left_count
+          FROM user_take_activity_count
+          WHERE u_id = #{uId} AND activity_id = #{activityId}),
+         #{strategyId}, #{state}, #{uuid}, now(), now())
     </insert>
 
 
     <update id="lockTakeActivity">
         UPDATE user_take_activity SET state = 1
-        WHERE u_id = #{uId} AND activity_id = #{activityId} AND state = 0
+        WHERE u_id = #{uId} AND activity_id = #{activityId} AND take_id = #{takeId} AND state = 0
     </update>
 
 

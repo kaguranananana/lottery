@@ -55,14 +55,6 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
             logger.warn("活动剩余库存非可用 stockSurplusCount：{}", bill.getStockSurplusCount());
             return Result.buildResult(Constants.ResponseCode.UN_ERROR, "活动剩余库存非可用");
         }
-
-        // 校验：个人活动剩余可领取次数
-        // userTakeLeftCount 为 null 表示首次参与，允许；非 null 且 <= 0 表示已无剩余次数
-        if (null != bill.getUserTakeLeftCount() && bill.getUserTakeLeftCount() <= 0) {
-            logger.warn("个人领取次数非可用 userTakeLeftCount：{}", bill.getUserTakeLeftCount());
-            return Result.buildResult(Constants.ResponseCode.UN_ERROR, "个人领取次数非可用");
-        }
-
         return Result.buildSuccessResult();
     }
 
@@ -113,8 +105,29 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
 
 
     @Override
+    protected UserTakeActivityVO queryNoConsumedTakeActivityOrderFromCache(Long activityId, String uId) {
+        return userTakeActivityRepository.queryNoConsumedTakeActivityOrderFromCache(activityId, uId);
+    }
+
+    @Override
     protected UserTakeActivityVO queryNoConsumedTakeActivityOrder(Long activityId, String uId) {
         return userTakeActivityRepository.queryNoConsumedTakeActivityOrder(activityId, uId);
+    }
+
+    @Override
+    public Result consumeTakeActivity(String uId, Long activityId, Long takeId) {
+        try {
+            dbRouter.doRouter(uId);
+            int lockCount = userTakeActivityRepository.lockTakeActivity(uId, activityId, takeId);
+            if (lockCount == 0) {
+                logger.error("consume take activity failed, no row updated activityId:{} uId:{} takeId:{}", activityId,
+                        uId, takeId);
+                return Result.buildResult(Constants.ResponseCode.NO_UPDATE);
+            }
+            return Result.buildSuccessResult();
+        } finally {
+            dbRouter.clear();
+        }
     }
 
     @Override
@@ -168,8 +181,13 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
 
 
     @Override
-    protected StockResult substractionActivityStockByRedis(String uId, Long activityId, Integer stockCount) {
-        return activityRepository.substractionActivityStockByRedis(uId, activityId, stockCount);
+    protected StockResult substractionActivityStockByRedis(String uId, Long activityId) {
+        return activityRepository.substractionActivityStockByRedis(uId, activityId);
+    }
+
+    @Override
+    protected void recoverActivityStockByRedis(Long activityId) {
+        activityRepository.recoverActivityStockByRedis(activityId);
     }
 
     @Override
