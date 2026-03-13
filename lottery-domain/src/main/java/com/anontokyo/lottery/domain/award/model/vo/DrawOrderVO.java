@@ -1,4 +1,4 @@
-package com.anontokyo.lottery.domain.activity.model.vo;
+package com.anontokyo.lottery.domain.award.model.vo;
 
 import java.util.Date;
 

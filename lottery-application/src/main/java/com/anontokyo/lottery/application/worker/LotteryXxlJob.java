@@ -5,9 +5,9 @@ import com.anontokyo.lottery.application.mq.producer.KafkaProducer;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.common.Result;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
-import com.anontokyo.lottery.domain.activity.model.vo.InvoiceVO;
+import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
 import com.anontokyo.lottery.domain.activity.service.deploy.IActivityDeploy;
-import com.anontokyo.lottery.domain.activity.service.partake.IActivityPartake;
+import com.anontokyo.lottery.domain.award.service.order.IAwardOrder;
 import com.anontokyo.lottery.domain.activity.service.stateflow.IStateHandler;
 import com.alibaba.fastjson.JSON;
 import com.xxl.job.core.context.XxlJobHelper;
@@ -43,7 +43,7 @@ public class LotteryXxlJob {
     private IDBRouterStrategy dbRouter;
 
     @Resource
-    private IActivityPartake activityPartake;
+    private IAwardOrder awardOrder;
 
     @Resource
     private KafkaProducer kafkaProducer;
@@ -123,7 +123,7 @@ public class LotteryXxlJob {
             for (int i = 0; i < tbCount; i++) {
 
                 //  扫描表数据
-                List<InvoiceVO> invoiceVOList = activityPartake.scanInvoiceMqState(dbCount, i);
+                List<InvoiceVO> invoiceVOList = awardOrder.scanInvoiceMqState(dbCount, i);
                 logger.info("扫描用户抽奖奖品发放MQ状态[Table = 2*4] 扫描库：{} 扫描表：{} 扫描数：{}", dbCount, i, invoiceVOList.size());
 
                 // 补偿MQ消息
@@ -135,13 +135,13 @@ public class LotteryXxlJob {
                         @Override
                         public void onSuccess(SendResult<String, Object> stringObjectSendResult) {
                             // MQ 消息发送完成，更新数据库表 user_strategy_export.mq_state = 1
-                            activityPartake.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(), Constants.MQState.COMPLETE.getCode());
+                            awardOrder.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(), Constants.MQState.COMPLETE.getCode());
                         }
 
                         @Override
                         public void onFailure(Throwable throwable) {
                             // MQ 消息发送失败，更新数据库表 user_strategy_export.mq_state = 2 【等待定时任务扫码补偿MQ消息】
-                            activityPartake.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(), Constants.MQState.FAIL.getCode());
+                            awardOrder.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(), Constants.MQState.FAIL.getCode());
                         }
 
                     });

@@ -4,18 +4,14 @@ import com.alibaba.fastjson.JSON;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityPartakeRecordVO;
-import com.anontokyo.lottery.domain.activity.model.vo.DrawOrderVO;
-import com.anontokyo.lottery.domain.activity.model.vo.InvoiceVO;
 import com.anontokyo.lottery.domain.activity.model.vo.UserTakeActivityVO;
 import com.anontokyo.lottery.domain.activity.repository.IUserTakeActivityRepository;
 import com.anontokyo.lottery.infrastructure.cache.CacheConfigProperties;
 import com.anontokyo.lottery.infrastructure.cache.TwoLevelCacheService;
 import com.anontokyo.lottery.infrastructure.dao.IActivityDao;
-import com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao;
 import com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityCountDao;
 import com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityDao;
 import com.anontokyo.lottery.infrastructure.po.Activity;
-import com.anontokyo.lottery.infrastructure.po.UserStrategyExport;
 import com.anontokyo.lottery.infrastructure.po.UserTakeActivity;
 import com.anontokyo.lottery.infrastructure.po.UserTakeActivityCount;
 import com.anontokyo.lottery.infrastructure.utils.RedisUtil;
@@ -24,9 +20,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 /**
  * @description: user take activity repository
@@ -46,9 +40,6 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
 
     @Resource
     private IUserTakeActivityDao userTakeActivityDao;
-
-    @Resource
-    private IUserStrategyExportDao userStrategyExportDao;
 
     @Resource
     private RedisUtil redisUtil;
@@ -147,52 +138,6 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
             }
         }
         return lockCount;
-    }
-
-    @Override
-    public void saveUserStrategyExport(DrawOrderVO drawOrder) {
-        UserStrategyExport userStrategyExport = new UserStrategyExport();
-        userStrategyExport.setuId(drawOrder.getuId());
-        userStrategyExport.setActivityId(drawOrder.getActivityId());
-        userStrategyExport.setOrderId(drawOrder.getOrderId());
-        userStrategyExport.setStrategyId(drawOrder.getStrategyId());
-        userStrategyExport.setStrategyMode(drawOrder.getStrategyMode());
-        userStrategyExport.setGrantType(drawOrder.getGrantType());
-        userStrategyExport.setGrantDate(drawOrder.getGrantDate());
-        userStrategyExport.setGrantState(drawOrder.getGrantState());
-        userStrategyExport.setAwardId(drawOrder.getAwardId());
-        userStrategyExport.setAwardType(drawOrder.getAwardType());
-        userStrategyExport.setAwardName(drawOrder.getAwardName());
-        userStrategyExport.setAwardContent(drawOrder.getAwardContent());
-        userStrategyExport.setUuid(String.valueOf(drawOrder.getOrderId()));
-        userStrategyExport.setMqState(drawOrder.getMqState());
-        userStrategyExportDao.insert(userStrategyExport);
-    }
-
-    @Override
-    public void updateInvoiceMqState(String uId, Long orderId, Integer mqState) {
-        UserStrategyExport userStrategyExport = new UserStrategyExport();
-        userStrategyExport.setuId(uId);
-        userStrategyExport.setOrderId(orderId);
-        userStrategyExport.setMqState(mqState);
-        userStrategyExportDao.updateInvoiceMqState(userStrategyExport);
-    }
-
-    @Override
-    public List<InvoiceVO> scanInvoiceMqState() {
-        List<UserStrategyExport> userStrategyExportList = userStrategyExportDao.scanInvoiceMqState();
-        List<InvoiceVO> invoiceVOList = new ArrayList<>(userStrategyExportList.size());
-        for (UserStrategyExport userStrategyExport : userStrategyExportList) {
-            InvoiceVO invoiceVO = new InvoiceVO();
-            invoiceVO.setuId(userStrategyExport.getuId());
-            invoiceVO.setOrderId(userStrategyExport.getOrderId());
-            invoiceVO.setAwardId(userStrategyExport.getAwardId());
-            invoiceVO.setAwardType(userStrategyExport.getAwardType());
-            invoiceVO.setAwardName(userStrategyExport.getAwardName());
-            invoiceVO.setAwardContent(userStrategyExport.getAwardContent());
-            invoiceVOList.add(invoiceVO);
-        }
-        return invoiceVOList;
     }
 
     @Override

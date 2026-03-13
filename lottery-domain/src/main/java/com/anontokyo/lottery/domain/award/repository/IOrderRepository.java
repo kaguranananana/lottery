@@ -1,5 +1,10 @@
 package com.anontokyo.lottery.domain.award.repository;
 
+import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
+import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
+
+import java.util.List;
+
 /**
  * @description: 奖品表仓储服务接口
  * @author：anontokyo
@@ -15,6 +20,21 @@ public interface IOrderRepository {
      * @param grantState
      */
     void updateUserAwardState(String uId, Long orderId, String awardId, Integer grantState);
+
+    /**
+     * 保存中奖订单。
+     */
+    void saveDrawOrder(DrawOrderVO drawOrder);
+
+    /**
+     * 更新发奖MQ状态。
+     */
+    void updateInvoiceMqState(String uId, Long orderId, Integer mqState);
+
+    /**
+     * 扫描待补偿的发奖MQ订单。
+     */
+    List<InvoiceVO> scanInvoiceMqState();
 
     /**
      * 查询订单是否已经完成发奖。

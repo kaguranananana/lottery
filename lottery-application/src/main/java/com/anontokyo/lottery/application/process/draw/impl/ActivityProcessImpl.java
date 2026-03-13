@@ -9,24 +9,24 @@ import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.common.Result;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityPartakeRecordVO;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
-import com.anontokyo.lottery.domain.activity.model.vo.DrawOrderVO;
 import com.anontokyo.lottery.domain.activity.model.req.PartakeReq;
 import com.anontokyo.lottery.domain.activity.model.res.PartakeResult;
-import com.anontokyo.lottery.domain.activity.model.vo.InvoiceVO;
+import com.anontokyo.lottery.domain.award.model.req.AwardOrderReq;
+import com.anontokyo.lottery.domain.award.model.res.AwardOrderResult;
+import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
 import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
 import com.anontokyo.lottery.domain.activity.service.partake.IActivityPartake;
+import com.anontokyo.lottery.domain.award.service.order.IAwardOrder;
 import com.anontokyo.lottery.domain.rule.model.req.DecisionMatterReq;
 import com.anontokyo.lottery.domain.rule.model.res.EngineResult;
 import com.anontokyo.lottery.domain.rule.model.vo.RuleCriteriaVO;
 import com.anontokyo.lottery.domain.rule.model.vo.TreeRootVO;
 import com.anontokyo.lottery.domain.rule.repository.IRuleRepository;
 import com.anontokyo.lottery.domain.rule.service.engine.EngineFilter;
-import com.anontokyo.lottery.domain.strategy.repository.IStrategyRepository;
 import com.anontokyo.lottery.domain.strategy.model.req.DrawReq;
 import com.anontokyo.lottery.domain.strategy.model.res.DrawResult;
 import com.anontokyo.lottery.domain.strategy.model.vo.DrawAwardInfo;
 import com.anontokyo.lottery.domain.strategy.service.draw.IDrawExec;
-import com.anontokyo.lottery.domain.support.ids.IIdGenerator;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
 import org.springframework.util.concurrent.ListenableFuture;
@@ -34,7 +34,6 @@ import org.springframework.util.concurrent.ListenableFutureCallback;
 
 import javax.annotation.Resource;
 import java.util.List;
-import java.util.Map;
 
 /**
  * @description: 活动抽奖流程编排
@@ -48,10 +47,10 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
     private IActivityPartake activityPartake;
 
     @Resource
-    private IDrawExec drawExec;
+    private IAwardOrder awardOrder;
 
     @Resource
-    private Map<Constants.Ids, IIdGenerator> idGeneratorMap;
+    private IDrawExec drawExec;
 
     @Resource(name = "ruleEngineHandle")
     private EngineFilter engineFilter;
@@ -64,9 +63,6 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
 
     @Resource
     private IRuleRepository ruleRepository;
-
-    @Resource
-    private IStrategyRepository strategyRepository;
 
     @Override
     public DrawProcessResult doDrawProcess(DrawProcessReq req) {
@@ -107,49 +103,17 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
         }
         DrawAwardInfo drawAwardInfo = drawResult.getDrawAwardInfo();
 
-        // Step 4: 中奖后先扣减策略奖品DB库存；失败则直接返回，避免生成无库存订单。
-        boolean deductSuccess = strategyRepository.deductStock(strategyId, drawAwardInfo.getAwardId());
-        if (!deductSuccess) {
-            // 回收Redis侧奖品库存占位，避免缓存与DB库存长期不一致。
-            strategyRepository.recoverStrategyAwardStockByRedis(strategyId, drawAwardInfo.getAwardId());
-            return new DrawProcessResult(Constants.ResponseCode.UN_ERROR.getCode(), "奖品库存扣减失败");
+        // Step 4: 构建并落库中奖订单；奖品库存结算和补偿由领域服务内部处理。
+        AwardOrderResult orderResult = awardOrder.placeOrder(buildAwardOrderReq(req, strategyId, takeId, drawAwardInfo));
+        if (!Constants.ResponseCode.SUCCESS.getCode().equals(orderResult.getCode())) {
+            return new DrawProcessResult(orderResult.getCode(), orderResult.getInfo());
         }
 
-        // Step 5: 构建并落库中奖订单（与领取单状态变更在同一事务中处理）。
-        DrawOrderVO drawOrderVO = buildDrawOrderVO(req, strategyId, takeId, drawAwardInfo);
-        Result recordResult;
-        try {
-            recordResult = activityPartake.recordDrawOrder(drawOrderVO);
-        } catch (Exception e) {
-            // 落库异常时做库存补偿，尽量把DB与Redis状态回滚到一致。
-            strategyRepository.recoverStock(strategyId, drawAwardInfo.getAwardId());
-            strategyRepository.recoverStrategyAwardStockByRedis(strategyId, drawAwardInfo.getAwardId());
-            throw e;
-        }
-        if (!Constants.ResponseCode.SUCCESS.getCode().equals(recordResult.getCode())) {
-            // 业务失败同样补偿库存，避免“订单没落成但库存已扣”。
-            strategyRepository.recoverStock(strategyId, drawAwardInfo.getAwardId());
-            strategyRepository.recoverStrategyAwardStockByRedis(strategyId, drawAwardInfo.getAwardId());
-            return new DrawProcessResult(recordResult.getCode(), recordResult.getInfo());
-        }
-
-        // Step 6: 发送发奖MQ，交由异步消费者执行发货；并在回调中更新mq_state。
-        InvoiceVO invoiceVO = buildInvoice(drawOrderVO);
-        sendInvoiceMessage(invoiceVO);
+        // Step 5: 发送发奖MQ，交由异步消费者执行发货；并在回调中更新mq_state。
+        sendInvoiceMessage(orderResult.getInvoiceVO());
 
         return new DrawProcessResult(Constants.ResponseCode.SUCCESS.getCode(), Constants.ResponseCode.SUCCESS.getInfo(),
                 drawAwardInfo);
-    }
-
-    private InvoiceVO buildInvoice(DrawOrderVO drawOrderVO) {
-        InvoiceVO invoiceVO = new InvoiceVO();
-        invoiceVO.setuId(drawOrderVO.getuId());
-        invoiceVO.setOrderId(drawOrderVO.getOrderId());
-        invoiceVO.setAwardId(drawOrderVO.getAwardId());
-        invoiceVO.setAwardType(drawOrderVO.getAwardType());
-        invoiceVO.setAwardName(drawOrderVO.getAwardName());
-        invoiceVO.setAwardContent(drawOrderVO.getAwardContent());
-        return invoiceVO;
     }
 
     private void sendInvoiceMessage(InvoiceVO invoiceVO) {
@@ -159,18 +123,18 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
 
                 @Override
                 public void onSuccess(SendResult<String, Object> stringObjectSendResult) {
-                    activityPartake.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(),
+                    awardOrder.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(),
                             Constants.MQState.COMPLETE.getCode());
                 }
 
                 @Override
                 public void onFailure(Throwable throwable) {
-                    activityPartake.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(),
+                    awardOrder.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(),
                             Constants.MQState.FAIL.getCode());
                 }
             });
         } catch (Exception e) {
-            activityPartake.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(),
+            awardOrder.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(),
                     Constants.MQState.FAIL.getCode());
         }
     }
@@ -209,24 +173,20 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
         return ruleRepository.queryRuleCriteria();
     }
 
-    private DrawOrderVO buildDrawOrderVO(DrawProcessReq req, Long strategyId, Long takeId,
+    private AwardOrderReq buildAwardOrderReq(DrawProcessReq req, Long strategyId, Long takeId,
             DrawAwardInfo drawAwardInfo) {
-        long orderId = idGeneratorMap.get(Constants.Ids.SnowFlake).nextId();
-        DrawOrderVO drawOrderVO = new DrawOrderVO();
-        drawOrderVO.setuId(req.getuId());
-        drawOrderVO.setTakeId(takeId);
-        drawOrderVO.setActivityId(req.getActivityId());
-        drawOrderVO.setOrderId(orderId);
-        drawOrderVO.setStrategyId(strategyId);
-        drawOrderVO.setStrategyMode(drawAwardInfo.getStrategyMode());
-        drawOrderVO.setGrantType(drawAwardInfo.getGrantType());
-        drawOrderVO.setGrantDate(drawAwardInfo.getGrantDate());
-        drawOrderVO.setGrantState(Constants.GrantState.INIT.getCode());
-        drawOrderVO.setAwardId(drawAwardInfo.getAwardId());
-        drawOrderVO.setAwardType(drawAwardInfo.getAwardType());
-        drawOrderVO.setAwardName(drawAwardInfo.getAwardName());
-        drawOrderVO.setAwardContent(drawAwardInfo.getAwardContent());
-        drawOrderVO.setMqState(Constants.MQState.INIT.getCode());
-        return drawOrderVO;
+        AwardOrderReq awardOrderReq = new AwardOrderReq();
+        awardOrderReq.setuId(req.getuId());
+        awardOrderReq.setTakeId(takeId);
+        awardOrderReq.setActivityId(req.getActivityId());
+        awardOrderReq.setStrategyId(strategyId);
+        awardOrderReq.setStrategyMode(drawAwardInfo.getStrategyMode());
+        awardOrderReq.setGrantType(drawAwardInfo.getGrantType());
+        awardOrderReq.setGrantDate(drawAwardInfo.getGrantDate());
+        awardOrderReq.setAwardId(drawAwardInfo.getAwardId());
+        awardOrderReq.setAwardType(drawAwardInfo.getAwardType());
+        awardOrderReq.setAwardName(drawAwardInfo.getAwardName());
+        awardOrderReq.setAwardContent(drawAwardInfo.getAwardContent());
+        return awardOrderReq;
     }
 }

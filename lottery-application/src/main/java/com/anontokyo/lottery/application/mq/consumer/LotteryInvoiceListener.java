@@ -1,7 +1,7 @@
 package com.anontokyo.lottery.application.mq.consumer;
 
 import com.anontokyo.lottery.common.Constants;
-import com.anontokyo.lottery.domain.activity.model.vo.InvoiceVO;
+import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
 import com.anontokyo.lottery.domain.award.model.req.GoodsReq;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
 import com.anontokyo.lottery.domain.award.model.res.DistributionRes;

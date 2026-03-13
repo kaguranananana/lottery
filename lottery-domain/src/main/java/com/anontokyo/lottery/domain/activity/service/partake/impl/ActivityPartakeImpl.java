@@ -15,8 +15,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
-import java.util.List;
-
 /**
  * @description: 活动参与功能的业务实现
  * @author：anontokyo
@@ -129,56 +127,6 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
             dbRouter.clear();
         }
     }
-
-    @Override
-    public Result recordDrawOrder(DrawOrderVO drawOrder) {
-        try {
-            dbRouter.doRouter(drawOrder.getuId());
-            return transactionTemplate.execute(status -> {
-                try {
-                    // 锁定活动领取记录
-                   int lockCount = userTakeActivityRepository.lockTakeActivity(drawOrder.getuId(), drawOrder.getActivityId(), drawOrder.getTakeId());
-                   if (lockCount == 0) {
-                       status.setRollbackOnly();
-                       logger.error("记录中奖单，个人参与活动抽奖已消耗完 activityId：{} uId：{}", drawOrder.getActivityId(), drawOrder.getuId());
-                       return Result.buildResult(Constants.ResponseCode.NO_UPDATE);
-                   }
-
-                   // 保存抽奖信息
-                    userTakeActivityRepository.saveUserStrategyExport(drawOrder);
-                } catch (DuplicateKeyException e) {
-                    status.setRollbackOnly();
-                    logger.error("记录中奖单，唯一索引冲突 activityId：{} uId：{}", drawOrder.getActivityId(), drawOrder.getuId(), e);
-                    return Result.buildResult(Constants.ResponseCode.INDEX_DUP);
-                }
-
-                return Result.buildSuccessResult();
-            });
-        } finally {
-            dbRouter.clear();
-        }
-    }
-
-    @Override
-    public void updateInvoiceMqState(String uId, Long orderId, Integer mqState) {
-        userTakeActivityRepository.updateInvoiceMqState(uId, orderId, mqState);
-    }
-
-    @Override
-    public List<InvoiceVO> scanInvoiceMqState(int dbCount, int tbCount) {
-        try {
-            // 设置路由
-            dbRouter.setDBKey(dbCount);
-            dbRouter.setTBKey(tbCount);
-
-            // 查询数据
-            return userTakeActivityRepository.scanInvoiceMqState();
-        } finally {
-            dbRouter.clear();
-        }
-    }
-
-
 
     @Override
     protected StockResult substractionActivityStockByRedis(String uId, Long activityId) {

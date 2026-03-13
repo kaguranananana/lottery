@@ -1,9 +1,10 @@
 package com.anontokyo.lottery.domain.activity.repository;
 
-import com.anontokyo.lottery.domain.activity.model.vo.*;
+import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
+import com.anontokyo.lottery.domain.activity.model.vo.ActivityPartakeRecordVO;
+import com.anontokyo.lottery.domain.activity.model.vo.UserTakeActivityVO;
 
 import java.util.Date;
-import java.util.List;
 
 /**
  * @description:
@@ -26,16 +27,6 @@ public interface IUserTakeActivityRepository {
     UserTakeActivityVO queryNoConsumedTakeActivityOrder(Long activityId, String uId);
 
     int lockTakeActivity(String uId, Long activityId, Long takeId);
-
-    /**
-     * 保存抽奖信息
-     * @param drawOrder
-     */
-    void saveUserStrategyExport(DrawOrderVO drawOrder);
-
-    void updateInvoiceMqState(String uId, Long orderId, Integer mqState);
-
-    List<InvoiceVO> scanInvoiceMqState();
 
     void updateActivityStock(ActivityPartakeRecordVO activityPartakeRecordVO);
 }

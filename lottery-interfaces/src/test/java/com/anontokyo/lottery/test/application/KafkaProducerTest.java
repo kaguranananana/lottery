@@ -2,7 +2,7 @@ package com.anontokyo.lottery.test.application;
 
 import com.anontokyo.lottery.application.mq.producer.KafkaProducer;
 import com.anontokyo.lottery.common.Constants;
-import com.anontokyo.lottery.domain.activity.model.vo.InvoiceVO;
+import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
