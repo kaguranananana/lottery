@@ -1,8 +1,8 @@
 package com.anontokyo.lottery.application.mq.consumer;
 
+import com.alibaba.fastjson.JSON;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityPartakeRecordVO;
 import com.anontokyo.lottery.domain.activity.service.partake.IActivityPartake;
-import com.alibaba.fastjson.JSON;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,32 +16,38 @@ import javax.annotation.Resource;
 import java.util.Optional;
 
 /**
- * @description:
- * @author：anontokyo
+ * @description: Activity partake record consumer
+ * @author: anontokyo
  * @date: 2026/1/30
  */
 @Component
 public class LotteryActivityPartakeRecordListener {
-    private Logger logger = LoggerFactory.getLogger(LotteryActivityPartakeRecordListener.class);
+
+    private final Logger logger = LoggerFactory.getLogger(LotteryActivityPartakeRecordListener.class);
 
     @Resource
     private IActivityPartake activityPartake;
 
     @KafkaListener(topics = "lottery_activity_partake", groupId = "lottery")
-    public void onMessage(ConsumerRecord<?, ?> record, Acknowledgment ack, @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
+    public void onMessage(ConsumerRecord<?, ?> record, Acknowledgment ack,
+            @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
         Optional<?> message = Optional.ofNullable(record.value());
-
-        // 1. 判断消息是否存在
         if (!message.isPresent()) {
             return;
         }
 
-        // 2. 转化对象（或者你也可以重写Serializer<T>）
-        ActivityPartakeRecordVO activityPartakeRecordVO = JSON.parseObject((String) message.get(), ActivityPartakeRecordVO.class);
-        logger.info("消费MQ消息，异步扣减活动库存 message：{}", message.get());
+        try {
+            ActivityPartakeRecordVO activityPartakeRecordVO = JSON.parseObject((String) message.get(),
+                    ActivityPartakeRecordVO.class);
+            logger.info("Consume mq message, async update activity stock, message:{}", message.get());
+            activityPartake.updateActivityStock(activityPartakeRecordVO);
 
-        // 3. 更新数据库库存【实际场景业务体量较大，可能也会由于MQ消费引起并发，对数据库产生压力，所以如果并发量较大，可以把库存记录缓存中，并使用定时任务进行处理缓存和数据库库存同步，减少对数据库的操作次数】
-        activityPartake.updateActivityStock(activityPartakeRecordVO);
+            // manual_immediate mode requires explicit ack to avoid duplicate re-consume.
+            ack.acknowledge();
+        } catch (Exception e) {
+            logger.error("Consume mq message failed, topic:{} message:{}", topic, message.get(), e);
+            throw e;
+        }
     }
 
 }
