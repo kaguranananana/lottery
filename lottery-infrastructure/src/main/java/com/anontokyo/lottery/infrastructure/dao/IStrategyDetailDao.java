@@ -16,6 +16,8 @@ public interface IStrategyDetailDao {
 
     List<StrategyDetail> queryStrategyDetailList(Long strategyId);
 
+    StrategyDetail queryStrategyDetail(StrategyDetail req);
+
     List<String> queryNoStockStrategyAwardList(Long strategyId);
 
     /**
@@ -25,6 +27,8 @@ public interface IStrategyDetailDao {
      * @return
      */
     int deductStock(StrategyDetail req);
+
+    int recoverStock(StrategyDetail req);
 
     void insertList(List<StrategyDetail> strategyDetailList);
 

@@ -36,39 +36,39 @@ public abstract class AbstractDrawBase extends DrawStrategySupport implements ID
         this.checkAndInitRateData(strategy.getStrategyId(), strategy.getStrategyMode(),
                 strategyRich.getStrategyDetailList());
 
-        // 获取不在抽奖范围之内的列表, 包括:列表为空, 风控策略, 临时调整
-        List<String> excludeAwardIds = this.queryExcludeAwardIds(req.getStrategyId());
-
         // 执行抽奖算法
         String awardId = this.drawAlgorithm(req.getStrategyId(), drawAlgorithmGroup.get(strategy.getStrategyMode()),
-                excludeAwardIds, strategyRich.getStrategyDetailList());
+                strategyRich.getStrategyDetailList());
 
         // 包装中奖结果
         return buildDrawResult(req.getuId(), req.getStrategyId(), awardId, strategy);
     }
-
-    protected abstract List<String> queryExcludeAwardIds(Long strategyId);
 
     public void checkAndInitRateData(Long strategyId, Integer strategyMode,
             List<StrategyDetailBriefVO> strategyDetailList) {
 
         IDrawAlgorithm drawAlgorithm = drawAlgorithmGroup.get(strategyMode);
 
-        // 已初始化则跳过（两种算法模式都适用的懒加载判断）
         if (drawAlgorithm.isInitialized(strategyId)) {
             return;
         }
 
-        List<AwardRateInfo> awardRateInfoList = new ArrayList<>(strategyDetailList.size());
-        for (StrategyDetailBriefVO strategyDetail : strategyDetailList) {
-            awardRateInfoList.add(new AwardRateInfo(strategyDetail.getAwardId(), strategyDetail.getAwardRate()));
-        }
+        synchronized (drawAlgorithm) {
+            if (drawAlgorithm.isInitialized(strategyId)) {
+                return;
+            }
 
-        drawAlgorithm.initRateData(strategyId, awardRateInfoList);
+            List<AwardRateInfo> awardRateInfoList = new ArrayList<>(strategyDetailList.size());
+            for (StrategyDetailBriefVO strategyDetail : strategyDetailList) {
+                awardRateInfoList.add(new AwardRateInfo(strategyDetail.getAwardId(), strategyDetail.getAwardRate()));
+            }
+
+            drawAlgorithm.initRateData(strategyId, awardRateInfoList);
+        }
     }
 
     protected abstract String drawAlgorithm(Long strategyId, IDrawAlgorithm drawAlgorithm,
-            List<String> excludeAwardIds, List<StrategyDetailBriefVO> strategyDetailList);
+            List<StrategyDetailBriefVO> strategyDetailList);
 
     private DrawResult buildDrawResult(String uId, Long strategyId, String awardId, StrategyBriefVO strategy) {
         if (awardId == null) {

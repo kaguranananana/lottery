@@ -3,9 +3,12 @@ package com.anontokyo.lottery.infrastructure.repository;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.strategy.model.aggregates.StrategyRich;
 import com.anontokyo.lottery.domain.strategy.model.vo.AwardBriefVO;
+import com.anontokyo.lottery.domain.strategy.model.vo.StrategyAwardStockDeductResultVO;
 import com.anontokyo.lottery.domain.strategy.model.vo.StrategyBriefVO;
 import com.anontokyo.lottery.domain.strategy.model.vo.StrategyDetailBriefVO;
 import com.anontokyo.lottery.domain.strategy.repository.IStrategyRepository;
+import com.anontokyo.lottery.infrastructure.cache.CacheConfigProperties;
+import com.anontokyo.lottery.infrastructure.cache.TwoLevelCacheService;
 import com.anontokyo.lottery.infrastructure.dao.IAwardDao;
 import com.anontokyo.lottery.infrastructure.dao.IStrategyDao;
 import com.anontokyo.lottery.infrastructure.dao.IStrategyDetailDao;
@@ -19,7 +22,9 @@ import org.springframework.stereotype.Repository;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * @description:
@@ -44,27 +49,45 @@ public class StrategyRepository implements IStrategyRepository {
     @Resource
     private RedisUtil redisUtil;
 
+    @Resource
+    private TwoLevelCacheService twoLevelCacheService;
+
+    @Resource
+    private CacheConfigProperties cacheConfigProperties;
+
 
     @Override
     public StrategyRich queryStrategyRich(Long strategyId) {
-        Strategy strategy = strategyDao.queryStrategy(strategyId);
-        List<StrategyDetail> strategyDetails = strategyDetailDao.queryStrategyDetailList(strategyId);
-
-        StrategyBriefVO strategyVO = toStrategyVO(strategy);
-        List<StrategyDetailBriefVO> detailVOList = toStrategyDetailVOList(strategyDetails);
-
-        return new StrategyRich(strategyId, strategyVO, detailVOList);
+        return twoLevelCacheService.getStrategyRichCache(
+                Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_RICH(strategyId),
+                StrategyRich.class,
+                () -> queryStrategyRichFromDb(strategyId));
     }
 
     @Override
     public AwardBriefVO queryAwardInfo(String awardId) {
-        Award award = awardDao.queryAwardInfo(awardId);
-        return toAwardVO(award);
+        return twoLevelCacheService.getAwardCache(
+                Constants.RedisKey.KEY_LOTTERY_CACHE_AWARD(awardId),
+                AwardBriefVO.class,
+                () -> {
+                    Award award = awardDao.queryAwardInfo(awardId);
+                    return toAwardVO(award);
+                });
     }
 
     @Override
     public List<String> queryNoStockStrategyAwardList(Long strategyId) {
-        return strategyDetailDao.queryNoStockStrategyAwardList(strategyId);
+        String cacheKey = Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_NO_STOCK_AWARD(strategyId);
+        try {
+            Set<String> awardSet = redisUtil.sMembers(cacheKey);
+            if (awardSet == null || awardSet.isEmpty()) {
+                return Collections.emptyList();
+            }
+            return new ArrayList<>(awardSet);
+        } catch (Exception e) {
+            logger.warn("query no-stock award list from redis failed, strategyId:{}", strategyId, e);
+            return Collections.emptyList();
+        }
     }
 
     @Override
@@ -77,35 +100,71 @@ public class StrategyRepository implements IStrategyRepository {
     }
 
     @Override
-    public boolean deductStockByRedis(Long strategyId, String awardId, Integer awardCount) {
-        // 获取策略奖品库存key
+    public StrategyAwardStockDeductResultVO deductStockByRedis(Long strategyId, String awardId) {
         String stockKey = Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT(strategyId, awardId);
-
-        // 扣减库存, 使用Redis incr 原子操作
-        Integer stockUsedCount = (int) redisUtil.incr(stockKey, 1);
-
-        // 超出库存判断, 进行恢复
-        if (stockUsedCount > awardCount) {
-            redisUtil.decr(stockKey, 1);
-            return false;
+        long currentStockSurplusCount = initStrategyAwardStockIfAbsent(strategyId, awardId, stockKey);
+        if (currentStockSurplusCount <= 0) {
+            markNoStockAward(strategyId, awardId);
+            return StrategyAwardStockDeductResultVO.soldOut();
         }
 
-        // 使用Redis.setNx 加上一个分布式锁, 保证同一个库存位不被重复消费
-        String stockTokenKey = Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT_TOKEN(strategyId, awardId, stockUsedCount);
-        boolean lockToken = redisUtil.setNx(stockTokenKey, 350L);
-
-        if (!lockToken) {
-            logger.info("策略奖品库存扣减, 分布式锁失败: strategyId:{} awardId:{} stockTokenKey:{}", strategyId, awardId, stockTokenKey);
-            redisUtil.decr(stockKey, 1);
-            return false;
+        long stockSurplusCount = redisUtil.decr(stockKey, 1);
+        if (stockSurplusCount < 0) {
+            redisUtil.incr(stockKey, 1);
+            markNoStockAward(strategyId, awardId);
+            return StrategyAwardStockDeductResultVO.soldOut();
         }
-
-        return true;
+        if (stockSurplusCount == 0) {
+            markNoStockAward(strategyId, awardId);
+        }
+        return StrategyAwardStockDeductResultVO.success();
     }
 
     @Override
-    public void recoverStrategyAwardStockByRedis(String stockTokenKey) {
-        redisUtil.del(stockTokenKey);
+    public void recoverStrategyAwardStockByRedis(Long strategyId, String awardId) {
+        String stockKey = Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT(strategyId, awardId);
+        try {
+            long stockSurplusCount = redisUtil.incr(stockKey, 1);
+            if (stockSurplusCount > 0) {
+                clearNoStockAward(strategyId, awardId);
+            }
+        } catch (Exception e) {
+            logger.error("recover strategy award stock by redis failed, strategyId:{} awardId:{}", strategyId,
+                    awardId, e);
+        }
+    }
+
+    @Override
+    public void recoverStock(Long strategyId, String awardId) {
+        StrategyDetail req = new StrategyDetail();
+        req.setStrategyId(strategyId);
+        req.setAwardId(awardId);
+        int count = strategyDetailDao.recoverStock(req);
+        if (count == 0) {
+            logger.warn("recover strategy detail stock failed, strategyId:{} awardId:{}", strategyId, awardId);
+        }
+    }
+
+    private void markNoStockAward(Long strategyId, String awardId) {
+        String cacheKey = Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_NO_STOCK_AWARD(strategyId);
+        try {
+            redisUtil.sAdd(cacheKey, awardId);
+            long ttlSeconds = cacheConfigProperties.getNoStockAwardListRedisTtlSeconds();
+            if (ttlSeconds > 0) {
+                redisUtil.expire(cacheKey, ttlSeconds);
+            }
+        } catch (Exception e) {
+            logger.warn("mark no-stock award in redis failed, strategyId:{} awardId:{}", strategyId, awardId, e);
+        }
+    }
+
+    private void clearNoStockAward(Long strategyId, String awardId) {
+        String cacheKey = Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_NO_STOCK_AWARD(strategyId);
+        try {
+            redisUtil.sRem(cacheKey, awardId);
+        } catch (Exception e) {
+            logger.warn("clear no-stock award in redis failed, strategyId:{} awardId:{}", strategyId, awardId, e);
+        }
     }
 
     private StrategyBriefVO toStrategyVO(Strategy strategy) {
@@ -152,5 +211,47 @@ public class StrategyRepository implements IStrategyRepository {
         vo.setAwardName(award.getAwardName());
         vo.setAwardContent(award.getAwardContent());
         return vo;
+    }
+
+    private StrategyRich queryStrategyRichFromDb(Long strategyId) {
+        Strategy strategy = strategyDao.queryStrategy(strategyId);
+        List<StrategyDetail> strategyDetails = strategyDetailDao.queryStrategyDetailList(strategyId);
+
+        StrategyBriefVO strategyVO = toStrategyVO(strategy);
+        List<StrategyDetailBriefVO> detailVOList = toStrategyDetailVOList(strategyDetails);
+
+        return new StrategyRich(strategyId, strategyVO, detailVOList);
+    }
+
+    private long initStrategyAwardStockIfAbsent(Long strategyId, String awardId, String stockKey) {
+        try {
+            String cacheValue = redisUtil.get(stockKey);
+            if (cacheValue != null && cacheValue.length() > 0) {
+                return Long.parseLong(cacheValue);
+            }
+        } catch (Exception e) {
+            logger.warn("read strategy award stock from redis failed, strategyId:{} awardId:{}", strategyId, awardId, e);
+        }
+
+        StrategyDetail req = new StrategyDetail();
+        req.setStrategyId(strategyId);
+        req.setAwardId(awardId);
+        StrategyDetail strategyDetail = strategyDetailDao.queryStrategyDetail(req);
+        long stockSurplusCount = strategyDetail == null || strategyDetail.getAwardSurplusCount() == null ? 0L
+                : strategyDetail.getAwardSurplusCount();
+        try {
+            boolean initialized = redisUtil.setIfAbsent(stockKey, String.valueOf(stockSurplusCount));
+            if (initialized) {
+                return stockSurplusCount;
+            }
+            String latestValue = redisUtil.get(stockKey);
+            if (latestValue != null && latestValue.length() > 0) {
+                return Long.parseLong(latestValue);
+            }
+        } catch (Exception e) {
+            logger.warn("init strategy award stock in redis failed, strategyId:{} awardId:{}", strategyId, awardId,
+                    e);
+        }
+        return stockSurplusCount;
     }
 }

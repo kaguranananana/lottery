@@ -21,6 +21,9 @@ public class StrategyRich {
     // 策略明细
     private List<StrategyDetailBriefVO> strategyDetailList;
 
+    public StrategyRich() {
+    }
+
     public StrategyRich(Long strategyId, StrategyBriefVO strategy, List<StrategyDetailBriefVO> strategyDetailList) {
         this.strategyId = strategyId;
         this.strategy = strategy;
