@@ -233,7 +233,8 @@ CREATE TABLE `user_take_activity` (
     `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `idx_uuid` (`uuid`) USING BTREE COMMENT '防重ID'
+    UNIQUE KEY `idx_uuid` (`uuid`) USING BTREE COMMENT '防重ID',
+    KEY `idx_uId_activityId_state_id` (`u_id`, `activity_id`, `state`, `id`) USING BTREE COMMENT 'queryNoConsumedTakeActivityOrder'
 ) ENGINE = InnoDB AUTO_INCREMENT = 21 DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = '用户参与活动记录表';
 -- ----------------------------
 -- Records of user_take_activity
