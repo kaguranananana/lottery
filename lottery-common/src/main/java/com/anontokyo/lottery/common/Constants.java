@@ -109,7 +109,7 @@ public class Constants {
     public enum AwardState {
 
         WAIT(0, "等待发奖"),
-        SUCCESS(0, "发奖成功"),
+        SUCCESS(1, "发奖成功"),
         FAILURE(2, "发奖失败");
 
         private Integer code;
@@ -404,6 +404,62 @@ public class Constants {
 
         public static String KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT_TOKEN(Long strategyId, String awardId, Integer stockUsedCount) {
             return LOTTERY_STRATEGY_AWARD_STOCK_COUNT_TOKEN + strategyId + "_" + awardId + "_" + stockUsedCount;
+        }
+
+        // Unconsumed user take-order cache key
+        private static final String LOTTERY_USER_TAKE_NO_CONSUMED = "lottery_user_take_no_consumed_";
+
+        public static String KEY_LOTTERY_USER_TAKE_NO_CONSUMED(Long activityId, String uId) {
+            return LOTTERY_USER_TAKE_NO_CONSUMED + activityId + "_" + uId;
+        }
+
+        // Activity config cache key
+        private static final String LOTTERY_CACHE_ACTIVITY = "lottery_cache_activity_";
+
+        public static String KEY_LOTTERY_CACHE_ACTIVITY(Long activityId) {
+            return LOTTERY_CACHE_ACTIVITY + activityId;
+        }
+
+        // Strategy aggregate cache key
+        private static final String LOTTERY_CACHE_STRATEGY_RICH = "lottery_cache_strategy_rich_";
+
+        public static String KEY_LOTTERY_CACHE_STRATEGY_RICH(Long strategyId) {
+            return LOTTERY_CACHE_STRATEGY_RICH + strategyId;
+        }
+
+        // Strategy no-stock award list cache key
+        private static final String LOTTERY_CACHE_STRATEGY_NO_STOCK_AWARD = "lottery_cache_strategy_no_stock_award_";
+
+        public static String KEY_LOTTERY_CACHE_STRATEGY_NO_STOCK_AWARD(Long strategyId) {
+            return LOTTERY_CACHE_STRATEGY_NO_STOCK_AWARD + strategyId;
+        }
+
+        // Award detail cache key
+        private static final String LOTTERY_CACHE_AWARD = "lottery_cache_award_";
+
+        public static String KEY_LOTTERY_CACHE_AWARD(String awardId) {
+            return LOTTERY_CACHE_AWARD + awardId;
+        }
+
+        // Rule tree aggregate cache key
+        private static final String LOTTERY_CACHE_RULE_TREE_RICH = "lottery_cache_rule_tree_rich_";
+
+        public static String KEY_LOTTERY_CACHE_RULE_TREE_RICH(Long treeId) {
+            return LOTTERY_CACHE_RULE_TREE_RICH + treeId;
+        }
+
+        // Strategy-award stock MQ dedup key
+        private static final String LOTTERY_STRATEGY_AWARD_STOCK_MQ_DONE = "lottery_strategy_award_stock_mq_done_";
+
+        public static String KEY_LOTTERY_STRATEGY_AWARD_STOCK_MQ_DONE(Long orderId) {
+            return LOTTERY_STRATEGY_AWARD_STOCK_MQ_DONE + orderId;
+        }
+
+        // Invoice MQ processing key
+        private static final String LOTTERY_INVOICE_MQ_PROCESSING = "lottery_invoice_mq_processing_";
+
+        public static String KEY_LOTTERY_INVOICE_MQ_PROCESSING(Long orderId) {
+            return LOTTERY_INVOICE_MQ_PROCESSING + orderId;
         }
 
     }
