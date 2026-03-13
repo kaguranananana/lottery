@@ -1,11 +1,13 @@
 package com.anontokyo.lottery.infrastructure.repository;
 
+import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.rule.model.aggregates.TreeRuleRich;
 import com.anontokyo.lottery.domain.rule.model.vo.RuleCriteriaVO;
 import com.anontokyo.lottery.domain.rule.model.vo.TreeNodeLineVO;
 import com.anontokyo.lottery.domain.rule.model.vo.TreeNodeVO;
 import com.anontokyo.lottery.domain.rule.model.vo.TreeRootVO;
 import com.anontokyo.lottery.domain.rule.repository.IRuleRepository;
+import com.anontokyo.lottery.infrastructure.cache.TwoLevelCacheService;
 import com.anontokyo.lottery.infrastructure.dao.IRuleTreeDao;
 import com.anontokyo.lottery.infrastructure.dao.IRuleTreeNodeDao;
 import com.anontokyo.lottery.infrastructure.dao.IRuleTreeNodeLineDao;
@@ -21,7 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * @description: 规则仓储实现
+ * @description: rule repository
  * @author: anontokyo
  * @date: 2026/1/23
  */
@@ -37,21 +39,26 @@ public class RuleRepository implements IRuleRepository {
     @Resource
     private IRuleTreeNodeLineDao ruleTreeNodeLineDao;
 
+    @Resource
+    private TwoLevelCacheService twoLevelCacheService;
+
     @Override
     public TreeRuleRich queryTreeRuleRich(Long treeId) {
-        // 1. 查询规则树
+        return twoLevelCacheService.getRuleTreeCache(
+                Constants.RedisKey.KEY_LOTTERY_CACHE_RULE_TREE_RICH(treeId),
+                TreeRuleRich.class,
+                () -> queryTreeRuleRichFromDb(treeId));
+    }
+
+    private TreeRuleRich queryTreeRuleRichFromDb(Long treeId) {
         RuleTree ruleTree = ruleTreeDao.queryRuleTreeByTreeId(treeId);
         if (null == ruleTree) {
             return null;
         }
 
-        // 2. 查询规则树节点
         List<RuleTreeNode> ruleTreeNodeList = ruleTreeNodeDao.queryRuleTreeNodeList(treeId);
-
-        // 3. 查询规则树节点连线
         List<RuleTreeNodeLine> ruleTreeNodeLineList = ruleTreeNodeLineDao.queryRuleTreeNodeLineList(treeId);
 
-        // 4. 组装节点连线映射 (nodeIdFrom -> List<TreeNodeLineVO>)
         Map<Long, List<TreeNodeLineVO>> nodeLineMap = new HashMap<>();
         for (RuleTreeNodeLine line : ruleTreeNodeLineList) {
             TreeNodeLineVO lineVO = new TreeNodeLineVO();
@@ -64,7 +71,6 @@ public class RuleRepository implements IRuleRepository {
             lineList.add(lineVO);
         }
 
-        // 5. 组装节点映射 (nodeId -> TreeNodeVO)
         Map<Long, TreeNodeVO> treeNodeMap = new HashMap<>();
         for (RuleTreeNode node : ruleTreeNodeList) {
             TreeNodeVO nodeVO = new TreeNodeVO();
@@ -79,17 +85,14 @@ public class RuleRepository implements IRuleRepository {
             treeNodeMap.put(node.getId(), nodeVO);
         }
 
-        // 6. 组装树根
         TreeRootVO treeRoot = new TreeRootVO();
         treeRoot.setTreeId(ruleTree.getId());
         treeRoot.setTreeName(ruleTree.getTreeName());
         treeRoot.setTreeRootNodeId(ruleTree.getTreeRootNodeId());
 
-        // 7. 组装聚合根
         TreeRuleRich treeRuleRich = new TreeRuleRich();
         treeRuleRich.setTreeRoot(treeRoot);
         treeRuleRich.setTreeNodeMap(treeNodeMap);
-
         return treeRuleRich;
     }
 
