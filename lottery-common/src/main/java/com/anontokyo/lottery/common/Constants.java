@@ -392,6 +392,19 @@ public class Constants {
             return LOTTERY_ACTIVITY_STOCK_COUNT_TOKEN + activityId + "_" + stockUsedCount;
         }
 
+        // 策略奖品库存 Key
+        private static final String LOTTERY_STRATEGY_AWARD_STOCK_COUNT = "lottery_strategy_award_stock_count_";
+
+        public static String KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT(Long strategyId, String awardId) {
+            return LOTTERY_STRATEGY_AWARD_STOCK_COUNT + strategyId + "_" + awardId;
+        }
+
+        // 策略奖品库存锁 Key
+        private static final String LOTTERY_STRATEGY_AWARD_STOCK_COUNT_TOKEN = "lottery_strategy_award_stock_count_token_";
+
+        public static String KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT_TOKEN(Long strategyId, String awardId, Integer stockUsedCount) {
+            return LOTTERY_STRATEGY_AWARD_STOCK_COUNT_TOKEN + strategyId + "_" + awardId + "_" + stockUsedCount;
+        }
 
     }
 

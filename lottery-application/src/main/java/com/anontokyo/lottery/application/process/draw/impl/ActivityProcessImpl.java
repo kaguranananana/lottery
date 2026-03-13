@@ -24,6 +24,7 @@ import com.anontokyo.lottery.domain.rule.service.engine.EngineFilter;
 import com.anontokyo.lottery.domain.strategy.model.req.DrawReq;
 import com.anontokyo.lottery.domain.strategy.model.res.DrawResult;
 import com.anontokyo.lottery.domain.strategy.model.vo.DrawAwardInfo;
+import com.anontokyo.lottery.domain.strategy.model.vo.StrategyAwardStockVO;
 import com.anontokyo.lottery.domain.strategy.service.draw.IDrawExec;
 import com.anontokyo.lottery.domain.support.ids.IIdGenerator;
 import org.springframework.kafka.support.SendResult;
@@ -96,6 +97,9 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
                     Constants.ResponseCode.LOSING_DRAW.getInfo());
         }
         DrawAwardInfo drawAwardInfo = drawResult.getDrawAwardInfo();
+
+        // 发送MQ消息, 异步扣减策略奖品DB库存（Redis已扣, 这里通知DB落库）
+        kafkaProducer.sendStrategyAwardStock(new StrategyAwardStockVO(strategyId, drawAwardInfo.getAwardId()));
 
         // 结果落库
         DrawOrderVO drawOrderVO = buildDrawOrderVO(req, strategyId, takeId, drawAwardInfo);

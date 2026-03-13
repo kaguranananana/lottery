@@ -41,7 +41,7 @@ public abstract class AbstractDrawBase extends DrawStrategySupport implements ID
 
         // 执行抽奖算法
         String awardId = this.drawAlgorithm(req.getStrategyId(), drawAlgorithmGroup.get(strategy.getStrategyMode()),
-                excludeAwardIds);
+                excludeAwardIds, strategyRich.getStrategyDetailList());
 
         // 包装中奖结果
         return buildDrawResult(req.getuId(), req.getStrategyId(), awardId, strategy);
@@ -68,7 +68,7 @@ public abstract class AbstractDrawBase extends DrawStrategySupport implements ID
     }
 
     protected abstract String drawAlgorithm(Long strategyId, IDrawAlgorithm drawAlgorithm,
-            List<String> excludeAwardIds);
+            List<String> excludeAwardIds, List<StrategyDetailBriefVO> strategyDetailList);
 
     private DrawResult buildDrawResult(String uId, Long strategyId, String awardId, StrategyBriefVO strategy) {
         if (awardId == null) {

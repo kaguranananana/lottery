@@ -1,6 +1,7 @@
 package com.anontokyo.lottery.domain.strategy.service.draw.impl;
 import com.alibaba.fastjson.JSON;
 
+import com.anontokyo.lottery.domain.strategy.model.vo.StrategyDetailBriefVO;
 import com.anontokyo.lottery.domain.strategy.service.algorithm.IDrawAlgorithm;
 import com.anontokyo.lottery.domain.strategy.service.draw.AbstractDrawBase;
 
@@ -31,7 +32,8 @@ public class DrawExecImpl extends AbstractDrawBase{
     }
 
     @Override
-    protected String drawAlgorithm(Long strategyId, IDrawAlgorithm drawAlgorithm, List<String> excludeAwardIds) {
+    protected String drawAlgorithm(Long strategyId, IDrawAlgorithm drawAlgorithm, List<String> excludeAwardIds,
+            List<StrategyDetailBriefVO> strategyDetailList) {
         // 执行抽奖
         String awardId = drawAlgorithm.randomDraw(strategyId, excludeAwardIds);
 
@@ -39,14 +41,21 @@ public class DrawExecImpl extends AbstractDrawBase{
         if (awardId == null) {
             return null;
         }
-        /*
-        扣减库存, 暂时使用数据库行级锁的方式进行扣减库存, 后续优化为Redis 分布式锁
-         */
-        boolean isSuccess = strategyRepository.deductStock(strategyId, awardId);
 
-        // 扣减成功返回奖品id, 否则返回NULL
+        // 从策略明细中查找该奖品的总库存
+        Integer awardCount = null;
+        for (StrategyDetailBriefVO detail : strategyDetailList) {
+            if (detail.getAwardId().equals(awardId)) {
+                awardCount = Integer.parseInt(detail.getAwardCount());
+                break;
+            }
+        }
+
+        // 扣减库存, 通过Redis分布式锁方式扣减（替代原有的数据库行级锁方式）
+        boolean isSuccess = strategyRepository.deductStockByRedis(strategyId, awardId, awardCount);
+
+        // 扣减成功返回奖品id, 否则返回NULL（库存不足/锁竞争失败）
         return isSuccess ? awardId : null;
-
 
     }
 
