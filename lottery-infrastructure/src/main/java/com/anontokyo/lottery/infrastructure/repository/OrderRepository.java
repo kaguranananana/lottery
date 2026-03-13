@@ -1,5 +1,6 @@
 package com.anontokyo.lottery.infrastructure.repository;
 
+import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
 import com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao;
 import com.anontokyo.lottery.infrastructure.po.UserStrategyExport;
@@ -27,5 +28,15 @@ public class OrderRepository implements IOrderRepository {
         userStrategyExport.setAwardId(awardId);
         userStrategyExport.setGrantState(grantState);
         userStrategyExportDao.updateUserAwardState(userStrategyExport);
+    }
+
+    @Override
+    public boolean isAwardCompleted(String uId, Long orderId) {
+        UserStrategyExport req = new UserStrategyExport();
+        req.setuId(uId);
+        req.setUuid(String.valueOf(orderId));
+        UserStrategyExport userStrategyExport = userStrategyExportDao.queryUserStrategyExportByUuid(req);
+        return userStrategyExport != null
+                && Constants.GrantState.COMPLETE.getCode().equals(userStrategyExport.getGrantState());
     }
 }

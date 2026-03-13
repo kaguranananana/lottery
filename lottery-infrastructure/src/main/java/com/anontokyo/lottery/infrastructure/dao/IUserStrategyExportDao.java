@@ -31,6 +31,12 @@ public interface IUserStrategyExportDao {
     UserStrategyExport queryUserStrategyExportByUId(String uId);
 
     /**
+     * 按订单唯一ID查询用户领奖单。
+     */
+    @DBRouter(key = "uId")
+    UserStrategyExport queryUserStrategyExportByUuid(UserStrategyExport userStrategyExport);
+
+    /**
      * 更新发奖状态
      * @param userStrategyExport
      */

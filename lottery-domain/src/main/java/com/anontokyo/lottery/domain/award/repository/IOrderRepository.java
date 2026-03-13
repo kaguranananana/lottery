@@ -16,7 +16,9 @@ public interface IOrderRepository {
      */
     void updateUserAwardState(String uId, Long orderId, String awardId, Integer grantState);
 
-
-
+    /**
+     * 查询订单是否已经完成发奖。
+     */
+    boolean isAwardCompleted(String uId, Long orderId);
 
 }

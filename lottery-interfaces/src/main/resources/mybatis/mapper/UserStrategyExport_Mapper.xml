@@ -48,10 +48,22 @@
         FROM user_strategy_export
         WHERE u_id = #{uId}
     </select>
+    <select id="queryUserStrategyExportByUuid"
+            parameterType="com.anontokyo.lottery.infrastructure.po.UserStrategyExport"
+            resultMap="userStrategyExportMap">
+        SELECT id, u_id, activity_id, order_id, strategy_id, strategy_mode,
+               grant_type, grant_date, grant_state, award_id, award_type,
+               award_name, award_content, uuid, mq_state, create_time, update_time
+        FROM user_strategy_export
+        WHERE u_id = #{uId}
+          AND uuid = #{uuid}
+        LIMIT 1
+    </select>
     <select id="scanInvoiceMqState" resultType="com.anontokyo.lottery.infrastructure.po.UserStrategyExport">
         SELECT u_id, order_id, award_id, award_type, award_name, award_content
         FROM user_strategy_export
-        WHERE mq_state = 2 OR ( mq_state = 0 AND now() - create_time > 1800000 )
+        WHERE mq_state = 2
+           OR (mq_state = 0 AND create_time &lt; DATE_SUB(NOW(), INTERVAL 30 MINUTE))
     </select>
 
 </mapper>
