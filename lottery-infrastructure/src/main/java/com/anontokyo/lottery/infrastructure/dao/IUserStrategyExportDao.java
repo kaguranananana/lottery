@@ -4,6 +4,7 @@ import cn.bugstack.middleware.db.router.annotation.DBRouter;
 import cn.bugstack.middleware.db.router.annotation.DBRouterStrategy;
 import com.anontokyo.lottery.infrastructure.po.UserStrategyExport;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -50,5 +51,13 @@ public interface IUserStrategyExportDao {
     @DBRouter
     void updateInvoiceMqState(UserStrategyExport userStrategyExport);
 
+    /**
+     * Update award stock settlement MQ state.
+     */
+    @DBRouter
+    void updateStockMqState(UserStrategyExport userStrategyExport);
+
     List<UserStrategyExport> scanInvoiceMqState();
+
+    List<UserStrategyExport> scanAwardStockMqState(@Param("limit") Integer limit);
 }

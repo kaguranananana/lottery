@@ -455,6 +455,27 @@ public class Constants {
             return LOTTERY_STRATEGY_AWARD_STOCK_MQ_DONE + orderId;
         }
 
+        // Strategy-award stock MQ processing key
+        private static final String LOTTERY_STRATEGY_AWARD_STOCK_MQ_PROCESSING = "lottery_strategy_award_stock_mq_processing_";
+
+        public static String KEY_LOTTERY_STRATEGY_AWARD_STOCK_MQ_PROCESSING(Long orderId) {
+            return LOTTERY_STRATEGY_AWARD_STOCK_MQ_PROCESSING + orderId;
+        }
+
+        // Strategy-award stock MQ dispatch marker
+        private static final String LOTTERY_STRATEGY_AWARD_STOCK_MQ_DISPATCHING = "lottery_strategy_award_stock_mq_dispatching_";
+
+        public static String KEY_LOTTERY_STRATEGY_AWARD_STOCK_MQ_DISPATCHING(Long orderId) {
+            return LOTTERY_STRATEGY_AWARD_STOCK_MQ_DISPATCHING + orderId;
+        }
+
+        // Activity-partake MQ dispatch marker
+        private static final String LOTTERY_ACTIVITY_PARTAKE_MQ_DISPATCHING = "lottery_activity_partake_mq_dispatching_";
+
+        public static String KEY_LOTTERY_ACTIVITY_PARTAKE_MQ_DISPATCHING(Long takeId) {
+            return LOTTERY_ACTIVITY_PARTAKE_MQ_DISPATCHING + takeId;
+        }
+
         // Invoice MQ processing key
         private static final String LOTTERY_INVOICE_MQ_PROCESSING = "lottery_invoice_mq_processing_";
 

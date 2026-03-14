@@ -7,17 +7,10 @@ import com.anontokyo.lottery.domain.activity.model.vo.UserTakeActivityVO;
 import java.util.Date;
 
 /**
- * @description:
- * @author：anontokyo
- * @date: 2026/1/17
+ * User take-activity repository.
  */
 public interface IUserTakeActivityRepository {
 
-    /**
-     * 扣减个人活动参与次数
-     * @param bill
-     * @return
-     */
     int subtractionLeftCount(ActivityBillVO bill);
 
     void takeActivity(ActivityBillVO bill, Date partakeDate, Long takeId);

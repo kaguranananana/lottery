@@ -1,6 +1,7 @@
 package com.anontokyo.lottery.infrastructure.repository;
 
 import com.anontokyo.lottery.common.Constants;
+import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
 import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
@@ -11,12 +12,6 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
-
-/**
- * @description: 奖品表仓储服务
- * @author：anontokyo
- * @date: 2026/1/10
- */
 
 @Component
 public class OrderRepository implements IOrderRepository {
@@ -51,6 +46,7 @@ public class OrderRepository implements IOrderRepository {
         userStrategyExport.setAwardContent(drawOrder.getAwardContent());
         userStrategyExport.setUuid(String.valueOf(drawOrder.getOrderId()));
         userStrategyExport.setMqState(drawOrder.getMqState());
+        userStrategyExport.setStockMqState(drawOrder.getStockMqState());
         userStrategyExportDao.insert(userStrategyExport);
     }
 
@@ -64,29 +60,77 @@ public class OrderRepository implements IOrderRepository {
     }
 
     @Override
+    public void updateStockMqState(String uId, Long orderId, Integer stockMqState) {
+        UserStrategyExport userStrategyExport = new UserStrategyExport();
+        userStrategyExport.setuId(uId);
+        userStrategyExport.setOrderId(orderId);
+        userStrategyExport.setStockMqState(stockMqState);
+        userStrategyExportDao.updateStockMqState(userStrategyExport);
+    }
+
+    @Override
     public List<InvoiceVO> scanInvoiceMqState() {
         List<UserStrategyExport> userStrategyExportList = userStrategyExportDao.scanInvoiceMqState();
         List<InvoiceVO> invoiceVOList = new ArrayList<>(userStrategyExportList.size());
         for (UserStrategyExport userStrategyExport : userStrategyExportList) {
-            InvoiceVO invoiceVO = new InvoiceVO();
-            invoiceVO.setuId(userStrategyExport.getuId());
-            invoiceVO.setOrderId(userStrategyExport.getOrderId());
-            invoiceVO.setAwardId(userStrategyExport.getAwardId());
-            invoiceVO.setAwardType(userStrategyExport.getAwardType());
-            invoiceVO.setAwardName(userStrategyExport.getAwardName());
-            invoiceVO.setAwardContent(userStrategyExport.getAwardContent());
-            invoiceVOList.add(invoiceVO);
+            invoiceVOList.add(toInvoice(userStrategyExport));
         }
         return invoiceVOList;
     }
 
     @Override
+    public List<AwardStockSettlementVO> scanAwardStockMqState(int limit) {
+        List<UserStrategyExport> userStrategyExportList = userStrategyExportDao.scanAwardStockMqState(limit);
+        List<AwardStockSettlementVO> settlementVOList = new ArrayList<>(userStrategyExportList.size());
+        for (UserStrategyExport userStrategyExport : userStrategyExportList) {
+            AwardStockSettlementVO settlementVO = new AwardStockSettlementVO();
+            settlementVO.setuId(userStrategyExport.getuId());
+            settlementVO.setOrderId(userStrategyExport.getOrderId());
+            settlementVO.setStrategyId(userStrategyExport.getStrategyId());
+            settlementVO.setAwardId(userStrategyExport.getAwardId());
+            settlementVOList.add(settlementVO);
+        }
+        return settlementVOList;
+    }
+
+    @Override
     public boolean isAwardCompleted(String uId, Long orderId) {
+        UserStrategyExport userStrategyExport = queryOrder(uId, orderId);
+        return userStrategyExport != null
+                && Constants.GrantState.COMPLETE.getCode().equals(userStrategyExport.getGrantState());
+    }
+
+    @Override
+    public InvoiceVO queryInvoiceByOrderId(String uId, Long orderId) {
+        UserStrategyExport userStrategyExport = queryOrder(uId, orderId);
+        if (userStrategyExport == null) {
+            return null;
+        }
+        return toInvoice(userStrategyExport);
+    }
+
+    @Override
+    public boolean isStockMqCompleted(String uId, Long orderId) {
+        UserStrategyExport userStrategyExport = queryOrder(uId, orderId);
+        return userStrategyExport != null
+                && Constants.MQState.COMPLETE.getCode().equals(userStrategyExport.getStockMqState());
+    }
+
+    private UserStrategyExport queryOrder(String uId, Long orderId) {
         UserStrategyExport req = new UserStrategyExport();
         req.setuId(uId);
         req.setUuid(String.valueOf(orderId));
-        UserStrategyExport userStrategyExport = userStrategyExportDao.queryUserStrategyExportByUuid(req);
-        return userStrategyExport != null
-                && Constants.GrantState.COMPLETE.getCode().equals(userStrategyExport.getGrantState());
+        return userStrategyExportDao.queryUserStrategyExportByUuid(req);
+    }
+
+    private InvoiceVO toInvoice(UserStrategyExport userStrategyExport) {
+        InvoiceVO invoiceVO = new InvoiceVO();
+        invoiceVO.setuId(userStrategyExport.getuId());
+        invoiceVO.setOrderId(userStrategyExport.getOrderId());
+        invoiceVO.setAwardId(userStrategyExport.getAwardId());
+        invoiceVO.setAwardType(userStrategyExport.getAwardType());
+        invoiceVO.setAwardName(userStrategyExport.getAwardName());
+        invoiceVO.setAwardContent(userStrategyExport.getAwardContent());
+        return invoiceVO;
     }
 }

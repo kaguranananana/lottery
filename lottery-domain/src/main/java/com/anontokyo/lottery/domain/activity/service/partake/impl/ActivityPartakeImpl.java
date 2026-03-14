@@ -5,7 +5,9 @@ import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.common.Result;
 import com.anontokyo.lottery.domain.activity.model.req.PartakeReq;
 import com.anontokyo.lottery.domain.activity.model.res.StockResult;
-import com.anontokyo.lottery.domain.activity.model.vo.*;
+import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
+import com.anontokyo.lottery.domain.activity.model.vo.ActivityPartakeRecordVO;
+import com.anontokyo.lottery.domain.activity.model.vo.UserTakeActivityVO;
 import com.anontokyo.lottery.domain.activity.repository.IUserTakeActivityRepository;
 import com.anontokyo.lottery.domain.activity.service.partake.BaseActivityPartake;
 import org.slf4j.Logger;
@@ -15,14 +17,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
-/**
- * @description: 活动参与功能的业务实现
- * @author：anontokyo
- * @date: 2026/1/17
- */
+
 @Service
 public class ActivityPartakeImpl extends BaseActivityPartake {
-    private Logger logger = LoggerFactory.getLogger(ActivityPartakeImpl.class);
+
+    private final Logger logger = LoggerFactory.getLogger(ActivityPartakeImpl.class);
 
     @Resource
     private IDBRouterStrategy dbRouter;
@@ -33,25 +32,22 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
     @Resource
     private IUserTakeActivityRepository userTakeActivityRepository;
 
-
-
     @Override
     protected Result checkActivityBill(PartakeReq partake, ActivityBillVO bill) {
-        // 校验 活动状态
         if (!Constants.ActivityState.DOING.getCode().equals(bill.getState())) {
-            logger.warn("活动当前状态非可用 state：{}", bill.getState());
-            return Result.buildResult(Constants.ResponseCode.UN_ERROR, "活动当前状态非可用");
+            logger.warn("activity unavailable state:{}", bill.getState());
+            return Result.buildResult(Constants.ResponseCode.UN_ERROR, "activity unavailable");
         }
 
-        // 校验: 活动日期
-        if (bill.getBeginDateTime().after(partake.getPartakeDate()) || bill.getEndDateTime().before(partake.getPartakeDate())) {
-            logger.warn("活动时间范围非可用 beginDateTime：{} endDateTime：{}", bill.getBeginDateTime(), bill.getEndDateTime());
-            return Result.buildResult(Constants.ResponseCode.UN_ERROR, "活动时间范围非可用");
+        if (bill.getBeginDateTime().after(partake.getPartakeDate())
+                || bill.getEndDateTime().before(partake.getPartakeDate())) {
+            logger.warn("activity not in valid time range begin:{} end:{}", bill.getBeginDateTime(), bill.getEndDateTime());
+            return Result.buildResult(Constants.ResponseCode.UN_ERROR, "activity not in valid time range");
         }
-        // 校验：活动库存
+
         if (bill.getStockSurplusCount() <= 0) {
-            logger.warn("活动剩余库存非可用 stockSurplusCount：{}", bill.getStockSurplusCount());
-            return Result.buildResult(Constants.ResponseCode.UN_ERROR, "活动剩余库存非可用");
+            logger.warn("activity stock unavailable stockSurplusCount:{}", bill.getStockSurplusCount());
+            return Result.buildResult(Constants.ResponseCode.UN_ERROR, "activity stock unavailable");
         }
         return Result.buildSuccessResult();
     }
@@ -59,14 +55,12 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
     @Override
     protected Result substractionActivityStock(PartakeReq req) {
         int count = activityRepository.substractionActivityStock(req.getActivityId());
-        if (0 == count) {
-            logger.error("扣减活动库存失败 activityId：{}", req.getActivityId());
+        if (count == 0) {
+            logger.error("subtract activity stock failed activityId:{}", req.getActivityId());
             return Result.buildResult(Constants.ResponseCode.NO_UPDATE);
         }
         return Result.buildSuccessResult();
     }
-
-
 
     @Override
     protected Result grabActivity(PartakeReq partake, ActivityBillVO bill, Long takeId) {
@@ -74,21 +68,19 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
             dbRouter.doRouter(partake.getuId());
             return transactionTemplate.execute(transactionStatus -> {
                 try {
-                    // 扣减个人剩余参与次数
                     int updateCount = userTakeActivityRepository.subtractionLeftCount(bill);
                     if (updateCount == 0) {
                         transactionStatus.setRollbackOnly();
-                        logger.error("领取活动，扣减个人已参与次数失败 activityId：{} uId：{}", partake.getActivityId(), partake.getuId());
+                        logger.error("grab activity subtract user quota failed activityId:{} uId:{}",
+                                partake.getActivityId(), partake.getuId());
                         return Result.buildResult(Constants.ResponseCode.NO_UPDATE);
                     }
 
-                    // 插入领取活动信息
                     userTakeActivityRepository.takeActivity(bill, partake.getPartakeDate(), takeId);
-
-
                 } catch (DuplicateKeyException e) {
                     transactionStatus.setRollbackOnly();
-                    logger.error("领取活动，唯一索引冲突 activityId：{} uId：{}", partake.getActivityId(), partake.getuId(), e);
+                    logger.error("grab activity duplicate key activityId:{} uId:{}", partake.getActivityId(),
+                            partake.getuId(), e);
                     return Result.buildResult(Constants.ResponseCode.INDEX_DUP);
                 }
 
@@ -98,9 +90,6 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
             dbRouter.clear();
         }
     }
-
-
-
 
     @Override
     protected UserTakeActivityVO queryNoConsumedTakeActivityOrderFromCache(Long activityId, String uId) {
@@ -118,8 +107,7 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
             dbRouter.doRouter(uId);
             int lockCount = userTakeActivityRepository.lockTakeActivity(uId, activityId, takeId);
             if (lockCount == 0) {
-                logger.error("consume take activity failed, no row updated activityId:{} uId:{} takeId:{}", activityId,
-                        uId, takeId);
+                logger.error("consume take activity failed activityId:{} uId:{} takeId:{}", activityId, uId, takeId);
                 return Result.buildResult(Constants.ResponseCode.NO_UPDATE);
             }
             return Result.buildSuccessResult();

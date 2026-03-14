@@ -38,5 +38,9 @@ public class DrawStrategySupport extends DrawConfig {
         return strategyRepository.queryAwardInfo(awardId);
     }
 
+    protected void recoverAwardStockByRedis(Long strategyId, String awardId) {
+        strategyRepository.recoverStrategyAwardStockByRedis(strategyId, awardId);
+    }
 
 }
+

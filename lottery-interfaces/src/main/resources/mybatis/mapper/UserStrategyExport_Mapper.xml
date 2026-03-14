@@ -18,6 +18,7 @@
         <result column="award_content" property="awardContent"/>
         <result column="uuid" property="uuid"/>
         <result column="mq_state" property="mqState"/>
+        <result column="stock_mq_state" property="stockMqState"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>
     </resultMap>
@@ -26,11 +27,11 @@
         INSERT INTO user_strategy_export
         (u_id, activity_id, order_id, strategy_id, strategy_mode,
          grant_type, grant_date, grant_state, award_id, award_type,
-         award_name, award_content, uuid, mq_state, create_time, update_time)
+         award_name, award_content, uuid, mq_state, stock_mq_state, create_time, update_time)
         VALUES
         (#{uId},#{activityId},#{orderId},#{strategyId},#{strategyMode},
          #{grantType},#{grantDate},#{grantState},#{awardId},#{awardType},
-         #{awardName},#{awardContent},#{uuid},#{mqState},now(),now())
+         #{awardName},#{awardContent},#{uuid},#{mqState},#{stockMqState},now(),now())
     </insert>
     <update id="updateUserAwardState">
         UPDATE user_strategy_export SET grant_state = #{grantState}, grant_date = now(), update_time = now()
@@ -40,11 +41,15 @@
         UPDATE user_strategy_export SET mq_state = #{mqState}, update_time = now()
         WHERE u_id = #{uId} AND order_id = #{orderId}
     </update>
+    <update id="updateStockMqState">
+        UPDATE user_strategy_export SET stock_mq_state = #{stockMqState}, update_time = now()
+        WHERE u_id = #{uId} AND order_id = #{orderId}
+    </update>
 
     <select id="queryUserStrategyExportByUId" parameterType="java.lang.String" resultMap="userStrategyExportMap">
         SELECT id, u_id, activity_id, order_id, strategy_id, strategy_mode,
                grant_type, grant_date, grant_state, award_id, award_type,
-               award_name, award_content, uuid, mq_state, create_time, update_time
+               award_name, award_content, uuid, mq_state, stock_mq_state, create_time, update_time
         FROM user_strategy_export
         WHERE u_id = #{uId}
     </select>
@@ -53,7 +58,7 @@
             resultMap="userStrategyExportMap">
         SELECT id, u_id, activity_id, order_id, strategy_id, strategy_mode,
                grant_type, grant_date, grant_state, award_id, award_type,
-               award_name, award_content, uuid, mq_state, create_time, update_time
+               award_name, award_content, uuid, mq_state, stock_mq_state, create_time, update_time
         FROM user_strategy_export
         WHERE u_id = #{uId}
           AND uuid = #{uuid}
@@ -62,8 +67,16 @@
     <select id="scanInvoiceMqState" resultType="com.anontokyo.lottery.infrastructure.po.UserStrategyExport">
         SELECT u_id, order_id, award_id, award_type, award_name, award_content
         FROM user_strategy_export
-        WHERE mq_state = 2
-           OR (mq_state = 0 AND create_time &lt; DATE_SUB(NOW(), INTERVAL 30 MINUTE))
+        WHERE stock_mq_state = 1
+          AND (mq_state = 2
+           OR (mq_state = 0 AND create_time &lt; DATE_SUB(NOW(), INTERVAL 30 MINUTE)))
+    </select>
+    <select id="scanAwardStockMqState" resultType="com.anontokyo.lottery.infrastructure.po.UserStrategyExport">
+        SELECT u_id, order_id, strategy_id, award_id
+        FROM user_strategy_export
+        WHERE stock_mq_state IN (0, 2)
+        ORDER BY create_time ASC
+        LIMIT #{limit}
     </select>
 
 </mapper>

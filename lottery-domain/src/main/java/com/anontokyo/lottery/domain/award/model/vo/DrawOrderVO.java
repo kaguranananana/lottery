@@ -66,6 +66,10 @@ public class DrawOrderVO {
      * 消息发送状态（0未发送、1发送成功、2发送失败）
      */
     private Integer mqState;
+    /**
+     * Award stock settlement MQ state (0 init, 1 complete, 2 fail).
+     */
+    private Integer stockMqState;
 
     public String getuId() {
         return uId;
@@ -179,6 +183,14 @@ public class DrawOrderVO {
         this.mqState = mqState;
     }
 
+    public Integer getStockMqState() {
+        return stockMqState;
+    }
+
+    public void setStockMqState(Integer stockMqState) {
+        this.stockMqState = stockMqState;
+    }
+
     @Override
     public String toString() {
         return "DrawOrderVO{" +
@@ -196,6 +208,7 @@ public class DrawOrderVO {
                 ", awardName='" + awardName + '\'' +
                 ", awardContent='" + awardContent + '\'' +
                 ", mqState=" + mqState +
+                ", stockMqState=" + stockMqState +
                 '}';
     }
 

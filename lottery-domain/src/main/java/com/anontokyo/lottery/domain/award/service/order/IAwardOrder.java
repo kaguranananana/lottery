@@ -2,6 +2,7 @@ package com.anontokyo.lottery.domain.award.service.order;
 
 import com.anontokyo.lottery.domain.award.model.req.AwardOrderReq;
 import com.anontokyo.lottery.domain.award.model.res.AwardOrderResult;
+import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
 
 import java.util.List;
@@ -22,7 +23,27 @@ public interface IAwardOrder {
     void updateInvoiceMqState(String uId, Long orderId, Integer mqState);
 
     /**
+     * Update award stock settlement MQ state.
+     */
+    void updateStockMqState(String uId, Long orderId, Integer stockMqState);
+
+    /**
      * 扫描待补偿的发奖MQ订单。
      */
     List<InvoiceVO> scanInvoiceMqState(int dbCount, int tbCount);
+
+    /**
+     * Scan award stock settlement outbox.
+     */
+    List<AwardStockSettlementVO> scanAwardStockMqState(int dbCount, int tbCount, int limit);
+
+    /**
+     * Query invoice payload by order id.
+     */
+    InvoiceVO queryInvoiceByOrderId(String uId, Long orderId);
+
+    /**
+     * Whether stock settlement is already complete.
+     */
+    boolean isStockMqCompleted(String uId, Long orderId);
 }

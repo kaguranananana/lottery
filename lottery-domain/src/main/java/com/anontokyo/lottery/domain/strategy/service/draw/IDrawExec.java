@@ -12,4 +12,9 @@ import com.anontokyo.lottery.domain.strategy.model.res.DrawResult;
 public interface IDrawExec {
 
     DrawResult doDrawExec(DrawReq req);
+
+    /**
+     * Recover the Redis-reserved award stock when downstream order creation fails.
+     */
+    void recoverDrawAwardStock(Long strategyId, String awardId);
 }

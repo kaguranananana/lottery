@@ -17,10 +17,10 @@ spring:
     timeout: 5000
     jedis:
       pool:
-        max-active: 8
-        max-wait: -1ms
-        max-idle: 8
-        min-idle: 0
+        max-active: 128
+        max-wait: 2000ms
+        max-idle: 32
+        min-idle: 8
 
   kafka:
     # Kafka服务器地址
@@ -51,7 +51,7 @@ spring:
       # 该属性指定了消费者在读取一个没有偏移量的分区或者偏移量无效的情况下该作何处理：
       # latest（默认值）：在偏移量无效的情况下，消费者将从最新的记录开始读取数据
       # earliest：在偏移量无效的情况下，消费者将从起始位置读取分区的记录
-      auto-offset-reset: earliest
+      auto-offset-reset: latest
       # 是否自动提交偏移量，默认值是true
       # 为了避免出现重复数据和数据丢失，可以把它设置为false，然后手动提交偏移量
       enable-auto-commit: false
@@ -70,10 +70,40 @@ spring:
       missing-topics-fatal: false
 
 lottery:
+  kafka:
+    activity-partake:
+      enabled: true
+    invoice:
+      enabled: true
+    topic:
+      invoice:
+        partitions: 8
+        replicas: 1
+      activity-partake:
+        partitions: 4
+        replicas: 1
+      strategy-award-stock:
+        partitions: 8
+        replicas: 1
+    consumer:
+      invoice-group-id: lottery-invoice-20260315
+      activity-partake-group-id: lottery-activity-partake-20260315
+      strategy-award-stock-group-id: lottery-strategy-award-stock-20260315
+      invoice-concurrency: 4
+      activity-partake-concurrency: 2
+      strategy-award-stock-concurrency: 4
+    dispatcher:
+      strategy-award-stock:
+        enabled: true
+      strategy-award-stock-batch-size: 10
+      strategy-award-stock-initial-delay-millis: 1000
+      strategy-award-stock-fixed-delay-millis: 5000
   cache:
     no-consumed-order-redis-ttl-seconds: 1800
     no-stock-award-list-redis-ttl-seconds: 60
     strategy-award-stock-mq-dedup-redis-ttl-seconds: 86400
+    strategy-award-stock-mq-processing-redis-ttl-seconds: 300
+    strategy-award-stock-mq-dispatch-redis-ttl-seconds: 60
     invoice-mq-processing-redis-ttl-seconds: 300
     activity:
       local-expire-seconds: 1
@@ -103,6 +133,14 @@ mini-db-router:
       default: db00
       routerKey: uId
       list: db01,db02
+      global:
+        pool:
+          maximum-pool-size: 48
+          minimum-idle: 12
+          connection-timeout: 5000
+          validation-timeout: 1000
+          idle-timeout: 600000
+          max-lifetime: 1800000
       db00:
         driver-class-name: com.mysql.cj.jdbc.Driver
         url: jdbc:mysql://127.0.0.1:13306/lottery?useUnicode=true&serverTimezone=Asia/Shanghai
@@ -129,7 +167,7 @@ mybatis:
     # 3. 开启我们之前讨论的驼峰转换（之前 XML 里没有，现在正好加上）
     map-underscore-to-camel-case: true
     # 4. 打印 SQL 日志（调试神器，建议开启）
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
 
 nacos:
   discovery:
@@ -145,6 +183,11 @@ dubbo:
   protocol:
     name: dubbo
     port: -1
+    threadpool: fixed
+    threads: 400
+    queues: 200
+  provider:
+    timeout: 7000
   scan:
     base-packages: com.anontokyo.lottery.rpc
 

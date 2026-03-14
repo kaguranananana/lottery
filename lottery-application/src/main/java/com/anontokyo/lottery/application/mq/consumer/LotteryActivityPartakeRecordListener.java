@@ -15,11 +15,6 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 import java.util.Optional;
 
-/**
- * @description: Activity partake record consumer
- * @author: anontokyo
- * @date: 2026/1/30
- */
 @Component
 public class LotteryActivityPartakeRecordListener {
 
@@ -28,26 +23,28 @@ public class LotteryActivityPartakeRecordListener {
     @Resource
     private IActivityPartake activityPartake;
 
-    @KafkaListener(topics = "lottery_activity_partake", groupId = "lottery")
+    @KafkaListener(topics = "lottery_activity_partake",
+            groupId = "${lottery.kafka.consumer.activity-partake-group-id:lottery-activity-partake}",
+            concurrency = "${lottery.kafka.consumer.activity-partake-concurrency:4}")
     public void onMessage(ConsumerRecord<?, ?> record, Acknowledgment ack,
             @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
         Optional<?> message = Optional.ofNullable(record.value());
         if (!message.isPresent()) {
+            ack.acknowledge();
             return;
         }
 
         try {
             ActivityPartakeRecordVO activityPartakeRecordVO = JSON.parseObject((String) message.get(),
                     ActivityPartakeRecordVO.class);
-            logger.info("Consume mq message, async update activity stock, message:{}", message.get());
+            if (logger.isDebugEnabled()) {
+                logger.debug("consume mq activity partake topic:{} message:{}", topic, message.get());
+            }
             activityPartake.updateActivityStock(activityPartakeRecordVO);
-
-            // manual_immediate mode requires explicit ack to avoid duplicate re-consume.
             ack.acknowledge();
         } catch (Exception e) {
-            logger.error("Consume mq message failed, topic:{} message:{}", topic, message.get(), e);
+            logger.error("consume mq activity partake failed, topic:{} message:{}", topic, message.get(), e);
             throw e;
         }
     }
-
 }

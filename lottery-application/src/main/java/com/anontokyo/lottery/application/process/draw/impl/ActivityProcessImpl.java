@@ -1,5 +1,4 @@
 package com.anontokyo.lottery.application.process.draw.impl;
-
 import com.anontokyo.lottery.application.mq.producer.KafkaProducer;
 import com.anontokyo.lottery.application.process.draw.IActivityDrawProcess;
 import com.anontokyo.lottery.application.process.draw.req.DrawProcessReq;
@@ -7,15 +6,14 @@ import com.anontokyo.lottery.application.process.draw.res.DrawProcessResult;
 import com.anontokyo.lottery.application.process.draw.res.RuleQuantificationCrowdResult;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.common.Result;
-import com.anontokyo.lottery.domain.activity.model.vo.ActivityPartakeRecordVO;
-import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
 import com.anontokyo.lottery.domain.activity.model.req.PartakeReq;
 import com.anontokyo.lottery.domain.activity.model.res.PartakeResult;
-import com.anontokyo.lottery.domain.award.model.req.AwardOrderReq;
-import com.anontokyo.lottery.domain.award.model.res.AwardOrderResult;
-import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
+import com.anontokyo.lottery.domain.activity.model.vo.ActivityPartakeRecordVO;
+import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
 import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
 import com.anontokyo.lottery.domain.activity.service.partake.IActivityPartake;
+import com.anontokyo.lottery.domain.award.model.req.AwardOrderReq;
+import com.anontokyo.lottery.domain.award.model.res.AwardOrderResult;
 import com.anontokyo.lottery.domain.award.service.order.IAwardOrder;
 import com.anontokyo.lottery.domain.rule.model.req.DecisionMatterReq;
 import com.anontokyo.lottery.domain.rule.model.res.EngineResult;
@@ -27,24 +25,26 @@ import com.anontokyo.lottery.domain.strategy.model.req.DrawReq;
 import com.anontokyo.lottery.domain.strategy.model.res.DrawResult;
 import com.anontokyo.lottery.domain.strategy.model.vo.DrawAwardInfo;
 import com.anontokyo.lottery.domain.strategy.service.draw.IDrawExec;
-import org.springframework.kafka.support.SendResult;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.ListenableFutureCallback;
 
 import javax.annotation.Resource;
 import java.util.List;
 
-/**
- * @description: 活动抽奖流程编排
- * @author：anontokyo
- * @date: 2026/1/22
- */
 @Service
 public class ActivityProcessImpl implements IActivityDrawProcess {
 
+    private static final long SLOW_DRAW_PROCESS_THRESHOLD_MS = 3000L;
+
+    private final Logger logger = LoggerFactory.getLogger(ActivityProcessImpl.class);
+
     @Resource
     private IActivityPartake activityPartake;
+
+    @Resource
+    private KafkaProducer kafkaProducer;
 
     @Resource
     private IAwardOrder awardOrder;
@@ -56,102 +56,94 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
     private EngineFilter engineFilter;
 
     @Resource
-    private KafkaProducer kafkaProducer;
-
-    @Resource
     private IActivityRepository activityRepository;
 
     @Resource
     private IRuleRepository ruleRepository;
 
+    @Value("${lottery.kafka.activity-partake.enabled:true}")
+    private boolean activityPartakeMqEnabled;
+
     @Override
     public DrawProcessResult doDrawProcess(DrawProcessReq req) {
+        long processStart = System.nanoTime();
+        long partakeCostMs = 0L;
+        long partakeDispatchCostMs = 0L;
+        long drawCostMs = 0L;
+        long consumeTakeCostMs = 0L;
+        long orderCostMs = 0L;
 
-        // Step 1: 先领取活动资格（会校验活动状态/时间/次数，并处理未消费领取单复用）。
+        long stageStart = System.nanoTime();
         PartakeResult partakeResult = activityPartake.doPartake(new PartakeReq(req.getuId(), req.getActivityId()));
-        // 只有“领取成功”或“存在未消费领取单”两种情况才继续往下走。
+        partakeCostMs = elapsedMillis(stageStart);
         if (!Constants.ResponseCode.SUCCESS.getCode().equals(partakeResult.getCode())
                 && !Constants.ResponseCode.NOT_CONSUMED_TAKE.getCode().equals(partakeResult.getCode())) {
-            return new DrawProcessResult(partakeResult.getCode(), partakeResult.getInfo());
-        }
-
-        // Step 2: 首次领取成功时，异步通知活动库存落库（Redis预扣成功后再由MQ异步更新DB库存）。
-        if (Constants.ResponseCode.SUCCESS.getCode().equals(partakeResult.getCode())) {
-            ActivityPartakeRecordVO activityPartakeRecord = new ActivityPartakeRecordVO();
-            activityPartakeRecord.setuId(req.getuId());
-            activityPartakeRecord.setActivityId(req.getActivityId());
-            activityPartakeRecord.setStockCount(partakeResult.getStockCount());
-            activityPartakeRecord.setStockSurplusCount(partakeResult.getStockSurplusCount());
-
-            kafkaProducer.sendLotteryActivityPartakeRecord(activityPartakeRecord);
+            DrawProcessResult result = new DrawProcessResult(partakeResult.getCode(), partakeResult.getInfo());
+            logDrawProcessTiming(req, result.getCode(), processStart, partakeCostMs, partakeDispatchCostMs, drawCostMs,
+                    consumeTakeCostMs, orderCostMs);
+            return result;
         }
 
         Long strategyId = partakeResult.getStrategyId();
         Long takeId = partakeResult.getTakeId();
 
-        // Step 3: 执行抽奖算法（基于策略计算是否中奖、命中哪个奖品）。
+        if (activityPartakeMqEnabled && Constants.ResponseCode.SUCCESS.getCode().equals(partakeResult.getCode())) {
+            stageStart = System.nanoTime();
+            kafkaProducer.sendLotteryActivityPartakeRecord(buildActivityPartakeRecord(req, partakeResult));
+            partakeDispatchCostMs = elapsedMillis(stageStart);
+        }
+
+        stageStart = System.nanoTime();
         DrawResult drawResult = drawExec.doDrawExec(new DrawReq(req.getuId(), strategyId, String.valueOf(takeId)));
+        drawCostMs = elapsedMillis(stageStart);
         if (Constants.DrawState.FAIL.getCode().equals(drawResult.getDrawState())) {
-            // 未中奖也要把领取单置为已消费，避免同一领取单被重复使用。
+            stageStart = System.nanoTime();
             Result consumeTakeResult = activityPartake.consumeTakeActivity(req.getuId(), req.getActivityId(), takeId);
+            consumeTakeCostMs = elapsedMillis(stageStart);
             if (!Constants.ResponseCode.SUCCESS.getCode().equals(consumeTakeResult.getCode())
                     && !Constants.ResponseCode.NO_UPDATE.getCode().equals(consumeTakeResult.getCode())) {
-                return new DrawProcessResult(consumeTakeResult.getCode(), consumeTakeResult.getInfo());
+                DrawProcessResult result = new DrawProcessResult(consumeTakeResult.getCode(),
+                        consumeTakeResult.getInfo());
+                logDrawProcessTiming(req, result.getCode(), processStart, partakeCostMs, partakeDispatchCostMs, drawCostMs,
+                        consumeTakeCostMs, orderCostMs);
+                return result;
             }
-            return new DrawProcessResult(Constants.ResponseCode.LOSING_DRAW.getCode(),
+            DrawProcessResult result = new DrawProcessResult(Constants.ResponseCode.LOSING_DRAW.getCode(),
                     Constants.ResponseCode.LOSING_DRAW.getInfo());
+            logDrawProcessTiming(req, result.getCode(), processStart, partakeCostMs, partakeDispatchCostMs, drawCostMs,
+                    consumeTakeCostMs, orderCostMs);
+            return result;
         }
+
         DrawAwardInfo drawAwardInfo = drawResult.getDrawAwardInfo();
 
-        // Step 4: 构建并落库中奖订单；奖品库存结算和补偿由领域服务内部处理。
+        stageStart = System.nanoTime();
         AwardOrderResult orderResult = awardOrder.placeOrder(buildAwardOrderReq(req, strategyId, takeId, drawAwardInfo));
+        orderCostMs = elapsedMillis(stageStart);
         if (!Constants.ResponseCode.SUCCESS.getCode().equals(orderResult.getCode())) {
-            return new DrawProcessResult(orderResult.getCode(), orderResult.getInfo());
+            drawExec.recoverDrawAwardStock(strategyId, drawAwardInfo.getAwardId());
+            DrawProcessResult result = new DrawProcessResult(orderResult.getCode(), orderResult.getInfo());
+            logDrawProcessTiming(req, result.getCode(), processStart, partakeCostMs, partakeDispatchCostMs, drawCostMs,
+                    consumeTakeCostMs, orderCostMs);
+            return result;
         }
 
-        // Step 5: 发送发奖MQ，交由异步消费者执行发货；并在回调中更新mq_state。
-        sendInvoiceMessage(orderResult.getInvoiceVO());
-
-        return new DrawProcessResult(Constants.ResponseCode.SUCCESS.getCode(), Constants.ResponseCode.SUCCESS.getInfo(),
-                drawAwardInfo);
-    }
-
-    private void sendInvoiceMessage(InvoiceVO invoiceVO) {
-        try {
-            ListenableFuture<SendResult<String, Object>> future = kafkaProducer.sendLotteryInvoice(invoiceVO);
-            future.addCallback(new ListenableFutureCallback<SendResult<String, Object>>() {
-
-                @Override
-                public void onSuccess(SendResult<String, Object> stringObjectSendResult) {
-                    awardOrder.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(),
-                            Constants.MQState.COMPLETE.getCode());
-                }
-
-                @Override
-                public void onFailure(Throwable throwable) {
-                    awardOrder.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(),
-                            Constants.MQState.FAIL.getCode());
-                }
-            });
-        } catch (Exception e) {
-            awardOrder.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(),
-                    Constants.MQState.FAIL.getCode());
-        }
+        DrawProcessResult result = new DrawProcessResult(Constants.ResponseCode.SUCCESS.getCode(),
+                Constants.ResponseCode.SUCCESS.getInfo(), drawAwardInfo);
+        logDrawProcessTiming(req, result.getCode(), processStart, partakeCostMs, partakeDispatchCostMs, drawCostMs,
+                consumeTakeCostMs, orderCostMs);
+        return result;
     }
 
     @Override
     public RuleQuantificationCrowdResult doRuleQuantificationCrowd(DecisionMatterReq req) {
-        // 调用规则引擎进行人群决策
         EngineResult engineResult = engineFilter.process(req);
-
-        // 判断决策结果
         if (!engineResult.isSuccess()) {
             return new RuleQuantificationCrowdResult(
                     Constants.ResponseCode.UN_ERROR.getCode(),
                     Constants.ResponseCode.UN_ERROR.getInfo());
         }
 
-        // 返回决策的活动ID
         return new RuleQuantificationCrowdResult(
                 Constants.ResponseCode.SUCCESS.getCode(),
                 Constants.ResponseCode.SUCCESS.getInfo(),
@@ -188,5 +180,37 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
         awardOrderReq.setAwardName(drawAwardInfo.getAwardName());
         awardOrderReq.setAwardContent(drawAwardInfo.getAwardContent());
         return awardOrderReq;
+    }
+
+    private ActivityPartakeRecordVO buildActivityPartakeRecord(DrawProcessReq req, PartakeResult partakeResult) {
+        ActivityPartakeRecordVO recordVO = new ActivityPartakeRecordVO();
+        recordVO.setuId(req.getuId());
+        recordVO.setActivityId(req.getActivityId());
+        recordVO.setTakeId(partakeResult.getTakeId());
+        recordVO.setStockCount(partakeResult.getStockCount());
+        recordVO.setStockSurplusCount(partakeResult.getStockSurplusCount());
+        return recordVO;
+    }
+
+    private void logDrawProcessTiming(DrawProcessReq req, String resultCode, long processStart, long partakeCostMs,
+            long partakeDispatchCostMs, long drawCostMs, long consumeTakeCostMs, long orderCostMs) {
+        long totalCostMs = elapsedMillis(processStart);
+        if (totalCostMs >= SLOW_DRAW_PROCESS_THRESHOLD_MS) {
+            logger.warn(
+                    "Slow draw process uId:{} activityId:{} resultCode:{} total={}ms partake={}ms partakeDispatch={}ms draw={}ms consumeTake={}ms order={}ms stockDispatch=async",
+                    req.getuId(), req.getActivityId(), resultCode, totalCostMs, partakeCostMs, partakeDispatchCostMs,
+                    drawCostMs, consumeTakeCostMs, orderCostMs);
+            return;
+        }
+        if (logger.isDebugEnabled()) {
+            logger.debug(
+                    "Draw process timing uId:{} activityId:{} resultCode:{} total={}ms partake={}ms partakeDispatch={}ms draw={}ms consumeTake={}ms order={}ms stockDispatch=async",
+                    req.getuId(), req.getActivityId(), resultCode, totalCostMs, partakeCostMs, partakeDispatchCostMs,
+                    drawCostMs, consumeTakeCostMs, orderCostMs);
+        }
+    }
+
+    private long elapsedMillis(long startNanoTime) {
+        return (System.nanoTime() - startNanoTime) / 1_000_000L;
     }
 }

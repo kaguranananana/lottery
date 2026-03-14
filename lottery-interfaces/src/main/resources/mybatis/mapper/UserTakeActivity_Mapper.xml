@@ -29,12 +29,10 @@
          #{strategyId}, #{state}, #{uuid}, now(), now())
     </insert>
 
-
     <update id="lockTakeActivity">
         UPDATE user_take_activity SET state = 1
         WHERE u_id = #{uId} AND activity_id = #{activityId} AND take_id = #{takeId} AND state = 0
     </update>
-
 
     <select id="queryNoConsumedTakeActivityOrder"
             resultType="com.anontokyo.lottery.infrastructure.po.UserTakeActivity">

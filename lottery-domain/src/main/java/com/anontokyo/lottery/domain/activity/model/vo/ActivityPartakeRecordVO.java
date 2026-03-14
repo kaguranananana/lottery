@@ -1,19 +1,14 @@
 package com.anontokyo.lottery.domain.activity.model.vo;
 
 /**
- * @description: 活动参与记录, 用于给mq发消息用
- * @author：anontokyo
- * @date: 2026/1/30
+ * Activity partake record used for asynchronous stock settlement.
  */
 public class ActivityPartakeRecordVO {
 
-    /** 用户ID */
     private String uId;
-    /** activity 活动ID */
     private Long activityId;
-    /** 库存 */
+    private Long takeId;
     private Integer stockCount;
-    /** activity 库存剩余 */
     private Integer stockSurplusCount;
 
     public String getuId() {
@@ -30,6 +25,14 @@ public class ActivityPartakeRecordVO {
 
     public void setActivityId(Long activityId) {
         this.activityId = activityId;
+    }
+
+    public Long getTakeId() {
+        return takeId;
+    }
+
+    public void setTakeId(Long takeId) {
+        this.takeId = takeId;
     }
 
     public Integer getStockCount() {
@@ -53,6 +56,7 @@ public class ActivityPartakeRecordVO {
         return "ActivityPartakeRecordVO{" +
                 "uId='" + uId + '\'' +
                 ", activityId=" + activityId +
+                ", takeId=" + takeId +
                 ", stockCount=" + stockCount +
                 ", stockSurplusCount=" + stockSurplusCount +
                 '}';

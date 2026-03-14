@@ -38,6 +38,8 @@ public class UserStrategyExport {
     private String uuid;
     /** 消息发送状态（0未发送、1发送成功、2发送失败） */
     private Integer mqState;
+    /** Award stock settlement MQ state. */
+    private Integer stockMqState;
     /** 创建时间 */
     private Date createTime;
     /** 更新时间 */
@@ -161,6 +163,14 @@ public class UserStrategyExport {
 
     public void setMqState(Integer mqState) {
         this.mqState = mqState;
+    }
+
+    public Integer getStockMqState() {
+        return stockMqState;
+    }
+
+    public void setStockMqState(Integer stockMqState) {
+        this.stockMqState = stockMqState;
     }
 
     public Date getCreateTime() {

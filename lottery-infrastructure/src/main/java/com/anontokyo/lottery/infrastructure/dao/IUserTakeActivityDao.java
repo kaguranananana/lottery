@@ -1,21 +1,17 @@
 package com.anontokyo.lottery.infrastructure.dao;
 
 import cn.bugstack.middleware.db.router.annotation.DBRouter;
+import cn.bugstack.middleware.db.router.annotation.DBRouterStrategy;
 import com.anontokyo.lottery.infrastructure.po.UserTakeActivity;
 import org.apache.ibatis.annotations.Mapper;
 
 /**
- * @description:
- * @author：anontokyo
- * @date: 2026/1/16
+ * User take-activity DAO.
  */
 @Mapper
+@DBRouterStrategy(splitTable = false)
 public interface IUserTakeActivityDao {
-    /**
-     * 插入用户领取活动信息
-     *
-     * @param userTakeActivity 入参
-     */
+
     @DBRouter(key = "uId")
     void insert(UserTakeActivity userTakeActivity);
 
@@ -23,5 +19,4 @@ public interface IUserTakeActivityDao {
     UserTakeActivity queryNoConsumedTakeActivityOrder(UserTakeActivity userTakeActivity);
 
     int lockTakeActivity(UserTakeActivity userTakeActivity);
-
 }

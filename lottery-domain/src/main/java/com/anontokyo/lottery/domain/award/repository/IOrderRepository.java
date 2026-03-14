@@ -1,5 +1,6 @@
 package com.anontokyo.lottery.domain.award.repository;
 
+import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
 import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
 
@@ -32,13 +33,33 @@ public interface IOrderRepository {
     void updateInvoiceMqState(String uId, Long orderId, Integer mqState);
 
     /**
+     * Update award stock settlement MQ state.
+     */
+    void updateStockMqState(String uId, Long orderId, Integer stockMqState);
+
+    /**
      * 扫描待补偿的发奖MQ订单。
      */
     List<InvoiceVO> scanInvoiceMqState();
 
     /**
+     * Scan award stock settlement outbox.
+     */
+    List<AwardStockSettlementVO> scanAwardStockMqState(int limit);
+
+    /**
      * 查询订单是否已经完成发奖。
      */
     boolean isAwardCompleted(String uId, Long orderId);
+
+    /**
+     * Query invoice payload by order id.
+     */
+    InvoiceVO queryInvoiceByOrderId(String uId, Long orderId);
+
+    /**
+     * Whether stock settlement is already complete.
+     */
+    boolean isStockMqCompleted(String uId, Long orderId);
 
 }

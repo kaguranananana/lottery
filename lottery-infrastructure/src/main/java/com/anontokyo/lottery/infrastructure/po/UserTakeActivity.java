@@ -3,80 +3,22 @@ package com.anontokyo.lottery.infrastructure.po;
 import java.util.Date;
 
 /**
- * @description: 用户领取活动表
- * @author：anontokyo
- * @date: 2026/1/16
+ * User take-activity order.
  */
 public class UserTakeActivity {
 
-    /**
-     * 自增ID
-     */
     private Long id;
-    /**
-     * 用户ID
-     */
     private String uId;
-    /**
-     * 活动领取ID
-     */
     private Long takeId;
-    /**
-     * 活动ID
-     */
     private Long activityId;
-    /**
-     * 活动名称
-     */
     private String activityName;
-    /**
-     * 活动领取时间
-     */
     private Date takeDate;
-    /**
-     * 领取次数
-     */
     private Integer takeCount;
-    /**
-     * 防重ID
-     */
     private String uuid;
-    /**
-     * 创建时间
-     */
     private Date createTime;
-    /**
-     * 更新时间
-     */
     private Date updateTime;
-
-    /**
-     * 策略ID
-     */
     private Long strategyId;
-
-    public Integer getState() {
-        return state;
-    }
-
-    public void setState(Integer state) {
-        this.state = state;
-    }
-
-    public Long getStrategyId() {
-        return strategyId;
-    }
-
-    public void setStrategyId(Long strategyId) {
-        this.strategyId = strategyId;
-    }
-
-    /**
-     * 活动单使用状态 0未使用、1已使用
-     * Constants.TaskState
-     */
     private Integer state;
-
 
     public Long getId() {
         return id;
@@ -156,5 +98,21 @@ public class UserTakeActivity {
 
     public void setUpdateTime(Date updateTime) {
         this.updateTime = updateTime;
+    }
+
+    public Long getStrategyId() {
+        return strategyId;
+    }
+
+    public void setStrategyId(Long strategyId) {
+        this.strategyId = strategyId;
+    }
+
+    public Integer getState() {
+        return state;
+    }
+
+    public void setState(Integer state) {
+        this.state = state;
     }
 }

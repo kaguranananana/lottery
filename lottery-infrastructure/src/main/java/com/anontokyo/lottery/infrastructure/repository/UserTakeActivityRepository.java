@@ -22,15 +22,10 @@ import org.springframework.stereotype.Repository;
 import javax.annotation.Resource;
 import java.util.Date;
 
-/**
- * @description: user take activity repository
- * @author: anontokyo
- * @date: 2026/1/17
- */
 @Repository
 public class UserTakeActivityRepository implements IUserTakeActivityRepository {
 
-    private Logger logger = LoggerFactory.getLogger(UserTakeActivityRepository.class);
+    private final Logger logger = LoggerFactory.getLogger(UserTakeActivityRepository.class);
 
     @Resource
     private IActivityDao activityDao;
@@ -58,7 +53,6 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
         userTakeActivityCount.setTotalCount(bill.getTakeCount());
         userTakeActivityCount.setLeftCount(bill.getTakeCount() - 1);
 
-        // write-first: try first-take insert, fallback to atomic decrement.
         int insertCount = userTakeActivityCountDao.insert(userTakeActivityCount);
         if (insertCount == 1) {
             return 1;
@@ -76,8 +70,7 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
         userTakeActivity.setTakeDate(partakeDate);
         userTakeActivity.setStrategyId(bill.getStrategyId());
         userTakeActivity.setState(Constants.TaskState.NO_USED.getCode());
-        String uuid = bill.getuId() + "_" + bill.getActivityId() + "_" + takeId;
-        userTakeActivity.setUuid(uuid);
+        userTakeActivity.setUuid(bill.getuId() + "_" + bill.getActivityId() + "_" + takeId);
 
         userTakeActivityDao.insert(userTakeActivity);
         cacheNoConsumedTakeActivityOrder(userTakeActivity);
@@ -109,7 +102,7 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
         userTakeActivity.setuId(uId);
         userTakeActivity.setActivityId(activityId);
         UserTakeActivity noConsumedTakeActivityOrder = userTakeActivityDao.queryNoConsumedTakeActivityOrder(userTakeActivity);
-        if (null == noConsumedTakeActivityOrder) {
+        if (noConsumedTakeActivityOrder == null) {
             return null;
         }
 
@@ -146,14 +139,14 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
         activity.setActivityId(activityPartakeRecordVO.getActivityId());
         activity.setStockSurplusCount(activityPartakeRecordVO.getStockSurplusCount());
         activityDao.updateActivityStock(activity);
-        twoLevelCacheService
-                .evictActivityCache(Constants.RedisKey.KEY_LOTTERY_CACHE_ACTIVITY(activityPartakeRecordVO.getActivityId()));
+        twoLevelCacheService.evictActivityCache(
+                Constants.RedisKey.KEY_LOTTERY_CACHE_ACTIVITY(activityPartakeRecordVO.getActivityId()));
     }
 
     private void cacheNoConsumedTakeActivityOrder(UserTakeActivity userTakeActivity) {
         UserTakeActivityVO userTakeActivityVO = buildUserTakeActivityVO(userTakeActivity);
-        String cacheKey = Constants.RedisKey.KEY_LOTTERY_USER_TAKE_NO_CONSUMED(userTakeActivity.getActivityId(),
-                userTakeActivity.getuId());
+        String cacheKey = Constants.RedisKey.KEY_LOTTERY_USER_TAKE_NO_CONSUMED(
+                userTakeActivity.getActivityId(), userTakeActivity.getuId());
         try {
             redisUtil.setWithExpire(cacheKey, JSON.toJSONString(userTakeActivityVO),
                     cacheConfigProperties.getNoConsumedOrderRedisTtlSeconds());

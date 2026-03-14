@@ -1,5 +1,6 @@
 package com.anontokyo.lottery.domain.award.model.res;
 
+import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
 
 /**
@@ -10,6 +11,7 @@ public class AwardOrderResult {
     private String code;
     private String info;
     private InvoiceVO invoiceVO;
+    private AwardStockSettlementVO awardStockSettlementVO;
 
     public AwardOrderResult() {
     }
@@ -23,6 +25,14 @@ public class AwardOrderResult {
         this.code = code;
         this.info = info;
         this.invoiceVO = invoiceVO;
+    }
+
+    public AwardOrderResult(String code, String info, InvoiceVO invoiceVO,
+            AwardStockSettlementVO awardStockSettlementVO) {
+        this.code = code;
+        this.info = info;
+        this.invoiceVO = invoiceVO;
+        this.awardStockSettlementVO = awardStockSettlementVO;
     }
 
     public String getCode() {
@@ -47,5 +57,13 @@ public class AwardOrderResult {
 
     public void setInvoiceVO(InvoiceVO invoiceVO) {
         this.invoiceVO = invoiceVO;
+    }
+
+    public AwardStockSettlementVO getAwardStockSettlementVO() {
+        return awardStockSettlementVO;
+    }
+
+    public void setAwardStockSettlementVO(AwardStockSettlementVO awardStockSettlementVO) {
+        this.awardStockSettlementVO = awardStockSettlementVO;
     }
 }
