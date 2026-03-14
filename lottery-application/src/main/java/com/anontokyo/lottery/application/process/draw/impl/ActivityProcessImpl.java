@@ -68,10 +68,9 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
     public DrawProcessResult doDrawProcess(DrawProcessReq req) {
         long processStart = System.nanoTime();
         long partakeCostMs = 0L;
-        long partakeDispatchCostMs = 0L;
+        long dispatchCostMs = 0L;
         long drawCostMs = 0L;
-        long consumeTakeCostMs = 0L;
-        long orderCostMs = 0L;
+        long settleCostMs = 0L;
 
         long stageStart = System.nanoTime();
         PartakeResult partakeResult = activityPartake.doPartake(new PartakeReq(req.getuId(), req.getActivityId()));
@@ -79,8 +78,8 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
         if (!Constants.ResponseCode.SUCCESS.getCode().equals(partakeResult.getCode())
                 && !Constants.ResponseCode.NOT_CONSUMED_TAKE.getCode().equals(partakeResult.getCode())) {
             DrawProcessResult result = new DrawProcessResult(partakeResult.getCode(), partakeResult.getInfo());
-            logDrawProcessTiming(req, result.getCode(), processStart, partakeCostMs, partakeDispatchCostMs, drawCostMs,
-                    consumeTakeCostMs, orderCostMs);
+            logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, dispatchCostMs, drawCostMs,
+                    settleCostMs);
             return result;
         }
 
@@ -90,7 +89,7 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
         if (activityPartakeMqEnabled && Constants.ResponseCode.SUCCESS.getCode().equals(partakeResult.getCode())) {
             stageStart = System.nanoTime();
             kafkaProducer.sendLotteryActivityPartakeRecord(buildActivityPartakeRecord(req, partakeResult));
-            partakeDispatchCostMs = elapsedMillis(stageStart);
+            dispatchCostMs = elapsedMillis(stageStart);
         }
 
         stageStart = System.nanoTime();
@@ -99,19 +98,19 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
         if (Constants.DrawState.FAIL.getCode().equals(drawResult.getDrawState())) {
             stageStart = System.nanoTime();
             Result consumeTakeResult = activityPartake.consumeTakeActivity(req.getuId(), req.getActivityId(), takeId);
-            consumeTakeCostMs = elapsedMillis(stageStart);
+            settleCostMs = elapsedMillis(stageStart);
             if (!Constants.ResponseCode.SUCCESS.getCode().equals(consumeTakeResult.getCode())
                     && !Constants.ResponseCode.NO_UPDATE.getCode().equals(consumeTakeResult.getCode())) {
                 DrawProcessResult result = new DrawProcessResult(consumeTakeResult.getCode(),
                         consumeTakeResult.getInfo());
-                logDrawProcessTiming(req, result.getCode(), processStart, partakeCostMs, partakeDispatchCostMs, drawCostMs,
-                        consumeTakeCostMs, orderCostMs);
+                logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, dispatchCostMs, drawCostMs,
+                        settleCostMs);
                 return result;
             }
             DrawProcessResult result = new DrawProcessResult(Constants.ResponseCode.LOSING_DRAW.getCode(),
                     Constants.ResponseCode.LOSING_DRAW.getInfo());
-            logDrawProcessTiming(req, result.getCode(), processStart, partakeCostMs, partakeDispatchCostMs, drawCostMs,
-                    consumeTakeCostMs, orderCostMs);
+            logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, dispatchCostMs, drawCostMs,
+                    settleCostMs);
             return result;
         }
 
@@ -119,19 +118,19 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
 
         stageStart = System.nanoTime();
         AwardOrderResult orderResult = awardOrder.placeOrder(buildAwardOrderReq(req, strategyId, takeId, drawAwardInfo));
-        orderCostMs = elapsedMillis(stageStart);
+        settleCostMs = elapsedMillis(stageStart);
         if (!Constants.ResponseCode.SUCCESS.getCode().equals(orderResult.getCode())) {
             drawExec.recoverDrawAwardStock(strategyId, drawAwardInfo.getAwardId());
             DrawProcessResult result = new DrawProcessResult(orderResult.getCode(), orderResult.getInfo());
-            logDrawProcessTiming(req, result.getCode(), processStart, partakeCostMs, partakeDispatchCostMs, drawCostMs,
-                    consumeTakeCostMs, orderCostMs);
+            logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, dispatchCostMs, drawCostMs,
+                    settleCostMs);
             return result;
         }
 
         DrawProcessResult result = new DrawProcessResult(Constants.ResponseCode.SUCCESS.getCode(),
                 Constants.ResponseCode.SUCCESS.getInfo(), drawAwardInfo);
-        logDrawProcessTiming(req, result.getCode(), processStart, partakeCostMs, partakeDispatchCostMs, drawCostMs,
-                consumeTakeCostMs, orderCostMs);
+        logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, dispatchCostMs, drawCostMs,
+                settleCostMs);
         return result;
     }
 
@@ -192,22 +191,16 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
         return recordVO;
     }
 
-    private void logDrawProcessTiming(DrawProcessReq req, String resultCode, long processStart, long partakeCostMs,
-            long partakeDispatchCostMs, long drawCostMs, long consumeTakeCostMs, long orderCostMs) {
+    private void logSlowDrawProcess(DrawProcessReq req, String resultCode, long processStart, long partakeCostMs,
+            long dispatchCostMs, long drawCostMs, long settleCostMs) {
         long totalCostMs = elapsedMillis(processStart);
-        if (totalCostMs >= SLOW_DRAW_PROCESS_THRESHOLD_MS) {
-            logger.warn(
-                    "Slow draw process uId:{} activityId:{} resultCode:{} total={}ms partake={}ms partakeDispatch={}ms draw={}ms consumeTake={}ms order={}ms stockDispatch=async",
-                    req.getuId(), req.getActivityId(), resultCode, totalCostMs, partakeCostMs, partakeDispatchCostMs,
-                    drawCostMs, consumeTakeCostMs, orderCostMs);
+        if (totalCostMs < SLOW_DRAW_PROCESS_THRESHOLD_MS) {
             return;
         }
-        if (logger.isDebugEnabled()) {
-            logger.debug(
-                    "Draw process timing uId:{} activityId:{} resultCode:{} total={}ms partake={}ms partakeDispatch={}ms draw={}ms consumeTake={}ms order={}ms stockDispatch=async",
-                    req.getuId(), req.getActivityId(), resultCode, totalCostMs, partakeCostMs, partakeDispatchCostMs,
-                    drawCostMs, consumeTakeCostMs, orderCostMs);
-        }
+        logger.warn(
+                "slow draw process uId:{} activityId:{} resultCode:{} total={}ms partake={}ms dispatch={}ms draw={}ms settle={}ms stockDispatch=async",
+                req.getuId(), req.getActivityId(), resultCode, totalCostMs, partakeCostMs, dispatchCostMs,
+                drawCostMs, settleCostMs);
     }
 
     private long elapsedMillis(long startNanoTime) {
