@@ -99,6 +99,7 @@ lottery:
       strategy-award-stock-initial-delay-millis: 1000
       strategy-award-stock-fixed-delay-millis: 5000
   cache:
+    draw-inflight-redis-ttl-seconds: 3
     no-consumed-order-redis-ttl-seconds: 1800
     no-stock-award-list-redis-ttl-seconds: 60
     strategy-award-stock-mq-dedup-redis-ttl-seconds: 86400

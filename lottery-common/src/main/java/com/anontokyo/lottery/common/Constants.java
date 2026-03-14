@@ -16,7 +16,8 @@ public class Constants {
         LOSING_DRAW("D001", "未中奖"),
         NOT_CONSUMED_TAKE("D003", "未消费活动领取记录"),
         OUT_OF_STOCK("D004", "活动无库存"),
-        ERR_TOKEN("D005", "分布式锁失败");
+        ERR_TOKEN("D005", "分布式锁失败"),
+        DRAW_IN_PROGRESS("D006", "抽奖处理中，请勿重复点击");
 
 
         private String code;
@@ -481,6 +482,13 @@ public class Constants {
 
         public static String KEY_LOTTERY_INVOICE_MQ_PROCESSING(Long orderId) {
             return LOTTERY_INVOICE_MQ_PROCESSING + orderId;
+        }
+
+        // User-activity draw inflight key
+        private static final String LOTTERY_DRAW_IN_FLIGHT = "lottery_draw_inflight_";
+
+        public static String KEY_LOTTERY_DRAW_IN_FLIGHT(Long activityId, String uId) {
+            return LOTTERY_DRAW_IN_FLIGHT + activityId + "_" + uId;
         }
 
     }

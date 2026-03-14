@@ -146,7 +146,7 @@ if (!matcher.find()) {
     throw new AssertionError(&apos;No result.code found in response: &apos; + body)
 }
 def code = matcher.group(1)
-def allowed = [&apos;0000&apos;, &apos;D001&apos;, &apos;D003&apos;, &apos;D004&apos;]
+def allowed = [&apos;0000&apos;, &apos;D001&apos;, &apos;D003&apos;, &apos;D004&apos;, &apos;D006&apos;]
 if (!allowed.contains(code)) {
     throw new AssertionError(&apos;Unexpected business code: &apos; + code + &apos;, body=&apos; + body)
 }</stringProp>
