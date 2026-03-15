@@ -19,8 +19,5 @@ public interface IUserTakeActivityCountDao {
     @DBRouter
     UserTakeActivityCount queryUserTakeActivityCount(UserTakeActivityCount userTakeActivityCountReq);
 
-
-    int insert(UserTakeActivityCount userTakeActivityCount);
-
-    int updateLeftCount(UserTakeActivityCount userTakeActivityCount);
+    int subtractionLeftCount(UserTakeActivityCount userTakeActivityCount);
 }

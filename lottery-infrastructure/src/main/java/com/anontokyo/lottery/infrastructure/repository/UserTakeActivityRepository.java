@@ -52,12 +52,7 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
         userTakeActivityCount.setActivityId(bill.getActivityId());
         userTakeActivityCount.setTotalCount(bill.getTakeCount());
         userTakeActivityCount.setLeftCount(bill.getTakeCount() - 1);
-
-        int insertCount = userTakeActivityCountDao.insert(userTakeActivityCount);
-        if (insertCount == 1) {
-            return 1;
-        }
-        return userTakeActivityCountDao.updateLeftCount(userTakeActivityCount);
+        return userTakeActivityCountDao.subtractionLeftCount(userTakeActivityCount);
     }
 
     @Override
