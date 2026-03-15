@@ -19,6 +19,7 @@ import com.anontokyo.lottery.domain.rule.model.req.DecisionMatterReq;
 import com.anontokyo.lottery.domain.rule.model.res.EngineResult;
 import com.anontokyo.lottery.domain.rule.model.vo.RuleCriteriaVO;
 import com.anontokyo.lottery.domain.rule.model.vo.TreeRootVO;
+import com.anontokyo.lottery.domain.support.lock.IActivityDrawProcessGuard;
 import com.anontokyo.lottery.domain.rule.repository.IRuleRepository;
 import com.anontokyo.lottery.domain.rule.service.engine.EngineFilter;
 import com.anontokyo.lottery.domain.strategy.model.req.DrawReq;
@@ -28,12 +29,10 @@ import com.anontokyo.lottery.domain.strategy.service.draw.IDrawExec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 @Service
 public class ActivityProcessImpl implements IActivityDrawProcess {
@@ -64,18 +63,14 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
     private IRuleRepository ruleRepository;
 
     @Resource
-    private StringRedisTemplate stringRedisTemplate;
+    private IActivityDrawProcessGuard activityDrawProcessGuard;
 
     @Value("${lottery.kafka.activity-partake.enabled:true}")
     private boolean activityPartakeMqEnabled;
 
-    @Value("${lottery.cache.draw-inflight-redis-ttl-seconds:3}")
-    private long drawInflightRedisTtlSeconds;
-
     @Override
     public DrawProcessResult doDrawProcess(DrawProcessReq req) {
-        String inflightKey = Constants.RedisKey.KEY_LOTTERY_DRAW_IN_FLIGHT(req.getActivityId(), req.getuId());
-        boolean inflightClaimed = tryClaimDrawInflight(inflightKey);
+        boolean inflightClaimed = activityDrawProcessGuard.tryClaim(req.getActivityId(), req.getuId());
         if (!inflightClaimed) {
             return new DrawProcessResult(Constants.ResponseCode.DRAW_IN_PROGRESS.getCode(),
                     Constants.ResponseCode.DRAW_IN_PROGRESS.getInfo());
@@ -148,7 +143,7 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
                     settleCostMs);
             return result;
         } finally {
-            releaseDrawInflight(inflightKey);
+            activityDrawProcessGuard.release(req.getActivityId(), req.getuId());
         }
     }
 
@@ -219,25 +214,6 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
                 "slow draw process uId:{} activityId:{} resultCode:{} total={}ms partake={}ms dispatch={}ms draw={}ms settle={}ms stockDispatch=async",
                 req.getuId(), req.getActivityId(), resultCode, totalCostMs, partakeCostMs, dispatchCostMs,
                 drawCostMs, settleCostMs);
-    }
-
-    private boolean tryClaimDrawInflight(String inflightKey) {
-        try {
-            Boolean success = stringRedisTemplate.opsForValue().setIfAbsent(inflightKey, "1",
-                    drawInflightRedisTtlSeconds, TimeUnit.SECONDS);
-            return Boolean.TRUE.equals(success);
-        } catch (Exception e) {
-            logger.warn("claim draw inflight key failed, degrade to unlocked flow key:{}", inflightKey, e);
-            return true;
-        }
-    }
-
-    private void releaseDrawInflight(String inflightKey) {
-        try {
-            stringRedisTemplate.delete(inflightKey);
-        } catch (Exception e) {
-            logger.warn("release draw inflight key failed key:{}", inflightKey, e);
-        }
     }
 
     private long elapsedMillis(long startNanoTime) {
