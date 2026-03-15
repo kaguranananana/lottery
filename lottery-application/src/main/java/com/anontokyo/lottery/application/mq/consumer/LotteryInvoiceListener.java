@@ -8,11 +8,10 @@ import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
 import com.anontokyo.lottery.domain.award.service.factory.DistributionGoodsFactory;
 import com.anontokyo.lottery.domain.award.service.goods.IDistributionGoods;
+import com.anontokyo.lottery.domain.support.lock.IInvoiceMqProcessGuard;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
@@ -22,7 +21,6 @@ import org.springframework.util.Assert;
 
 import javax.annotation.Resource;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 @Component
 public class LotteryInvoiceListener {
@@ -36,10 +34,7 @@ public class LotteryInvoiceListener {
     private IOrderRepository orderRepository;
 
     @Resource
-    private StringRedisTemplate stringRedisTemplate;
-
-    @Value("${lottery.cache.invoice-mq-processing-redis-ttl-seconds:300}")
-    private long invoiceMqProcessingRedisTtlSeconds;
+    private IInvoiceMqProcessGuard invoiceMqProcessGuard;
 
     @KafkaListener(topics = "lottery_invoice",
             groupId = "${lottery.kafka.consumer.invoice-group-id:lottery-invoice}",
@@ -60,7 +55,7 @@ public class LotteryInvoiceListener {
                 return;
             }
 
-            claimed = claimProcessing(invoiceVO.getOrderId());
+            claimed = invoiceMqProcessGuard.tryClaimProcessing(invoiceVO.getOrderId());
             if (!claimed) {
                 if (orderRepository.isAwardCompleted(invoiceVO.getuId(), invoiceVO.getOrderId())) {
                     ack.acknowledge();
@@ -83,14 +78,14 @@ public class LotteryInvoiceListener {
             }
 
             if (claimed) {
-                releaseProcessing(invoiceVO.getOrderId());
+                invoiceMqProcessGuard.releaseProcessing(invoiceVO.getOrderId());
             }
             ack.acknowledge();
         } catch (Exception e) {
             if (claimed) {
                 try {
                     InvoiceVO invoiceVO = JSON.parseObject((String) message.get(), InvoiceVO.class);
-                    releaseProcessing(invoiceVO.getOrderId());
+                    invoiceMqProcessGuard.releaseProcessing(invoiceVO.getOrderId());
                 } catch (Exception releaseException) {
                     logger.warn("release invoice processing key failed, message:{}", message.get(), releaseException);
                 }
@@ -98,22 +93,5 @@ public class LotteryInvoiceListener {
             logger.error("consume mq invoice failed, topic:{} message:{}", topic, message.get(), e);
             throw e;
         }
-    }
-
-    private boolean claimProcessing(Long orderId) {
-        if (orderId == null) {
-            return false;
-        }
-        String key = Constants.RedisKey.KEY_LOTTERY_INVOICE_MQ_PROCESSING(orderId);
-        Boolean result = stringRedisTemplate.opsForValue().setIfAbsent(key, "1",
-                invoiceMqProcessingRedisTtlSeconds, TimeUnit.SECONDS);
-        return Boolean.TRUE.equals(result);
-    }
-
-    private void releaseProcessing(Long orderId) {
-        if (orderId == null) {
-            return;
-        }
-        stringRedisTemplate.delete(Constants.RedisKey.KEY_LOTTERY_INVOICE_MQ_PROCESSING(orderId));
     }
 }
