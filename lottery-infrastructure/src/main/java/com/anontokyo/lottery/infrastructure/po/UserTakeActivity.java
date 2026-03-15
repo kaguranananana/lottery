@@ -13,8 +13,6 @@ public class UserTakeActivity {
     private Long activityId;
     private String activityName;
     private Date takeDate;
-    private Integer takeCount;
-    private String uuid;
     private Date createTime;
     private Date updateTime;
     private Long strategyId;
@@ -66,22 +64,6 @@ public class UserTakeActivity {
 
     public void setTakeDate(Date takeDate) {
         this.takeDate = takeDate;
-    }
-
-    public Integer getTakeCount() {
-        return takeCount;
-    }
-
-    public void setTakeCount(Integer takeCount) {
-        this.takeCount = takeCount;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(String uuid) {
-        this.uuid = uuid;
     }
 
     public Date getCreateTime() {

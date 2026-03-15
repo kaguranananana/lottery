@@ -65,7 +65,6 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
         userTakeActivity.setTakeDate(partakeDate);
         userTakeActivity.setStrategyId(bill.getStrategyId());
         userTakeActivity.setState(Constants.TaskState.NO_USED.getCode());
-        userTakeActivity.setUuid(bill.getuId() + "_" + bill.getActivityId() + "_" + takeId);
 
         userTakeActivityDao.insert(userTakeActivity);
         cacheNoConsumedTakeActivityOrder(userTakeActivity);

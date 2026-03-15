@@ -326,14 +326,12 @@ CREATE TABLE `user_take_activity` (
     `activity_id` bigint(20) DEFAULT NULL COMMENT '活动ID',
     `activity_name` varchar(64) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '活动名称',
     `take_date` datetime DEFAULT NULL COMMENT '活动领取时间',
-    `take_count` int(11) DEFAULT NULL COMMENT '领取次数',
     `strategy_id` int(11) DEFAULT NULL COMMENT '抽奖策略ID',
     `state` tinyint(2) DEFAULT NULL COMMENT '活动单使用状态 0未使用、1已使用',
-    `uuid` varchar(128) COLLATE utf8mb4_bin DEFAULT NULL COMMENT '防重ID',
     `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `update_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
     PRIMARY KEY (`id`),
-    UNIQUE KEY `idx_uuid` (`uuid`) USING BTREE COMMENT '防重ID',
+    UNIQUE KEY `idx_take_id` (`take_id`) USING BTREE COMMENT '活动领取ID',
     KEY `idx_uId_activityId_state_id` (`u_id`, `activity_id`, `state`, `id`) USING BTREE COMMENT 'queryNoConsumedTakeActivityOrder'
 ) ENGINE = InnoDB AUTO_INCREMENT = 16 DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = '用户参与活动记录表';
 -- ----------------------------
@@ -348,10 +346,8 @@ VALUES (
         100001,
         '???',
         '2021-10-03 13:37:33',
-        1,
         10001,
         1,
-        'fustack_100001_1',
         '2021-10-03 13:37:42',
         '2021-10-03 13:37:42'
     );
@@ -363,10 +359,8 @@ VALUES (
         100001,
         '???',
         '2021-10-03 13:45:18',
-        2,
         10001,
         1,
-        'fustack_100001_2',
         '2021-10-03 13:45:37',
         '2021-10-03 13:45:37'
     );
@@ -378,10 +372,8 @@ VALUES (
         100001,
         '???',
         '2021-10-03 13:50:57',
-        3,
         10001,
         1,
-        'fustack_100001_3',
         '2021-10-03 13:50:57',
         '2021-10-03 13:50:57'
     );
@@ -393,10 +385,8 @@ VALUES (
         100001,
         '???',
         '2021-10-03 13:55:22',
-        4,
         10001,
         1,
-        'fustack_100001_4',
         '2021-10-03 13:55:21',
         '2021-10-03 13:55:21'
     );
@@ -408,10 +398,8 @@ VALUES (
         100001,
         '???',
         '2021-10-04 08:23:00',
-        5,
         10001,
         1,
-        'fustack_100001_5',
         '2021-10-04 08:23:00',
         '2021-10-04 08:23:00'
     );
@@ -423,10 +411,8 @@ VALUES (
         100001,
         '活动名',
         '2021-10-30 13:05:29',
-        6,
         10001,
         1,
-        'fustack_100001_6',
         '2021-10-30 13:05:30',
         '2021-10-30 13:05:30'
     );
@@ -438,10 +424,8 @@ VALUES (
         100001,
         '活动名',
         '2021-10-30 13:06:59',
-        7,
         10001,
         1,
-        'fustack_100001_7',
         '2021-10-30 13:07:03',
         '2021-10-30 13:07:03'
     );
@@ -453,10 +437,8 @@ VALUES (
         100001,
         '活动名',
         '2021-10-30 13:07:51',
-        8,
         10001,
         1,
-        'fustack_100001_8',
         '2021-10-30 13:07:52',
         '2021-10-30 13:07:52'
     );
@@ -468,10 +450,8 @@ VALUES (
         100001,
         '活动名',
         '2021-10-30 13:08:31',
-        9,
         10001,
         1,
-        'fustack_100001_9',
         '2021-10-30 13:08:31',
         '2021-10-30 13:08:31'
     );
@@ -483,10 +463,8 @@ VALUES (
         100001,
         '活动名',
         '2021-10-30 13:09:06',
-        10,
         10001,
         1,
-        'fustack_100001_10',
         '2021-10-30 13:09:06',
         '2021-10-30 13:09:06'
     );

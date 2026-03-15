@@ -38,9 +38,6 @@ public class UserTakeActivityDaoTest {
         userTakeActivity.setActivityId(100001L);
         userTakeActivity.setActivityName("测试活动");
         userTakeActivity.setTakeDate(new Date());
-        userTakeActivity.setTakeCount(10);
-        userTakeActivity.setUuid("Uhdgkw766120d");
-
         userTakeActivityDao.insert(userTakeActivity);
         logger.info("用户领取活动数据插入完成");
     }
