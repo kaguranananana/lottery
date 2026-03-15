@@ -3,19 +3,12 @@ package com.anontokyo.lottery.domain.activity.model.res;
 import com.anontokyo.lottery.common.Result;
 
 /**
- * @description: 库存处理结果
- * @author：anontokyo
- * @date: 2026/1/30
+ * Activity stock processing result.
  */
 public class StockResult extends Result {
 
     /**
-     * 库存key
-     */
-    private String stockKey;
-
-    /**
-     * 库存剩余
+     * Remaining stock after processing.
      */
     private Integer stockSurplusCount;
 
@@ -23,18 +16,9 @@ public class StockResult extends Result {
         super(code, info);
     }
 
-    public StockResult(String code, String info, String stockKey, Integer stockSurplusCount) {
+    public StockResult(String code, String info, Integer stockSurplusCount) {
         super(code, info);
-        this.stockKey = stockKey;
         this.stockSurplusCount = stockSurplusCount;
-    }
-
-    public String getStockKey() {
-        return stockKey;
-    }
-
-    public void setStockKey(String stockKey) {
-        this.stockKey = stockKey;
     }
 
     public Integer getStockSurplusCount() {
@@ -44,6 +28,4 @@ public class StockResult extends Result {
     public void setStockSurplusCount(Integer stockSurplusCount) {
         this.stockSurplusCount = stockSurplusCount;
     }
-
-
 }

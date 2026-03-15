@@ -178,13 +178,7 @@ public class ActivityRepository implements IActivityRepository {
         }
 
         return new StockResult(Constants.ResponseCode.SUCCESS.getCode(), Constants.ResponseCode.SUCCESS.getInfo(),
-                null, (int) stockSurplusCount);
-
-    }
-
-    @Override
-    public void recoverActivityCacheStockByRedis(String stockKey) {
-        // remaining-stock model no longer uses token keys
+                (int) stockSurplusCount);
     }
 
     @Override

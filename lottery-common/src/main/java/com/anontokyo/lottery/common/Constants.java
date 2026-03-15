@@ -16,7 +16,6 @@ public class Constants {
         LOSING_DRAW("D001", "未中奖"),
         NOT_CONSUMED_TAKE("D003", "未消费活动领取记录"),
         OUT_OF_STOCK("D004", "活动无库存"),
-        ERR_TOKEN("D005", "分布式锁失败"),
         DRAW_IN_PROGRESS("D006", "抽奖处理中，请勿重复点击");
 
 
@@ -386,25 +385,11 @@ public class Constants {
             return LOTTERY_ACTIVITY_STOCK_COUNT + activityId;
         }
 
-        // 抽奖活动库存锁 Key
-        private static final String LOTTERY_ACTIVITY_STOCK_COUNT_TOKEN = "lottery_activity_stock_count_token_";
-
-        public static String KEY_LOTTERY_ACTIVITY_STOCK_COUNT_TOKEN(Long activityId, Integer stockUsedCount) {
-            return LOTTERY_ACTIVITY_STOCK_COUNT_TOKEN + activityId + "_" + stockUsedCount;
-        }
-
         // 策略奖品库存 Key
         private static final String LOTTERY_STRATEGY_AWARD_STOCK_COUNT = "lottery_strategy_award_stock_count_";
 
         public static String KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT(Long strategyId, String awardId) {
             return LOTTERY_STRATEGY_AWARD_STOCK_COUNT + strategyId + "_" + awardId;
-        }
-
-        // 策略奖品库存锁 Key
-        private static final String LOTTERY_STRATEGY_AWARD_STOCK_COUNT_TOKEN = "lottery_strategy_award_stock_count_token_";
-
-        public static String KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT_TOKEN(Long strategyId, String awardId, Integer stockUsedCount) {
-            return LOTTERY_STRATEGY_AWARD_STOCK_COUNT_TOKEN + strategyId + "_" + awardId + "_" + stockUsedCount;
         }
 
         // Unconsumed user take-order cache key

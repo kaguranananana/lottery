@@ -42,9 +42,6 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
         }
         activityBillVO.setStockSurplusCount(subtractionActivityResult.getStockSurplusCount());
 
-        // Token-lock path is retained only for compatibility with the old abstraction.
-        this.recoverActivityCacheStockByRedis(subtractionActivityResult.getStockKey());
-
         Long takeId = idGeneratorMap.get(Constants.Ids.SnowFlake).nextId();
         Result grabResult;
         try {
@@ -69,8 +66,6 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
         return buildPartakeResult(activityBillVO.getStrategyId(), takeId, activityBillVO.getStockCount(),
                 subtractionActivityResult.getStockSurplusCount(), Constants.ResponseCode.SUCCESS);
     }
-
-    protected abstract void recoverActivityCacheStockByRedis(String stockKey);
 
     protected abstract void recoverActivityStockByRedis(Long activityId);
 

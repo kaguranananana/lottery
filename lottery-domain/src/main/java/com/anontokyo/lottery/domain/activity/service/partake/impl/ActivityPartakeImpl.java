@@ -127,11 +127,6 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
     }
 
     @Override
-    protected void recoverActivityCacheStockByRedis(String stockKey) {
-        activityRepository.recoverActivityCacheStockByRedis(stockKey);
-    }
-
-    @Override
     public void updateActivityStock(ActivityPartakeRecordVO activityPartakeRecordVO) {
         userTakeActivityRepository.updateActivityStock(activityPartakeRecordVO);
     }
