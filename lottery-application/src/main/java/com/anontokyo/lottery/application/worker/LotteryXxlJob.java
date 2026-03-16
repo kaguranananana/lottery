@@ -1,12 +1,10 @@
 package com.anontokyo.lottery.application.worker;
 
 import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
-import com.anontokyo.lottery.application.mq.dispatcher.AwardStockSettlementOutboxDispatcher;
 import com.anontokyo.lottery.application.mq.producer.KafkaProducer;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.common.Result;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
-import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
 import com.anontokyo.lottery.domain.activity.service.deploy.IActivityDeploy;
 import com.anontokyo.lottery.domain.award.service.order.IAwardOrder;
@@ -51,14 +49,8 @@ public class LotteryXxlJob {
     @Resource
     private KafkaProducer kafkaProducer;
 
-    @Resource
-    private AwardStockSettlementOutboxDispatcher awardStockSettlementOutboxDispatcher;
-
     @Value("${lottery.kafka.invoice.enabled:true}")
     private boolean invoiceMqEnabled;
-
-    @Value("${lottery.kafka.dispatcher.strategy-award-stock-batch-size:200}")
-    private int stockSettlementDispatchBatchSize;
 
     @XxlJob("lotteryActivityStateJobHandler")
     public void lotteryActivityStateJobHandler() throws Exception {
@@ -99,42 +91,6 @@ public class LotteryXxlJob {
         logger.info("扫描活动状态 End");
 
     }
-
-
-
-    @XxlJob("lotteryAwardStockMQStateJobHandler")
-    public void lotteryAwardStockMQStateJobHandler() {
-        String jobParam = XxlJobHelper.getJobParam();
-        if (jobParam == null) {
-            logger.info("scan award stock mq state params is null");
-            return;
-        }
-
-        String[] params = jobParam.split(",");
-        if (params.length == 0) {
-            logger.info("scan award stock mq state params is empty");
-            return;
-        }
-
-        int tbCount = dbRouter.tbCount();
-        for (String param : params) {
-            int dbCount = Integer.parseInt(param);
-            if (dbCount > dbRouter.dbCount()) {
-                logger.info("scan award stock mq state skip invalid dbCount:{}", dbCount);
-                continue;
-            }
-
-            for (int i = 0; i < tbCount; i++) {
-                List<AwardStockSettlementVO> settlementVOList =
-                        awardOrder.scanAwardStockMqState(dbCount, i, stockSettlementDispatchBatchSize);
-                logger.info("scan award stock mq state db:{} tb:{} size:{}", dbCount, i, settlementVOList.size());
-                for (AwardStockSettlementVO settlementVO : settlementVOList) {
-                    awardStockSettlementOutboxDispatcher.dispatch(settlementVO);
-                }
-            }
-        }
-    }
-
     @XxlJob("lotteryOrderMQStateJobHandler")
     public void lotteryOrderMQStateJobHandler() {
         if (!invoiceMqEnabled) {
