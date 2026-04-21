@@ -109,18 +109,26 @@ lottery:
     activity:
       local-expire-seconds: 1
       redis-expire-seconds: 5
+      redis-expire-jitter-seconds: 2
+      null-redis-expire-seconds: 15
       local-max-size: 10000
     strategy-rich:
       local-expire-seconds: 30
       redis-expire-seconds: 600
+      redis-expire-jitter-seconds: 120
+      null-redis-expire-seconds: 60
       local-max-size: 10000
     award:
       local-expire-seconds: 30
       redis-expire-seconds: 600
+      redis-expire-jitter-seconds: 120
+      null-redis-expire-seconds: 60
       local-max-size: 10000
     rule-tree:
       local-expire-seconds: 30
       redis-expire-seconds: 1800
+      redis-expire-jitter-seconds: 300
+      null-redis-expire-seconds: 60
       local-max-size: 1000
 
 

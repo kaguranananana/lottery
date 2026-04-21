@@ -27,8 +27,9 @@ public class RedisActivityDrawProcessGuard implements IActivityDrawProcessGuard 
         try {
             return redisUtil.setIfAbsent(inflightKey, "1", drawInflightRedisTtlSeconds);
         } catch (Exception e) {
-            logger.warn("claim draw inflight key failed, degrade to unlocked flow key:{}", inflightKey, e);
-            return true;
+            // 抽奖防重标记不可用时直接中断主链路，避免 Redis 异常时放开重复抽奖。
+            logger.error("claim draw inflight key failed, key:{}", inflightKey, e);
+            throw new IllegalStateException("draw inflight guard unavailable", e);
         }
     }
 

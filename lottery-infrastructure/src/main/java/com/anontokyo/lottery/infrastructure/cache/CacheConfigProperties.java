@@ -105,6 +105,17 @@ public class CacheConfigProperties {
     public static class LayerCacheConfig {
         private long localExpireSeconds = 30L;
         private long redisExpireSeconds = 600L;
+
+        /**
+         * Redis 正常缓存 TTL 抖动上限，单位秒，用于打散集中失效时间。
+         */
+        private long redisExpireJitterSeconds = 0L;
+
+        /**
+         * Redis 空值占位缓存 TTL，单位秒，用于拦截已确认不存在的配置查询。
+         */
+        private long nullRedisExpireSeconds = 60L;
+
         private long localMaxSize = 10000L;
 
         public LayerCacheConfig() {
@@ -130,6 +141,22 @@ public class CacheConfigProperties {
 
         public void setRedisExpireSeconds(long redisExpireSeconds) {
             this.redisExpireSeconds = redisExpireSeconds;
+        }
+
+        public long getRedisExpireJitterSeconds() {
+            return redisExpireJitterSeconds;
+        }
+
+        public void setRedisExpireJitterSeconds(long redisExpireJitterSeconds) {
+            this.redisExpireJitterSeconds = redisExpireJitterSeconds;
+        }
+
+        public long getNullRedisExpireSeconds() {
+            return nullRedisExpireSeconds;
+        }
+
+        public void setNullRedisExpireSeconds(long nullRedisExpireSeconds) {
+            this.nullRedisExpireSeconds = nullRedisExpireSeconds;
         }
 
         public long getLocalMaxSize() {

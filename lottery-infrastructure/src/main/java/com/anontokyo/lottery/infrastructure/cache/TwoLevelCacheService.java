@@ -10,6 +10,9 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
@@ -18,6 +21,8 @@ import java.util.function.Supplier;
  */
 @Component
 public class TwoLevelCacheService {
+
+    private static final String NULL_VALUE = "__NULL__";
 
     private Logger logger = LoggerFactory.getLogger(TwoLevelCacheService.class);
 
@@ -31,6 +36,7 @@ public class TwoLevelCacheService {
     private Cache<String, Object> strategyRichLocalCache;
     private Cache<String, Object> awardLocalCache;
     private Cache<String, Object> ruleTreeLocalCache;
+    private final Map<String, Object> rebuildLockMap = new ConcurrentHashMap<>();
 
     @PostConstruct
     public void init() {
@@ -48,23 +54,20 @@ public class TwoLevelCacheService {
     }
 
     public <T> T getActivityCache(String cacheKey, Class<T> clazz, Supplier<T> loader) {
-        return getWithFallback(activityLocalCache, cacheKey, cacheConfigProperties.getActivity().getRedisExpireSeconds(),
-                clazz, loader);
+        return getWithCacheAside(activityLocalCache, cacheKey, cacheConfigProperties.getActivity(), clazz, loader);
     }
 
     public <T> T getStrategyRichCache(String cacheKey, Class<T> clazz, Supplier<T> loader) {
-        return getWithFallback(strategyRichLocalCache, cacheKey,
-                cacheConfigProperties.getStrategyRich().getRedisExpireSeconds(), clazz, loader);
-    }
-
-    public <T> T getAwardCache(String cacheKey, Class<T> clazz, Supplier<T> loader) {
-        return getWithFallback(awardLocalCache, cacheKey, cacheConfigProperties.getAward().getRedisExpireSeconds(), clazz,
+        return getWithCacheAside(strategyRichLocalCache, cacheKey, cacheConfigProperties.getStrategyRich(), clazz,
                 loader);
     }
 
+    public <T> T getAwardCache(String cacheKey, Class<T> clazz, Supplier<T> loader) {
+        return getWithCacheAside(awardLocalCache, cacheKey, cacheConfigProperties.getAward(), clazz, loader);
+    }
+
     public <T> T getRuleTreeCache(String cacheKey, Class<T> clazz, Supplier<T> loader) {
-        return getWithFallback(ruleTreeLocalCache, cacheKey, cacheConfigProperties.getRuleTree().getRedisExpireSeconds(),
-                clazz, loader);
+        return getWithCacheAside(ruleTreeLocalCache, cacheKey, cacheConfigProperties.getRuleTree(), clazz, loader);
     }
 
     public void evictActivityCache(String cacheKey) {
@@ -95,31 +98,51 @@ public class TwoLevelCacheService {
         }
     }
 
-    private <T> T getWithFallback(Cache<String, Object> localCache, String cacheKey, long redisExpireSeconds,
+    private <T> T getWithCacheAside(Cache<String, Object> localCache, String cacheKey,
+            CacheConfigProperties.LayerCacheConfig layerCacheConfig,
             Class<T> clazz, Supplier<T> loader) {
         T localValue = getLocalValue(localCache, cacheKey, clazz);
         if (localValue != null) {
             return localValue;
         }
 
-        T redisValue = getRedisValue(cacheKey, clazz);
-        if (redisValue != null) {
-            putLocalValue(localCache, cacheKey, redisValue);
-            return redisValue;
+        RedisValue<T> redisValue = getRedisValue(cacheKey, clazz);
+        if (redisValue.isHit()) {
+            putLocalValue(localCache, cacheKey, redisValue.getValue());
+            return redisValue.getValue();
         }
-
-        T sourceValue = loader.get();
-        if (sourceValue == null) {
+        if (redisValue.isNullPlaceholder()) {
             return null;
         }
 
-        putLocalValue(localCache, cacheKey, sourceValue);
-        try {
-            redisUtil.setWithExpire(cacheKey, JSON.toJSONString(sourceValue), redisExpireSeconds);
-        } catch (Exception e) {
-            logger.warn("write redis cache failed, key:{}", cacheKey, e);
+        Object rebuildLock = rebuildLockMap.computeIfAbsent(cacheKey, key -> new Object());
+        synchronized (rebuildLock) {
+            // 加锁后先双检本地缓存，避免等待锁期间其他线程已经完成回填。
+            localValue = getLocalValue(localCache, cacheKey, clazz);
+            if (localValue != null) {
+                return localValue;
+            }
+
+            // 再双检 Redis，确保同 key 并发 miss 时只有一个线程真正回源。
+            redisValue = getRedisValue(cacheKey, clazz);
+            if (redisValue.isHit()) {
+                putLocalValue(localCache, cacheKey, redisValue.getValue());
+                return redisValue.getValue();
+            }
+            if (redisValue.isNullPlaceholder()) {
+                return null;
+            }
+
+            T sourceValue = loader.get();
+            if (sourceValue == null) {
+                putNullValue(cacheKey, layerCacheConfig.getNullRedisExpireSeconds());
+                return null;
+            }
+
+            putLocalValue(localCache, cacheKey, sourceValue);
+            putRedisValue(cacheKey, sourceValue, nextRedisExpireSeconds(layerCacheConfig));
+            return sourceValue;
         }
-        return sourceValue;
     }
 
     @SuppressWarnings("unchecked")
@@ -139,20 +162,42 @@ public class TwoLevelCacheService {
         return null;
     }
 
-    private <T> T getRedisValue(String cacheKey, Class<T> clazz) {
+    private <T> RedisValue<T> getRedisValue(String cacheKey, Class<T> clazz) {
         try {
             String cacheValue = redisUtil.get(cacheKey);
             if (cacheValue == null || cacheValue.length() == 0) {
-                return null;
+                return RedisValue.miss();
+            }
+            if (NULL_VALUE.equals(cacheValue)) {
+                return RedisValue.nullPlaceholder();
             }
             T value = JSON.parseObject(cacheValue, clazz);
             if (value == null) {
                 redisUtil.delStringKey(cacheKey);
+                return RedisValue.miss();
             }
-            return value;
+            return RedisValue.hit(value);
         } catch (Exception e) {
-            logger.warn("read redis cache failed, key:{}", cacheKey, e);
-            return null;
+            logger.error("read redis cache failed, key:{}", cacheKey, e);
+            throw new IllegalStateException("read redis cache failed, key:" + cacheKey, e);
+        }
+    }
+
+    private void putRedisValue(String cacheKey, Object value, long redisExpireSeconds) {
+        try {
+            redisUtil.setWithExpire(cacheKey, JSON.toJSONString(value), redisExpireSeconds);
+        } catch (Exception e) {
+            logger.error("write redis cache failed, key:{}", cacheKey, e);
+            throw new IllegalStateException("write redis cache failed, key:" + cacheKey, e);
+        }
+    }
+
+    private void putNullValue(String cacheKey, long nullRedisExpireSeconds) {
+        try {
+            redisUtil.setWithExpire(cacheKey, NULL_VALUE, nullRedisExpireSeconds);
+        } catch (Exception e) {
+            logger.error("write redis null cache failed, key:{}", cacheKey, e);
+            throw new IllegalStateException("write redis null cache failed, key:" + cacheKey, e);
         }
     }
 
@@ -161,6 +206,51 @@ public class TwoLevelCacheService {
             localCache.put(cacheKey, value);
         } catch (Exception e) {
             logger.warn("write local cache failed, key:{}", cacheKey, e);
+        }
+    }
+
+    private long nextRedisExpireSeconds(CacheConfigProperties.LayerCacheConfig layerCacheConfig) {
+        long baseExpireSeconds = layerCacheConfig.getRedisExpireSeconds();
+        long jitterSeconds = layerCacheConfig.getRedisExpireJitterSeconds();
+        if (jitterSeconds <= 0) {
+            return baseExpireSeconds;
+        }
+        return baseExpireSeconds + ThreadLocalRandom.current().nextLong(jitterSeconds + 1L);
+    }
+
+    private static class RedisValue<T> {
+        private final boolean hit;
+        private final boolean nullPlaceholder;
+        private final T value;
+
+        private RedisValue(boolean hit, boolean nullPlaceholder, T value) {
+            this.hit = hit;
+            this.nullPlaceholder = nullPlaceholder;
+            this.value = value;
+        }
+
+        private static <T> RedisValue<T> hit(T value) {
+            return new RedisValue<>(true, false, value);
+        }
+
+        private static <T> RedisValue<T> nullPlaceholder() {
+            return new RedisValue<>(false, true, null);
+        }
+
+        private static <T> RedisValue<T> miss() {
+            return new RedisValue<>(false, false, null);
+        }
+
+        private boolean isHit() {
+            return hit;
+        }
+
+        private boolean isNullPlaceholder() {
+            return nullPlaceholder;
+        }
+
+        private T getValue() {
+            return value;
         }
     }
 }
