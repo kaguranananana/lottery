@@ -2,12 +2,9 @@ package com.anontokyo.lottery.application.mq.consumer;
 
 import com.alibaba.fastjson.JSON;
 import com.anontokyo.lottery.common.Constants;
-import com.anontokyo.lottery.domain.award.model.req.GoodsReq;
-import com.anontokyo.lottery.domain.award.model.res.DistributionRes;
 import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
-import com.anontokyo.lottery.domain.award.service.factory.DistributionGoodsFactory;
-import com.anontokyo.lottery.domain.award.service.goods.IDistributionGoods;
+import com.anontokyo.lottery.domain.award.service.fulfillment.AwardFulfillmentHandler;
 import com.anontokyo.lottery.domain.support.lock.IInvoiceMqProcessGuard;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
@@ -17,24 +14,45 @@ import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.kafka.support.KafkaHeaders;
 import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
 
+import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
+/**
+ * 发奖消费者。Spring 注入全部 {@link AwardFulfillmentHandler} 后按奖品类型构建注册表，
+ * 不再需要 Config+Factory 的双层包装。
+ */
 @Component
 public class LotteryInvoiceListener {
 
     private final Logger logger = LoggerFactory.getLogger(LotteryInvoiceListener.class);
 
     @Resource
-    private DistributionGoodsFactory distributionGoodsFactory;
+    private List<AwardFulfillmentHandler> fulfillmentHandlers;
 
     @Resource
     private IOrderRepository orderRepository;
 
     @Resource
     private IInvoiceMqProcessGuard invoiceMqProcessGuard;
+
+    private final Map<Integer, AwardFulfillmentHandler> handlerRegistry = new HashMap<>();
+
+    @PostConstruct
+    public void initRegistry() {
+        for (AwardFulfillmentHandler handler : fulfillmentHandlers) {
+            AwardFulfillmentHandler previous = handlerRegistry.put(handler.supportType(), handler);
+            if (previous != null) {
+                throw new IllegalStateException("duplicate award fulfillment handler for type "
+                        + handler.supportType());
+            }
+        }
+        logger.info("award fulfillment handlers registered: {}", handlerRegistry.keySet());
+    }
 
     @KafkaListener(topics = "lottery_invoice",
             groupId = "${lottery.kafka.consumer.invoice-group-id:lottery-invoice}",
@@ -47,49 +65,39 @@ public class LotteryInvoiceListener {
             return;
         }
 
-        boolean claimed = false;
         try {
             InvoiceVO invoiceVO = JSON.parseObject((String) message.get(), InvoiceVO.class);
+
+            // DB 兜底：已发奖完成的订单直接跳过（重复投递安全）
             if (orderRepository.isAwardCompleted(invoiceVO.getuId(), invoiceVO.getOrderId())) {
                 ack.acknowledge();
                 return;
             }
 
-            claimed = invoiceMqProcessGuard.tryClaimProcessing(invoiceVO.getOrderId());
-            if (!claimed) {
-                if (orderRepository.isAwardCompleted(invoiceVO.getuId(), invoiceVO.getOrderId())) {
-                    ack.acknowledge();
-                    return;
+            if (invoiceMqProcessGuard.tryClaimProcessing(invoiceVO.getOrderId())) {
+                // grant_state CAS 同时是本地业务幂等兜底，orderId 即未来真实渠道的 idempotencyKey
+                AwardFulfillmentHandler handler = handlerRegistry.get(invoiceVO.getAwardType());
+                if (handler == null) {
+                    throw new IllegalStateException("no award fulfillment handler for type "
+                            + invoiceVO.getAwardType() + ", orderId:" + invoiceVO.getOrderId());
                 }
-                throw new IllegalStateException("invoice mq message is processing");
-            }
-
-            IDistributionGoods distributionGoodsService = distributionGoodsFactory
-                    .getDistributionGoodsService(invoiceVO.getAwardType());
-            DistributionRes distributionRes = distributionGoodsService
-                    .doDistribution(new GoodsReq(invoiceVO.getuId(), invoiceVO.getOrderId(), invoiceVO.getAwardId()));
-
-            Assert.isTrue(Constants.AwardState.SUCCESS.getCode().equals(distributionRes.getCode()),
-                    distributionRes.getInfo());
-
-            if (logger.isDebugEnabled()) {
-                logger.debug("consume mq invoice topic:{} bizId:{} distributionRes:{}", topic, invoiceVO.getuId(),
-                        JSON.toJSONString(distributionRes));
-            }
-
-            if (claimed) {
+                Constants.AwardState state = handler.fulfill(invoiceVO).getState();
+                if (!Constants.AwardState.SUCCESS.getCode().equals(state.getCode())) {
+                    throw new IllegalStateException("award fulfillment failed, orderId:" + invoiceVO.getOrderId()
+                            + " info:" + state.getInfo());
+                }
                 invoiceMqProcessGuard.releaseProcessing(invoiceVO.getOrderId());
+                logger.info("award fulfilled uId:{} orderId:{} awardId:{}",
+                        invoiceVO.getuId(), invoiceVO.getOrderId(), invoiceVO.getAwardId());
+            } else {
+                // 其他实例正在处理同一订单：等待其完成后再投递校验即可
+                if (!orderRepository.isAwardCompleted(invoiceVO.getuId(), invoiceVO.getOrderId())) {
+                    throw new IllegalStateException("invoice mq message is processing, orderId:"
+                            + invoiceVO.getOrderId());
+                }
             }
             ack.acknowledge();
         } catch (Exception e) {
-            if (claimed) {
-                try {
-                    InvoiceVO invoiceVO = JSON.parseObject((String) message.get(), InvoiceVO.class);
-                    invoiceMqProcessGuard.releaseProcessing(invoiceVO.getOrderId());
-                } catch (Exception releaseException) {
-                    logger.warn("release invoice processing key failed, message:{}", message.get(), releaseException);
-                }
-            }
             logger.error("consume mq invoice failed, topic:{} message:{}", topic, message.get(), e);
             throw e;
         }

@@ -1,4 +1,4 @@
-package com.anontokyo.lottery.test.domain;
+package com.anontokyo.lottery.test.manual;
 
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.activity.model.aggregates.ActivityConfigRich;
@@ -33,9 +33,9 @@ import java.util.List;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class ActivityTest {
+public class ActivityDomainManualIT {
 
-    private Logger logger = LoggerFactory.getLogger(ActivityTest.class);
+    private Logger logger = LoggerFactory.getLogger(ActivityDomainManualIT.class);
 
     @Resource
     private IActivityDeploy activityDeploy;

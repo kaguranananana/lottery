@@ -1,4 +1,4 @@
-package com.anontokyo.lottery.test.application;
+package com.anontokyo.lottery.test.manual;
 
 import com.anontokyo.lottery.application.mq.producer.KafkaProducer;
 import com.anontokyo.lottery.common.Constants;
@@ -14,9 +14,9 @@ import javax.annotation.Resource;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class KafkaProducerTest {
+public class KafkaProducerManualIT {
 
-    private Logger logger = LoggerFactory.getLogger(KafkaProducerTest.class);
+    private Logger logger = LoggerFactory.getLogger(KafkaProducerManualIT.class);
 
     @Resource
     private KafkaProducer kafkaProducer;

@@ -44,7 +44,7 @@ public interface IUserStrategyExportDao {
      * @param userStrategyExport
      */
     @DBRouter
-    void updateUserAwardState(UserStrategyExport userStrategyExport);
+    int markUserAwardGranted(UserStrategyExport userStrategyExport);
 
     /**
      * 更新发送MQ状态

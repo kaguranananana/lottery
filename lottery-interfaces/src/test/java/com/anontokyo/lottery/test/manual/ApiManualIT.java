@@ -1,4 +1,4 @@
-package com.anontokyo.lottery.test;
+package com.anontokyo.lottery.test.manual;
 
 import com.anontokyo.lottery.infrastructure.dao.IActivityDao;
 import com.anontokyo.lottery.infrastructure.po.Activity;
@@ -20,9 +20,9 @@ import java.util.Date;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class ApiTest {
+public class ApiManualIT {
 
-    private Logger logger = LoggerFactory.getLogger(ApiTest.class);
+    private Logger logger = LoggerFactory.getLogger(ApiManualIT.class);
 
     @Resource
     IActivityDao activityDao;

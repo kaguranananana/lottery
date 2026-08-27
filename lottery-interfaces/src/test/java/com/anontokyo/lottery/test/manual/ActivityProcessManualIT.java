@@ -1,4 +1,4 @@
-package com.anontokyo.lottery.test.application;
+package com.anontokyo.lottery.test.manual;
 
 import com.anontokyo.lottery.application.process.draw.IActivityDrawProcess;
 import com.anontokyo.lottery.application.process.draw.req.DrawProcessReq;
@@ -20,9 +20,9 @@ import javax.annotation.Resource;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class ActivityProcessTest {
+public class ActivityProcessManualIT {
 
-    private Logger logger = LoggerFactory.getLogger(ActivityProcessTest.class);
+    private Logger logger = LoggerFactory.getLogger(ActivityProcessManualIT.class);
 
     @Resource
     private IActivityDrawProcess activityProcess;

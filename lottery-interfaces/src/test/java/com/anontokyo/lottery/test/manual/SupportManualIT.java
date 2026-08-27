@@ -1,4 +1,4 @@
-package com.anontokyo.lottery.test.domain;
+package com.anontokyo.lottery.test.manual;
 
 import com.anontokyo.lottery.domain.support.ids.IdGenerator;
 import org.junit.Test;
@@ -16,9 +16,9 @@ import javax.annotation.Resource;
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class SupportTest {
+public class SupportManualIT {
 
-    private Logger logger = LoggerFactory.getLogger(SupportTest.class);
+    private Logger logger = LoggerFactory.getLogger(SupportManualIT.class);
 
     @Resource
     private IdGenerator idGenerator;

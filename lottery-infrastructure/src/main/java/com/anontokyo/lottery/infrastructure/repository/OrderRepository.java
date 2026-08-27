@@ -20,13 +20,13 @@ public class OrderRepository implements IOrderRepository {
     private IUserStrategyExportDao userStrategyExportDao;
 
     @Override
-    public void updateUserAwardState(String uId, Long orderId, String awardId, Integer grantState) {
+    public boolean markUserAwardGranted(String uId, Long orderId, String awardId) {
         UserStrategyExport userStrategyExport = new UserStrategyExport();
         userStrategyExport.setuId(uId);
         userStrategyExport.setOrderId(orderId);
         userStrategyExport.setAwardId(awardId);
-        userStrategyExport.setGrantState(grantState);
-        userStrategyExportDao.updateUserAwardState(userStrategyExport);
+        userStrategyExport.setGrantState(Constants.GrantState.COMPLETE.getCode());
+        return userStrategyExportDao.markUserAwardGranted(userStrategyExport) > 0;
     }
 
     @Override

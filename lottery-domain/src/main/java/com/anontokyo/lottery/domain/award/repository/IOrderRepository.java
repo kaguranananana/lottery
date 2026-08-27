@@ -20,7 +20,11 @@ public interface IOrderRepository {
      * @param awardId
      * @param grantState
      */
-    void updateUserAwardState(String uId, Long orderId, String awardId, Integer grantState);
+    /**
+     * CAS 标记发奖完成（grant_state -> SUCCESS，且仅当未完成时生效）。
+     * @return true 表示本次调用完成了首次标记；false 表示订单此前已完成（幂等短路）
+     */
+    boolean markUserAwardGranted(String uId, Long orderId, String awardId);
 
     /**
      * 保存中奖订单。
