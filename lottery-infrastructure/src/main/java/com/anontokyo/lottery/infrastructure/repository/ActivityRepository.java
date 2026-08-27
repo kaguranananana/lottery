@@ -9,6 +9,7 @@ import com.anontokyo.lottery.domain.activity.model.vo.*;
 import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
 import com.anontokyo.lottery.infrastructure.cache.TwoLevelCacheService;
 import com.anontokyo.lottery.infrastructure.dao.*;
+import com.anontokyo.lottery.infrastructure.po.StrategyDetail;
 import com.anontokyo.lottery.infrastructure.po.*;
 import com.anontokyo.lottery.infrastructure.utils.RedisUtil;
 import org.slf4j.Logger;
@@ -150,24 +151,42 @@ public class ActivityRepository implements IActivityRepository {
         return activityVOList;
     }
 
+    /**
+     * Redis 原子预扣活动库存。RUNNING 期间 key 不存在属于异常状态：
+     * 绝不能用可能滞后的 MySQL 值回填（会造成库存复活），必须 fail closed 由人工/对账恢复。
+     */
     @Override
     public StockResult substractionActivityStockByRedis(String uId, Long activityId) {
         String stockKey = Constants.RedisKey.KEY_LOTTERY_ACTIVITY_STOCK_COUNT(activityId);
-        long currentStockSurplusCount = initActivityStockIfAbsent(activityId, stockKey);
-        if (currentStockSurplusCount <= 0) {
-            return new StockResult(Constants.ResponseCode.OUT_OF_STOCK.getCode(),
-                    Constants.ResponseCode.OUT_OF_STOCK.getInfo());
-        }
+        try {
+            String cacheValue = redisUtil.get(stockKey);
+            if (cacheValue == null || cacheValue.length() == 0) {
+                logger.error("activity stock key missing on running activity, fail closed. "
+                        + "run stock warmup/recovery manually, activityId:{} key:{}", activityId, stockKey);
+                return new StockResult(Constants.ResponseCode.STOCK_STATE_ERROR.getCode(),
+                        Constants.ResponseCode.STOCK_STATE_ERROR.getInfo());
+            }
+            long current = Long.parseLong(cacheValue);
+            if (current <= 0) {
+                return new StockResult(Constants.ResponseCode.OUT_OF_STOCK.getCode(),
+                        Constants.ResponseCode.OUT_OF_STOCK.getInfo());
+            }
 
-        long stockSurplusCount = redisUtil.decr(stockKey, 1);
-        if (stockSurplusCount < 0) {
-            redisUtil.incr(stockKey, 1);
-            return new StockResult(Constants.ResponseCode.OUT_OF_STOCK.getCode(),
-                    Constants.ResponseCode.OUT_OF_STOCK.getInfo());
+            long stockSurplusCount = redisUtil.decr(stockKey, 1);
+            if (stockSurplusCount < 0) {
+                redisUtil.incr(stockKey, 1);
+                return new StockResult(Constants.ResponseCode.OUT_OF_STOCK.getCode(),
+                        Constants.ResponseCode.OUT_OF_STOCK.getInfo());
+            }
+            return new StockResult(Constants.ResponseCode.SUCCESS.getCode(), Constants.ResponseCode.SUCCESS.getInfo(),
+                    (int) stockSurplusCount);
+        } catch (Exception e) {
+            // fail closed：无法确认 Redis 库存状态时不允许继续抽奖
+            logger.error("activity stock redis operation failed, fail closed. activityId:{} key:{}",
+                    activityId, stockKey, e);
+            return new StockResult(Constants.ResponseCode.STOCK_STATE_ERROR.getCode(),
+                    Constants.ResponseCode.STOCK_STATE_ERROR.getInfo());
         }
-
-        return new StockResult(Constants.ResponseCode.SUCCESS.getCode(), Constants.ResponseCode.SUCCESS.getInfo(),
-                (int) stockSurplusCount);
     }
 
     @Override
@@ -182,6 +201,49 @@ public class ActivityRepository implements IActivityRepository {
             }
         } catch (Exception e) {
             logger.error("recover activity stock by redis failed, activityId:{} key:{}", activityId, stockKey, e);
+        }
+    }
+
+    /**
+     * 活动启动前的库存预热（READY→RUNNING 时由调度触发；SETNX 幂等可重复执行）：
+     * 活动 Redis 初始剩余库存 + 该策略下所有奖品 Redis 初始剩余库存，初始值取自此刻的 MySQL。
+     */
+    @Override
+    public int warmupStockForActivity(Long activityId) {
+        Activity activity = activityDao.queryActivityById(activityId);
+        if (activity == null) {
+            logger.warn("warmup stock failed, activity not found activityId:{}", activityId);
+            return 0;
+        }
+        int warmedKeys = 0;
+        warmedKeys += warmupKey(Constants.RedisKey.KEY_LOTTERY_ACTIVITY_STOCK_COUNT(activityId),
+                activity.getStockSurplusCount());
+
+        if (activity.getStrategyId() != null) {
+            StrategyDetail query = new StrategyDetail();
+            query.setStrategyId(activity.getStrategyId());
+            List<StrategyDetail> details = strategyDetailDao.queryStrategyDetailList(activity.getStrategyId());
+            for (StrategyDetail detail : details) {
+                warmedKeys += warmupKey(
+                        Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT(detail.getStrategyId(),
+                                detail.getAwardId()),
+                        detail.getAwardSurplusCount());
+            }
+        }
+        logger.info("stock warmup finished activityId:{} keysWarmup:{}", activityId, warmedKeys);
+        return warmedKeys;
+    }
+
+    private int warmupKey(String key, Integer initialValue) {
+        if (initialValue == null) {
+            initialValue = 0;
+        }
+        try {
+            boolean set = redisUtil.setIfAbsent(key, String.valueOf(initialValue));
+            return set ? 1 : 0;
+        } catch (Exception e) {
+            logger.error("warmup stock key failed, key:{}", key, e);
+            return 0;
         }
     }
 
@@ -215,33 +277,5 @@ public class ActivityRepository implements IActivityRepository {
             activityVOList.add(activityVO);
         }
         return activityVOList;
-    }
-
-    private long initActivityStockIfAbsent(Long activityId, String stockKey) {
-        try {
-            String cacheValue = redisUtil.get(stockKey);
-            if (cacheValue != null && cacheValue.length() > 0) {
-                return Long.parseLong(cacheValue);
-            }
-        } catch (Exception e) {
-            logger.warn("read activity stock from redis failed, activityId:{} key:{}", activityId, stockKey, e);
-        }
-
-        Activity activity = activityDao.queryActivityById(activityId);
-        long stockSurplusCount = activity == null || activity.getStockSurplusCount() == null ? 0L
-                : activity.getStockSurplusCount();
-        try {
-            boolean initialized = redisUtil.setIfAbsent(stockKey, String.valueOf(stockSurplusCount));
-            if (initialized) {
-                return stockSurplusCount;
-            }
-            String latestValue = redisUtil.get(stockKey);
-            if (latestValue != null && latestValue.length() > 0) {
-                return Long.parseLong(latestValue);
-            }
-        } catch (Exception e) {
-            logger.warn("init activity stock in redis failed, activityId:{} key:{}", activityId, stockKey, e);
-        }
-        return stockSurplusCount;
     }
 }

@@ -84,10 +84,28 @@ public class StrategyRepository implements IStrategyRepository {
         return count == 1;
     }
 
+    /**
+     * Redis 原子预扣奖品库存。key 不存在时不回填 MySQL（结算滞后值会造成库存复活）：
+     * 视为不可售并记录 error，由活动启动预热或人工对账恢复。
+     */
     @Override
     public StrategyAwardStockDeductResultVO deductStockByRedis(Long strategyId, String awardId) {
         String stockKey = Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT(strategyId, awardId);
-        long currentStockSurplusCount = initStrategyAwardStockIfAbsent(strategyId, awardId, stockKey);
+        long currentStockSurplusCount;
+        try {
+            String cacheValue = redisUtil.get(stockKey);
+            if (cacheValue == null || cacheValue.length() == 0) {
+                logger.error("strategy award stock key missing on running strategy, treated as sold out. "
+                        + "run stock warmup/recovery, strategyId:{} awardId:{} key:{}", strategyId, awardId, stockKey);
+                return StrategyAwardStockDeductResultVO.soldOut();
+            }
+            currentStockSurplusCount = Long.parseLong(cacheValue);
+        } catch (Exception e) {
+            logger.error("read strategy award stock from redis failed, fail closed. strategyId:{} awardId:{}",
+                    strategyId, awardId, e);
+            throw new IllegalStateException("strategy award stock state unavailable", e);
+        }
+
         if (currentStockSurplusCount <= 0) {
             return StrategyAwardStockDeductResultVO.soldOut();
         }
@@ -176,37 +194,5 @@ public class StrategyRepository implements IStrategyRepository {
         List<StrategyDetailBriefVO> detailVOList = toStrategyDetailVOList(strategyDetails);
 
         return new StrategyRich(strategyId, strategyVO, detailVOList);
-    }
-
-    private long initStrategyAwardStockIfAbsent(Long strategyId, String awardId, String stockKey) {
-        try {
-            String cacheValue = redisUtil.get(stockKey);
-            if (cacheValue != null && cacheValue.length() > 0) {
-                return Long.parseLong(cacheValue);
-            }
-        } catch (Exception e) {
-            logger.warn("read strategy award stock from redis failed, strategyId:{} awardId:{}", strategyId, awardId, e);
-        }
-
-        StrategyDetail req = new StrategyDetail();
-        req.setStrategyId(strategyId);
-        req.setAwardId(awardId);
-        StrategyDetail strategyDetail = strategyDetailDao.queryStrategyDetail(req);
-        long stockSurplusCount = strategyDetail == null || strategyDetail.getAwardSurplusCount() == null ? 0L
-                : strategyDetail.getAwardSurplusCount();
-        try {
-            boolean initialized = redisUtil.setIfAbsent(stockKey, String.valueOf(stockSurplusCount));
-            if (initialized) {
-                return stockSurplusCount;
-            }
-            String latestValue = redisUtil.get(stockKey);
-            if (latestValue != null && latestValue.length() > 0) {
-                return Long.parseLong(latestValue);
-            }
-        } catch (Exception e) {
-            logger.warn("init strategy award stock in redis failed, strategyId:{} awardId:{}", strategyId, awardId,
-                    e);
-        }
-        return stockSurplusCount;
     }
 }

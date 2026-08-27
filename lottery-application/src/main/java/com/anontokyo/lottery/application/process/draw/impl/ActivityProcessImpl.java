@@ -1,5 +1,4 @@
 package com.anontokyo.lottery.application.process.draw.impl;
-import com.anontokyo.lottery.application.mq.producer.KafkaProducer;
 import com.anontokyo.lottery.application.process.draw.IActivityDrawProcess;
 import com.anontokyo.lottery.application.process.draw.req.DrawProcessReq;
 import com.anontokyo.lottery.application.process.draw.res.DrawProcessResult;
@@ -7,7 +6,6 @@ import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.common.Result;
 import com.anontokyo.lottery.domain.activity.model.req.PartakeReq;
 import com.anontokyo.lottery.domain.activity.model.res.PartakeResult;
-import com.anontokyo.lottery.domain.activity.model.vo.ActivityPartakeRecordVO;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
 import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
 import com.anontokyo.lottery.domain.activity.service.partake.IActivityPartake;
@@ -38,9 +36,6 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
     private IActivityPartake activityPartake;
 
     @Resource
-    private KafkaProducer kafkaProducer;
-
-    @Resource
     private IAwardOrder awardOrder;
 
     @Resource
@@ -52,9 +47,6 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
     @Resource
     private IActivityDrawProcessGuard activityDrawProcessGuard;
 
-    @Value("${lottery.kafka.activity-partake.enabled:true}")
-    private boolean activityPartakeMqEnabled;
-
     @Override
     public DrawProcessResult doDrawProcess(DrawProcessReq req) {
         boolean inflightClaimed = activityDrawProcessGuard.tryClaim(req.getActivityId(), req.getuId());
@@ -65,7 +57,6 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
 
         long processStart = System.nanoTime();
         long partakeCostMs = 0L;
-        long dispatchCostMs = 0L;
         long drawCostMs = 0L;
         long settleCostMs = 0L;
         try {
@@ -75,19 +66,12 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
             if (!Constants.ResponseCode.SUCCESS.getCode().equals(partakeResult.getCode())
                     && !Constants.ResponseCode.NOT_CONSUMED_TAKE.getCode().equals(partakeResult.getCode())) {
                 DrawProcessResult result = new DrawProcessResult(partakeResult.getCode(), partakeResult.getInfo());
-                logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, dispatchCostMs, drawCostMs,
-                        settleCostMs);
+                logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, drawCostMs, settleCostMs);
                 return result;
             }
 
             Long strategyId = partakeResult.getStrategyId();
             Long takeId = partakeResult.getTakeId();
-
-            if (activityPartakeMqEnabled && Constants.ResponseCode.SUCCESS.getCode().equals(partakeResult.getCode())) {
-                stageStart = System.nanoTime();
-                kafkaProducer.sendLotteryActivityPartakeRecord(buildActivityPartakeRecord(req, partakeResult));
-                dispatchCostMs = elapsedMillis(stageStart);
-            }
 
             stageStart = System.nanoTime();
             DrawResult drawResult = drawExec.doDrawExec(new DrawReq(req.getuId(), strategyId, String.valueOf(takeId)));
@@ -100,14 +84,13 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
                         && !Constants.ResponseCode.NO_UPDATE.getCode().equals(consumeTakeResult.getCode())) {
                     DrawProcessResult result = new DrawProcessResult(consumeTakeResult.getCode(),
                             consumeTakeResult.getInfo());
-                    logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, dispatchCostMs, drawCostMs,
-                            settleCostMs);
+                    logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, drawCostMs, settleCostMs);
                     return result;
                 }
                 DrawProcessResult result = new DrawProcessResult(Constants.ResponseCode.LOSING_DRAW.getCode(),
                         Constants.ResponseCode.LOSING_DRAW.getInfo());
-                logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, dispatchCostMs, drawCostMs,
-                        settleCostMs);
+                result.setTakeId(takeId);
+                logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, drawCostMs, settleCostMs);
                 return result;
             }
 
@@ -119,8 +102,7 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
             if (!Constants.ResponseCode.SUCCESS.getCode().equals(orderResult.getCode())) {
                 drawExec.recoverDrawAwardStock(strategyId, drawAwardInfo.getAwardId());
                 DrawProcessResult result = new DrawProcessResult(orderResult.getCode(), orderResult.getInfo());
-                logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, dispatchCostMs, drawCostMs,
-                        settleCostMs);
+                logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, drawCostMs, settleCostMs);
                 return result;
             }
 
@@ -130,7 +112,7 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
             if (orderResult.getInvoiceVO() != null) {
                 result.setOrderId(orderResult.getInvoiceVO().getOrderId());
             }
-            logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, dispatchCostMs, drawCostMs,
+            logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, drawCostMs,
                     settleCostMs);
             return result;
         } finally {
@@ -160,26 +142,15 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
         return awardOrderReq;
     }
 
-    private ActivityPartakeRecordVO buildActivityPartakeRecord(DrawProcessReq req, PartakeResult partakeResult) {
-        ActivityPartakeRecordVO recordVO = new ActivityPartakeRecordVO();
-        recordVO.setuId(req.getuId());
-        recordVO.setActivityId(req.getActivityId());
-        recordVO.setTakeId(partakeResult.getTakeId());
-        recordVO.setStockCount(partakeResult.getStockCount());
-        recordVO.setStockSurplusCount(partakeResult.getStockSurplusCount());
-        return recordVO;
-    }
-
     private void logSlowDrawProcess(DrawProcessReq req, String resultCode, long processStart, long partakeCostMs,
-            long dispatchCostMs, long drawCostMs, long settleCostMs) {
+            long drawCostMs, long settleCostMs) {
         long totalCostMs = elapsedMillis(processStart);
         if (totalCostMs < SLOW_DRAW_PROCESS_THRESHOLD_MS) {
             return;
         }
         logger.warn(
-                "slow draw process uId:{} activityId:{} resultCode:{} total={}ms partake={}ms dispatch={}ms draw={}ms settle={}ms stockDispatch=async",
-                req.getuId(), req.getActivityId(), resultCode, totalCostMs, partakeCostMs, dispatchCostMs,
-                drawCostMs, settleCostMs);
+                "slow draw process uId:{} activityId:{} resultCode:{} total={}ms partake={}ms draw={}ms settle={}ms stockDispatch=async",
+                req.getuId(), req.getActivityId(), resultCode, totalCostMs, partakeCostMs, drawCostMs, settleCostMs);
     }
 
     private long elapsedMillis(long startNanoTime) {

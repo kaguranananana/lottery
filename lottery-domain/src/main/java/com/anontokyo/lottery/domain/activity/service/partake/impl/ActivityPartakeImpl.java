@@ -6,7 +6,6 @@ import com.anontokyo.lottery.common.Result;
 import com.anontokyo.lottery.domain.activity.model.req.PartakeReq;
 import com.anontokyo.lottery.domain.activity.model.res.StockResult;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
-import com.anontokyo.lottery.domain.activity.model.vo.ActivityPartakeRecordVO;
 import com.anontokyo.lottery.domain.activity.model.vo.UserTakeActivityVO;
 import com.anontokyo.lottery.domain.activity.repository.IUserTakeActivityRepository;
 import com.anontokyo.lottery.domain.activity.service.partake.BaseActivityPartake;
@@ -114,10 +113,5 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
     @Override
     protected void recoverActivityStockByRedis(Long activityId) {
         activityRepository.recoverActivityStockByRedis(activityId);
-    }
-
-    @Override
-    public void updateActivityStock(ActivityPartakeRecordVO activityPartakeRecordVO) {
-        userTakeActivityRepository.updateActivityStock(activityPartakeRecordVO);
     }
 }

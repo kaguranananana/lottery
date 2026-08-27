@@ -26,8 +26,6 @@ public interface IActivityDao {
 
     List<Activity> scanToDoActivityList(Long id);
 
-    void updateActivityStock(Activity activity);
-
     Long queryActivityInfoCount(ActivityInfoLimitPageReq req);
 
     List<Activity> queryActivityInfoList(ActivityInfoLimitPageReq req);

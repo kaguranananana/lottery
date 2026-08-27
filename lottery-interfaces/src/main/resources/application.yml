@@ -71,26 +71,19 @@ spring:
 
 lottery:
   kafka:
-    activity-partake:
-      enabled: true
     invoice:
       enabled: true
     topic:
       invoice:
         partitions: 8
         replicas: 1
-      activity-partake:
-        partitions: 4
-        replicas: 1
       strategy-award-stock:
         partitions: 8
         replicas: 1
     consumer:
       invoice-group-id: lottery-invoice-20260315
-      activity-partake-group-id: lottery-activity-partake-20260315
       strategy-award-stock-group-id: lottery-strategy-award-stock-20260315
       invoice-concurrency: 4
-      activity-partake-concurrency: 2
       strategy-award-stock-concurrency: 4
     dispatcher:
       strategy-award-stock:

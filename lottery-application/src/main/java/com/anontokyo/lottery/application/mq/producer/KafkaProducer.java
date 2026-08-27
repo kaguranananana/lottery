@@ -1,7 +1,6 @@
 package com.anontokyo.lottery.application.mq.producer;
 
 import com.alibaba.fastjson.JSON;
-import com.anontokyo.lottery.domain.activity.model.vo.ActivityPartakeRecordVO;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
 import org.slf4j.Logger;
@@ -17,7 +16,6 @@ import javax.annotation.Resource;
 public class KafkaProducer {
 
     public static final String TOPIC_INVOICE = "lottery_invoice";
-    private static final String TOPIC_ACTIVITY_PARTAKE = "lottery_activity_partake";
     private static final String TOPIC_STRATEGY_AWARD_STOCK = "lottery_strategy_award_stock";
 
     private final Logger logger = LoggerFactory.getLogger(KafkaProducer.class);
@@ -31,19 +29,6 @@ public class KafkaProducer {
             logger.debug("send mq topic:{} bizId:{} message:{}", TOPIC_INVOICE, invoice.getuId(), objJson);
         }
         return kafkaTemplate.send(TOPIC_INVOICE, String.valueOf(invoice.getOrderId()), objJson);
-    }
-
-    public ListenableFuture<SendResult<String, Object>> sendLotteryActivityPartakeRecord(
-            ActivityPartakeRecordVO activityPartakeRecord) {
-        String objJson = JSON.toJSONString(activityPartakeRecord);
-        if (logger.isDebugEnabled()) {
-            logger.debug("send mq activity partake topic:{} bizId:{} message:{}", TOPIC_ACTIVITY_PARTAKE,
-                    activityPartakeRecord.getuId(), objJson);
-        }
-        String messageKey = activityPartakeRecord.getTakeId() == null
-                ? activityPartakeRecord.getuId()
-                : String.valueOf(activityPartakeRecord.getTakeId());
-        return kafkaTemplate.send(TOPIC_ACTIVITY_PARTAKE, messageKey, objJson);
     }
 
     public ListenableFuture<SendResult<String, Object>> sendStrategyAwardStock(

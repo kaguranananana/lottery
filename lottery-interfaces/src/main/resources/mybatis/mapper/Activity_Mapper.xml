@@ -41,12 +41,6 @@
         WHERE activity_id = #{activityId}
           AND state = #{beforeState}
     </update>
-    <update id="updateActivityStock">
-        UPDATE activity SET stock_surplus_count = #{stockSurplusCount}
-        WHERE activity_id = #{activityId} AND stock_surplus_count > #{stockSurplusCount}
-    </update>
-
-
     <select id="scanToDoActivityList" resultType="com.anontokyo.lottery.infrastructure.po.Activity">
         SELECT activity_id, activity_name, begin_date_time, end_date_time, state, creator
         FROM activity

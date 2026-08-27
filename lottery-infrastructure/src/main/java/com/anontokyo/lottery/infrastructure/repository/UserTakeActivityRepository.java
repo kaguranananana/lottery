@@ -3,7 +3,6 @@ package com.anontokyo.lottery.infrastructure.repository;
 import com.alibaba.fastjson.JSON;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
-import com.anontokyo.lottery.domain.activity.model.vo.ActivityPartakeRecordVO;
 import com.anontokyo.lottery.domain.activity.model.vo.UserTakeActivityVO;
 import com.anontokyo.lottery.domain.activity.repository.IUserTakeActivityRepository;
 import com.anontokyo.lottery.infrastructure.cache.CacheConfigProperties;
@@ -125,16 +124,6 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
             }
         }
         return lockCount;
-    }
-
-    @Override
-    public void updateActivityStock(ActivityPartakeRecordVO activityPartakeRecordVO) {
-        Activity activity = new Activity();
-        activity.setActivityId(activityPartakeRecordVO.getActivityId());
-        activity.setStockSurplusCount(activityPartakeRecordVO.getStockSurplusCount());
-        activityDao.updateActivityStock(activity);
-        twoLevelCacheService.evictActivityCache(
-                Constants.RedisKey.KEY_LOTTERY_CACHE_ACTIVITY(activityPartakeRecordVO.getActivityId()));
     }
 
     private void cacheNoConsumedTakeActivityOrder(UserTakeActivity userTakeActivity) {

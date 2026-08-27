@@ -33,6 +33,12 @@ public interface IActivityRepository {
 
     void recoverActivityStockByRedis(Long activityId);
 
+    /**
+     * 活动启动前预热 Redis 库存（活动剩余库存 + 各奖品剩余库存，SETNX 幂等）。
+     * @return 实际初始化的 key 数量
+     */
+    int warmupStockForActivity(Long activityId);
+
     ActivityInfoLimitPageRich queryActivityInfoLimitPage(ActivityInfoLimitPageReq req);
 
     List<ActivityVO> queryRunningActivityList();

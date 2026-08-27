@@ -16,6 +16,7 @@ public class Constants {
         LOSING_DRAW("D001", "未中奖"),
         NOT_CONSUMED_TAKE("D003", "未消费活动领取记录"),
         OUT_OF_STOCK("D004", "活动无库存"),
+        STOCK_STATE_ERROR("D005", "系统繁忙，请稍后重试"),
         DRAW_IN_PROGRESS("D006", "抽奖处理中，请勿重复点击");
 
 
@@ -387,13 +388,6 @@ public class Constants {
 
         public static String KEY_LOTTERY_STRATEGY_AWARD_STOCK_MQ_DISPATCHING(Long orderId) {
             return LOTTERY_STRATEGY_AWARD_STOCK_MQ_DISPATCHING + orderId;
-        }
-
-        // Activity-partake MQ dispatch marker
-        private static final String LOTTERY_ACTIVITY_PARTAKE_MQ_DISPATCHING = "lottery_activity_partake_mq_dispatching_";
-
-        public static String KEY_LOTTERY_ACTIVITY_PARTAKE_MQ_DISPATCHING(Long takeId) {
-            return LOTTERY_ACTIVITY_PARTAKE_MQ_DISPATCHING + takeId;
         }
 
         // Invoice MQ processing key
