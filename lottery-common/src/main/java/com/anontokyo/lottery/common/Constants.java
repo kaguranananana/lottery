@@ -184,26 +184,20 @@ public class Constants {
     }
 
     /**
-     * 活动状态：1编辑、2提审、3撤审、4通过、5运行(审核通过后worker扫描状态)、6拒绝、7关闭、8开启
+     * 活动状态（保留运行时真实使用的状态）：
+     * 1编辑(DRAFT)、4通过(READY)、5运行(RUNNING)、7关闭(CLOSED)
+     * 历史 2提审/3撤审/6拒绝/8开启 无生产语义，见 docs/sql migration 注释。
      */
     public enum ActivityState {
 
         /** 1：编辑 */
         EDIT(1, "编辑"),
-        /** 2：提审 */
-        ARRAIGNMENT(2, "提审"),
-        /** 3：撤审 */
-        REVOKE(3, "撤审"),
-        /** 4：通过 */
+        /** 4：通过（就绪，可由调度进入运行） */
         PASS(4, "通过"),
         /** 5：运行(活动中) */
         DOING(5, "运行(活动中)"),
-        /** 6：拒绝 */
-        REFUSE(6, "拒绝"),
         /** 7：关闭 */
-        CLOSE(7, "关闭"),
-        /** 8：开启 */
-        OPEN(8, "开启");
+        CLOSE(7, "关闭");
 
         private Integer code;
         private String info;
@@ -228,18 +222,6 @@ public class Constants {
         public void setInfo(String info) {
             this.info = info;
         }
-    }
-
-    /**
-     * Ids 生成策略枚举
-     */
-    public enum Ids {
-        /** 雪花算法 */
-        SnowFlake,
-        /** 日期算法 */
-        ShortCode,
-        /** 随机算法 */
-        RandomNumeric;
     }
 
     /**
@@ -307,40 +289,6 @@ public class Constants {
         public void setInfo(String info) {
             this.info = info;
         }
-    }
-
-    /**
-     * 全局常量
-     */
-    public static final class Global {
-        /** 空节点值 */
-        public static final Long TREE_NULL_NODE = 0L;
-    }
-
-    /**
-     * 决策树节点类型
-     */
-    public static final class NodeType {
-        /** 子叶节点 */
-        public static final Integer STEM = 1;
-        /** 果实节点 */
-        public static final Integer FRUIT = 2;
-    }
-
-    /**
-     * 规则限定类型
-     */
-    public static final class RuleLimitType {
-        /** 等于 */
-        public static final int EQUAL = 1;
-        /** 大于 */
-        public static final int GT = 2;
-        /** 小于 */
-        public static final int LT = 3;
-        /** 大于等于 */
-        public static final int GE = 4;
-        /** 小于等于 */
-        public static final int LE = 5;
     }
 
     /**
@@ -425,13 +373,6 @@ public class Constants {
 
         public static String KEY_LOTTERY_CACHE_AWARD(String awardId) {
             return LOTTERY_CACHE_AWARD + awardId;
-        }
-
-        // Rule tree aggregate cache key
-        private static final String LOTTERY_CACHE_RULE_TREE_RICH = "lottery_cache_rule_tree_rich_";
-
-        public static String KEY_LOTTERY_CACHE_RULE_TREE_RICH(Long treeId) {
-            return LOTTERY_CACHE_RULE_TREE_RICH + treeId;
         }
 
         // Strategy-award stock MQ dedup key

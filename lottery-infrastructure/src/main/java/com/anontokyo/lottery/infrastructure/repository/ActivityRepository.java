@@ -101,11 +101,11 @@ public class ActivityRepository implements IActivityRepository {
     }
 
     @Override
-    public boolean alterStatus(Long activityId, Enum<Constants.ActivityState> beforeState,
+    public boolean alterStatus(Long activityId, Constants.ActivityState beforeState,
             Constants.ActivityState afterState) {
         AlterStateVO alterStateVO = new AlterStateVO(
                 activityId,
-                ((Constants.ActivityState) beforeState).getCode(),
+                beforeState.getCode(),
                 afterState.getCode());
         int count = activityDao.alterState(alterStateVO);
         if (count == 1) {
@@ -132,15 +132,6 @@ public class ActivityRepository implements IActivityRepository {
         activityBillVO.setStrategyId(activity.getStrategyId());
         activityBillVO.setState(activity.getState());
         return activityBillVO;
-    }
-
-    @Override
-    public int substractionActivityStock(Long activityId) {
-        int count = activityDao.substractionActivityStock(activityId);
-        if (count > 0) {
-            twoLevelCacheService.evictActivityCache(Constants.RedisKey.KEY_LOTTERY_CACHE_ACTIVITY(activityId));
-        }
-        return count;
     }
 
     @Override

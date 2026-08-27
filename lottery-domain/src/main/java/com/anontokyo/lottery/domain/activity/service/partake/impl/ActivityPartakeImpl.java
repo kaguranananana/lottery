@@ -53,16 +53,6 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
     }
 
     @Override
-    protected Result substractionActivityStock(PartakeReq req) {
-        int count = activityRepository.substractionActivityStock(req.getActivityId());
-        if (count == 0) {
-            logger.error("subtract activity stock failed activityId:{}", req.getActivityId());
-            return Result.buildResult(Constants.ResponseCode.NO_UPDATE);
-        }
-        return Result.buildSuccessResult();
-    }
-
-    @Override
     protected Result grabActivity(PartakeReq partake, ActivityBillVO bill, Long takeId) {
         try {
             dbRouter.doRouter(partake.getuId());

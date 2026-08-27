@@ -1,42 +1,35 @@
-package com.anontokyo.lottery.domain.support.ids.policy;
+package com.anontokyo.lottery.domain.support.ids;
 
 import cn.hutool.core.lang.Snowflake;
 import cn.hutool.core.net.NetUtil;
 import cn.hutool.core.util.IdUtil;
-import com.anontokyo.lottery.domain.support.ids.IIdGenerator;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 
 /**
- * @description: hutool 工具包下的雪花算法，15位雪花算法推荐：https://github.com/yitter/idgenerator/blob/master/Java/source/src/main/java/com/github/yitter/core/SnowWorkerM1.java
- * @author：anontokyo
- * @date: 2026/1/12
+ * Hutool Snowflake：workerId 取本机 IP 派生值低 5 位。
+ * 单实例部署下没有冲突问题；多实例部署时应改为配置或注册中心分配 workerId（known limitation）。
  */
 @Component
-public class SnowFlake implements IIdGenerator {
+public class SnowflakeIdGenerator implements IdGenerator {
 
     private Snowflake snowflake;
 
     @PostConstruct
     public void init() {
-        // 0 ~ 31 位，可以采用配置的方式使用
         long workerId;
         try {
             workerId = NetUtil.ipv4ToLong(NetUtil.getLocalhostStr());
         } catch (Exception e) {
             workerId = NetUtil.getLocalhostStr().hashCode();
         }
-
         workerId = workerId >> 16 & 31;
-
-        long dataCenterId = 1L;
-        snowflake = IdUtil.createSnowflake(workerId, dataCenterId);
+        snowflake = IdUtil.createSnowflake(workerId, 1L);
     }
 
     @Override
     public synchronized long nextId() {
         return snowflake.nextId();
     }
-
 }

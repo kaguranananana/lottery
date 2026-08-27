@@ -1,7 +1,6 @@
 package com.anontokyo.lottery.test.domain;
 
-import com.anontokyo.lottery.common.Constants;
-import com.anontokyo.lottery.domain.support.ids.IIdGenerator;
+import com.anontokyo.lottery.domain.support.ids.IdGenerator;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -10,12 +9,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.annotation.Resource;
-import java.util.Map;
 
 /**
- * @description: 支撑领域测试
+ * @description: 支撑领域测试（需本机 Redis/MySQL 环境，手动运行）
  * @author：anontokyo
- * @date: 2026/1/12
  */
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -24,13 +21,12 @@ public class SupportTest {
     private Logger logger = LoggerFactory.getLogger(SupportTest.class);
 
     @Resource
-    private Map<Constants.Ids, IIdGenerator> idGeneratorMap;
+    private IdGenerator idGenerator;
 
     @Test
     public void test_ids() {
-        logger.info("雪花算法策略，生成ID：{}", idGeneratorMap.get(Constants.Ids.SnowFlake).nextId());
-        logger.info("日期算法策略，生成ID：{}", idGeneratorMap.get(Constants.Ids.ShortCode).nextId());
-        logger.info("随机算法策略，生成ID：{}", idGeneratorMap.get(Constants.Ids.RandomNumeric).nextId());
+        logger.info("snowflake id: {}", idGenerator.nextId());
+        logger.info("snowflake id: {}", idGenerator.nextId());
     }
 
 }

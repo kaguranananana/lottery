@@ -11,7 +11,6 @@ import com.anontokyo.lottery.domain.activity.model.vo.StrategyDetailVO;
 import com.anontokyo.lottery.domain.activity.model.vo.StrategyVO;
 import com.anontokyo.lottery.domain.activity.service.deploy.IActivityDeploy;
 import com.anontokyo.lottery.domain.activity.service.partake.IActivityPartake;
-import com.anontokyo.lottery.domain.activity.service.stateflow.IStateHandler;
 import com.alibaba.fastjson.JSON;
 import org.junit.Before;
 import org.junit.Test;
@@ -40,9 +39,6 @@ public class ActivityTest {
 
     @Resource
     private IActivityDeploy activityDeploy;
-
-    @Resource
-    private IStateHandler stateHandler;
 
     private ActivityConfigRich activityConfigRich;
 
@@ -167,14 +163,6 @@ public class ActivityTest {
     @Test
     public void test_createActivity() {
         activityDeploy.createActivity(new ActivityConfigReq(activityId, activityConfigRich));
-    }
-
-    @Test
-    public void test_alterState() {
-        logger.info("提交审核，测试：{}", JSON.toJSONString(stateHandler.arraignment(100001L, Constants.ActivityState.EDIT)));
-        logger.info("审核通过，测试：{}", JSON.toJSONString(stateHandler.checkPass(100001L, Constants.ActivityState.ARRAIGNMENT)));
-        logger.info("运行活动，测试：{}", JSON.toJSONString(stateHandler.doing(100001L, Constants.ActivityState.PASS)));
-        logger.info("二次提审，测试：{}", JSON.toJSONString(stateHandler.checkPass(100001L, Constants.ActivityState.EDIT)));
     }
 
     @Test

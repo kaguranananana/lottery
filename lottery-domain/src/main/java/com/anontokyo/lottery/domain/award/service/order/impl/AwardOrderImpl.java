@@ -11,7 +11,7 @@ import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
 import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
 import com.anontokyo.lottery.domain.award.service.order.IAwardOrder;
-import com.anontokyo.lottery.domain.support.ids.IIdGenerator;
+import com.anontokyo.lottery.domain.support.ids.IdGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
@@ -20,7 +20,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
 import java.util.List;
-import java.util.Map;
 
 @Service
 public class AwardOrderImpl implements IAwardOrder {
@@ -42,7 +41,7 @@ public class AwardOrderImpl implements IAwardOrder {
     private IOrderRepository orderRepository;
 
     @Resource
-    private Map<Constants.Ids, IIdGenerator> idGeneratorMap;
+    private IdGenerator idGenerator;
 
     @Override
     public AwardOrderResult placeOrder(AwardOrderReq awardOrderReq) {
@@ -168,7 +167,7 @@ public class AwardOrderImpl implements IAwardOrder {
         drawOrderVO.setuId(awardOrderReq.getuId());
         drawOrderVO.setTakeId(awardOrderReq.getTakeId());
         drawOrderVO.setActivityId(awardOrderReq.getActivityId());
-        drawOrderVO.setOrderId(idGeneratorMap.get(Constants.Ids.SnowFlake).nextId());
+        drawOrderVO.setOrderId(idGenerator.nextId());
         drawOrderVO.setStrategyId(awardOrderReq.getStrategyId());
         drawOrderVO.setStrategyMode(awardOrderReq.getStrategyMode());
         drawOrderVO.setGrantType(awardOrderReq.getGrantType());

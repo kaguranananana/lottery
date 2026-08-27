@@ -2,7 +2,7 @@ package com.anontokyo.lottery.test.dao;
 
 import com.anontokyo.lottery.LotteryApplication;
 import com.anontokyo.lottery.common.Constants;
-import com.anontokyo.lottery.domain.support.ids.IIdGenerator;
+import com.anontokyo.lottery.domain.support.ids.IdGenerator;
 import com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao;
 import com.anontokyo.lottery.infrastructure.po.UserStrategyExport;
 import com.alibaba.fastjson.JSON;
@@ -15,7 +15,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import javax.annotation.Resource;
 import java.util.Date;
-import java.util.Map;
 
 /**
  * @description: 用户策略计算结果表Dao测试
@@ -34,15 +33,15 @@ public class UserStrategyExportDaoTest {
     private IUserStrategyExportDao userStrategyExportDao;
 
     @Resource
-    private Map<Constants.Ids, IIdGenerator> idGeneratorMap;
+    private IdGenerator idGenerator;
 
     @Test
     public void test_insert() {
         UserStrategyExport userStrategyExport = new UserStrategyExport();
         userStrategyExport.setuId("Uhdgkw766120d");
-        userStrategyExport.setActivityId(idGeneratorMap.get(Constants.Ids.ShortCode).nextId());
-        userStrategyExport.setOrderId(idGeneratorMap.get(Constants.Ids.SnowFlake).nextId());
-        userStrategyExport.setStrategyId(idGeneratorMap.get(Constants.Ids.RandomNumeric).nextId());
+        userStrategyExport.setActivityId(100001L);
+        userStrategyExport.setOrderId(idGenerator.nextId());
+        userStrategyExport.setStrategyId(10001L);
         userStrategyExport.setStrategyMode(Constants.StrategyMode.SINGLE.getCode());
         userStrategyExport.setGrantType(1);
         userStrategyExport.setGrantDate(new Date());

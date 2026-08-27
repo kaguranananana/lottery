@@ -3,12 +3,11 @@ package com.anontokyo.lottery.application.worker;
 import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
 import com.anontokyo.lottery.application.mq.producer.KafkaProducer;
 import com.anontokyo.lottery.common.Constants;
-import com.anontokyo.lottery.common.Result;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
-import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
 import com.anontokyo.lottery.domain.activity.service.deploy.IActivityDeploy;
+import com.anontokyo.lottery.domain.activity.service.lifecycle.ActivityLifecycleService;
+import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
 import com.anontokyo.lottery.domain.award.service.order.IAwardOrder;
-import com.anontokyo.lottery.domain.activity.service.stateflow.IStateHandler;
 import com.alibaba.fastjson.JSON;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
@@ -38,7 +37,7 @@ public class LotteryXxlJob {
     private IActivityDeploy activityDeploy;
 
     @Resource
-    private IStateHandler stateHandler;
+    private ActivityLifecycleService activityLifecycleService;
 
     @Resource
     private IDBRouterStrategy dbRouter;
@@ -66,16 +65,21 @@ public class LotteryXxlJob {
             for (ActivityVO activityVO : activityVOList) {
                 Integer state = activityVO.getState();
                 switch (state) {
-                    // 活动状态为审核通过，在临近活动开启时间前，审核活动为活动中。在使用活动的时候，需要依照活动状态核时间两个字段进行判断和使用。
+                    // 4 通过(READY)：临近活动开启时间由调度切换为运行中。
                     case 4:
-                        Result state4Result = stateHandler.doing(activityVO.getActivityId(), Constants.ActivityState.PASS);
-                        logger.info("扫描活动状态为活动中 结果：{} activityId：{} activityName：{} creator：{}", JSON.toJSONString(state4Result), activityVO.getActivityId(), activityVO.getActivityName(), activityVO.getCreator());
+                        boolean started = activityLifecycleService.transition(activityVO.getActivityId(),
+                                Constants.ActivityState.PASS, Constants.ActivityState.DOING);
+                        logger.info("scan activity start transition result:{} activityId:{} activityName:{} creator:{}",
+                                started, activityVO.getActivityId(), activityVO.getActivityName(),
+                                activityVO.getCreator());
                         break;
-                    // 扫描时间已过期的活动，从活动中状态变更为关闭状态【这里也可以细化为2个任务来处理，也可以把时间判断放到数据库中操作】
+                    // 5 运行中(RUNNING)：扫描到已过期则关闭。CAS 保证并发安全，重复执行幂等。
                     case 5:
-                        if (activityVO.getEndDateTime().before(new Date())){
-                            Result state5Result = stateHandler.close(activityVO.getActivityId(), Constants.ActivityState.DOING);
-                            logger.info("扫描活动状态为关闭 结果：{} activityId：{} activityName：{} creator：{}", JSON.toJSONString(state5Result), activityVO.getActivityId(), activityVO.getActivityName(), activityVO.getCreator());
+                        if (activityVO.getEndDateTime().before(new Date())) {
+                            boolean closed = activityLifecycleService.transition(activityVO.getActivityId(),
+                                    Constants.ActivityState.DOING, Constants.ActivityState.CLOSE);
+                            logger.info("scan activity close transition result:{} activityId:{} creator:{}",
+                                    closed, activityVO.getActivityId(), activityVO.getCreator());
                         }
                         break;
                     default:

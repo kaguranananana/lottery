@@ -24,8 +24,6 @@ public interface IActivityDao {
      */
     int alterState(AlterStateVO alterStateVO);
 
-    int substractionActivityStock(Long activityId);
-
     List<Activity> scanToDoActivityList(Long id);
 
     void updateActivityStock(Activity activity);

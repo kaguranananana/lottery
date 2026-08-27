@@ -7,10 +7,9 @@ import com.anontokyo.lottery.domain.activity.model.res.PartakeResult;
 import com.anontokyo.lottery.domain.activity.model.res.StockResult;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
 import com.anontokyo.lottery.domain.activity.model.vo.UserTakeActivityVO;
-import com.anontokyo.lottery.domain.support.ids.IIdGenerator;
+import com.anontokyo.lottery.domain.support.ids.IdGenerator;
 
 import javax.annotation.Resource;
-import java.util.Map;
 
 /**
  * Activity partake template. It only orchestrates the domain flow.
@@ -18,7 +17,7 @@ import java.util.Map;
 public abstract class BaseActivityPartake extends ActivityPartakeSupport implements IActivityPartake {
 
     @Resource
-    private Map<Constants.Ids, IIdGenerator> idGeneratorMap;
+    private IdGenerator idGenerator;
 
     @Override
     public PartakeResult doPartake(PartakeReq req) {
@@ -42,7 +41,7 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
         }
         activityBillVO.setStockSurplusCount(subtractionActivityResult.getStockSurplusCount());
 
-        Long takeId = idGeneratorMap.get(Constants.Ids.SnowFlake).nextId();
+        Long takeId = idGenerator.nextId();
         Result grabResult;
         try {
             grabResult = this.grabActivity(req, activityBillVO, takeId);
@@ -93,8 +92,6 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
     }
 
     protected abstract Result grabActivity(PartakeReq req, ActivityBillVO activityBillVO, Long takeId);
-
-    protected abstract Result substractionActivityStock(PartakeReq req);
 
     protected abstract Result checkActivityBill(PartakeReq partake, ActivityBillVO bill);
 

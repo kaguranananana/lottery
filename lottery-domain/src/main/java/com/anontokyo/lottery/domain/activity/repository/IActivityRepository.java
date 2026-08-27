@@ -23,11 +23,9 @@ public interface IActivityRepository {
 
     void addStrategyDetailList(List<StrategyDetailVO> strategyDetailList);
 
-    boolean alterStatus(Long activityId, Enum<Constants.ActivityState> beforeState, Constants.ActivityState afterState);
+    boolean alterStatus(Long activityId, Constants.ActivityState beforeState, Constants.ActivityState afterState);
 
     ActivityBillVO queryActivityBill(PartakeReq req);
-
-    int substractionActivityStock(Long activityId);
 
     List<ActivityVO> scanToDoActivityList(Long id);
 
