@@ -11,6 +11,7 @@
         <result column="take_date" property="takeDate"/>
         <result column="strategy_id" property="strategyId"/>
         <result column="state" property="state"/>
+        <result column="request_id" property="requestId"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>
     </resultMap>
@@ -18,10 +19,10 @@
     <insert id="insert" parameterType="com.anontokyo.lottery.infrastructure.po.UserTakeActivity">
         INSERT INTO user_take_activity
         (u_id, take_id, activity_id, activity_name, take_date,
-         strategy_id, state, create_time, update_time)
+         strategy_id, state, request_id, create_time, update_time)
         VALUES
         (#{uId}, #{takeId}, #{activityId}, #{activityName}, #{takeDate},
-         #{strategyId}, #{state}, now(), now())
+         #{strategyId}, #{state}, #{requestId}, now(), now())
     </insert>
 
     <update id="lockTakeActivity">
@@ -31,10 +32,18 @@
 
     <select id="queryNoConsumedTakeActivityOrder"
             resultType="com.anontokyo.lottery.infrastructure.po.UserTakeActivity">
-        SELECT activity_id, take_id, strategy_id, state
+        SELECT activity_id, take_id, strategy_id, state, request_id
         FROM user_take_activity
         WHERE u_id = #{uId} AND activity_id = #{activityId} AND state = 0
         ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+    <select id="queryTakeActivityByRequestId"
+            resultType="com.anontokyo.lottery.infrastructure.po.UserTakeActivity">
+        SELECT activity_id, take_id, strategy_id, state, request_id
+        FROM user_take_activity
+        WHERE u_id = #{uId} AND activity_id = #{activityId} AND request_id = #{requestId}
         LIMIT 1
     </select>
 

@@ -65,7 +65,8 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
                         return Result.buildResult(Constants.ResponseCode.NO_UPDATE);
                     }
 
-                    userTakeActivityRepository.takeActivity(bill, partake.getPartakeDate(), takeId);
+                    userTakeActivityRepository.takeActivity(bill, partake.getPartakeDate(), takeId,
+                            partake.getRequestId());
                 } catch (DuplicateKeyException e) {
                     transactionStatus.setRollbackOnly();
                     logger.error("grab activity duplicate key activityId:{} uId:{}", partake.getActivityId(),

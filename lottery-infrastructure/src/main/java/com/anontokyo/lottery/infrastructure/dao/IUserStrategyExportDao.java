@@ -37,6 +37,8 @@ public interface IUserStrategyExportDao {
     @DBRouter(key = "uId")
     UserStrategyExport queryUserStrategyExportByUuid(UserStrategyExport userStrategyExport);
 
+    UserStrategyExport queryUserStrategyExportByTakeId(UserStrategyExport userStrategyExport);
+
     /**
      * 更新发奖状态
      * @param userStrategyExport

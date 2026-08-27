@@ -16,6 +16,8 @@ public class UserStrategyExport {
     private Long activityId;
     /** 订单ID */
     private Long orderId;
+    /** 关联的用户参与记录ID（幂等回放用） */
+    private Long takeId;
     /** 策略ID */
     private Long strategyId;
     /** 策略方式（1:单项概率、2:总体概率） */
@@ -75,6 +77,14 @@ public class UserStrategyExport {
 
     public void setOrderId(Long orderId) {
         this.orderId = orderId;
+    }
+
+    public Long getTakeId() {
+        return takeId;
+    }
+
+    public void setTakeId(Long takeId) {
+        this.takeId = takeId;
     }
 
     public Long getStrategyId() {

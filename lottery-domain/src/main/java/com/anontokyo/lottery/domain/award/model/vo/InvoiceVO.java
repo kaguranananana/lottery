@@ -2,6 +2,8 @@ package com.anontokyo.lottery.domain.award.model.vo;
 
 import com.anontokyo.lottery.domain.award.model.vo.ShippingAddress;
 
+import java.util.Date;
+
 /**
  * @description:
  * @author：anontokyo
@@ -34,6 +36,39 @@ public class InvoiceVO {
 
     /** 扩展信息，用于一些个性商品发放所需要的透传字段内容 */
     private String extInfo;
+
+    /** 关联的用户参与记录ID（幂等回放） */
+    private Long takeId;
+
+    /** 发放方式（1:即时、2:定时、3:人工），回放时透出 */
+    private Integer grantType;
+
+    /** 计划发放时间，回放时透出 */
+    private Date grantDate;
+
+    public Long getTakeId() {
+        return takeId;
+    }
+
+    public void setTakeId(Long takeId) {
+        this.takeId = takeId;
+    }
+
+    public Integer getGrantType() {
+        return grantType;
+    }
+
+    public void setGrantType(Integer grantType) {
+        this.grantType = grantType;
+    }
+
+    public java.util.Date getGrantDate() {
+        return grantDate;
+    }
+
+    public void setGrantDate(java.util.Date grantDate) {
+        this.grantDate = grantDate;
+    }
 
     public String getAwardContent() {
         return awardContent;

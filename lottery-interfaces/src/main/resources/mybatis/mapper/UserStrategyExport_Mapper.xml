@@ -7,6 +7,7 @@
         <result column="u_id" property="uId"/>
         <result column="activity_id" property="activityId"/>
         <result column="order_id" property="orderId"/>
+        <result column="take_id" property="takeId"/>
         <result column="strategy_id" property="strategyId"/>
         <result column="strategy_mode" property="strategyMode"/>
         <result column="grant_type" property="grantType"/>
@@ -25,11 +26,11 @@
 
     <insert id="insert" parameterType="com.anontokyo.lottery.infrastructure.po.UserStrategyExport">
         INSERT INTO user_strategy_export
-        (u_id, activity_id, order_id, strategy_id, strategy_mode,
+        (u_id, activity_id, order_id, take_id, strategy_id, strategy_mode,
          grant_type, grant_date, grant_state, award_id, award_type,
          award_name, award_content, uuid, mq_state, stock_mq_state, create_time, update_time)
         VALUES
-        (#{uId},#{activityId},#{orderId},#{strategyId},#{strategyMode},
+        (#{uId},#{activityId},#{orderId},#{takeId},#{strategyId},#{strategyMode},
          #{grantType},#{grantDate},#{grantState},#{awardId},#{awardType},
          #{awardName},#{awardContent},#{uuid},#{mqState},#{stockMqState},now(),now())
     </insert>
@@ -56,12 +57,24 @@
     <select id="queryUserStrategyExportByUuid"
             parameterType="com.anontokyo.lottery.infrastructure.po.UserStrategyExport"
             resultMap="userStrategyExportMap">
-        SELECT id, u_id, activity_id, order_id, strategy_id, strategy_mode,
+        SELECT id, u_id, activity_id, order_id, take_id, strategy_id, strategy_mode,
                grant_type, grant_date, grant_state, award_id, award_type,
                award_name, award_content, uuid, mq_state, stock_mq_state, create_time, update_time
         FROM user_strategy_export
         WHERE u_id = #{uId}
           AND uuid = #{uuid}
+        LIMIT 1
+    </select>
+    <select id="queryUserStrategyExportByTakeId"
+            parameterType="com.anontokyo.lottery.infrastructure.po.UserStrategyExport"
+            resultMap="userStrategyExportMap">
+        SELECT id, u_id, activity_id, order_id, take_id, strategy_id, strategy_mode,
+               grant_type, grant_date, grant_state, award_id, award_type,
+               award_name, award_content, uuid, mq_state, stock_mq_state, create_time, update_time
+        FROM user_strategy_export
+        WHERE u_id = #{uId}
+          AND take_id = #{takeId}
+        ORDER BY id DESC
         LIMIT 1
     </select>
     <select id="scanInvoiceMqState" resultType="com.anontokyo.lottery.infrastructure.po.UserStrategyExport">

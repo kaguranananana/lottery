@@ -10,6 +10,9 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
 
+/**
+ * 并发防重入锁（性能控制，不是业务幂等的事实来源——幂等由 user_take_activity.uk_request_id 兜底）。
+ */
 @Component
 public class RedisActivityDrawProcessGuard implements IActivityDrawProcessGuard {
 
@@ -22,10 +25,10 @@ public class RedisActivityDrawProcessGuard implements IActivityDrawProcessGuard 
     private long drawInflightRedisTtlSeconds;
 
     @Override
-    public boolean tryClaim(Long activityId, String uId) {
+    public boolean tryClaim(Long activityId, String uId, String token) {
         String inflightKey = Constants.RedisKey.KEY_LOTTERY_DRAW_IN_FLIGHT(activityId, uId);
         try {
-            return redisUtil.setIfAbsent(inflightKey, "1", drawInflightRedisTtlSeconds);
+            return redisUtil.setIfAbsent(inflightKey, token, drawInflightRedisTtlSeconds);
         } catch (Exception e) {
             // 抽奖防重标记不可用时直接中断主链路，避免 Redis 异常时放开重复抽奖。
             logger.error("claim draw inflight key failed, key:{}", inflightKey, e);
@@ -34,10 +37,13 @@ public class RedisActivityDrawProcessGuard implements IActivityDrawProcessGuard 
     }
 
     @Override
-    public void release(Long activityId, String uId) {
+    public void release(Long activityId, String uId, String token) {
         String inflightKey = Constants.RedisKey.KEY_LOTTERY_DRAW_IN_FLIGHT(activityId, uId);
         try {
-            redisUtil.delStringKey(inflightKey);
+            boolean released = redisUtil.deleteIfValueEquals(inflightKey, token);
+            if (!released) {
+                logger.warn("release draw inflight key skipped (not owner or expired), key:{}", inflightKey);
+            }
         } catch (Exception e) {
             logger.warn("release draw inflight key failed key:{}", inflightKey, e);
         }

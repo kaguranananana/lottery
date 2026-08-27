@@ -17,6 +17,16 @@ public class UserTakeActivity {
     private Date updateTime;
     private Long strategyId;
     private Integer state;
+    /** 请求幂等号（UNIQUE 兜底） */
+    private String requestId;
+
+    public String getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
+    }
 
     public Long getId() {
         return id;

@@ -12,6 +12,8 @@ public class PartakeReq {
     private String uId;
     /** 活动ID */
     private Long activityId;
+    /** 请求幂等号（透传自 Draw API） */
+    private String requestId;
     /** 活动领取时间 */
     private Date partakeDate;
 
@@ -21,6 +23,13 @@ public class PartakeReq {
     public PartakeReq(String uId, Long activityId) {
         this.uId = uId;
         this.activityId = activityId;
+        this.partakeDate = new Date();
+    }
+
+    public PartakeReq(String uId, Long activityId, String requestId) {
+        this.uId = uId;
+        this.activityId = activityId;
+        this.requestId = requestId;
         this.partakeDate = new Date();
     }
 
@@ -44,6 +53,14 @@ public class PartakeReq {
 
     public void setActivityId(Long activityId) {
         this.activityId = activityId;
+    }
+
+    public String getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
     }
 
     public Date getPartakeDate() {

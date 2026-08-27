@@ -35,6 +35,7 @@ public class OrderRepository implements IOrderRepository {
         userStrategyExport.setuId(drawOrder.getuId());
         userStrategyExport.setActivityId(drawOrder.getActivityId());
         userStrategyExport.setOrderId(drawOrder.getOrderId());
+        userStrategyExport.setTakeId(drawOrder.getTakeId());
         userStrategyExport.setStrategyId(drawOrder.getStrategyId());
         userStrategyExport.setStrategyMode(drawOrder.getStrategyMode());
         userStrategyExport.setGrantType(drawOrder.getGrantType());
@@ -110,6 +111,15 @@ public class OrderRepository implements IOrderRepository {
     }
 
     @Override
+    public InvoiceVO queryOrderByTakeId(String uId, Long takeId) {
+        UserStrategyExport req = new UserStrategyExport();
+        req.setuId(uId);
+        req.setTakeId(takeId);
+        UserStrategyExport order = userStrategyExportDao.queryUserStrategyExportByTakeId(req);
+        return order == null ? null : toInvoice(order);
+    }
+
+    @Override
     public boolean isStockMqCompleted(String uId, Long orderId) {
         UserStrategyExport userStrategyExport = queryOrder(uId, orderId);
         return userStrategyExport != null
@@ -127,6 +137,9 @@ public class OrderRepository implements IOrderRepository {
         InvoiceVO invoiceVO = new InvoiceVO();
         invoiceVO.setuId(userStrategyExport.getuId());
         invoiceVO.setOrderId(userStrategyExport.getOrderId());
+        invoiceVO.setTakeId(userStrategyExport.getTakeId());
+        invoiceVO.setGrantType(userStrategyExport.getGrantType());
+        invoiceVO.setGrantDate(userStrategyExport.getGrantDate());
         invoiceVO.setAwardId(userStrategyExport.getAwardId());
         invoiceVO.setAwardType(userStrategyExport.getAwardType());
         invoiceVO.setAwardName(userStrategyExport.getAwardName());

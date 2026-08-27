@@ -2,13 +2,13 @@ package com.anontokyo.lottery.infrastructure.utils;
 
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.Resource;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -47,6 +47,18 @@ public class RedisUtil {
                 .setIfAbsent(key, String.valueOf(System.currentTimeMillis() + lockExpireMils), lockExpireMils,
                         TimeUnit.MILLISECONDS));
 
+    }
+
+    /**
+     * 释放带属主标记的锁：只有当 key 的值与 token 匹配时才删除，
+     * 避免“A 超时后 B 获得锁，A finally DEL 误删 B 的锁”。原子性由 Lua 保证。
+     */
+    public boolean deleteIfValueEquals(String key, String token) {
+        DefaultRedisScript<Long> script = new DefaultRedisScript<>(
+                "if redis.call('get', KEYS[1]) == ARGV[1] then "
+                        + "return redis.call('del', KEYS[1]); end return 0", Long.class);
+        Long result = stringRedisTemplate.execute(script, Collections.singletonList(key), token);
+        return result != null && result == 1L;
     }
 
     public boolean setIfAbsent(String key, String value) {

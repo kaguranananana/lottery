@@ -58,6 +58,11 @@ public interface IOrderRepository {
     InvoiceVO queryInvoiceByOrderId(String uId, Long orderId);
 
     /**
+     * 按 take 关联查询中奖订单，用于 requestId 幂等回放；无订单返回 null。
+     */
+    InvoiceVO queryOrderByTakeId(String uId, Long takeId);
+
+    /**
      * Whether stock settlement is already complete.
      */
     boolean isStockMqCompleted(String uId, Long orderId);

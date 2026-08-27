@@ -55,7 +55,7 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
     }
 
     @Override
-    public void takeActivity(ActivityBillVO bill, Date partakeDate, Long takeId) {
+    public void takeActivity(ActivityBillVO bill, Date partakeDate, Long takeId, String requestId) {
         UserTakeActivity userTakeActivity = new UserTakeActivity();
         userTakeActivity.setuId(bill.getuId());
         userTakeActivity.setTakeId(takeId);
@@ -64,6 +64,7 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
         userTakeActivity.setTakeDate(partakeDate);
         userTakeActivity.setStrategyId(bill.getStrategyId());
         userTakeActivity.setState(Constants.TaskState.NO_USED.getCode());
+        userTakeActivity.setRequestId(requestId);
 
         userTakeActivityDao.insert(userTakeActivity);
         cacheNoConsumedTakeActivityOrder(userTakeActivity);
@@ -124,6 +125,16 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
             }
         }
         return lockCount;
+    }
+
+    @Override
+    public UserTakeActivityVO queryTakeActivityByRequestId(Long activityId, String uId, String requestId) {
+        UserTakeActivity req = new UserTakeActivity();
+        req.setuId(uId);
+        req.setActivityId(activityId);
+        req.setRequestId(requestId);
+        UserTakeActivity order = userTakeActivityDao.queryTakeActivityByRequestId(req);
+        return order == null ? null : buildUserTakeActivityVO(order);
     }
 
     private void cacheNoConsumedTakeActivityOrder(UserTakeActivity userTakeActivity) {
