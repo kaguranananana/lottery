@@ -7,6 +7,7 @@ import com.anontokyo.lottery.domain.activity.model.req.PartakeReq;
 import com.anontokyo.lottery.domain.activity.model.res.StockResult;
 import com.anontokyo.lottery.domain.activity.model.vo.*;
 import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
+import com.anontokyo.lottery.infrastructure.cache.CacheConfigProperties;
 import com.anontokyo.lottery.infrastructure.cache.TwoLevelCacheService;
 import com.anontokyo.lottery.infrastructure.dao.*;
 import com.anontokyo.lottery.infrastructure.po.StrategyDetail;
@@ -51,6 +52,9 @@ public class ActivityRepository implements IActivityRepository {
     @Resource
     private TwoLevelCacheService twoLevelCacheService;
 
+    @Resource
+    private CacheConfigProperties cacheConfigProperties;
+
     @Override
     public void addActivity(ActivityVO activity) {
         Activity req = new Activity();
@@ -69,7 +73,6 @@ public class ActivityRepository implements IActivityRepository {
         }
         awardDao.insertList(req);
         for (AwardVO awardVO : awardList) {
-            twoLevelCacheService.evictAwardCache(Constants.RedisKey.KEY_LOTTERY_CACHE_AWARD(awardVO.getAwardId()));
         }
     }
 
@@ -78,8 +81,8 @@ public class ActivityRepository implements IActivityRepository {
         Strategy req = new Strategy();
         BeanUtils.copyProperties(strategy, req);
         strategyDao.insert(req);
-        twoLevelCacheService
-                .evictStrategyRichCache(Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_RICH(strategy.getStrategyId()));
+        twoLevelCacheService.evictStrategySnapshotCache(
+                Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_SNAPSHOT(strategy.getStrategyId()));
     }
 
     @Override
@@ -94,7 +97,8 @@ public class ActivityRepository implements IActivityRepository {
         }
         strategyDetailDao.insertList(req);
         for (Long strategyId : strategyIds) {
-            twoLevelCacheService.evictStrategyRichCache(Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_RICH(strategyId));
+            twoLevelCacheService.evictStrategySnapshotCache(
+                    Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_SNAPSHOT(strategyId));
         }
 
     }
@@ -114,9 +118,10 @@ public class ActivityRepository implements IActivityRepository {
     }
     @Override
     public ActivityBillVO queryActivityBill(PartakeReq req) {
-        Activity activity = twoLevelCacheService.getActivityCache(
+        Activity activity = twoLevelCacheService.getRedisCache(
                 Constants.RedisKey.KEY_LOTTERY_CACHE_ACTIVITY(req.getActivityId()),
                 Activity.class,
+                cacheConfigProperties.getActivity(),
                 () -> activityDao.queryActivityById(req.getActivityId()));
 
         ActivityBillVO activityBillVO = new ActivityBillVO();

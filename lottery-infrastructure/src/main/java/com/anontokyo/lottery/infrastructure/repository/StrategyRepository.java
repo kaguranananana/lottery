@@ -3,12 +3,13 @@ package com.anontokyo.lottery.infrastructure.repository;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.strategy.model.aggregates.StrategyRich;
+import com.anontokyo.lottery.domain.strategy.model.snapshot.StrategySnapshot;
 import com.anontokyo.lottery.domain.strategy.model.vo.AwardBriefVO;
 import com.anontokyo.lottery.domain.strategy.model.vo.StrategyAwardStockDeductResultVO;
 import com.anontokyo.lottery.domain.strategy.model.vo.StrategyBriefVO;
 import com.anontokyo.lottery.domain.strategy.model.vo.StrategyDetailBriefVO;
 import com.anontokyo.lottery.domain.strategy.repository.IStrategyRepository;
-import com.anontokyo.lottery.infrastructure.cache.CacheConfigProperties;
+import com.anontokyo.lottery.domain.strategy.service.snapshot.StrategySnapshotFactory;
 import com.anontokyo.lottery.infrastructure.cache.TwoLevelCacheService;
 import com.anontokyo.lottery.infrastructure.dao.IAwardStockSettlementDao;
 import com.anontokyo.lottery.infrastructure.dao.IAwardDao;
@@ -27,9 +28,7 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 
 /**
  * @description:
@@ -63,42 +62,28 @@ public class StrategyRepository implements IStrategyRepository {
     @Resource
     private TwoLevelCacheService twoLevelCacheService;
 
-    @Resource
-    private CacheConfigProperties cacheConfigProperties;
-
+    private final StrategySnapshotFactory snapshotFactory = new StrategySnapshotFactory();
 
     @Override
-    public StrategyRich queryStrategyRich(Long strategyId) {
-        return twoLevelCacheService.getStrategyRichCache(
-                Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_RICH(strategyId),
-                StrategyRich.class,
-                () -> queryStrategyRichFromDb(strategyId));
+    public StrategySnapshot queryStrategySnapshot(Long strategyId) {
+        return twoLevelCacheService.getStrategySnapshotCache(
+                Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_SNAPSHOT(strategyId),
+                StrategySnapshot.class,
+                () -> buildSnapshotFromDb(strategyId));
     }
 
-    @Override
-    public AwardBriefVO queryAwardInfo(String awardId) {
-        return twoLevelCacheService.getAwardCache(
-                Constants.RedisKey.KEY_LOTTERY_CACHE_AWARD(awardId),
-                AwardBriefVO.class,
-                () -> {
-                    Award award = awardDao.queryAwardInfo(awardId);
-                    return toAwardVO(award);
-                });
+    private StrategySnapshot buildSnapshotFromDb(Long strategyId) {
+        Strategy strategy = strategyDao.queryStrategy(strategyId);
+        List<StrategyDetail> details = strategyDetailDao.queryStrategyDetailList(strategyId);
+
+        return snapshotFactory.build(new StrategyRich(strategyId, toStrategyVO(strategy), toStrategyDetailVOList(details)),
+                this::queryAwardInfoFromDb);
     }
 
-    @Override
-    public boolean deductStock(Long strategyId, String awardId) {
-        StrategyDetail req = new StrategyDetail();
-        req.setStrategyId(strategyId);
-        req.setAwardId(awardId);
-        int count = strategyDetailDao.deductStock(req);
-        return count == 1;
+    private AwardBriefVO queryAwardInfoFromDb(String awardId) {
+        return toAwardVO(awardDao.queryAwardInfo(awardId));
     }
 
-    /**
-     * 数据库结算幂等：INSERT 账本(UNIQUE order_id) + 条件扣减库存，同一本地事务。
-     * duplicate-key 意味着该订单早已结算过——直接返回成功，绝不重复扣减。
-     */
     @Override
     public boolean settleAwardStock(AwardStockSettlementVO settlement) {
         Boolean settled = transactionTemplate.execute(status -> {
@@ -170,17 +155,6 @@ public class StrategyRepository implements IStrategyRepository {
         }
     }
 
-    @Override
-    public void recoverStock(Long strategyId, String awardId) {
-        StrategyDetail req = new StrategyDetail();
-        req.setStrategyId(strategyId);
-        req.setAwardId(awardId);
-        int count = strategyDetailDao.recoverStock(req);
-        if (count == 0) {
-            logger.warn("recover strategy detail stock failed, strategyId:{} awardId:{}", strategyId, awardId);
-        }
-    }
-
     private StrategyBriefVO toStrategyVO(Strategy strategy) {
         if (strategy == null) {
             return null;
@@ -227,13 +201,14 @@ public class StrategyRepository implements IStrategyRepository {
         return vo;
     }
 
-    private StrategyRich queryStrategyRichFromDb(Long strategyId) {
-        Strategy strategy = strategyDao.queryStrategy(strategyId);
-        List<StrategyDetail> strategyDetails = strategyDetailDao.queryStrategyDetailList(strategyId);
-
-        StrategyBriefVO strategyVO = toStrategyVO(strategy);
-        List<StrategyDetailBriefVO> detailVOList = toStrategyDetailVOList(strategyDetails);
-
-        return new StrategyRich(strategyId, strategyVO, detailVOList);
+    /**
+     * 结算账本本地事务内完成「INSERT 账本 + 条件扣减库存」，供 settleAwardStock 使用。
+     */
+    private boolean deductStock(Long strategyId, String awardId) {
+        StrategyDetail req = new StrategyDetail();
+        req.setStrategyId(strategyId);
+        req.setAwardId(awardId);
+        int count = strategyDetailDao.deductStock(req);
+        return count == 1;
     }
 }

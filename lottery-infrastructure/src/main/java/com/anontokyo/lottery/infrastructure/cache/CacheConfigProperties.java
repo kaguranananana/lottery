@@ -4,7 +4,9 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * Cache config for two-level cache and no-consumed order cache.
+ * 缓存分层配置。
+ * strategy-snapshot 使用 Caffeine + Redis 两级；
+ * activity 配置为低频读、允许短暂滞后，只走 Redis 单级，避免多实例本地缓存不一致问题。
  */
 @Component
 @ConfigurationProperties(prefix = "lottery.cache")
@@ -20,13 +22,16 @@ public class CacheConfigProperties {
      */
     private long invoiceMqProcessingRedisTtlSeconds = 300L;
 
-    private LayerCacheConfig activity = new LayerCacheConfig(1L, 5L, 10000L);
+    /**
+     * Redis TTL for outbox dispatch marker.
+     */
+    private long stockMqDispatchRedisTtlSeconds = 60L;
 
-    private LayerCacheConfig strategyRich = new LayerCacheConfig(30L, 600L, 10000L);
+    /** 抽奖策略快照：高频读、低变更，唯一使用两级缓存的实体 */
+    private TwoLayerConfig strategySnapshot = new TwoLayerConfig(60L, 600L, 120L, 60L, 10000L);
 
-    private LayerCacheConfig award = new LayerCacheConfig(30L, 600L, 10000L);
-
-    private LayerCacheConfig ruleTree = new LayerCacheConfig(30L, 1800L, 1000L);
+    /** 活动配置：仅 Redis 单级 */
+    private SingleLayerConfig activity = new SingleLayerConfig(300L, 60L, 30L);
 
     public long getNoConsumedOrderRedisTtlSeconds() {
         return noConsumedOrderRedisTtlSeconds;
@@ -44,61 +49,47 @@ public class CacheConfigProperties {
         this.invoiceMqProcessingRedisTtlSeconds = invoiceMqProcessingRedisTtlSeconds;
     }
 
-    public LayerCacheConfig getActivity() {
+    public long getStockMqDispatchRedisTtlSeconds() {
+        return stockMqDispatchRedisTtlSeconds;
+    }
+
+    public void setStockMqDispatchRedisTtlSeconds(long stockMqDispatchRedisTtlSeconds) {
+        this.stockMqDispatchRedisTtlSeconds = stockMqDispatchRedisTtlSeconds;
+    }
+
+    public TwoLayerConfig getStrategySnapshot() {
+        return strategySnapshot;
+    }
+
+    public void setStrategySnapshot(TwoLayerConfig strategySnapshot) {
+        this.strategySnapshot = strategySnapshot;
+    }
+
+    public SingleLayerConfig getActivity() {
         return activity;
     }
 
-    public void setActivity(LayerCacheConfig activity) {
+    public void setActivity(SingleLayerConfig activity) {
         this.activity = activity;
     }
 
-    public LayerCacheConfig getStrategyRich() {
-        return strategyRich;
-    }
+    public static class TwoLayerConfig {
+        private long localExpireSeconds;
+        private long localMaxSize;
+        private long redisExpireSeconds;
+        private long redisExpireJitterSeconds;
+        private long nullRedisExpireSeconds;
 
-    public void setStrategyRich(LayerCacheConfig strategyRich) {
-        this.strategyRich = strategyRich;
-    }
-
-    public LayerCacheConfig getAward() {
-        return award;
-    }
-
-    public void setAward(LayerCacheConfig award) {
-        this.award = award;
-    }
-
-    public LayerCacheConfig getRuleTree() {
-        return ruleTree;
-    }
-
-    public void setRuleTree(LayerCacheConfig ruleTree) {
-        this.ruleTree = ruleTree;
-    }
-
-    public static class LayerCacheConfig {
-        private long localExpireSeconds = 30L;
-        private long redisExpireSeconds = 600L;
-
-        /**
-         * Redis 正常缓存 TTL 抖动上限，单位秒，用于打散集中失效时间。
-         */
-        private long redisExpireJitterSeconds = 0L;
-
-        /**
-         * Redis 空值占位缓存 TTL，单位秒，用于拦截已确认不存在的配置查询。
-         */
-        private long nullRedisExpireSeconds = 60L;
-
-        private long localMaxSize = 10000L;
-
-        public LayerCacheConfig() {
+        public TwoLayerConfig() {
         }
 
-        public LayerCacheConfig(long localExpireSeconds, long redisExpireSeconds, long localMaxSize) {
+        public TwoLayerConfig(long localExpireSeconds, long localMaxSize,
+                long redisExpireSeconds, long redisExpireJitterSeconds, long nullRedisExpireSeconds) {
             this.localExpireSeconds = localExpireSeconds;
-            this.redisExpireSeconds = redisExpireSeconds;
             this.localMaxSize = localMaxSize;
+            this.redisExpireSeconds = redisExpireSeconds;
+            this.redisExpireJitterSeconds = redisExpireJitterSeconds;
+            this.nullRedisExpireSeconds = nullRedisExpireSeconds;
         }
 
         public long getLocalExpireSeconds() {
@@ -107,6 +98,14 @@ public class CacheConfigProperties {
 
         public void setLocalExpireSeconds(long localExpireSeconds) {
             this.localExpireSeconds = localExpireSeconds;
+        }
+
+        public long getLocalMaxSize() {
+            return localMaxSize;
+        }
+
+        public void setLocalMaxSize(long localMaxSize) {
+            this.localMaxSize = localMaxSize;
         }
 
         public long getRedisExpireSeconds() {
@@ -132,13 +131,45 @@ public class CacheConfigProperties {
         public void setNullRedisExpireSeconds(long nullRedisExpireSeconds) {
             this.nullRedisExpireSeconds = nullRedisExpireSeconds;
         }
+    }
 
-        public long getLocalMaxSize() {
-            return localMaxSize;
+    public static class SingleLayerConfig {
+        private long redisExpireSeconds;
+        private long redisExpireJitterSeconds;
+        private long nullRedisExpireSeconds;
+
+        public SingleLayerConfig() {
         }
 
-        public void setLocalMaxSize(long localMaxSize) {
-            this.localMaxSize = localMaxSize;
+        public SingleLayerConfig(long redisExpireSeconds, long redisExpireJitterSeconds,
+                long nullRedisExpireSeconds) {
+            this.redisExpireSeconds = redisExpireSeconds;
+            this.redisExpireJitterSeconds = redisExpireJitterSeconds;
+            this.nullRedisExpireSeconds = nullRedisExpireSeconds;
+        }
+
+        public long getRedisExpireSeconds() {
+            return redisExpireSeconds;
+        }
+
+        public void setRedisExpireSeconds(long redisExpireSeconds) {
+            this.redisExpireSeconds = redisExpireSeconds;
+        }
+
+        public long getRedisExpireJitterSeconds() {
+            return redisExpireJitterSeconds;
+        }
+
+        public void setRedisExpireJitterSeconds(long redisExpireJitterSeconds) {
+            this.redisExpireJitterSeconds = redisExpireJitterSeconds;
+        }
+
+        public long getNullRedisExpireSeconds() {
+            return nullRedisExpireSeconds;
+        }
+
+        public void setNullRedisExpireSeconds(long nullRedisExpireSeconds) {
+            this.nullRedisExpireSeconds = nullRedisExpireSeconds;
         }
     }
 }

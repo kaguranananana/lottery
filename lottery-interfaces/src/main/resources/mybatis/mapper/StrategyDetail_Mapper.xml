@@ -48,11 +48,4 @@
           AND award_surplus_count > 0
     </update>
 
-    <update id="recoverStock" parameterType="com.anontokyo.lottery.infrastructure.po.StrategyDetail">
-        UPDATE strategy_detail
-        SET award_surplus_count = award_surplus_count + 1
-        WHERE strategy_id = #{strategyId}
-          AND award_id = #{awardId}
-    </update>
-
 </mapper>

@@ -10,14 +10,16 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 
 /**
- * Two-level cache helper: local Caffeine + Redis.
+ * 缓存基础设施：
+ *  - 两级缓存（Caffeine L1 + Redis L2）只用于 StrategySnapshot：高频读、低变更、每次抽奖必需；
+ *  - 其余配置类数据（activity 等）走 {@link #getRedisCache} 单级 Redis，避免为多实例本地缓存失效引入广播机制；
+ *  - null 占位防止不存在配置的反复穿透。
+ * 一致性边界：快照视为短 TTL 的最终一致读（TTL 内可能读到旧版本）；运营变更需等 TTL 过期生效。
  */
 @Component
 public class TwoLevelCacheService {
@@ -32,101 +34,45 @@ public class TwoLevelCacheService {
     @Resource
     private CacheConfigProperties cacheConfigProperties;
 
-    private Cache<String, Object> activityLocalCache;
-    private Cache<String, Object> strategyRichLocalCache;
-    private Cache<String, Object> awardLocalCache;
-    private Cache<String, Object> ruleTreeLocalCache;
-    private final Map<String, Object> rebuildLockMap = new ConcurrentHashMap<>();
+    private Cache<String, Object> snapshotLocalCache;
 
     @PostConstruct
     public void init() {
-        activityLocalCache = buildLocalCache(cacheConfigProperties.getActivity());
-        strategyRichLocalCache = buildLocalCache(cacheConfigProperties.getStrategyRich());
-        awardLocalCache = buildLocalCache(cacheConfigProperties.getAward());
-        ruleTreeLocalCache = buildLocalCache(cacheConfigProperties.getRuleTree());
-    }
-
-    private Cache<String, Object> buildLocalCache(CacheConfigProperties.LayerCacheConfig config) {
-        return Caffeine.newBuilder()
+        CacheConfigProperties.TwoLayerConfig config = cacheConfigProperties.getStrategySnapshot();
+        snapshotLocalCache = Caffeine.newBuilder()
                 .expireAfterWrite(config.getLocalExpireSeconds(), TimeUnit.SECONDS)
                 .maximumSize(config.getLocalMaxSize())
                 .build();
     }
 
-    public <T> T getActivityCache(String cacheKey, Class<T> clazz, Supplier<T> loader) {
-        return getWithCacheAside(activityLocalCache, cacheKey, cacheConfigProperties.getActivity(), clazz, loader);
-    }
+    /**
+     * 两级缓存读取（仅 StrategySnapshot 使用）。
+     */
+    public <T> T getStrategySnapshotCache(String cacheKey, Class<T> clazz, Supplier<T> loader) {
+        CacheConfigProperties.TwoLayerConfig config = cacheConfigProperties.getStrategySnapshot();
 
-    public <T> T getStrategyRichCache(String cacheKey, Class<T> clazz, Supplier<T> loader) {
-        return getWithCacheAside(strategyRichLocalCache, cacheKey, cacheConfigProperties.getStrategyRich(), clazz,
-                loader);
-    }
-
-    public <T> T getAwardCache(String cacheKey, Class<T> clazz, Supplier<T> loader) {
-        return getWithCacheAside(awardLocalCache, cacheKey, cacheConfigProperties.getAward(), clazz, loader);
-    }
-
-    public <T> T getRuleTreeCache(String cacheKey, Class<T> clazz, Supplier<T> loader) {
-        return getWithCacheAside(ruleTreeLocalCache, cacheKey, cacheConfigProperties.getRuleTree(), clazz, loader);
-    }
-
-    public void evictActivityCache(String cacheKey) {
-        evict(activityLocalCache, cacheKey);
-    }
-
-    public void evictStrategyRichCache(String cacheKey) {
-        evict(strategyRichLocalCache, cacheKey);
-    }
-
-    public void evictAwardCache(String cacheKey) {
-        evict(awardLocalCache, cacheKey);
-    }
-
-    private void evict(Cache<String, Object> localCache, String cacheKey) {
-        if (cacheKey == null) {
-            return;
-        }
-        try {
-            localCache.invalidate(cacheKey);
-        } catch (Exception e) {
-            logger.warn("invalidate local cache failed, key:{}", cacheKey, e);
-        }
-        try {
-            redisUtil.delStringKey(cacheKey);
-        } catch (Exception e) {
-            logger.warn("invalidate redis cache failed, key:{}", cacheKey, e);
-        }
-    }
-
-    private <T> T getWithCacheAside(Cache<String, Object> localCache, String cacheKey,
-            CacheConfigProperties.LayerCacheConfig layerCacheConfig,
-            Class<T> clazz, Supplier<T> loader) {
-        T localValue = getLocalValue(localCache, cacheKey, clazz);
+        T localValue = getLocalValue(snapshotLocalCache, cacheKey, clazz);
         if (localValue != null) {
             return localValue;
         }
 
         RedisValue<T> redisValue = getRedisValue(cacheKey, clazz);
         if (redisValue.isHit()) {
-            putLocalValue(localCache, cacheKey, redisValue.getValue());
+            putLocalValue(snapshotLocalCache, cacheKey, redisValue.getValue());
             return redisValue.getValue();
         }
         if (redisValue.isNullPlaceholder()) {
             return null;
         }
 
-        Object rebuildLock = rebuildLockMap.computeIfAbsent(cacheKey, key -> new Object());
-        synchronized (rebuildLock) {
-            // 加锁后先双检本地缓存，避免等待锁期间其他线程已经完成回填。
-            localValue = getLocalValue(localCache, cacheKey, clazz);
+        synchronized (this) {
+            localValue = getLocalValue(snapshotLocalCache, cacheKey, clazz);
             if (localValue != null) {
                 return localValue;
             }
-
-            // 再双检 Redis，确保同 key 并发 miss 时只有一个线程真正回源。
             redisValue = getRedisValue(cacheKey, clazz);
             if (redisValue.isHit()) {
-                putLocalValue(localCache, cacheKey, redisValue.getValue());
+                putLocalValue(snapshotLocalCache, cacheKey, redisValue.getValue());
                 return redisValue.getValue();
             }
             if (redisValue.isNullPlaceholder()) {
@@ -135,13 +81,64 @@ public class TwoLevelCacheService {
 
             T sourceValue = loader.get();
             if (sourceValue == null) {
-                putNullValue(cacheKey, layerCacheConfig.getNullRedisExpireSeconds());
+                putNullPlaceholder(cacheKey, config.getNullRedisExpireSeconds());
                 return null;
             }
-
-            putLocalValue(localCache, cacheKey, sourceValue);
-            putRedisValue(cacheKey, sourceValue, nextRedisExpireSeconds(layerCacheConfig));
+            putLocalValue(snapshotLocalCache, cacheKey, sourceValue);
+            writeRedis(cacheKey, sourceValue, nextRedisExpireSeconds(
+                    config.getRedisExpireSeconds(), config.getRedisExpireJitterSeconds()));
             return sourceValue;
+        }
+    }
+
+    /**
+     * Redis 单级缓存读取（活动等低频配置）。
+     */
+    public <T> T getRedisCache(String cacheKey, Class<T> clazz,
+            CacheConfigProperties.SingleLayerConfig config, Supplier<T> loader) {
+        RedisValue<T> redisValue = getRedisValue(cacheKey, clazz);
+        if (redisValue.isHit()) {
+            return redisValue.getValue();
+        }
+        if (redisValue.isNullPlaceholder()) {
+            return null;
+        }
+
+        T sourceValue = loader.get();
+        if (sourceValue == null) {
+            putNullPlaceholder(cacheKey, config.getNullRedisExpireSeconds());
+            return null;
+        }
+        writeRedis(cacheKey, sourceValue,
+                nextRedisExpireSeconds(config.getRedisExpireSeconds(), config.getRedisExpireJitterSeconds()));
+        return sourceValue;
+    }
+
+    public void evictStrategySnapshotCache(String cacheKey) {
+        evict(cacheKey);
+    }
+
+    public void evictActivityCache(String cacheKey) {
+        try {
+            redisUtil.delStringKey(cacheKey);
+        } catch (Exception e) {
+            logger.warn("invalidate redis cache failed, key:{}", cacheKey, e);
+        }
+    }
+
+    private void evict(String cacheKey) {
+        if (cacheKey == null) {
+            return;
+        }
+        try {
+            snapshotLocalCache.invalidate(cacheKey);
+        } catch (Exception e) {
+            logger.warn("invalidate local cache failed, key:{}", cacheKey, e);
+        }
+        try {
+            redisUtil.delStringKey(cacheKey);
+        } catch (Exception e) {
+            logger.warn("invalidate redis cache failed, key:{}", cacheKey, e);
         }
     }
 
@@ -163,41 +160,35 @@ public class TwoLevelCacheService {
     }
 
     private <T> RedisValue<T> getRedisValue(String cacheKey, Class<T> clazz) {
-        try {
-            String cacheValue = redisUtil.get(cacheKey);
-            if (cacheValue == null || cacheValue.length() == 0) {
-                return RedisValue.miss();
-            }
-            if (NULL_VALUE.equals(cacheValue)) {
-                return RedisValue.nullPlaceholder();
-            }
-            T value = JSON.parseObject(cacheValue, clazz);
-            if (value == null) {
-                redisUtil.delStringKey(cacheKey);
-                return RedisValue.miss();
-            }
-            return RedisValue.hit(value);
-        } catch (Exception e) {
-            logger.error("read redis cache failed, key:{}", cacheKey, e);
-            throw new IllegalStateException("read redis cache failed, key:" + cacheKey, e);
+        String cacheValue = redisUtil.get(cacheKey);
+        if (cacheValue == null || cacheValue.length() == 0) {
+            return RedisValue.miss();
         }
+        if (NULL_VALUE.equals(cacheValue)) {
+            return RedisValue.nullPlaceholder();
+        }
+        T value = JSON.parseObject(cacheValue, clazz);
+        if (value == null) {
+            redisUtil.delStringKey(cacheKey);
+            return RedisValue.miss();
+        }
+        return RedisValue.hit(value);
     }
 
-    private void putRedisValue(String cacheKey, Object value, long redisExpireSeconds) {
+    private void writeRedis(String cacheKey, Object value, long ttlSeconds) {
         try {
-            redisUtil.setWithExpire(cacheKey, JSON.toJSONString(value), redisExpireSeconds);
+            redisUtil.setWithExpire(cacheKey, JSON.toJSONString(value), ttlSeconds);
         } catch (Exception e) {
+            // 回写失败不阻断主流程：下次 miss 会重试回源
             logger.error("write redis cache failed, key:{}", cacheKey, e);
-            throw new IllegalStateException("write redis cache failed, key:" + cacheKey, e);
         }
     }
 
-    private void putNullValue(String cacheKey, long nullRedisExpireSeconds) {
+    private void putNullPlaceholder(String cacheKey, long nullRedisExpireSeconds) {
         try {
             redisUtil.setWithExpire(cacheKey, NULL_VALUE, nullRedisExpireSeconds);
         } catch (Exception e) {
             logger.error("write redis null cache failed, key:{}", cacheKey, e);
-            throw new IllegalStateException("write redis null cache failed, key:" + cacheKey, e);
         }
     }
 
@@ -209,9 +200,7 @@ public class TwoLevelCacheService {
         }
     }
 
-    private long nextRedisExpireSeconds(CacheConfigProperties.LayerCacheConfig layerCacheConfig) {
-        long baseExpireSeconds = layerCacheConfig.getRedisExpireSeconds();
-        long jitterSeconds = layerCacheConfig.getRedisExpireJitterSeconds();
+    private long nextRedisExpireSeconds(long baseExpireSeconds, long jitterSeconds) {
         if (jitterSeconds <= 0) {
             return baseExpireSeconds;
         }

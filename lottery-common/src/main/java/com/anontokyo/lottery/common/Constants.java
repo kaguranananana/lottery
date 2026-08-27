@@ -357,19 +357,13 @@ public class Constants {
             return LOTTERY_CACHE_ACTIVITY + activityId;
         }
 
-        // Strategy aggregate cache key
-        private static final String LOTTERY_CACHE_STRATEGY_RICH = "lottery_cache_strategy_rich_";
+        // Strategy snapshot cache key (two-level cache, draw hot path)
+        private static final String LOTTERY_CACHE_STRATEGY_SNAPSHOT = "lottery_cache_strategy_snapshot_";
 
-        public static String KEY_LOTTERY_CACHE_STRATEGY_RICH(Long strategyId) {
-            return LOTTERY_CACHE_STRATEGY_RICH + strategyId;
+        public static String KEY_LOTTERY_CACHE_STRATEGY_SNAPSHOT(Long strategyId) {
+            return LOTTERY_CACHE_STRATEGY_SNAPSHOT + strategyId;
         }
 
-        // Award detail cache key
-        private static final String LOTTERY_CACHE_AWARD = "lottery_cache_award_";
-
-        public static String KEY_LOTTERY_CACHE_AWARD(String awardId) {
-            return LOTTERY_CACHE_AWARD + awardId;
-        }
 
         // Strategy-award stock MQ processing key
         private static final String LOTTERY_STRATEGY_AWARD_STOCK_MQ_PROCESSING = "lottery_strategy_award_stock_mq_processing_";

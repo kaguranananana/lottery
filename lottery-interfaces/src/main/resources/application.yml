@@ -93,30 +93,19 @@ lottery:
     strategy-award-stock-mq-processing-redis-ttl-seconds: 300
     strategy-award-stock-mq-dispatch-redis-ttl-seconds: 60
     invoice-mq-processing-redis-ttl-seconds: 300
+    # 抽奖策略快照：唯一的两级缓存（Caffeine L1 + Redis L2），高频读、低变更。
+    # 一致性边界：快照为短 TTL 最终一致，运营变更配置后需等 TTL 过期生效；不做广播失效。
+    strategy-snapshot:
+      local-expire-seconds: 60
+      local-max-size: 10000
+      redis-expire-seconds: 600
+      redis-expire-jitter-seconds: 120
+      null-redis-expire-seconds: 60
+    # 活动配置仅走 Redis 单级（低频变更、允许短暂滞后）
     activity:
-      local-expire-seconds: 1
-      redis-expire-seconds: 5
-      redis-expire-jitter-seconds: 2
-      null-redis-expire-seconds: 15
-      local-max-size: 10000
-    strategy-rich:
-      local-expire-seconds: 30
-      redis-expire-seconds: 600
-      redis-expire-jitter-seconds: 120
-      null-redis-expire-seconds: 60
-      local-max-size: 10000
-    award:
-      local-expire-seconds: 30
-      redis-expire-seconds: 600
-      redis-expire-jitter-seconds: 120
-      null-redis-expire-seconds: 60
-      local-max-size: 10000
-    rule-tree:
-      local-expire-seconds: 30
-      redis-expire-seconds: 1800
-      redis-expire-jitter-seconds: 300
-      null-redis-expire-seconds: 60
-      local-max-size: 1000
+      redis-expire-seconds: 300
+      redis-expire-jitter-seconds: 60
+      null-redis-expire-seconds: 30
 
 
 
