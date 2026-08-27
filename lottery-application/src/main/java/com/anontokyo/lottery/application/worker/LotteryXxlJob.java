@@ -7,8 +7,10 @@ import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
 import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
 import com.anontokyo.lottery.domain.activity.service.deploy.IActivityDeploy;
 import com.anontokyo.lottery.domain.activity.service.lifecycle.ActivityLifecycleService;
+import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
 import com.anontokyo.lottery.domain.award.service.order.IAwardOrder;
+import com.anontokyo.lottery.domain.support.lock.IStrategyAwardStockMqGuard;
 import com.alibaba.fastjson.JSON;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
@@ -54,6 +56,12 @@ public class LotteryXxlJob {
 
     @Resource
     private KafkaProducer kafkaProducer;
+
+    @Resource
+    private IStrategyAwardStockMqGuard strategyAwardStockMqGuard;
+
+    @Value("${lottery.kafka.dispatcher.strategy-award-stock-batch-size:200}")
+    private int stockSettlementDispatchBatchSize;
 
     @Value("${lottery.kafka.invoice.enabled:true}")
     private boolean invoiceMqEnabled;
@@ -172,5 +180,96 @@ public class LotteryXxlJob {
 
         }
         logger.info("扫描用户抽奖奖品发放MQ状态[Table = 2*4] 完成 param：{}", JSON.toJSONString(params));
+    }
+
+    /**
+     * 库存结算 Outbox 扫描投递任务（原 @Scheduled dispatcher 迁移至此）。
+     * 任务参数指定本 worker 负责的分库编号，逗号分隔，如 "1" 或 "1,2"：
+     * 多实例部署时在 XXL-Job 中配置不同分片参数即可，无需每个实例扫描全部分库。
+     * 状态机：INIT(0)/FAIL(2) 扫描 → 投递成功落 SENT(3) → 消费完成 COMPLETE(1)。
+     * crash 在发送与落状态之间最多造成一次重复投递，由 settlement 账本兜底幂等。
+     */
+    @XxlJob("awardStockSettlementOutboxJobHandler")
+    public void awardStockSettlementOutboxJobHandler() {
+        String jobParam = XxlJobHelper.getJobParam();
+        if (jobParam == null || jobParam.trim().isEmpty()) {
+            logger.warn("award stock outbox job requires db index param, e.g. \"1\"");
+            return;
+        }
+
+        int totalDbCount = dbRouter.dbCount();
+        int tbCount = dbRouter.tbCount();
+
+        for (String part : jobParam.split(",")) {
+            int dbIdx;
+            try {
+                dbIdx = Integer.parseInt(part.trim());
+            } catch (NumberFormatException e) {
+                logger.warn("invalid db index param:{}", part);
+                continue;
+            }
+            if (dbIdx < 1 || dbIdx > totalDbCount) {
+                logger.warn("db index out of range:{} totalDbCount:{}", dbIdx, totalDbCount);
+                continue;
+            }
+
+            for (int tbIdx = 0; tbIdx < tbCount; tbIdx++) {
+                List<AwardStockSettlementVO> pendingList =
+                        awardOrder.scanAwardStockMqState(dbIdx, tbIdx, stockSettlementDispatchBatchSize);
+                if (pendingList.isEmpty()) {
+                    continue;
+                }
+                logger.info("scan award stock outbox dbIdx:{} tbIdx:{} size:{}", dbIdx, tbIdx, pendingList.size());
+                for (AwardStockSettlementVO settlementVO : pendingList) {
+                    dispatchAwardStockSettlement(settlementVO);
+                }
+            }
+        }
+    }
+
+    private void dispatchAwardStockSettlement(AwardStockSettlementVO settlementVO) {
+        if (settlementVO == null || settlementVO.getOrderId() == null) {
+            return;
+        }
+        Long orderId = settlementVO.getOrderId();
+        if (awardOrder.isStockMqCompleted(settlementVO.getuId(), orderId)) {
+            strategyAwardStockMqGuard.clearDispatchMarker(orderId);
+            return;
+        }
+        // DISPATCHING 标记用于防止同一轮内多 worker 对同一条记录并发重复投递
+        if (!strategyAwardStockMqGuard.tryClaimDispatch(orderId)) {
+            return;
+        }
+
+        try {
+            ListenableFuture<SendResult<String, Object>> future = kafkaProducer.sendStrategyAwardStock(settlementVO);
+            future.addCallback(new ListenableFutureCallback<SendResult<String, Object>>() {
+
+                @Override
+                public void onSuccess(SendResult<String, Object> result) {
+                    awardOrder.updateStockMqState(settlementVO.getuId(), orderId,
+                            Constants.MQState.SENT.getCode());
+                    strategyAwardStockMqGuard.clearDispatchMarker(orderId);
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("dispatch award stock settlement mq success uId:{} orderId:{}",
+                                settlementVO.getuId(), orderId);
+                    }
+                }
+
+                @Override
+                public void onFailure(Throwable throwable) {
+                    awardOrder.updateStockMqState(settlementVO.getuId(), orderId,
+                            Constants.MQState.FAIL.getCode());
+                    strategyAwardStockMqGuard.clearDispatchMarker(orderId);
+                    logger.error("dispatch award stock settlement mq failed uId:{} orderId:{}",
+                            settlementVO.getuId(), orderId, throwable);
+                }
+            });
+        } catch (Exception e) {
+            awardOrder.updateStockMqState(settlementVO.getuId(), orderId, Constants.MQState.FAIL.getCode());
+            strategyAwardStockMqGuard.clearDispatchMarker(orderId);
+            logger.error("dispatch award stock settlement mq exception uId:{} orderId:{}",
+                    settlementVO.getuId(), orderId, e);
+        }
     }
 }
