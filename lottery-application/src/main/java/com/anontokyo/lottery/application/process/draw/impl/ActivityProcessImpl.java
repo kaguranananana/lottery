@@ -3,7 +3,6 @@ import com.anontokyo.lottery.application.mq.producer.KafkaProducer;
 import com.anontokyo.lottery.application.process.draw.IActivityDrawProcess;
 import com.anontokyo.lottery.application.process.draw.req.DrawProcessReq;
 import com.anontokyo.lottery.application.process.draw.res.DrawProcessResult;
-import com.anontokyo.lottery.application.process.draw.res.RuleQuantificationCrowdResult;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.common.Result;
 import com.anontokyo.lottery.domain.activity.model.req.PartakeReq;
@@ -15,13 +14,7 @@ import com.anontokyo.lottery.domain.activity.service.partake.IActivityPartake;
 import com.anontokyo.lottery.domain.award.model.req.AwardOrderReq;
 import com.anontokyo.lottery.domain.award.model.res.AwardOrderResult;
 import com.anontokyo.lottery.domain.award.service.order.IAwardOrder;
-import com.anontokyo.lottery.domain.rule.model.req.DecisionMatterReq;
-import com.anontokyo.lottery.domain.rule.model.res.EngineResult;
-import com.anontokyo.lottery.domain.rule.model.vo.RuleCriteriaVO;
-import com.anontokyo.lottery.domain.rule.model.vo.TreeRootVO;
 import com.anontokyo.lottery.domain.support.lock.IActivityDrawProcessGuard;
-import com.anontokyo.lottery.domain.rule.repository.IRuleRepository;
-import com.anontokyo.lottery.domain.rule.service.engine.EngineFilter;
 import com.anontokyo.lottery.domain.strategy.model.req.DrawReq;
 import com.anontokyo.lottery.domain.strategy.model.res.DrawResult;
 import com.anontokyo.lottery.domain.strategy.model.vo.DrawAwardInfo;
@@ -53,14 +46,8 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
     @Resource
     private IDrawExec drawExec;
 
-    @Resource(name = "ruleEngineHandle")
-    private EngineFilter engineFilter;
-
     @Resource
     private IActivityRepository activityRepository;
-
-    @Resource
-    private IRuleRepository ruleRepository;
 
     @Resource
     private IActivityDrawProcessGuard activityDrawProcessGuard;
@@ -139,6 +126,10 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
 
             DrawProcessResult result = new DrawProcessResult(Constants.ResponseCode.SUCCESS.getCode(),
                     Constants.ResponseCode.SUCCESS.getInfo(), drawAwardInfo);
+            result.setTakeId(takeId);
+            if (orderResult.getInvoiceVO() != null) {
+                result.setOrderId(orderResult.getInvoiceVO().getOrderId());
+            }
             logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, dispatchCostMs, drawCostMs,
                     settleCostMs);
             return result;
@@ -148,33 +139,8 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
     }
 
     @Override
-    public RuleQuantificationCrowdResult doRuleQuantificationCrowd(DecisionMatterReq req) {
-        EngineResult engineResult = engineFilter.process(req);
-        if (!engineResult.isSuccess()) {
-            return new RuleQuantificationCrowdResult(
-                    Constants.ResponseCode.UN_ERROR.getCode(),
-                    Constants.ResponseCode.UN_ERROR.getInfo());
-        }
-
-        return new RuleQuantificationCrowdResult(
-                Constants.ResponseCode.SUCCESS.getCode(),
-                Constants.ResponseCode.SUCCESS.getInfo(),
-                Long.valueOf(engineResult.getNodeValue()));
-    }
-
-    @Override
     public List<ActivityVO> queryRunningActivityList() {
         return activityRepository.queryRunningActivityList();
-    }
-
-    @Override
-    public List<TreeRootVO> queryRuleTreeList() {
-        return ruleRepository.queryRuleTreeList();
-    }
-
-    @Override
-    public List<RuleCriteriaVO> queryRuleCriteria() {
-        return ruleRepository.queryRuleCriteria();
     }
 
     private AwardOrderReq buildAwardOrderReq(DrawProcessReq req, Long strategyId, Long takeId,

@@ -178,28 +178,6 @@ mybatis:
     # 4. 打印 SQL 日志（调试神器，建议开启）
     log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
 
-nacos:
-  discovery:
-    server-addr: localhost:8848
-
-# Dubbo 广播方式配置
-dubbo:
-  application:
-    name: Lottery
-    version: 1.0.0
-  registry:
-    address: nacos://localhost:8848
-  protocol:
-    name: dubbo
-    port: -1
-    threadpool: fixed
-    threads: 400
-    queues: 200
-  provider:
-    timeout: 7000
-  scan:
-    base-packages: com.anontokyo.lottery.rpc
-
 
 # XXL-JOB配置
 xxl:
