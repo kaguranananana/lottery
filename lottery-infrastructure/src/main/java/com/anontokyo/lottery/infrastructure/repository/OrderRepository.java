@@ -70,8 +70,8 @@ public class OrderRepository implements IOrderRepository {
     }
 
     @Override
-    public List<InvoiceVO> scanInvoiceMqState() {
-        List<UserStrategyExport> userStrategyExportList = userStrategyExportDao.scanInvoiceMqState();
+    public List<InvoiceVO> scanInvoiceMqState(int limit) {
+        List<UserStrategyExport> userStrategyExportList = userStrategyExportDao.scanInvoiceMqState(limit);
         List<InvoiceVO> invoiceVOList = new ArrayList<>(userStrategyExportList.size());
         for (UserStrategyExport userStrategyExport : userStrategyExportList) {
             invoiceVOList.add(toInvoice(userStrategyExport));

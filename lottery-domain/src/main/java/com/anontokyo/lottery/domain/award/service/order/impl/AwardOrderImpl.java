@@ -131,11 +131,11 @@ public class AwardOrderImpl implements IAwardOrder {
     }
 
     @Override
-    public List<InvoiceVO> scanInvoiceMqState(int dbCount, int tbCount) {
+    public List<InvoiceVO> scanInvoiceMqState(int dbCount, int tbCount, int limit) {
         try {
             dbRouter.setDBKey(dbCount);
             dbRouter.setTBKey(tbCount);
-            return orderRepository.scanInvoiceMqState();
+            return orderRepository.scanInvoiceMqState(limit);
         } finally {
             dbRouter.clear();
         }

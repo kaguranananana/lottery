@@ -94,7 +94,6 @@ lottery:
   cache:
     draw-inflight-redis-ttl-seconds: 3
     no-consumed-order-redis-ttl-seconds: 1800
-    strategy-award-stock-mq-dedup-redis-ttl-seconds: 86400
     strategy-award-stock-mq-processing-redis-ttl-seconds: 300
     strategy-award-stock-mq-dispatch-redis-ttl-seconds: 60
     invoice-mq-processing-redis-ttl-seconds: 300

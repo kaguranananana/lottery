@@ -59,7 +59,7 @@ public interface IUserStrategyExportDao {
     @DBRouter
     void updateStockMqState(UserStrategyExport userStrategyExport);
 
-    List<UserStrategyExport> scanInvoiceMqState();
+    List<UserStrategyExport> scanInvoiceMqState(int limit);
 
     List<UserStrategyExport> scanAwardStockMqState(@Param("limit") Integer limit);
 }

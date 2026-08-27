@@ -16,11 +16,6 @@ public class CacheConfigProperties {
     private long noConsumedOrderRedisTtlSeconds = 1800L;
 
     /**
-     * Redis TTL for strategy-award stock MQ dedup marker.
-     */
-    private long strategyAwardStockMqDedupRedisTtlSeconds = 86400L;
-
-    /**
      * Redis TTL for invoice MQ processing lock.
      */
     private long invoiceMqProcessingRedisTtlSeconds = 300L;
@@ -39,14 +34,6 @@ public class CacheConfigProperties {
 
     public void setNoConsumedOrderRedisTtlSeconds(long noConsumedOrderRedisTtlSeconds) {
         this.noConsumedOrderRedisTtlSeconds = noConsumedOrderRedisTtlSeconds;
-    }
-
-    public long getStrategyAwardStockMqDedupRedisTtlSeconds() {
-        return strategyAwardStockMqDedupRedisTtlSeconds;
-    }
-
-    public void setStrategyAwardStockMqDedupRedisTtlSeconds(long strategyAwardStockMqDedupRedisTtlSeconds) {
-        this.strategyAwardStockMqDedupRedisTtlSeconds = strategyAwardStockMqDedupRedisTtlSeconds;
     }
 
     public long getInvoiceMqProcessingRedisTtlSeconds() {

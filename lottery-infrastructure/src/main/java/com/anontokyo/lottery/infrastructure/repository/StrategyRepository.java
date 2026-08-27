@@ -1,6 +1,7 @@
 package com.anontokyo.lottery.infrastructure.repository;
 
 import com.anontokyo.lottery.common.Constants;
+import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.strategy.model.aggregates.StrategyRich;
 import com.anontokyo.lottery.domain.strategy.model.vo.AwardBriefVO;
 import com.anontokyo.lottery.domain.strategy.model.vo.StrategyAwardStockDeductResultVO;
@@ -9,16 +10,20 @@ import com.anontokyo.lottery.domain.strategy.model.vo.StrategyDetailBriefVO;
 import com.anontokyo.lottery.domain.strategy.repository.IStrategyRepository;
 import com.anontokyo.lottery.infrastructure.cache.CacheConfigProperties;
 import com.anontokyo.lottery.infrastructure.cache.TwoLevelCacheService;
+import com.anontokyo.lottery.infrastructure.dao.IAwardStockSettlementDao;
 import com.anontokyo.lottery.infrastructure.dao.IAwardDao;
 import com.anontokyo.lottery.infrastructure.dao.IStrategyDao;
 import com.anontokyo.lottery.infrastructure.dao.IStrategyDetailDao;
+import com.anontokyo.lottery.infrastructure.po.AwardStockSettlement;
 import com.anontokyo.lottery.infrastructure.po.Award;
 import com.anontokyo.lottery.infrastructure.po.Strategy;
 import com.anontokyo.lottery.infrastructure.po.StrategyDetail;
 import com.anontokyo.lottery.infrastructure.utils.RedisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
 import java.util.ArrayList;
@@ -42,6 +47,12 @@ public class StrategyRepository implements IStrategyRepository {
 
     @Resource
     private IStrategyDetailDao strategyDetailDao;
+
+    @Resource
+    private IAwardStockSettlementDao awardStockSettlementDao;
+
+    @Resource
+    private TransactionTemplate transactionTemplate;
 
     @Resource
     private IAwardDao awardDao;
@@ -82,6 +93,36 @@ public class StrategyRepository implements IStrategyRepository {
         req.setAwardId(awardId);
         int count = strategyDetailDao.deductStock(req);
         return count == 1;
+    }
+
+    /**
+     * 数据库结算幂等：INSERT 账本(UNIQUE order_id) + 条件扣减库存，同一本地事务。
+     * duplicate-key 意味着该订单早已结算过——直接返回成功，绝不重复扣减。
+     */
+    @Override
+    public boolean settleAwardStock(AwardStockSettlementVO settlement) {
+        Boolean settled = transactionTemplate.execute(status -> {
+            AwardStockSettlement ledgerRow = new AwardStockSettlement();
+            ledgerRow.setOrderId(settlement.getOrderId());
+            ledgerRow.setuId(settlement.getuId());
+            ledgerRow.setStrategyId(settlement.getStrategyId());
+            ledgerRow.setAwardId(settlement.getAwardId());
+            try {
+                awardStockSettlementDao.insert(ledgerRow);
+            } catch (DuplicateKeyException e) {
+                logger.info("award stock settlement already done for orderId:{}, skip deduction",
+                        settlement.getOrderId());
+                return true;
+            }
+
+            boolean deducted = deductStock(settlement.getStrategyId(), settlement.getAwardId());
+            if (!deducted) {
+                status.setRollbackOnly();
+                return false;
+            }
+            return true;
+        });
+        return Boolean.TRUE.equals(settled);
     }
 
     /**

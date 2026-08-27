@@ -293,12 +293,14 @@ public class Constants {
     }
 
     /**
-     * 消息发送状态（0未发送、1发送成功、2发送失败）
+     * 消息投递状态（0初始待投递、1消费完成、2投递失败待重试、3已投递等待消费结果）
      */
     public enum MQState {
         INIT(0, "初始"),
         COMPLETE(1, "完成"),
-        FAIL(2, "失败");
+        FAIL(2, "失败"),
+        /** dispatch 成功、尚未收到消费侧收口 */
+        SENT(3, "已发送");
 
         private Integer code;
         private String info;
@@ -367,13 +369,6 @@ public class Constants {
 
         public static String KEY_LOTTERY_CACHE_AWARD(String awardId) {
             return LOTTERY_CACHE_AWARD + awardId;
-        }
-
-        // Strategy-award stock MQ dedup key
-        private static final String LOTTERY_STRATEGY_AWARD_STOCK_MQ_DONE = "lottery_strategy_award_stock_mq_done_";
-
-        public static String KEY_LOTTERY_STRATEGY_AWARD_STOCK_MQ_DONE(Long orderId) {
-            return LOTTERY_STRATEGY_AWARD_STOCK_MQ_DONE + orderId;
         }
 
         // Strategy-award stock MQ processing key

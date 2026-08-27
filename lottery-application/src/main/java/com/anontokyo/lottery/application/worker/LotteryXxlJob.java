@@ -32,6 +32,9 @@ import java.util.List;
  */
 @Component
 public class LotteryXxlJob {
+
+    /** 补偿扫描单次批量上限，避免大表全量扫描 */
+    private static final int INVOICE_COMPENSATION_BATCH_LIMIT = 100;
     private Logger logger = LoggerFactory.getLogger(LotteryXxlJob.class);
 
     @Resource
@@ -141,7 +144,7 @@ public class LotteryXxlJob {
             for (int i = 0; i < tbCount; i++) {
 
                 //  扫描表数据
-                List<InvoiceVO> invoiceVOList = awardOrder.scanInvoiceMqState(dbCount, i);
+                List<InvoiceVO> invoiceVOList = awardOrder.scanInvoiceMqState(dbCount, i, INVOICE_COMPENSATION_BATCH_LIMIT);
                 logger.info("扫描用户抽奖奖品发放MQ状态[Table = 2*4] 扫描库：{} 扫描表：{} 扫描数：{}", dbCount, i, invoiceVOList.size());
 
                 // 补偿MQ消息

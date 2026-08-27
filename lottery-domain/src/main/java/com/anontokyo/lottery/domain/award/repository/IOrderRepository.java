@@ -40,7 +40,7 @@ public interface IOrderRepository {
     /**
      * 扫描待补偿的发奖MQ订单。
      */
-    List<InvoiceVO> scanInvoiceMqState();
+    List<InvoiceVO> scanInvoiceMqState(int limit);
 
     /**
      * Scan award stock settlement outbox.

@@ -55,34 +55,6 @@ public class RedisStrategyAwardStockMqGuard implements IStrategyAwardStockMqGuar
     }
 
     @Override
-    public boolean isProcessed(Long orderId) {
-        if (orderId == null) {
-            return false;
-        }
-        String key = Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_MQ_DONE(orderId);
-        try {
-            String value = redisUtil.get(key);
-            return value != null && value.length() > 0;
-        } catch (Exception e) {
-            logger.warn("read strategy award stock mq dedup key failed, orderId:{}", orderId, e);
-            return false;
-        }
-    }
-
-    @Override
-    public void markProcessed(Long orderId) {
-        if (orderId == null) {
-            return;
-        }
-        String key = Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_MQ_DONE(orderId);
-        try {
-            redisUtil.setWithExpire(key, "1", strategyAwardStockMqDedupRedisTtlSeconds);
-        } catch (Exception e) {
-            logger.warn("set strategy award stock mq dedup key failed, orderId:{}", orderId, e);
-        }
-    }
-
-    @Override
     public boolean tryClaimDispatch(Long orderId) {
         if (orderId == null) {
             return false;

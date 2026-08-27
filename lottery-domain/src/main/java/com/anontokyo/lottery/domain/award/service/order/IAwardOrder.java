@@ -30,7 +30,7 @@ public interface IAwardOrder {
     /**
      * 扫描待补偿的发奖MQ订单。
      */
-    List<InvoiceVO> scanInvoiceMqState(int dbCount, int tbCount);
+    List<InvoiceVO> scanInvoiceMqState(int dbCount, int tbCount, int limit);
 
     /**
      * Scan award stock settlement outbox.

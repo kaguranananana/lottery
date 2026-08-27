@@ -78,11 +78,13 @@
         LIMIT 1
     </select>
     <select id="scanInvoiceMqState" resultType="com.anontokyo.lottery.infrastructure.po.UserStrategyExport">
-        SELECT u_id, order_id, award_id, award_type, award_name, award_content
+        SELECT u_id, order_id, take_id, award_id, award_type, award_name, award_content, grant_type, grant_date
         FROM user_strategy_export
         WHERE stock_mq_state = 1
           AND (mq_state = 2
-           OR (mq_state = 0 AND create_time &lt; DATE_SUB(NOW(), INTERVAL 30 MINUTE)))
+           OR (mq_state = 0 AND create_time &lt; DATE_SUB(NOW(), INTERVAL 30 MINUTE))
+           OR (mq_state = 3 AND update_time &lt; DATE_SUB(NOW(), INTERVAL 10 MINUTE)))
+        LIMIT #{limit}
     </select>
     <select id="scanAwardStockMqState" resultType="com.anontokyo.lottery.infrastructure.po.UserStrategyExport">
         SELECT u_id, order_id, strategy_id, award_id

@@ -87,6 +87,10 @@ public class AwardStockSettlementOutboxDispatcher {
 
                 @Override
                 public void onSuccess(SendResult<String, Object> result) {
+                    // 已投递：落 SENT，等待消费侧收口 COMPLETE（避免每轮重复扫描+重复投递）
+                    awardOrder.updateStockMqState(settlementVO.getuId(), settlementVO.getOrderId(),
+                            Constants.MQState.SENT.getCode());
+                    strategyAwardStockMqGuard.clearDispatchMarker(settlementVO.getOrderId());
                     if (logger.isDebugEnabled()) {
                         logger.debug("dispatch award stock settlement mq success uId:{} orderId:{}",
                                 settlementVO.getuId(), settlementVO.getOrderId());

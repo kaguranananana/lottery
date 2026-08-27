@@ -1,5 +1,6 @@
 package com.anontokyo.lottery.domain.strategy.repository;
 
+import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.strategy.model.aggregates.StrategyRich;
 import com.anontokyo.lottery.domain.strategy.model.vo.AwardBriefVO;
 import com.anontokyo.lottery.domain.strategy.model.vo.StrategyAwardStockDeductResultVO;
@@ -24,6 +25,14 @@ public interface IStrategyRepository {
      * @return
      */
     boolean deductStock(Long strategyId, String awardId);
+
+    /**
+     * 结算奖品库存：在同一个数据库事务内「写入结算账本 + 条件扣减库存」。
+     * 账本 order_id 唯一：重复消费 / crash 重放会在 duplicate-key 处被拦截并直接返回 true。
+     *
+     * @return true 表示该订单的数据库库存已经结算完成；false 表示扣减时库存不足
+     */
+    boolean settleAwardStock(AwardStockSettlementVO settlement);
 
     /**
      * 扣减奖品库存（通过Redis）。

@@ -6,7 +6,6 @@ import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
 import com.anontokyo.lottery.domain.award.service.order.IAwardOrder;
-import com.anontokyo.lottery.domain.support.lock.IStrategyAwardStockMqGuard;
 import com.anontokyo.lottery.domain.strategy.repository.IStrategyRepository;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
@@ -24,6 +23,13 @@ import org.springframework.util.concurrent.ListenableFutureCallback;
 import javax.annotation.Resource;
 import java.util.Optional;
 
+/**
+ * 库存结算消费者。
+ * 正确性由数据库兜底：
+ *  - strategy_detail 条件扣减（award_surplus_count > 0）
+ *  - award_stock_settlement 账本 UNIQUE(order_id)：重复投递/crash 重放只会结算一次
+ * Redis PROCESSING 锁只是并发优化，不是事实来源。
+ */
 @Component
 public class LotteryStrategyAwardStockListener {
 
@@ -37,9 +43,6 @@ public class LotteryStrategyAwardStockListener {
 
     @Resource
     private KafkaProducer kafkaProducer;
-
-    @Resource
-    private IStrategyAwardStockMqGuard strategyAwardStockMqGuard;
 
     @Value("${lottery.kafka.invoice.enabled:true}")
     private boolean invoiceMqEnabled;
@@ -56,16 +59,9 @@ public class LotteryStrategyAwardStockListener {
         }
 
         AwardStockSettlementVO settlementVO = JSON.parseObject((String) message.get(), AwardStockSettlementVO.class);
-        boolean claimed = false;
         try {
-            if (strategyAwardStockMqGuard.isProcessed(settlementVO.getOrderId())
-                    || awardOrder.isStockMqCompleted(settlementVO.getuId(), settlementVO.getOrderId())) {
-                ack.acknowledge();
-                return;
-            }
-
-            claimed = strategyAwardStockMqGuard.tryClaimProcessing(settlementVO.getOrderId());
-            if (!claimed) {
+            // 已完成的历史订单快速短路（DB 状态，可依赖）
+            if (awardOrder.isStockMqCompleted(settlementVO.getuId(), settlementVO.getOrderId())) {
                 ack.acknowledge();
                 return;
             }
@@ -76,20 +72,19 @@ public class LotteryStrategyAwardStockListener {
 
             InvoiceVO invoiceVO = awardOrder.queryInvoiceByOrderId(settlementVO.getuId(), settlementVO.getOrderId());
             if (invoiceVO == null) {
-                strategyAwardStockMqGuard.markProcessed(settlementVO.getOrderId());
-                strategyAwardStockMqGuard.clearDispatchMarker(settlementVO.getOrderId());
                 logger.warn("skip stale strategy award stock message, order not found uId:{} orderId:{}",
                         settlementVO.getuId(), settlementVO.getOrderId());
                 ack.acknowledge();
                 return;
             }
 
-            boolean deductSuccess = strategyRepository.deductStock(
-                    settlementVO.getStrategyId(), settlementVO.getAwardId());
-            if (!deductSuccess) {
+            boolean settled = strategyRepository.settleAwardStock(settlementVO);
+            if (!settled) {
+                // 条件扣减失败：Redis 与 DB 状态出现分歧，显式落 FAIL 并停止重试等待人工对账
                 awardOrder.updateStockMqState(settlementVO.getuId(), settlementVO.getOrderId(),
                         Constants.MQState.FAIL.getCode());
-                logger.error("deduct strategy award stock failed uId:{} orderId:{} strategyId:{} awardId:{}",
+                logger.error("settle award stock failed (stock gap), needs reconciliation "
+                                + "uId:{} orderId:{} strategyId:{} awardId:{}",
                         settlementVO.getuId(), settlementVO.getOrderId(), settlementVO.getStrategyId(),
                         settlementVO.getAwardId());
                 ack.acknowledge();
@@ -98,17 +93,12 @@ public class LotteryStrategyAwardStockListener {
 
             awardOrder.updateStockMqState(settlementVO.getuId(), settlementVO.getOrderId(),
                     Constants.MQState.COMPLETE.getCode());
-            strategyAwardStockMqGuard.markProcessed(settlementVO.getOrderId());
-            strategyAwardStockMqGuard.clearDispatchMarker(settlementVO.getOrderId());
             sendInvoiceMessage(invoiceVO);
             ack.acknowledge();
         } catch (Exception e) {
+            // 不 ack：让 Kafka redeliver，settleAwardStock 的账本保证重放安全
             logger.error("consume strategy award stock failed topic:{} message:{}", topic, message.get(), e);
             throw e;
-        } finally {
-            if (claimed) {
-                strategyAwardStockMqGuard.releaseProcessing(settlementVO.getOrderId());
-            }
         }
     }
 
@@ -130,7 +120,7 @@ public class LotteryStrategyAwardStockListener {
                 @Override
                 public void onSuccess(SendResult<String, Object> result) {
                     awardOrder.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(),
-                            Constants.MQState.COMPLETE.getCode());
+                            Constants.MQState.SENT.getCode());
                 }
 
                 @Override
