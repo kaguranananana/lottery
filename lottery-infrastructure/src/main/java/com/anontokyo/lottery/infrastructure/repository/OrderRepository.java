@@ -1,7 +1,14 @@
 package com.anontokyo.lottery.infrastructure.repository;
 
 import com.anontokyo.lottery.common.Constants;
+import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
+import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
+import org.springframework.dao.DuplicateKeyException;
+import org.springframework.transaction.support.TransactionTemplate;
+import javax.annotation.Resource;
+import com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityDao;
+import com.anontokyo.lottery.infrastructure.po.UserTakeActivity;
 import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
 import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
@@ -19,6 +26,54 @@ public class OrderRepository implements IOrderRepository {
     @Resource
     private IUserStrategyExportDao userStrategyExportDao;
 
+    @Resource
+    private IUserTakeActivityDao userTakeActivityDao;
+
+    @Resource
+    private IDBRouterStrategy dbRouter;
+
+    @Resource
+    private TransactionTemplate transactionTemplate;
+
+    @Override
+    public Constants.ResponseCode saveDrawOrderWithTakeLock(DrawOrderVO drawOrder) {
+        try {
+            dbRouter.doRouter(drawOrder.getuId());
+            return transactionTemplate.execute(status -> {
+                UserTakeActivity lockReq = new UserTakeActivity();
+                lockReq.setuId(drawOrder.getuId());
+                lockReq.setActivityId(drawOrder.getActivityId());
+                lockReq.setTakeId(drawOrder.getTakeId());
+                int lockCount = userTakeActivityDao.lockTakeActivity(lockReq);
+                if (lockCount == 0) {
+                    status.setRollbackOnly();
+                    return Constants.ResponseCode.NO_UPDATE;
+                }
+
+                try {
+                    insertDrawOrder(drawOrder);
+                } catch (DuplicateKeyException e) {
+                    status.setRollbackOnly();
+                    return Constants.ResponseCode.INDEX_DUP;
+                }
+
+                return Constants.ResponseCode.SUCCESS;
+            });
+        } finally {
+            dbRouter.clear();
+        }
+    }
+
+    @Override
+    public int shardingDbCount() {
+        return dbRouter.dbCount();
+    }
+
+    @Override
+    public int shardingTableCount() {
+        return dbRouter.tbCount();
+    }
+
     @Override
     public boolean markUserAwardGranted(String uId, Long orderId, String awardId) {
         UserStrategyExport userStrategyExport = new UserStrategyExport();
@@ -29,8 +84,7 @@ public class OrderRepository implements IOrderRepository {
         return userStrategyExportDao.markUserAwardGranted(userStrategyExport) > 0;
     }
 
-    @Override
-    public void saveDrawOrder(DrawOrderVO drawOrder) {
+    private void insertDrawOrder(DrawOrderVO drawOrder) {
         UserStrategyExport userStrategyExport = new UserStrategyExport();
         userStrategyExport.setuId(drawOrder.getuId());
         userStrategyExport.setActivityId(drawOrder.getActivityId());
@@ -92,6 +146,28 @@ public class OrderRepository implements IOrderRepository {
             settlementVOList.add(settlementVO);
         }
         return settlementVOList;
+    }
+
+    @Override
+    public List<InvoiceVO> scanInvoiceMqStateByShard(int dbIdx, int tbIdx, int limit) {
+        try {
+            dbRouter.setDBKey(dbIdx);
+            dbRouter.setTBKey(tbIdx);
+            return scanInvoiceMqState(limit);
+        } finally {
+            dbRouter.clear();
+        }
+    }
+
+    @Override
+    public List<AwardStockSettlementVO> scanAwardStockMqStateByShard(int dbIdx, int tbIdx, int limit) {
+        try {
+            dbRouter.setDBKey(dbIdx);
+            dbRouter.setTBKey(tbIdx);
+            return scanAwardStockMqState(limit);
+        } finally {
+            dbRouter.clear();
+        }
     }
 
     @Override

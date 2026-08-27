@@ -37,6 +37,12 @@ public interface IAwardOrder {
      */
     List<AwardStockSettlementVO> scanAwardStockMqState(int dbCount, int tbCount, int limit);
 
+    /** 分库元信息（供调度任务按分片遍历） */
+    int shardingDbCount();
+
+    /** 分表元信息 */
+    int shardingTableCount();
+
     /**
      * Query invoice payload by order id.
      */

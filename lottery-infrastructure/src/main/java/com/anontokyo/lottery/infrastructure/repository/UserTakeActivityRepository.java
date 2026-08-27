@@ -13,10 +13,13 @@ import com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityDao;
 import com.anontokyo.lottery.infrastructure.po.Activity;
 import com.anontokyo.lottery.infrastructure.po.UserTakeActivity;
 import com.anontokyo.lottery.infrastructure.po.UserTakeActivityCount;
+import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
 import com.anontokyo.lottery.infrastructure.utils.RedisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import javax.annotation.Resource;
 import java.util.Date;
@@ -34,6 +37,12 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
 
     @Resource
     private IUserTakeActivityDao userTakeActivityDao;
+
+    @Resource
+    private IDBRouterStrategy dbRouter;
+
+    @Resource
+    private TransactionTemplate transactionTemplate;
 
     @Resource
     private RedisUtil redisUtil;
@@ -125,6 +134,57 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
             }
         }
         return lockCount;
+    }
+
+    /**
+     * 扣减剩余次数 + 创建参与记录：同一路由事务。DuplicateKey（take_id / request_id 唯一冲突）
+     * 返回 INDEX_DUP，由上层按幂等复用语义处理。
+     */
+    @Override
+    public Constants.ResponseCode takeParticipation(ActivityBillVO bill, Date partakeDate, Long takeId,
+            String requestId) {
+        try {
+            dbRouter.doRouter(bill.getuId());
+            return transactionTemplate.execute(status -> {
+                try {
+                    int updateCount = subtractionLeftCount(bill);
+                    if (updateCount == 0) {
+                        status.setRollbackOnly();
+                        logger.error("grab activity subtract user quota failed activityId:{} uId:{}",
+                                bill.getActivityId(), bill.getuId());
+                        return Constants.ResponseCode.NO_UPDATE;
+                    }
+                    takeActivity(bill, partakeDate, takeId, requestId);
+                } catch (DuplicateKeyException e) {
+                    status.setRollbackOnly();
+                    logger.warn("grab activity duplicate key activityId:{} uId:{} takeId:{} requestId:{}",
+                            bill.getActivityId(), bill.getuId(), takeId, requestId);
+                    return Constants.ResponseCode.INDEX_DUP;
+                }
+                return Constants.ResponseCode.SUCCESS;
+            });
+        } finally {
+            dbRouter.clear();
+        }
+    }
+
+    @Override
+    public Constants.ResponseCode consumeTake(String uId, Long activityId, Long takeId) {
+        try {
+            dbRouter.doRouter(uId);
+            int lockCount = userTakeActivityDao.lockTakeActivity(buildLockRequest(uId, activityId, takeId));
+            return lockCount > 0 ? Constants.ResponseCode.SUCCESS : Constants.ResponseCode.NO_UPDATE;
+        } finally {
+            dbRouter.clear();
+        }
+    }
+
+    private UserTakeActivity buildLockRequest(String uId, Long activityId, Long takeId) {
+        UserTakeActivity userTakeActivity = new UserTakeActivity();
+        userTakeActivity.setuId(uId);
+        userTakeActivity.setActivityId(activityId);
+        userTakeActivity.setTakeId(takeId);
+        return userTakeActivity;
     }
 
     @Override

@@ -1,6 +1,5 @@
 package com.anontokyo.lottery.application.worker;
 
-import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
 import com.anontokyo.lottery.application.mq.producer.KafkaProducer;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
@@ -47,9 +46,6 @@ public class LotteryXxlJob {
 
     @Resource
     private IActivityRepository activityRepository;
-
-    @Resource
-    private IDBRouterStrategy dbRouter;
 
     @Resource
     private IAwardOrder awardOrder;
@@ -136,14 +132,14 @@ public class LotteryXxlJob {
         }
 
         // 获取分库分表配置下的分表数
-        int tbCount = dbRouter.tbCount();
+        int tbCount = awardOrder.shardingTableCount();
 
         // 循环获取指定扫描库
         for (String param : params) {
             // 获取当前任务扫描的指定分库
             int dbCount = Integer.parseInt(param);
 
-            if (dbCount > dbRouter.dbCount()) {
+            if (dbCount > awardOrder.shardingDbCount()) {
                 logger.info("扫描用户抽奖奖品发放MQ状态[Table = 2*4] 结束 dbCount not exist");
                 continue;
             }
@@ -197,8 +193,8 @@ public class LotteryXxlJob {
             return;
         }
 
-        int totalDbCount = dbRouter.dbCount();
-        int tbCount = dbRouter.tbCount();
+        int totalDbCount = awardOrder.shardingDbCount();
+        int tbCount = awardOrder.shardingTableCount();
 
         for (String part : jobParam.split(",")) {
             int dbIdx;
