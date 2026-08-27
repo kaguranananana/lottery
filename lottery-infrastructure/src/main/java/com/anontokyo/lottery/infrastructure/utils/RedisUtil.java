@@ -77,33 +77,6 @@ public class RedisUtil {
         stringRedisTemplate.delete(key);
     }
 
-    public Set<String> sMembers(String key) {
-        Set<String> members = stringRedisTemplate.opsForSet().members(key);
-        return members == null ? Collections.<String>emptySet() : members;
-    }
-
-    public void sAdd(String key, String... values) {
-        if (values == null || values.length == 0) {
-            return;
-        }
-        stringRedisTemplate.opsForSet().add(key, values);
-    }
-
-    public void sRem(String key, String... values) {
-        if (values == null || values.length == 0) {
-            return;
-        }
-        stringRedisTemplate.opsForSet().remove(key, (Object[]) values);
-    }
-
-    public boolean expire(String key, long expireSeconds) {
-        if (expireSeconds <= 0) {
-            return true;
-        }
-        Boolean result = stringRedisTemplate.expire(key, expireSeconds, TimeUnit.SECONDS);
-        return Boolean.TRUE.equals(result);
-    }
-
     public void del(String... key) {
         if (key != null && key.length > 0) {
             if (key.length == 1) {

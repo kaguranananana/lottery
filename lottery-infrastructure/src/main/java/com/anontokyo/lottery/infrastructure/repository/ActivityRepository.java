@@ -79,7 +79,6 @@ public class ActivityRepository implements IActivityRepository {
         strategyDao.insert(req);
         twoLevelCacheService
                 .evictStrategyRichCache(Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_RICH(strategy.getStrategyId()));
-        redisUtil.delStringKey(Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_NO_STOCK_AWARD(strategy.getStrategyId()));
     }
 
     @Override
@@ -95,7 +94,6 @@ public class ActivityRepository implements IActivityRepository {
         strategyDetailDao.insertList(req);
         for (Long strategyId : strategyIds) {
             twoLevelCacheService.evictStrategyRichCache(Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_RICH(strategyId));
-            redisUtil.delStringKey(Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_NO_STOCK_AWARD(strategyId));
         }
 
     }

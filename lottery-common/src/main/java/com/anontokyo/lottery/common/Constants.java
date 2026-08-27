@@ -361,13 +361,6 @@ public class Constants {
             return LOTTERY_CACHE_STRATEGY_RICH + strategyId;
         }
 
-        // Strategy no-stock award list cache key
-        private static final String LOTTERY_CACHE_STRATEGY_NO_STOCK_AWARD = "lottery_cache_strategy_no_stock_award_";
-
-        public static String KEY_LOTTERY_CACHE_STRATEGY_NO_STOCK_AWARD(Long strategyId) {
-            return LOTTERY_CACHE_STRATEGY_NO_STOCK_AWARD + strategyId;
-        }
-
         // Award detail cache key
         private static final String LOTTERY_CACHE_AWARD = "lottery_cache_award_";
 

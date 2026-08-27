@@ -17,8 +17,6 @@ public interface IStrategyRepository {
 
     AwardBriefVO queryAwardInfo(String awardId);
 
-    List<String> queryNoStockStrategyAwardList(Long strategyId);
-
     /**
      * 扣减库存
      * @param strategyId

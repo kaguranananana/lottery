@@ -76,21 +76,6 @@ public class StrategyRepository implements IStrategyRepository {
     }
 
     @Override
-    public List<String> queryNoStockStrategyAwardList(Long strategyId) {
-        String cacheKey = Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_NO_STOCK_AWARD(strategyId);
-        try {
-            Set<String> awardSet = redisUtil.sMembers(cacheKey);
-            if (awardSet == null || awardSet.isEmpty()) {
-                return Collections.emptyList();
-            }
-            return new ArrayList<>(awardSet);
-        } catch (Exception e) {
-            logger.warn("query no-stock award list from redis failed, strategyId:{}", strategyId, e);
-            return Collections.emptyList();
-        }
-    }
-
-    @Override
     public boolean deductStock(Long strategyId, String awardId) {
         StrategyDetail req = new StrategyDetail();
         req.setStrategyId(strategyId);
@@ -104,18 +89,13 @@ public class StrategyRepository implements IStrategyRepository {
         String stockKey = Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT(strategyId, awardId);
         long currentStockSurplusCount = initStrategyAwardStockIfAbsent(strategyId, awardId, stockKey);
         if (currentStockSurplusCount <= 0) {
-            markNoStockAward(strategyId, awardId);
             return StrategyAwardStockDeductResultVO.soldOut();
         }
 
         long stockSurplusCount = redisUtil.decr(stockKey, 1);
         if (stockSurplusCount < 0) {
             redisUtil.incr(stockKey, 1);
-            markNoStockAward(strategyId, awardId);
             return StrategyAwardStockDeductResultVO.soldOut();
-        }
-        if (stockSurplusCount == 0) {
-            markNoStockAward(strategyId, awardId);
         }
         return StrategyAwardStockDeductResultVO.success();
     }
@@ -124,10 +104,7 @@ public class StrategyRepository implements IStrategyRepository {
     public void recoverStrategyAwardStockByRedis(Long strategyId, String awardId) {
         String stockKey = Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT(strategyId, awardId);
         try {
-            long stockSurplusCount = redisUtil.incr(stockKey, 1);
-            if (stockSurplusCount > 0) {
-                clearNoStockAward(strategyId, awardId);
-            }
+            redisUtil.incr(stockKey, 1);
         } catch (Exception e) {
             logger.error("recover strategy award stock by redis failed, strategyId:{} awardId:{}", strategyId,
                     awardId, e);
@@ -142,28 +119,6 @@ public class StrategyRepository implements IStrategyRepository {
         int count = strategyDetailDao.recoverStock(req);
         if (count == 0) {
             logger.warn("recover strategy detail stock failed, strategyId:{} awardId:{}", strategyId, awardId);
-        }
-    }
-
-    private void markNoStockAward(Long strategyId, String awardId) {
-        String cacheKey = Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_NO_STOCK_AWARD(strategyId);
-        try {
-            redisUtil.sAdd(cacheKey, awardId);
-            long ttlSeconds = cacheConfigProperties.getNoStockAwardListRedisTtlSeconds();
-            if (ttlSeconds > 0) {
-                redisUtil.expire(cacheKey, ttlSeconds);
-            }
-        } catch (Exception e) {
-            logger.warn("mark no-stock award in redis failed, strategyId:{} awardId:{}", strategyId, awardId, e);
-        }
-    }
-
-    private void clearNoStockAward(Long strategyId, String awardId) {
-        String cacheKey = Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_NO_STOCK_AWARD(strategyId);
-        try {
-            redisUtil.sRem(cacheKey, awardId);
-        } catch (Exception e) {
-            logger.warn("clear no-stock award in redis failed, strategyId:{} awardId:{}", strategyId, awardId, e);
         }
     }
 

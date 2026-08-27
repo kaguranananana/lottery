@@ -16,11 +16,6 @@ public class CacheConfigProperties {
     private long noConsumedOrderRedisTtlSeconds = 1800L;
 
     /**
-     * Redis TTL for strategy no-stock award list cache.
-     */
-    private long noStockAwardListRedisTtlSeconds = 60L;
-
-    /**
      * Redis TTL for strategy-award stock MQ dedup marker.
      */
     private long strategyAwardStockMqDedupRedisTtlSeconds = 86400L;
@@ -44,14 +39,6 @@ public class CacheConfigProperties {
 
     public void setNoConsumedOrderRedisTtlSeconds(long noConsumedOrderRedisTtlSeconds) {
         this.noConsumedOrderRedisTtlSeconds = noConsumedOrderRedisTtlSeconds;
-    }
-
-    public long getNoStockAwardListRedisTtlSeconds() {
-        return noStockAwardListRedisTtlSeconds;
-    }
-
-    public void setNoStockAwardListRedisTtlSeconds(long noStockAwardListRedisTtlSeconds) {
-        this.noStockAwardListRedisTtlSeconds = noStockAwardListRedisTtlSeconds;
     }
 
     public long getStrategyAwardStockMqDedupRedisTtlSeconds() {
