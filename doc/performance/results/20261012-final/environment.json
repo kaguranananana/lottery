@@ -1,0 +1,67 @@
+{
+  "date": "2026-10-12 Asia/Shanghai",
+  "host": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "cpu": "Apple M4\n10\n17179869184\n",
+  "java": "openjdk version \"17.0.18\" 2026-01-20 LTS\nOpenJDK Runtime Environment Microsoft-13106359 (build 17.0.18+8-LTS)\nOpenJDK 64-Bit Server VM Microsoft-13106359 (build 17.0.18+8-LTS, mixed mode, sharing)\n",
+  "maven": "Apache Maven 3.9.14 (996c630dbc656c76214ce58821dcc58be960875b)\nMaven home: /opt/homebrew/Cellar/maven/3.9.14/libexec\nJava version: 25.0.2, vendor: Homebrew, runtime: /opt/homebrew/Cellar/openjdk/25.0.2/libexec/openjdk.jdk/Contents/Home\nDefault locale: zh_CN_#Hans, platform encoding: UTF-8\nOS name: \"mac os x\", version: \"26.6.2\", arch: \"aarch64\", family: \"mac\"\n",
+  "docker": "NCPU=10 MemTotal=8217059328 Version=29.3.1 Arch=aarch64\n",
+  "containers": "lottery-perf-kafka-1 wurstmeister/kafka:2.13-2.8.1 127.0.0.1:29092->9092/tcp\nlottery-perf-zookeeper-1 zookeeper:3.8 2181/tcp, 2888/tcp, 3888/tcp, 8080/tcp\nlottery-perf-redis-1 redis:7.2 127.0.0.1:17379->6379/tcp\nlottery-perf-mysql-1 mysql:8.0 127.0.0.1:13329->3306/tcp\nlottery-final-sql-it mysql:8.0 127.0.0.1:13319->3306/tcp\nlottery-mq-e2e-kafka-1 wurstmeister/kafka:2.13-2.8.1 0.0.0.0:19092->9092/tcp, [::]:19092->9092/tcp\nlottery-mq-e2e-mysql-1 mysql:8.0 0.0.0.0:13309->3306/tcp, [::]:13309->3306/tcp\nlottery-mq-e2e-zookeeper-1 zookeeper:3.8 2181/tcp, 2888/tcp, 3888/tcp, 8080/tcp\nlottery-mq-e2e-redis-1 redis:7.2 0.0.0.0:16379->6379/tcp, [::]:16379->6379/tcp\n",
+  "limits": [
+    {
+      "container": "/lottery-perf-mysql-1",
+      "image": "mysql:8.0",
+      "nanoCpus": 2000000000,
+      "memoryBytes": 2147483648,
+      "ports": {
+        "3306/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "13329"
+          }
+        ]
+      }
+    },
+    {
+      "container": "/lottery-perf-redis-1",
+      "image": "redis:7.2",
+      "nanoCpus": 1000000000,
+      "memoryBytes": 268435456,
+      "ports": {
+        "6379/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "17379"
+          }
+        ]
+      }
+    },
+    {
+      "container": "/lottery-perf-kafka-1",
+      "image": "wurstmeister/kafka:2.13-2.8.1",
+      "nanoCpus": 2000000000,
+      "memoryBytes": 1073741824,
+      "ports": {
+        "9092/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "29092"
+          }
+        ]
+      }
+    },
+    {
+      "container": "/lottery-perf-zookeeper-1",
+      "image": "zookeeper:3.8",
+      "nanoCpus": 500000000,
+      "memoryBytes": 402653184,
+      "ports": {}
+    }
+  ],
+  "commit": "b398d323ea0fa9994e6866ea26bb50182e6240b6",
+  "jmeter": "5.6.3",
+  "appJvm": "-Xms512m -Xmx1024m -XX:ActiveProcessorCount=4",
+  "jmeterJvm": "-Xms256m -Xmx512m -XX:ActiveProcessorCount=2",
+  "appPid": "67791",
+  "mysqlVersion": "8.0.46",
+  "redisVersion": "7.2.16"
+}

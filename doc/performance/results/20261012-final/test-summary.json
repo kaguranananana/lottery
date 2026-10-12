@@ -1,0 +1,51 @@
+{
+  "gateStart": "2026-10-12T21:39:33.223404",
+  "tests": 34,
+  "failures": 0,
+  "errors": 0,
+  "skipped": 0,
+  "suites": [
+    {
+      "suite": "com.anontokyo.lottery.test.domain.DrawRequestIdempotencyTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0"
+    },
+    {
+      "suite": "com.anontokyo.lottery.test.domain.PartakeRequestOwnershipTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0"
+    },
+    {
+      "suite": "com.anontokyo.lottery.test.infrastructure.lock.RedisActivityDrawProcessGuardTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0"
+    },
+    {
+      "suite": "com.anontokyo.lottery.test.web.DrawHttpOwnershipTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0"
+    },
+    {
+      "suite": "com.anontokyo.lottery.test.domain.WeightedRandomSelectorTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0"
+    },
+    {
+      "suite": "com.anontokyo.lottery.test.mq.MqCallbackStateTest",
+      "tests": "8",
+      "failures": "0",
+      "errors": "0"
+    }
+  ],
+  "excludedOldReports": [
+    "com.anontokyo.lottery.test.manual.MqStateCasManualIT",
+    "com.anontokyo.lottery.test.manual.MqMiddlewareE2eManualIT",
+    "com.anontokyo.lottery.test.manual.FinalBusinessE2eManualIT",
+    "com.anontokyo.lottery.test.manual.DrawRequestOwnershipManualIT"
+  ]
+}

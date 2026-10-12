@@ -1,0 +1,13 @@
+wait/io/file/innodb/innodb_log_file	694622	484.4023	0.6973
+wait/io/file/innodb/innodb_data_file	75703	83.3891	1.1015
+wait/io/file/innodb/innodb_dblwr_file	24250	49.3414	2.0347
+wait/io/file/innodb/innodb_temp_file	60	0.0134	0.2236
+wait/io/file/innodb/innodb_tablespace_open_file	0	0.0000	0.0000
+wait/io/file/innodb/innodb_arch_file	0	0.0000	0.0000
+wait/io/file/innodb/innodb_clone_file	0	0.0000	0.0000
+wait/io/file/innodb/meb::redo_log_archive_file	0	0.0000	0.0000
+innodb_buffer_pool_size	134217728
+innodb_flush_log_at_trx_commit	1
+log_bin	ON
+max_connections	151
+sync_binlog	1

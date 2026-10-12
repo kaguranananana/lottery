@@ -1,0 +1,4 @@
+1	UPDATE	strategy_detail	NULL	index	NULL	PRIMARY	8	NULL	30	100.00	Using where
+strategy_detail	0	PRIMARY	1	id	A	30	NULL	NULL		BTREE			YES	NULL
+innodb_autoinc_lock_mode	2
+transaction_isolation	REPEATABLE-READ

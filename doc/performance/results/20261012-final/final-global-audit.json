@@ -1,0 +1,80 @@
+{
+  "database": "185754\t185754\t185754\t0\t0\t0\n185754\t185754\n0\n",
+  "fulfillmentCalls": 185754,
+  "distinctFulfilledOrders": 185754,
+  "ordersWithRepeatedHandlerCall": 0,
+  "job": {
+    "time": 1791812360483,
+    "processCpuTimeNs": 1456233166000,
+    "heapUsed": 388315568,
+    "heapMax": 1073741824,
+    "threads": 62,
+    "gc": [
+      [
+        "G1 Young Generation",
+        1009,
+        5397
+      ],
+      [
+        "G1 Old Generation",
+        0,
+        0
+      ]
+    ],
+    "pools": {
+      "HikariPool-1": {
+        "url": "jdbc:mysql://127.0.0.1:13329/lottery_01?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai",
+        "max": 48,
+        "active": 0,
+        "idle": 24,
+        "waiting": 0,
+        "acquires": 1365953,
+        "acquireNanos": 54948000000,
+        "timeouts": 0
+      },
+      "HikariPool-2": {
+        "url": "jdbc:mysql://127.0.0.1:13329/lottery_02?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai",
+        "max": 48,
+        "active": 1,
+        "idle": 16,
+        "waiting": 0,
+        "acquires": 1373580,
+        "acquireNanos": 42716000000,
+        "timeouts": 0
+      },
+      "HikariPool-3": {
+        "url": "jdbc:mysql://127.0.0.1:13329/lottery?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai",
+        "max": 48,
+        "active": 0,
+        "idle": 16,
+        "waiting": 0,
+        "acquires": 185945,
+        "acquireNanos": 5019000000,
+        "timeouts": 0
+      }
+    },
+    "jobCalls": 2510,
+    "jobNanos": 1409107772352,
+    "jobFailure": null,
+    "tomcat": {
+      "Tomcat:type=ThreadPool,name=\"http-nio-127.0.0.1-18090\"": [
+        1,
+        10,
+        200
+      ]
+    }
+  },
+  "lag": {
+    "lottery-perf-stock": [
+      187232,
+      0,
+      8
+    ],
+    "lottery-perf-invoice": [
+      186302,
+      0,
+      8
+    ]
+  },
+  "redisSlowlogLength": "40"
+}

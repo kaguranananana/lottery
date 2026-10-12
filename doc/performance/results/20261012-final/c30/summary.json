@@ -1,0 +1,119 @@
+{
+  "name": "c30",
+  "threads": 30,
+  "windowSeconds": 60.0,
+  "totalSamples": 15228,
+  "measuredSamples": 12910,
+  "rps": 215.16666666666666,
+  "newDrawRps": 215.16666666666666,
+  "newDrawsWindow": 12910,
+  "newDrawsTotal": 15228,
+  "ordersTotal": 15228,
+  "meanMs": 137.5981409759876,
+  "p50Ms": 105,
+  "p95Ms": 312,
+  "p99Ms": 603,
+  "maxMs": 1633,
+  "httpErrorRate": 0.0,
+  "systemErrorRate": 0.0,
+  "businessCodes": {
+    "0000": 12910
+  },
+  "cpuMeanPercentOfOneCore": 93.45249933226475,
+  "heapMaxObservedMiB": 347.4740676879883,
+  "gcMs": 240,
+  "gcPauseRatio": 0.0041559880861674866,
+  "pools": {
+    "HikariPool-1": {
+      "url": "lottery_01",
+      "maxActive": 23,
+      "maxWaiting": 0,
+      "acquireMeanMs": 0.019587409109211057,
+      "timeouts": 0
+    },
+    "HikariPool-2": {
+      "url": "lottery_02",
+      "maxActive": 20,
+      "maxWaiting": 0,
+      "acquireMeanMs": 0.0225620163194688,
+      "timeouts": 0
+    },
+    "HikariPool-3": {
+      "url": "lottery",
+      "maxActive": 3,
+      "maxWaiting": 0,
+      "acquireMeanMs": 0.016973125884016973,
+      "timeouts": 0
+    }
+  },
+  "tomcatMaxBusy": 31,
+  "backlog": [
+    [
+      1791808812545,
+      {
+        "orders": 3327,
+        "stockPending": 2407,
+        "grantPending": 2860,
+        "blocked": 0
+      }
+    ],
+    [
+      1791808821549,
+      {
+        "orders": 5643,
+        "stockPending": 4057,
+        "grantPending": 4599,
+        "blocked": 0
+      }
+    ],
+    [
+      1791808831522,
+      {
+        "orders": 8047,
+        "stockPending": 5804,
+        "grantPending": 7003,
+        "blocked": 0
+      }
+    ],
+    [
+      1791808840951,
+      {
+        "orders": 10658,
+        "stockPending": 7688,
+        "grantPending": 8656,
+        "blocked": 0
+      }
+    ],
+    [
+      1791808850195,
+      {
+        "orders": 13435,
+        "stockPending": 9726,
+        "grantPending": 11130,
+        "blocked": 0
+      }
+    ],
+    [
+      1791808859880,
+      {
+        "orders": 14495,
+        "stockPending": 10455,
+        "grantPending": 11748,
+        "blocked": 0
+      }
+    ]
+  ],
+  "rpsBuckets": [
+    200.8,
+    249.0,
+    252.0,
+    288.7,
+    188.9,
+    111.6
+  ],
+  "drainSeconds": 83.65817904472351,
+  "asyncP95LowerMs": 90332,
+  "asyncP95UpperMs": 91332,
+  "audit": "PASS",
+  "observedThreads": 30
+}

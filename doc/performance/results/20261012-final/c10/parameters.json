@@ -1,0 +1,12 @@
+{
+  "session": "20261012-final",
+  "name": "c10",
+  "id": 720010,
+  "threads": 10,
+  "duration": 80,
+  "warmup": 20,
+  "stock": 1000000,
+  "award_stock": -1,
+  "users": 100000,
+  "jmeter": "/tmp/apache-jmeter-5.6.3/bin/jmeter"
+}

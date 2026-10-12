@@ -1,0 +1,84 @@
+{
+  "name": "finiteAward",
+  "threads": 30,
+  "windowSeconds": 15.0,
+  "totalSamples": 8404,
+  "measuredSamples": 8404,
+  "rps": 560.2666666666667,
+  "newDrawRps": 560.2666666666667,
+  "newDrawsWindow": 8404,
+  "newDrawsTotal": 8404,
+  "ordersTotal": 50,
+  "meanMs": 44.620775821037604,
+  "p50Ms": 39,
+  "p95Ms": 86,
+  "p99Ms": 133,
+  "maxMs": 252,
+  "httpErrorRate": 0.0,
+  "systemErrorRate": 0.0,
+  "businessCodes": {
+    "0000": 50,
+    "D001": 8354
+  },
+  "cpuMeanPercentOfOneCore": 93.14313715635315,
+  "heapMaxObservedMiB": 325.41778564453125,
+  "gcMs": 17,
+  "gcPauseRatio": 0.0014158407595569252,
+  "pools": {
+    "HikariPool-1": {
+      "url": "lottery_01",
+      "maxActive": 20,
+      "maxWaiting": 0,
+      "acquireMeanMs": 0.0011652614983891974,
+      "timeouts": 0
+    },
+    "HikariPool-2": {
+      "url": "lottery_02",
+      "maxActive": 10,
+      "maxWaiting": 0,
+      "acquireMeanMs": 0.0006187693365417669,
+      "timeouts": 0
+    },
+    "HikariPool-3": {
+      "url": "lottery",
+      "maxActive": 0,
+      "maxWaiting": 0,
+      "acquireMeanMs": null,
+      "timeouts": 0
+    }
+  },
+  "tomcatMaxBusy": 31,
+  "backlog": [
+    [
+      1791811721123,
+      {
+        "orders": 50,
+        "stockPending": 0,
+        "grantPending": 0,
+        "blocked": 0
+      }
+    ],
+    [
+      1791811730126,
+      {
+        "orders": 50,
+        "stockPending": 0,
+        "grantPending": 0,
+        "blocked": 0
+      }
+    ]
+  ],
+  "rpsBuckets": [
+    361.6,
+    634.4,
+    528.0,
+    636.8,
+    581.6,
+    619.2
+  ],
+  "drainSeconds": 0.23060011863708496,
+  "asyncP95LowerMs": 656,
+  "asyncP95UpperMs": 1656,
+  "audit": "PASS",
+  "observedThreads": 30
+}

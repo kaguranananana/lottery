@@ -1,0 +1,39 @@
+{
+  "source": "host-memory-pressure.jsonl（原始文件保留本地）",
+  "startTimeMs": 1791812305577,
+  "endTimeMs": 1791812320703,
+  "elapsedSeconds": 15.126,
+  "pageSizeBytes": 16384,
+  "startSwap": "vm.swapusage: total = 13312.00M  used = 11831.44M  free = 1480.56M  (encrypted)",
+  "endSwap": "vm.swapusage: total = 13312.00M  used = 11894.31M  free = 1417.69M  (encrypted)",
+  "pageCounterDeltas": {
+    "Swapins": 3590,
+    "Swapouts": 7096,
+    "Pageins": 2355,
+    "Pageouts": 73
+  },
+  "swapInMiB": 56.09375,
+  "swapOutMiB": 110.875,
+  "observations": [
+    {
+      "time": 1791812305577,
+      "swap": "vm.swapusage: total = 13312.00M  used = 11831.44M  free = 1480.56M  (encrypted)\n",
+      "vm": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                     8546.\nPages active:                                 169251.\nPages inactive:                               167856.\nPages speculative:                               780.\nPages throttled:                                   0.\nPages wired down:                             180814.\nPages purgeable:                                   5.\n\"Translation faults\":                     2960455229.\nPages copy-on-write:                        83186514.\nPages zero filled:                        2053606301.\nPages reactivated:                         850857737.\nPages purged:                              176298451.\nFile-backed pages:                            119429.\nAnonymous pages:                              218458.\nPages stored in compressor:                  2477696.\nPages occupied by compressor:                 481761.\nDecompressions:                            895741098.\nCompressions:                             1023947115.\nPageins:                                    66529021.\nPageouts:                                    1209126.\nSwapins:                                    11093748.\nSwapouts:                                   14235920.\n"
+    },
+    {
+      "time": 1791812310626,
+      "swap": "vm.swapusage: total = 13312.00M  used = 11831.44M  free = 1480.56M  (encrypted)\n",
+      "vm": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                     4046.\nPages active:                                 175430.\nPages inactive:                               173660.\nPages speculative:                               993.\nPages throttled:                                   0.\nPages wired down:                             175717.\nPages purgeable:                                1288.\n\"Translation faults\":                     2960577864.\nPages copy-on-write:                        83189857.\nPages zero filled:                        2053632795.\nPages reactivated:                         850919690.\nPages purged:                              176307862.\nFile-backed pages:                            119841.\nAnonymous pages:                              230242.\nPages stored in compressor:                  2470184.\nPages occupied by compressor:                 479051.\nDecompressions:                            895813530.\nCompressions:                             1024012896.\nPageins:                                    66529441.\nPageouts:                                    1209140.\nSwapins:                                    11094228.\nSwapouts:                                   14235920.\n"
+    },
+    {
+      "time": 1791812315665,
+      "swap": "vm.swapusage: total = 13312.00M  used = 11839.94M  free = 1472.06M  (encrypted)\n",
+      "vm": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                     5431.\nPages active:                                 161212.\nPages inactive:                               159713.\nPages speculative:                               797.\nPages throttled:                                   0.\nPages wired down:                             193036.\nPages purgeable:                                   2.\n\"Translation faults\":                     2960793835.\nPages copy-on-write:                        83191823.\nPages zero filled:                        2053661314.\nPages reactivated:                         851007480.\nPages purged:                              176315723.\nFile-backed pages:                            118670.\nAnonymous pages:                              203052.\nPages stored in compressor:                  2484254.\nPages occupied by compressor:                 489044.\nDecompressions:                            895951039.\nCompressions:                             1024168225.\nPageins:                                    66529569.\nPageouts:                                    1209179.\nSwapins:                                    11095158.\nSwapouts:                                   14237488.\n"
+    },
+    {
+      "time": 1791812320703,
+      "swap": "vm.swapusage: total = 13312.00M  used = 11894.31M  free = 1417.69M  (encrypted)\n",
+      "vm": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                     3571.\nPages active:                                 178708.\nPages inactive:                               175177.\nPages speculative:                              2290.\nPages throttled:                                   0.\nPages wired down:                             192492.\nPages purgeable:                                   0.\n\"Translation faults\":                     2961155987.\nPages copy-on-write:                        83193716.\nPages zero filled:                        2053692003.\nPages reactivated:                         851149830.\nPages purged:                              176321105.\nFile-backed pages:                            120992.\nAnonymous pages:                              235183.\nPages stored in compressor:                  2445329.\nPages occupied by compressor:                 456490.\nDecompressions:                            896165880.\nCompressions:                             1024356573.\nPageins:                                    66531376.\nPageouts:                                    1209199.\nSwapins:                                    11097338.\nSwapouts:                                   14243016.\n"
+    }
+  ]
+}

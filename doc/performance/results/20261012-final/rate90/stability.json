@@ -1,0 +1,20 @@
+{
+  "stable": false,
+  "checks": {
+    "至少180秒测量": true,
+    "达到目标到达速率95%": false,
+    "HTTP与系统错误率低于0.1%": true,
+    "HTTP P99低于1秒": true,
+    "积压峰值不超过10秒请求量": false,
+    "首尾平均积压增长不超过1秒请求量": false,
+    "异步P95保守上界低于10秒": false,
+    "入口结束后15秒内收敛": false,
+    "业务审计通过": true
+  },
+  "measuredRps": 82.95,
+  "targetRps": 90.0,
+  "backlogPeak": 3700,
+  "backlogMeanGrowth": 1363.4523809523807,
+  "firstMeanBacklog": 1455.7142857142858,
+  "lastMeanBacklog": 2819.1666666666665
+}

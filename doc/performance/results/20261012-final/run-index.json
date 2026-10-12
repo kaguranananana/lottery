@@ -1,0 +1,42 @@
+{
+  "formalConcurrency": [
+    "c10",
+    "c30",
+    "c50-confirm"
+  ],
+  "excludedConcurrency": [
+    {
+      "name": "c50",
+      "reason": "计划50但实际49线程；定速器零速率问题，另轮复核"
+    }
+  ],
+  "warmupOnly": [
+    "smoke"
+  ],
+  "fixedRateCalibration": [
+    "rate80",
+    "rate90",
+    "rate90-workers30"
+  ],
+  "longConfirmation": [
+    "rate60-confirm",
+    "rate70-confirm",
+    "rate80-confirm"
+  ],
+  "businessSemantics": "semantics-confirm",
+  "limitedStocks": [
+    "finiteActivity",
+    "finiteAward"
+  ],
+  "excludedSetups": [
+    {
+      "name": "semantics",
+      "reason": "测试脚本http名称冲突，在发送请求前失败；改用control别名后新活动重跑"
+    }
+  ],
+  "capacityConclusion": {
+    "maxStableRps": null,
+    "hostSwapGiB": "约11.9",
+    "reason": "所有持续复核未满足全部标准；发现活跃宿主机换页，停止降低负载盲试"
+  }
+}

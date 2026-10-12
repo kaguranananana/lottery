@@ -1,0 +1,4 @@
+{
+  "mysql": "usage_usec 1398990456\nuser_usec 960948476\nsystem_usec 438041979\nnice_usec 0\nnr_periods 14693\nnr_throttled 1856\nthrottled_usec 204751346\nnr_bursts 0\nburst_usec 0\n200000 100000\n",
+  "kafka": "usage_usec 1472011493\nuser_usec 1167060275\nsystem_usec 304951218\nnice_usec 0\nnr_periods 16909\nnr_throttled 743\nthrottled_usec 49216330\nnr_bursts 0\nburst_usec 0\n200000 100000\n"
+}

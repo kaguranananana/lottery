@@ -1,0 +1,1 @@
+{"status":"excluded_from_ladder","requestedThreads":50,"observedSteadyThreads":49,"reason":"定速器在零目标速率时使一个线程提前结束。已修复为无等待/定速两套JMX；本轮原始数据仅作诊断，另运行完整50线程。"}

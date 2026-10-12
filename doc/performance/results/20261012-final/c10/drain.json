@@ -1,0 +1,124 @@
+{
+  "seconds": 37.229252099990845,
+  "samples": [
+    {
+      "time": 1791808713416,
+      "orders": 7233,
+      "stockPending": 2886,
+      "grantPending": 4009,
+      "blocked": 0
+    },
+    {
+      "time": 1791808715706,
+      "orders": 7233,
+      "stockPending": 2705,
+      "grantPending": 4009,
+      "blocked": 0
+    },
+    {
+      "time": 1791808717864,
+      "orders": 7233,
+      "stockPending": 2400,
+      "grantPending": 3851,
+      "blocked": 0
+    },
+    {
+      "time": 1791808720105,
+      "orders": 7233,
+      "stockPending": 2179,
+      "grantPending": 3572,
+      "blocked": 0
+    },
+    {
+      "time": 1791808722290,
+      "orders": 7233,
+      "stockPending": 1909,
+      "grantPending": 3230,
+      "blocked": 0
+    },
+    {
+      "time": 1791808724492,
+      "orders": 7233,
+      "stockPending": 1518,
+      "grantPending": 2896,
+      "blocked": 0
+    },
+    {
+      "time": 1791808726688,
+      "orders": 7233,
+      "stockPending": 1185,
+      "grantPending": 2896,
+      "blocked": 0
+    },
+    {
+      "time": 1791808728958,
+      "orders": 7233,
+      "stockPending": 934,
+      "grantPending": 2691,
+      "blocked": 0
+    },
+    {
+      "time": 1791808731199,
+      "orders": 7233,
+      "stockPending": 785,
+      "grantPending": 2491,
+      "blocked": 0
+    },
+    {
+      "time": 1791808734609,
+      "orders": 7233,
+      "stockPending": 723,
+      "grantPending": 2409,
+      "blocked": 0
+    },
+    {
+      "time": 1791808736854,
+      "orders": 7233,
+      "stockPending": 615,
+      "grantPending": 2262,
+      "blocked": 0
+    },
+    {
+      "time": 1791808739194,
+      "orders": 7233,
+      "stockPending": 331,
+      "grantPending": 1903,
+      "blocked": 0
+    },
+    {
+      "time": 1791808741423,
+      "orders": 7233,
+      "stockPending": 161,
+      "grantPending": 1683,
+      "blocked": 0
+    },
+    {
+      "time": 1791808743635,
+      "orders": 7233,
+      "stockPending": 0,
+      "grantPending": 1192,
+      "blocked": 0
+    },
+    {
+      "time": 1791808745799,
+      "orders": 7233,
+      "stockPending": 0,
+      "grantPending": 726,
+      "blocked": 0
+    },
+    {
+      "time": 1791808748010,
+      "orders": 7233,
+      "stockPending": 0,
+      "grantPending": 319,
+      "blocked": 0
+    },
+    {
+      "time": 1791808750168,
+      "orders": 7233,
+      "stockPending": 0,
+      "grantPending": 0,
+      "blocked": 0
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "validatedNormalNewDraws": 164868,
+  "validatedNormalOrders": 164868,
+  "formalLadderOrders": 48829,
+  "maxMeasuredShortWindowNewDrawRps": 328.9,
+  "maxStableRps": null,
+  "reason": "未有持续轮次满足全部事先固定的条件；存在活跃宿主机换页",
+  "finiteActivityNewDraws": 100,
+  "finiteAwardNewDraws": 8404,
+  "finiteAwardOrders": 50,
+  "semanticsNewDraws": 4
+}

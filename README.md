@@ -154,3 +154,9 @@ mvn test -Dtest='*ManualIT'
 抽奖请求号、未完成参与恢复与发布前迁移见 [抽奖幂等接口说明](docs/draw-request-idempotency.md)。
 
 最新的四项正确性修复、真实 HTTP 业务 E2E、执行命令和简历证据边界见[最终验证报告](docs/final-correctness-e2e.md)。
+
+## 8. 真实性能压测
+
+本地真实HTTP、Redis、MySQL分片事务、Outbox/Kafka与模拟发奖的测试结果见[性能压测报告](doc/performance/report.md)，独立环境及执行步骤见[复现说明](doc/performance/README.md)，每轮参数、曲线与审计汇总见[证据索引](doc/performance/results/20261012-final/README.md)。
+
+50并发、60秒窗口测得328.9次新抽奖/秒，P95/P99为362/574ms；这属于本地短时同步入口吞吐。持续测试未全部满足预设稳定条件，宿主机存在活跃换页，最大稳定容量未确认，不能表述为生产容量。

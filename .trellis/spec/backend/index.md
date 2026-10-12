@@ -12,6 +12,7 @@
 | [Redis 与缓存](./redis-guidelines.md) | 库存、锁、配置缓存、TTL 与预热 |
 | [错误处理](./error-handling.md) | 业务拒绝、异常传播、补偿、现有偏差 |
 | [日志](./logging-guidelines.md) | 请求关联、库存告警、消息与任务日志 |
+| [性能压测](./performance-testing.md) | 独立环境、真实HTTP/异步链路、指标与容量证据 |
 | [质量与验证](./quality-guidelines.md) | Java 8、中文注释、测试选择、交付边界 |
 
 ## Pre-Development Checklist

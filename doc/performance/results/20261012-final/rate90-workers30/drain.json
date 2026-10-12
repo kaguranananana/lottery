@@ -1,0 +1,61 @@
+{
+  "seconds": 18.24893283843994,
+  "samples": [
+    {
+      "time": 1791810480557,
+      "orders": 17964,
+      "stockPending": 760,
+      "grantPending": 1349,
+      "blocked": 0
+    },
+    {
+      "time": 1791810483568,
+      "orders": 17964,
+      "stockPending": 682,
+      "grantPending": 1243,
+      "blocked": 0
+    },
+    {
+      "time": 1791810485898,
+      "orders": 17964,
+      "stockPending": 532,
+      "grantPending": 1050,
+      "blocked": 0
+    },
+    {
+      "time": 1791810488346,
+      "orders": 17964,
+      "stockPending": 340,
+      "grantPending": 814,
+      "blocked": 0
+    },
+    {
+      "time": 1791810490534,
+      "orders": 17964,
+      "stockPending": 33,
+      "grantPending": 766,
+      "blocked": 0
+    },
+    {
+      "time": 1791810492740,
+      "orders": 17964,
+      "stockPending": 0,
+      "grantPending": 463,
+      "blocked": 0
+    },
+    {
+      "time": 1791810495784,
+      "orders": 17964,
+      "stockPending": 0,
+      "grantPending": 163,
+      "blocked": 0
+    },
+    {
+      "time": 1791810497988,
+      "orders": 17964,
+      "stockPending": 0,
+      "grantPending": 0,
+      "blocked": 0
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "quota": "1\t50002\t3634\t0\n2\t49998\t3599\t0",
+  "takes": "7233\t0\t0",
+  "duplicateOrders": "0\t0",
+  "stock": "p720010_0\tNULL\t998535\np720010_1\tNULL\t998494\np720010_2\tNULL\t998545\np720010_3\tNULL\t998642\np720010_4\tNULL\t998551",
+  "ledger": "p720010_4\t1449\np720010_1\t1506\np720010_2\t1455\np720010_0\t1465\np720010_3\t1358",
+  "activity": "5\t1000000\t1000000",
+  "pending": {
+    "orders": 7233,
+    "stockPending": 0,
+    "grantPending": 0,
+    "blocked": 0
+  },
+  "redisActivity": "992767",
+  "redisAwards": {
+    "p720010_0": "998535",
+    "p720010_1": "998494",
+    "p720010_2": "998545",
+    "p720010_3": "998642",
+    "p720010_4": "998551"
+  },
+  "kafka": {
+    "lottery-perf-stock": [
+      7778,
+      0,
+      8
+    ],
+    "lottery-perf-invoice": [
+      7731,
+      0,
+      8
+    ]
+  }
+}

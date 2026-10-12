@@ -1,0 +1,41 @@
+# 仅测试启动器加载；保留生产池大小、缓存与消费者并发。
+server:
+  address: 127.0.0.1
+  port: 18090
+  tomcat:
+    mbeanregistry:
+      enabled: true
+spring:
+  redis:
+    host: 127.0.0.1
+    port: 17379
+    password: ''
+  kafka:
+    bootstrap-servers: 127.0.0.1:29092
+    consumer:
+      auto-offset-reset: earliest
+lottery:
+  kafka:
+    consumer:
+      invoice-group-id: lottery-perf-invoice
+      strategy-award-stock-group-id: lottery-perf-stock
+mini-db-router:
+  jdbc:
+    datasource:
+      db00:
+        url: jdbc:mysql://127.0.0.1:13329/lottery?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+        password: perf-only
+      db01:
+        url: jdbc:mysql://127.0.0.1:13329/lottery_01?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+        password: perf-only
+      db02:
+        url: jdbc:mysql://127.0.0.1:13329/lottery_02?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+        password: perf-only
+xxl:
+  job:
+    admin:
+      addresses: ''
+    executor:
+      port: 29999
+      address: http://127.0.0.1:29999
+      logpath: /tmp/lottery-perf-xxl
