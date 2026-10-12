@@ -41,12 +41,26 @@ def initialize():
     for name in ('doc/sql/20260315_async_award_stock_outbox.sql', 'docs/sql/V2__architecture_simplification.sql', 'docs/sql/V3__draw_request_ownership.sql'):
         sql((ROOT / name).read_text())
 
+def apply_stock_index():
+    # 复用仓库已有库存索引定义，只处理全局库存表，不混入发奖扫描索引实验。
+    source = (ROOT / 'doc/sql/20260314_high_concurrency_index.sql').read_text()
+    statement = re.search(r'ALTER TABLE `strategy_detail`.*?;', source, re.S).group()
+    indexes = sql("SELECT index_name,GROUP_CONCAT(column_name ORDER BY seq_in_index) FROM information_schema.statistics WHERE table_schema='lottery' AND table_name='strategy_detail' GROUP BY index_name;")
+    # 已有相同前导列时不重复增加等价索引。
+    if any(row.split('\t')[1].split(',')[:2] == ['strategy_id','award_id'] for row in indexes.strip().splitlines()):
+        print('库存条件索引已存在')
+        return
+    sql('USE lottery; ' + statement)
+    print('已应用现有库存组合索引定义')
+
 if __name__ == '__main__':
     action = sys.argv[1]
     if action == 'up':
         subprocess.run(COMPOSE + ['up', '-d', '--wait'], check=True)
     elif action == 'init':
         initialize()
+    elif action == 'stock-index':
+        apply_stock_index()
     elif action == 'stop':
         verify()
         subprocess.run(COMPOSE + ['stop'], check=True)
