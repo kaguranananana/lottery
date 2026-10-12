@@ -41,8 +41,11 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
         userTakeActivityCount.setuId(bill.getuId());
         userTakeActivityCount.setActivityId(bill.getActivityId());
         userTakeActivityCount.setTotalCount(bill.getTakeCount());
-        // 初始化与条件扣减都在同一个参与事务内，行锁串行化同用户活动的扣减。
-        userTakeActivityCountDao.initializeCount(userTakeActivityCount);
+        // 普通读取仅判断次数行是否存在；已有行避免无变化 upsert 占用主键末端间隙锁。
+        if (userTakeActivityCountDao.queryUserTakeActivityCount(userTakeActivityCount) == null) {
+            // 首次参与仍在同一事务内初始化，唯一约束处理并发创建，不重置已有次数。
+            userTakeActivityCountDao.initializeCount(userTakeActivityCount);
+        }
         // 次数耗尽时 UPDATE 匹配零行，不依赖 JDBC 是否返回匹配行数。
         return userTakeActivityCountDao.subtractionLeftCount(userTakeActivityCount);
     }
