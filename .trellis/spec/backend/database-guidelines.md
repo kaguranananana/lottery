@@ -35,3 +35,7 @@ requestId 用于参与记录查询与唯一约束，takeId 关联抽奖结果，
 ## 抽奖归属约束
 
 [V3__draw_request_ownership.sql](../../../docs/sql/V3__draw_request_ownership.sql) 是可执行的两库参与表及八张订单表迁移。request_id 按字节比较，参与表 UNIQUE(u_id,activity_id,request_id) 保留请求身份；生成列 UNIQUE(u_id,unfinished_activity_id) 限制每用户活动最多一条 state=0 记录。迁移遇到历史冲突显式失败，不能自动丢弃机会。数据库用例不证明目标生产环境已经迁移。
+
+## 活动创建与启动持久化契约
+
+创建聚合由 StrategyVO.strategyId 绑定 ActivityVO.strategyId 及明细所属策略；新活动 stock_surplus_count 从 stock_count 初始化，新策略明细剩余库存从 award_count 初始化。Activity_Mapper INSERT 显式携带 strategy_id 与 stock_surplus_count。scanToDoActivityList 使用自增 id 的十条游标分页，SELECT 必须返回 id。启动使用全局 TransactionTemplate + queryActivityForUpdate 的 FOR UPDATE，锁内预热后 CAS DOING；不要只在 worker 改调用顺序而允许其它入口绕过。回归见 FinalBusinessE2eManualIT。

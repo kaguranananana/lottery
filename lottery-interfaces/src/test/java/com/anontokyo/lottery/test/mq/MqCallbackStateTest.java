@@ -108,7 +108,7 @@ public class MqCallbackStateTest {
     }
 
     @Test
-    public void stockGapUsesConsumerFailureEventAndRemainsRetryable() {
+    public void stockGapPersistsReconciliationBeforeAcknowledgment() {
         IAwardOrder order = mock(IAwardOrder.class);
         IStrategyRepository strategy = mock(IStrategyRepository.class);
         when(order.queryInvoiceByOrderId("mq-test", 1L)).thenReturn(invoice);
@@ -122,9 +122,30 @@ public class MqCallbackStateTest {
         // 库存消费失败必须使用独立入口，不能冒充发送失败。
         listener.onMessage(new ConsumerRecord<>("lottery_strategy_award_stock", 0, 0, "1", JSON.toJSONString(stock)),
                 ack, "lottery_strategy_award_stock");
-        verify(order).markStockSettlementFailed("mq-test", 1L);
+        org.mockito.InOrder sequence = inOrder(order, ack);
+        sequence.verify(order).markStockSettlementFailed("mq-test", 1L);
+        sequence.verify(ack).acknowledge();
         verify(order, never()).updateStockMqState(anyString(), anyLong(), eq(Constants.MQState.FAIL.getCode()));
-        verify(ack).acknowledge();
+    }
+
+    @Test
+    public void stockGapPersistenceErrorMustPreventAck() {
+        IAwardOrder order = mock(IAwardOrder.class);
+        IStrategyRepository strategy = mock(IStrategyRepository.class);
+        when(order.queryInvoiceByOrderId("mq-test", 1L)).thenReturn(invoice);
+        when(strategy.settleAwardStock(any())).thenReturn(false);
+        doThrow(new IllegalStateException("数据库不可用")).when(order).markStockSettlementFailed("mq-test", 1L);
+        LotteryStrategyAwardStockListener listener = new LotteryStrategyAwardStockListener();
+        ReflectionTestUtils.setField(listener, "awardOrder", order);
+        ReflectionTestUtils.setField(listener, "strategyRepository", strategy);
+        AwardStockSettlementVO stock = new AwardStockSettlementVO();
+        stock.setuId("mq-test");
+        stock.setOrderId(1L);
+        // 没有持久保存待对账事实时，消费异常必须暴露，不能 ACK 丢掉应完成的结算。
+        assertThrows(IllegalStateException.class, () -> listener.onMessage(
+                new ConsumerRecord<>("lottery_strategy_award_stock", 0, 0, "1", JSON.toJSONString(stock)),
+                ack, "lottery_strategy_award_stock"));
+        verify(ack, never()).acknowledge();
     }
 
     @Test

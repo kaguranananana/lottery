@@ -34,7 +34,7 @@ public interface IActivityRepository {
     void recoverActivityStockByRedis(Long activityId);
 
     /**
-     * 活动启动前预热 Redis 库存（活动剩余库存 + 各奖品剩余库存，SETNX 幂等）。
+     * 仅 PASS 活动可预热 Redis 库存；行锁串行化启动，SETNX 保留已有值，异常阻止启动。
      * @return 实际初始化的 key 数量
      */
     int warmupStockForActivity(Long activityId);

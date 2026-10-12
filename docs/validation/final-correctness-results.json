@@ -1,0 +1,482 @@
+{
+  "date": "2026-10-12",
+  "baseline_commit": "2527478",
+  "java_version": "1.8.0_482",
+  "maven_version": "3.9.14",
+  "environment": {
+    "mysql": "8.0.46",
+    "redis": "7.2.16",
+    "kafka": "2.8.1",
+    "mysql_e2e_port": 13309,
+    "mysql_sql_port": 13319,
+    "redis_port": 16379,
+    "kafka_port": 19092
+  },
+  "baseline": [
+    {
+      "source_log": "lottery-final-baseline.log",
+      "tests": 3,
+      "failures": 3,
+      "errors": 0,
+      "skipped": 0,
+      "failure_cases": [
+        {
+          "name": "createdActivityHasStrategyAndInitialStock",
+          "failure": "真实数据库 strategy_id 为 NULL"
+        },
+        {
+          "name": "scanReturnsEveryCursorAcrossMoreThanTenActivities",
+          "failure": "分页必须返回自增 id"
+        },
+        {
+          "name": "futureActivityIsNotStartedOrWarmed",
+          "failure": "未来活动提前进入 DOING"
+        }
+      ]
+    },
+    {
+      "source_log": "lottery-final-stock-before.log",
+      "tests": 1,
+      "failures": 1,
+      "errors": 0,
+      "skipped": 0,
+      "failure_cases": [
+        {
+          "name": "stockGapStopsAutomaticResendUntilReconciled",
+          "failure": "库存业务分歧必须待对账，expected 4 but was 2"
+        }
+      ]
+    }
+  ],
+  "final": {
+    "tests": 79,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "final_suites": [
+    {
+      "name": "com.anontokyo.lottery.test.domain.DrawRequestIdempotencyTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "time": "0.031",
+      "test_cases": [
+        {
+          "name": "interruptedTakeIsReusedNotDuplicated",
+          "passed": true
+        },
+        {
+          "name": "queryFailureStopsBeforeAnySideEffects",
+          "passed": true
+        },
+        {
+          "name": "retryWithSameRequestIdReplaysConsumedTakeWithoutSideEffects",
+          "passed": true
+        },
+        {
+          "name": "unfinishedConflictIsForwardedWithoutDrawing",
+          "passed": true
+        },
+        {
+          "name": "guardIsAlwaysReleasedWithOwnerToken",
+          "passed": true
+        },
+        {
+          "name": "losingCasConflictReplaysConcurrentWinningOrder",
+          "passed": true
+        },
+        {
+          "name": "firstRequestRunsFullPipeline",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "com.anontokyo.lottery.test.domain.PartakeRequestOwnershipTest",
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "time": "0.001",
+      "test_cases": [
+        {
+          "name": "differentRequestIsBlockedAndCanRecoverOriginalId",
+          "passed": true
+        },
+        {
+          "name": "databaseFailureMustNotCreateParticipation",
+          "passed": true
+        },
+        {
+          "name": "sameRequestResumesWithoutQuotaOrStock",
+          "passed": true
+        },
+        {
+          "name": "missingOwnershipIsExplicitError",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "com.anontokyo.lottery.test.domain.WeightedRandomSelectorTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "time": "0.002",
+      "test_cases": [
+        {
+          "name": "build_keepsMicroPrecisionWeights",
+          "passed": true
+        },
+        {
+          "name": "select_hitsCorrectBoundaries",
+          "passed": true
+        },
+        {
+          "name": "negativeRateIsRejected",
+          "passed": true
+        },
+        {
+          "name": "overHundredPercentIsRejected",
+          "passed": true
+        },
+        {
+          "name": "sampleDistributionStaysWithinBounds",
+          "passed": true
+        },
+        {
+          "name": "zeroProbabilityAwardNeverSelected",
+          "passed": true
+        },
+        {
+          "name": "randomDrawNeverThrowsAndRespectsNullForFullNoPrize",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "com.anontokyo.lottery.test.infrastructure.lock.RedisActivityDrawProcessGuardTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "time": "0.013",
+      "test_cases": [
+        {
+          "name": "releaseMustUseOwnerCompareAndDeleteNotPlainDel",
+          "passed": true
+        },
+        {
+          "name": "shouldReturnTrueWhenDrawInflightKeyIsClaimed",
+          "passed": true
+        },
+        {
+          "name": "shouldReturnFalseWhenDrawInflightKeyAlreadyExists",
+          "passed": true
+        },
+        {
+          "name": "tryClaimStoresRandomTokenAsLockValue",
+          "passed": true
+        },
+        {
+          "name": "shouldFailClosedWhenRedisClaimThrowsException",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "com.anontokyo.lottery.test.manual.DrawRequestOwnershipManualIT",
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "time": "1.079",
+      "test_cases": [
+        {
+          "name": "orderInsertSqlFailureRollsBackConsumptionAndAResumes",
+          "passed": true
+        },
+        {
+          "name": "firstReplayThenNewRoundAcrossAllShards",
+          "passed": true
+        },
+        {
+          "name": "concurrentSameRequestCreatesOneTakeAndOneOrder",
+          "passed": true
+        },
+        {
+          "name": "requestIdComparisonMatchesJavaBytes",
+          "passed": true
+        },
+        {
+          "name": "realSqlFailureLeavesQuotaAndTakeUntouched",
+          "passed": true
+        },
+        {
+          "name": "legacyTakeWithoutRequestOwnershipCannotBeClaimedByB",
+          "passed": true
+        },
+        {
+          "name": "exhaustedQuotaDoesNotCreateTakeWithMatchedRowsDriver",
+          "passed": true
+        },
+        {
+          "name": "concurrentDifferentRequestsRollbackLosingQuota",
+          "passed": true
+        },
+        {
+          "name": "interruptionBlocksBAndAResumesWithoutCache",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "com.anontokyo.lottery.test.manual.FinalBusinessE2eManualIT",
+      "tests": 14,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "time": "26.868",
+      "test_cases": [
+        {
+          "name": "competingHttpRequestsCannotOverdrawQuota",
+          "passed": true
+        },
+        {
+          "name": "stockGapIsDurableBlockedAndReconciledOrderCanFinish",
+          "passed": true
+        },
+        {
+          "name": "httpPipelineReplaysRequestsAndRoutesAllEightTables",
+          "passed": true
+        },
+        {
+          "name": "expiredPassedAndRunningActivitiesCloseWithoutWarmup",
+          "passed": true
+        },
+        {
+          "name": "redisOutagePreventsStartAndRecoversAfterRestart",
+          "passed": true
+        },
+        {
+          "name": "realSqlFailureDoesNotAckOrBlockAndBrokerReplayCanSettle",
+          "passed": true
+        },
+        {
+          "name": "concurrentStartsAreSerializedAndDoNotResetStock",
+          "passed": true
+        },
+        {
+          "name": "partialWarmupFailureKeepsPassAndSetNxPreservesExistingStock",
+          "passed": true
+        },
+        {
+          "name": "createFailureRollsBackActivityStrategyAndAwards",
+          "passed": true
+        },
+        {
+          "name": "scanReturnsEveryCursorAcrossMoreThanTenActivities",
+          "passed": true
+        },
+        {
+          "name": "exhaustedActivityDoesNotCreateExtraTakeOrOrder",
+          "passed": true
+        },
+        {
+          "name": "createdActivityHasStrategyAndInitialStock",
+          "passed": true
+        },
+        {
+          "name": "unfinishedRequestOwnershipRecoversThroughHttp",
+          "passed": true
+        },
+        {
+          "name": "futureActivityIsNotStartedOrWarmed",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "com.anontokyo.lottery.test.manual.MqMiddlewareE2eManualIT",
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "time": "37.345",
+      "test_cases": [
+        {
+          "name": "completePipelineRoutesAcrossAllEightOrderTables",
+          "passed": true
+        },
+        {
+          "name": "timedOutSentStockIsReallyResentAndConsumed",
+          "passed": true
+        },
+        {
+          "name": "invoiceCompensationRecoversFailSentAndLegacyComplete",
+          "passed": true
+        },
+        {
+          "name": "consumersFinishBeforeInjectedLateFailureCallbacks",
+          "passed": true
+        },
+        {
+          "name": "consumersFinishBeforeDelayedSuccessCallbacks",
+          "passed": true
+        },
+        {
+          "name": "stockGapStopsAutomaticResendUntilReconciled",
+          "passed": true
+        },
+        {
+          "name": "actualBrokerFailureIsRetriedAfterKafkaRestarts",
+          "passed": true
+        },
+        {
+          "name": "duplicateBrokerMessagesDoNotRepeatInventoryOrGrant",
+          "passed": true
+        },
+        {
+          "name": "realRedisExpiryAndOutOfOrderRetryCallbacksRemainSafe",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "com.anontokyo.lottery.test.manual.MqStateCasManualIT",
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "time": "1.46",
+      "test_cases": [
+        {
+          "name": "retryCallbacksOutOfOrderKeepSendSuccessUntilConsumption",
+          "passed": true
+        },
+        {
+          "name": "stockConsumerCompletesBeforeRealProducerCallbacks",
+          "passed": true
+        },
+        {
+          "name": "concurrentSqlUpdatesNeverUndoConsumption",
+          "passed": true
+        },
+        {
+          "name": "realScanSqlRecoversPendingStatesAndExcludesCompletedAwards",
+          "passed": true
+        },
+        {
+          "name": "stockStateMatrixAllowsRetriesAndProtectsSentAndComplete",
+          "passed": true
+        },
+        {
+          "name": "invoiceConsumerAndLateCallbacksShareRealCas",
+          "passed": true
+        },
+        {
+          "name": "completedStockCannotBeOverwrittenByLateCallbacks",
+          "passed": true
+        },
+        {
+          "name": "invoiceStateMatrixRequiresGrantFactForCompletion",
+          "passed": true
+        },
+        {
+          "name": "invoiceRetriesAlsoIgnoreOldFailuresAfterNewSuccess",
+          "passed": true
+        },
+        {
+          "name": "duplicateAndLateEventsDoNotPostponeTimeout",
+          "passed": true
+        },
+        {
+          "name": "legacyInvoiceCompleteWithoutGrantIsActuallyRecoverable",
+          "passed": true
+        },
+        {
+          "name": "stockGapBlocksCallbacksButSuccessfulLedgerCanComplete",
+          "passed": true
+        },
+        {
+          "name": "timedOutStockCanBeResentEvenIfRetrySendFails",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "com.anontokyo.lottery.test.mq.MqCallbackStateTest",
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "time": "0.102",
+      "test_cases": [
+        {
+          "name": "otherConsumerCompletedInvoiceAlsoClosesMqBeforeAck",
+          "passed": true
+        },
+        {
+          "name": "stockCompletionInvoiceSendUsesSentAndFailCallbacks",
+          "passed": true
+        },
+        {
+          "name": "invoiceConsumerClosesMqBeforeAck",
+          "passed": true
+        },
+        {
+          "name": "compensationSuccessMeansSent",
+          "passed": true
+        },
+        {
+          "name": "stockGapPersistenceErrorMustPreventAck",
+          "passed": true
+        },
+        {
+          "name": "duplicateGrantedInvoiceRepairsMqAndAcknowledges",
+          "passed": true
+        },
+        {
+          "name": "stockGapPersistsReconciliationBeforeAcknowledgment",
+          "passed": true
+        },
+        {
+          "name": "mqCloseSqlErrorMustPreventAck",
+          "passed": true
+        }
+      ]
+    },
+    {
+      "name": "com.anontokyo.lottery.test.web.DrawHttpOwnershipTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "time": "0.776",
+      "test_cases": [
+        {
+          "name": "missingRequestIdCannotEnterApplication",
+          "passed": true
+        },
+        {
+          "name": "blockedBReturnsAThroughSeparateRecoveryField",
+          "passed": true
+        },
+        {
+          "name": "unknownResultRetainsOriginalRequestId",
+          "passed": true
+        }
+      ]
+    }
+  ],
+  "limits": [
+    "默认单元和 SQL 专项存在 Mock；E2E 的中间件和业务组件均真实运行",
+    "XXL-Job Handler 直接调用，发奖渠道为已有模拟",
+    "SQL 异常直接调用真实消费者检查 ACK；恢复链路真实通过 Kafka",
+    "迟到失败回调为显式注入；真实 Broker 停机发送失败另有用例",
+    "关联路由组件自身 POM 跳过测试，未计入通过数量"
+  ]
+}

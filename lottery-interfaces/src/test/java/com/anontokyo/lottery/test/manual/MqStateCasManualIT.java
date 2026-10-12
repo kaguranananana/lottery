@@ -121,10 +121,10 @@ public class MqStateCasManualIT {
 
     @Test
     public void stockStateMatrixAllowsRetriesAndProtectsSentAndComplete() {
-        // 行是旧状态 0/1/2/3，列是目标状态 0/1/2/3；0 不作为更新事件。
-        int[][] expected = {{0, 1, 2, 3}, {1, 1, 1, 1}, {2, 1, 2, 3}, {3, 1, 3, 3}};
-        for (int from = 0; from < 4; from++) {
-            for (int target = 0; target < 4; target++) {
+        // 库存加入 BLOCKED=4；通用发送入口不能写入或解除待对账状态。
+        int[][] expected = {{0, 1, 2, 3, 0}, {1, 1, 1, 1, 1}, {2, 1, 2, 3, 2}, {3, 1, 3, 3, 3}, {4, 1, 4, 4, 4}};
+        for (int from = 0; from < 5; from++) {
+            for (int target = 0; target < 5; target++) {
                 jdbc.update("UPDATE user_strategy_export SET stock_mq_state=?", from);
                 repository.updateStockMqState("mq-test", 1L, target);
                 assertEquals("库存转换 " + from + "→" + target, expected[from][target], stockState());
@@ -148,15 +148,17 @@ public class MqStateCasManualIT {
     }
 
     @Test
-    public void consumerFailureCanRetryFromSentButCannotOverwriteComplete() {
-        for (int from = 0; from < 4; from++) {
+    public void stockGapBlocksCallbacksButSuccessfulLedgerCanComplete() {
+        for (int from = 0; from < 5; from++) {
             jdbc.update("UPDATE user_strategy_export SET stock_mq_state=?", from);
             repository.markStockSettlementFailed("mq-test", 1L);
-            assertEquals(from == 1 ? 1 : 2, stockState());
+            assertEquals(from == 1 ? 1 : 4, stockState());
             if (from != 1) {
-                // 结算 FAIL 必须能继续进入 SENT 与 COMPLETE，不能只保护 INIT。
+                // 业务分歧不得被发送通知解除；真实结算成功仍可以收口。
                 repository.updateStockMqState("mq-test", 1L, 3);
-                assertEquals(3, stockState());
+                assertEquals(4, stockState());
+                repository.updateStockMqState("mq-test", 1L, 2);
+                assertEquals(4, stockState());
                 repository.updateStockMqState("mq-test", 1L, 1);
                 assertEquals(1, stockState());
             }

@@ -86,6 +86,14 @@ public class MqMiddlewareE2eManualIT {
 
     @BeforeClass
     public static void createSchema() throws Exception {
+        // DROP 前核实 Docker 项目和端口，避免误连业务实例。
+        Process inspected = new ProcessBuilder("docker", "inspect", "lottery-mq-e2e-mysql-1", "--format",
+                "{{index .Config.Labels \"com.docker.compose.project\"}}:{{index .Config.Labels \"com.docker.compose.service\"}}:{{(index (index .NetworkSettings.Ports \"3306/tcp\") 0).HostPort}}")
+                .redirectError(ProcessBuilder.Redirect.INHERIT).start();
+        String identity = new String(org.springframework.util.StreamUtils.copyToByteArray(inspected.getInputStream()), StandardCharsets.UTF_8).trim();
+        assertTrue("专用 MySQL 身份检查超时", inspected.waitFor(10, TimeUnit.SECONDS));
+        assertEquals("专用 MySQL 身份检查失败", 0, inspected.exitValue());
+        assertEquals("必须使用专用 E2E MySQL", "lottery-mq-e2e:mysql:13309", identity);
         // 运行标识固定后，两个真实消费者组在本轮测试内保持一致且不沿用旧消费位点。
         System.setProperty("lottery.e2e.run", String.valueOf(IDS.get()));
         try (Connection connection = connect(); Statement statement = connection.createStatement()) {
@@ -317,7 +325,36 @@ public class MqMiddlewareE2eManualIT {
         awaitCommitted();
     }
 
-    private static void compose(String... arguments) throws Exception {
+    @Test
+    public void stockGapStopsAutomaticResendUntilReconciled() throws Exception {
+        UserStrategyExport row = createOrder(null, 0, 0);
+        Gate gate = callbacks.hold(STOCK_TOPIC, row.getOrderId());
+        // 真实 Redis 已预扣且用户订单存在，但数据库库存损坏为零。
+        sql("UPDATE lottery.strategy_detail SET award_surplus_count=0 WHERE strategy_id=?", strategyId);
+        job.awardStockSettlementOutboxJobHandler();
+        Attempt sent = gate.attempt(0);
+        await("库存消费返回明确失败状态", () -> query(row).getStockMqState() == 2 || query(row).getStockMqState() == 4);
+        assertEquals("库存业务分歧必须待对账，不能进入自动重试 FAIL", Integer.valueOf(4), query(row).getStockMqState());
+        assertEquals(0, ledgerCount(row));
+        assertEquals(0, dbStock());
+        // 发送成功迟于库存分歧，不能解除 BLOCKED。
+        sent.success();
+        for (int i = 0; i < 3; i++) job.awardStockSettlementOutboxJobHandler();
+        assertEquals(1, gate.attempts.size());
+        assertEquals(Integer.valueOf(0), query(row).getGrantState());
+        awaitCommitted();
+        // 只修复 fixture 的错误库存，显式按订单释放原有 Outbox 后继续原业务链。
+        sql("UPDATE lottery.strategy_detail SET award_surplus_count=100 WHERE strategy_id=?", strategyId);
+        sql("UPDATE " + physicalTable(row.getuId()) + " SET stock_mq_state=0 WHERE order_id=? AND stock_mq_state=4", row.getOrderId());
+        job.awardStockSettlementOutboxJobHandler();
+        awaitCompleted(row);
+        gate.attempt(1).success();
+        assertEquals(1, ledgerCount(row));
+        assertEquals(99, dbStock());
+        awaitCommitted();
+    }
+
+    static void compose(String... arguments) throws Exception {
         List<String> command = new ArrayList<>(Arrays.asList("docker", "compose", "-f",
                 "src/test/resources/mq-e2e/docker-compose.yml"));
         command.addAll(Arrays.asList(arguments));

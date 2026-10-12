@@ -19,6 +19,9 @@ public interface IActivityDao {
 
     Activity queryActivityById(Long activityId);
 
+    /** 在全局库本地事务中锁定启动状态及初始库存。 */
+    Activity queryActivityForUpdate(Long activityId);
+
     /**
      * 活动状态变更（乐观更新：必须匹配变更前状态）。
      */

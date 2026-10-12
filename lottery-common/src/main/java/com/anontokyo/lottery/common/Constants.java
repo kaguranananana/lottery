@@ -302,7 +302,9 @@ public class Constants {
         COMPLETE(1, "完成"),
         FAIL(2, "失败"),
         /** dispatch 成功、尚未收到消费侧收口 */
-        SENT(3, "已发送");
+        SENT(3, "已发送"),
+        /** 仅库存结算使用：业务库存分歧，持久保留订单等待对账，禁止自动重投。 */
+        BLOCKED(4, "待对账");
 
         private Integer code;
         private String info;

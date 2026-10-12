@@ -42,6 +42,17 @@ public class ActivityDeployImpl implements IActivityDeploy {
         try {
             // 添加活动配置
             ActivityVO activity = activityConfigRich.getActivity();
+            // 活动、策略和策略明细来自同一个新建配置，避免活动关联空策略。
+            StrategyVO strategy = activityConfigRich.getStrategy();
+            // 聚合中的策略号是创建活动关联的唯一来源。
+            activity.setStrategyId(strategy.getStrategyId());
+            // 新建策略的明细必须属于该策略，初始剩余库存等于配置库存。
+            for (StrategyDetailVO detail : strategy.getStrategyDetailList()) {
+                // 将明细关联到本次创建的策略，避免插入不可达的奖品配置。
+                detail.setStrategyId(strategy.getStrategyId());
+                // 新建库存没有预扣或结算历史，剩余量从配置总量初始化。
+                detail.setAwardSurplusCount(detail.getAwardCount());
+            }
             activityRepository.addActivity(activity);
 
             // 添加奖品信息
@@ -49,7 +60,6 @@ public class ActivityDeployImpl implements IActivityDeploy {
             activityRepository.addAward(awardList);
 
             // 添加策略配置
-            StrategyVO strategy = activityConfigRich.getStrategy();
             activityRepository.addStrategy(strategy);
 
             // 添加策略明细配置

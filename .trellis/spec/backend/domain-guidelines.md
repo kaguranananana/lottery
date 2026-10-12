@@ -18,7 +18,7 @@
 
 ## 活动生命周期
 
-[ActivityLifecycleService.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/lifecycle/ActivityLifecycleService.java) 的合法转换为 EDIT(1)→PASS(4)、PASS(4)→DOING(5)、PASS(4)→CLOSE(7)、DOING(5)→CLOSE(7)。仓储使用 expected state 的 CAS，影响行数决定是否成功。历史状态值不作为新增业务规则；不能绕过转换矩阵直接覆盖状态。
+[ActivityLifecycleService.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/lifecycle/ActivityLifecycleService.java) 的合法转换为 EDIT(1)→PASS(4)、PASS(4)→DOING(5)、PASS(4)→CLOSE(7)、DOING(5)→CLOSE(7)。仓储使用 expected state 的 CAS，影响行数决定是否成功。PASS→DOING 仓储在活动行锁内校验时间并先完成 SETNX 预热，Redis 失败保持 PASS；历史状态值不作为新增业务规则；不能绕过转换矩阵直接覆盖状态。
 
 ## 发奖扩展
 

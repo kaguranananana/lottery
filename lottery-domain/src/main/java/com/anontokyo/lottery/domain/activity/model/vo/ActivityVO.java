@@ -44,6 +44,13 @@ public class ActivityVO {
      */
     private Integer stockCount;
 
+    /** 活动所属抽奖策略，创建时由同一配置聚合绑定。 */
+    private Long strategyId;
+
+    public Long getStrategyId() { return strategyId; }
+
+    public void setStrategyId(Long strategyId) { this.strategyId = strategyId; }
+
     /**
      * 每人可参与次数
      */

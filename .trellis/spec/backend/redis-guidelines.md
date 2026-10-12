@@ -10,7 +10,7 @@
 
 当前操作读取 key 后执行原子 DECR，减成负数则 INCR 回补；不是把整个读、扣、回补过程包成一个 Lua 脚本。新改动不得将缺 key 改为热路径按 MySQL 剩余值回填，异步结算滞后的值会恢复已预扣库存。
 
-warmupStockForActivity 由活动 CAS 启动成功后调用，用 SETNX 初始化活动与奖品库存，已存在的 key 不覆盖。运行期丢失 key 后恢复仍需要对账决策；SETNX 本身不能证明 MySQL 数值已反映全部在途订单。[BaseActivityPartake.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java) 的旧「首次 miss 回填」注释与当前仓储不一致，以实际方法为准。
+warmupStockForActivity 仅允许 PASS 活动，使用 SELECT FOR UPDATE 与启动共用活动行锁。PASS→DOING 在锁内检查 begin <= now < end，所有 SETNX 成功或 Key 已存在后才提交状态。Redis 异常保留 Key 与堆栈并抛出，状态回滚为 PASS；部分已成功 Key 留存，下轮补齐且不覆盖实时值。重复启动返回 false；DOING/CLOSE 的直接预热抛出，运行期缺失库存须人工对账，不能从滞后数据库自动回填。详见[最终验证](../../../docs/final-correctness-e2e.md)。
 
 ## 并发锁
 

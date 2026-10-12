@@ -3,7 +3,6 @@ package com.anontokyo.lottery.application.worker;
 import com.anontokyo.lottery.application.mq.producer.KafkaProducer;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
-import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
 import com.anontokyo.lottery.domain.activity.service.deploy.IActivityDeploy;
 import com.anontokyo.lottery.domain.activity.service.lifecycle.ActivityLifecycleService;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
@@ -45,9 +44,6 @@ public class LotteryXxlJob {
     private ActivityLifecycleService activityLifecycleService;
 
     @Resource
-    private IActivityRepository activityRepository;
-
-    @Resource
     private IAwardOrder awardOrder;
 
     @Resource
@@ -76,17 +72,23 @@ public class LotteryXxlJob {
             for (ActivityVO activityVO : activityVOList) {
                 Integer state = activityVO.getState();
                 switch (state) {
-                    // 4 通过(READY)：临近活动开启时间由调度切换为运行中；CAS 成功后预热 Redis 库存。
+                    // 通过的活动先检查时间，仓储在行锁内再次检查并完成预热后才发布运行状态。
                     case 4:
+                        Date now = new Date();
+                        // 已经过期但尚未启动的活动直接关闭，无须创建库存 Key。
+                        if (!activityVO.getEndDateTime().after(now)) {
+                            activityLifecycleService.transition(activityVO.getActivityId(),
+                                    Constants.ActivityState.PASS, Constants.ActivityState.CLOSE);
+                            break;
+                        }
+                        // 未到开始时间留待下一轮扫描，不提前预热或运行。
+                        if (activityVO.getBeginDateTime().after(now)) {
+                            break;
+                        }
                         boolean started = activityLifecycleService.transition(activityVO.getActivityId(),
                                 Constants.ActivityState.PASS, Constants.ActivityState.DOING);
                         logger.info("scan activity start transition result:{} activityId:{} activityName:{} creator:{}",
-                                started, activityVO.getActivityId(), activityVO.getActivityName(),
-                                activityVO.getCreator());
-                        if (started) {
-                            int warmedKeys = activityRepository.warmupStockForActivity(activityVO.getActivityId());
-                            logger.info("activity stock warmed up after start activityId:{} keys:{}", activityVO.getActivityId(), warmedKeys);
-                        }
+                                started, activityVO.getActivityId(), activityVO.getActivityName(), activityVO.getCreator());
                         break;
                     // 5 运行中(RUNNING)：扫描到已过期则关闭。CAS 保证并发安全，重复执行幂等。
                     case 5:

@@ -1,5 +1,7 @@
 # Kafka 消息状态修复的 Docker 端到端验证
 
+> 本文保留此前验证记录；当前库存业务分歧已改为 BLOCKED=4，HTTP 和预热故障验证已补齐，最新契约与结果以[最终报告](final-correctness-e2e.md)为准。
+
 2026-10-12 已在独立 Docker 栈验证生产异步链路，8 个集成用例全部通过。MySQL、Redis、Kafka、分片路由、库存 Repository、DAO/Mapper、生产者与消费者均真实运行，没有使用 Mockito 或中间件 Mock。
 
 ## 环境与执行范围

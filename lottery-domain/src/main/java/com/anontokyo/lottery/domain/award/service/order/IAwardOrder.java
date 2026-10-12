@@ -27,7 +27,7 @@ public interface IAwardOrder {
      */
     void updateStockMqState(String uId, Long orderId, Integer stockMqState);
 
-    /** 库存消费失败允许 INIT/SENT 转 FAIL，COMPLETE 保持不变。 */
+    /** 库存条件扣减失败：INIT/FAIL/SENT 转 BLOCKED 等待对账；持久化失败抛出，COMPLETE 不回退。 */
     void markStockSettlementFailed(String uId, Long orderId);
 
     /**

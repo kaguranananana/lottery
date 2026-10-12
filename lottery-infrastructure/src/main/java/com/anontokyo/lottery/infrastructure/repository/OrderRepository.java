@@ -130,8 +130,16 @@ public class OrderRepository implements IOrderRepository {
         userStrategyExport.setuId(uId);
         // 按订单限定本次结算失败的更新范围。
         userStrategyExport.setOrderId(orderId);
-        // SQL 条件决定是否更新；零行是终态保护或重复失败，SQL 异常仍向上传播。
-        userStrategyExportDao.markStockSettlementFailed(userStrategyExport);
+        // 只有持久化成功才允许消费者 ACK，数据库异常原样传播。
+        if (userStrategyExportDao.markStockSettlementFailed(userStrategyExport) > 0) {
+            return;
+        }
+        // 零行可能是并发结算成功或重复 BLOCKED；必须回读事实而非默认成功。
+        UserStrategyExport current = queryOrder(uId, orderId);
+        if (current == null || (!Constants.MQState.COMPLETE.getCode().equals(current.getStockMqState())
+                && !Constants.MQState.BLOCKED.getCode().equals(current.getStockMqState()))) {
+            throw new IllegalStateException("库存分歧未持久化，uId=" + uId + " orderId=" + orderId);
+        }
     }
 
     @Override

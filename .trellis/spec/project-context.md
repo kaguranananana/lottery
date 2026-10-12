@@ -39,6 +39,6 @@ MySQL 保存参与记录、订单与库存结算事实；Redis 锁用于并发�
 - Redis 库存丢失按不可售处理，需要预热或对账；配置缓存与库存的错误策略不同。
 - 快照缓存没有跨实例广播失效，TTL 内可能仍读到旧快照。
 - 本地 Kafka 为单副本、acks=1，不代表生产级消息可靠性。
-- 请求查询异常中断、库存 FAIL 重扫和 SENT 恢复边界见[错误处理](./backend/error-handling.md)与[应用规范](./backend/application-guidelines.md)。
+- 请求查询异常中断、库存 BLOCKED 对账与 FAIL 重试和 SENT 恢复边界见[错误处理](./backend/error-handling.md)与[应用规范](./backend/application-guidelines.md)。
 
 分析基于直接源码与测试阅读；本机没有可用 GitNexus CLI 或 GitNexus/ABCoder MCP，本次未生成额外索引。以上为源码事实或已有文档说明，不代表本次已执行业务测试。

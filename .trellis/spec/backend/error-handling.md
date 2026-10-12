@@ -19,10 +19,10 @@
 | [ActivityProcessImpl.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java) 的 findTakeByRequestId | 查询异常记录 error 并传播，禁止把 SQL 失败解释为无参与记录；消费 CAS 零更新回读最终结果 |
 | [ActivityRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityRepository.java)、[StrategyRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java) 的库存回补 | INCR 异常记录 error 后返回，主流程未必获知回补失败；不能据此声称补偿必达 |
 | [TwoLevelCacheService.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/cache/TwoLevelCacheService.java) | 部分缓存写入、失效异常只记录日志；须与事实存储或库存错误区分 |
-| [LotteryStrategyAwardStockListener.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryStrategyAwardStockListener.java) 与 [UserStrategyExport_Mapper.xml](../../../lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml) | 库存分歧写 FAIL 并 ack，但 Outbox 仍扫描 FAIL；不等于永久停止重投 |
+| [LotteryStrategyAwardStockListener.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryStrategyAwardStockListener.java) 与 [UserStrategyExport_Mapper.xml](../../../lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml) | 库存分歧写 BLOCKED 并告警；持久化失败不 ack。FAIL 保留发送重试，对账后显式释放 BLOCKED 原订单 |
 | [AbstractAwardFulfillmentHandler.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/award/service/fulfillment/impl/AbstractAwardFulfillmentHandler.java) | 本地 CAS 零更新也返回 SUCCESS；这仅是当前模拟渠道行为，不证明真实外部发奖已完成 |
 
-本次只记录已确认的代码形态，未修改业务，也未验证这些偏差的运行期故障。后续处理先复现、追踪状态及 SQL，再修复责任层，并给出有效验证。
+初始化时记录的现状由后续任务持续修正；最新库存分歧、启动故障及真实主链路验证见[最终报告](../../../docs/final-correctness-e2e.md)。其他缓存/回补边界仍按实际实现评估。
 
 ## 项目要求
 

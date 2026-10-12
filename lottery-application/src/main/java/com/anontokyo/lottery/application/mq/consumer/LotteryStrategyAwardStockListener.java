@@ -80,12 +80,13 @@ public class LotteryStrategyAwardStockListener {
 
             boolean settled = strategyRepository.settleAwardStock(settlementVO);
             if (!settled) {
-                // 条件扣减失败：独立消费事件可将 SENT 转 FAIL；Outbox 仍会重扫，并需人工对账。
+                // 账本与扣减事务已回滚：先持久化 BLOCKED，保留应结算订单等待对账。
                 awardOrder.markStockSettlementFailed(settlementVO.getuId(), settlementVO.getOrderId());
                 logger.error("settle award stock failed (stock gap), needs reconciliation "
                                 + "uId:{} orderId:{} strategyId:{} awardId:{}",
                         settlementVO.getuId(), settlementVO.getOrderId(), settlementVO.getStrategyId(),
                         settlementVO.getAwardId());
+                // 待对账状态写入失败会抛出而不 ACK；成功持久化后才停止本消息重投。
                 ack.acknowledge();
                 return;
             }

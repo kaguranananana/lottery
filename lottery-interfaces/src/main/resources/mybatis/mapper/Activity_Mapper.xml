@@ -22,10 +22,10 @@
     <insert id="insert" parameterType="com.anontokyo.lottery.infrastructure.po.Activity">
         INSERT INTO activity
         (activity_id, activity_name, activity_desc, begin_date_time, end_date_time,
-         stock_count, take_count, state, creator, create_time, update_time)
+         stock_count, stock_surplus_count, strategy_id, take_count, state, creator, create_time, update_time)
         VALUES
             (#{activityId}, #{activityName}, #{activityDesc}, #{beginDateTime}, #{endDateTime},
-             #{stockCount}, #{takeCount}, #{state}, #{creator}, now(), now())
+             #{stockCount}, #{stockSurplusCount}, #{strategyId}, #{takeCount}, #{state}, #{creator}, now(), now())
     </insert>
 
     <select id="queryActivityById" parameterType="java.lang.Long" resultType="com.anontokyo.lottery.infrastructure.po.Activity">
@@ -35,6 +35,12 @@
         WHERE activity_id = #{activityId}
     </select>
 
+    <!-- 启动和预热共用活动行锁，防止另一启动者在 DOING 后回填丢失库存。 -->
+    <select id="queryActivityForUpdate" resultMap="activityMap">
+        SELECT id, activity_id, strategy_id, stock_surplus_count, state, begin_date_time, end_date_time
+        FROM activity WHERE activity_id = #{activityId} FOR UPDATE
+    </select>
+
     <update id="alterState" parameterType="com.anontokyo.lottery.domain.activity.model.vo.AlterStateVO">
         UPDATE activity
         SET state = #{afterState}, update_time = now()
@@ -42,7 +48,8 @@
           AND state = #{beforeState}
     </update>
     <select id="scanToDoActivityList" resultType="com.anontokyo.lottery.infrastructure.po.Activity">
-        SELECT activity_id, activity_name, begin_date_time, end_date_time, state, creator
+        <!-- 游标按自增 id 推进，查询必须同时返回该列。 -->
+        SELECT id, activity_id, activity_name, begin_date_time, end_date_time, state, creator
         FROM activity
         WHERE id > #{id} AND state in (4,5)
         ORDER BY ID ASC

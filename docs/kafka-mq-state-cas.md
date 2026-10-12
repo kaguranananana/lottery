@@ -1,5 +1,7 @@
 # Kafka 迟到回调与消息状态修复
 
+> 本文保留此前验证记录；当前库存业务分歧已改为 BLOCKED=4，HTTP 和预热故障验证已补齐，最新契约与结果以[最终报告](final-correctness-e2e.md)为准。
+
 ## 根因与完整调用链
 
 中奖订单在用户分片事务内以 stock_mq_state=INIT、mq_state=INIT 创建。LotteryXxlJob 的库存 Outbox 扫描经 AwardOrderImpl → OrderRepository → IUserStrategyExportDao → UserStrategyExport_Mapper.xml 读取待投递订单，KafkaProducer 按 orderId 发消息，Future 回调异步写 SENT 或 FAIL。

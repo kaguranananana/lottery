@@ -44,6 +44,7 @@ Redis 不承担任何“最终是否处理过”的事实判定：DONE 类 guard
 ### Outbox 为什么存在？
 避免 “DB 提交成功 → JVM crash → 消息永远没有发出去”。订单写入与 `stock_mq_state=0`
 在同一事务落库，之后由 XXL-Job 扫描 `IN(0,2)` 及超时 10 分钟的 SENT 补偿投递。
+库存条件扣减分歧进入独立 BLOCKED=4 等待对账，发送 FAIL=2 继续自动重试；对账后按订单显式 CAS 4→0 恢复原 Outbox。
 发送与消费事件以 SQL 条件更新推进状态，迟到发送回调不能覆盖 COMPLETE；发奖发送成功统一为 SENT，消费确认 grant_state 后才收口 COMPLETE。详见[消息状态修复说明](kafka-mq-state-cas.md)。
 
 ### settlement ledger 为什么存在？
@@ -57,7 +58,7 @@ Redis 不承担任何“最终是否处理过”的事实判定：DONE 类 guard
 
 | Job | 参数 | 职责 |
 | --- | --- | --- |
-| lotteryActivityStateJobHandler | — | READY→RUNNING（CAS 成功后 SETNX 预热库存）；RUNNING 过期→CLOSED |
+| lotteryActivityStateJobHandler | — | READY→RUNNING（检查开始时间，活动行锁内先 SETNX 预热，再 CAS）；RUNNING 过期→CLOSED |
 | awardStockSettlementOutboxJobHandler | `"1"` 或 `"1,2"` | 库存 Outbox 分片扫描投递 |
 | lotteryOrderMQStateJobHandler | dbIdx 列表 | 发奖消息补偿重发（scan 带 LIMIT=100） |
 
@@ -116,3 +117,5 @@ migration 注释提供归并语句（默认不自动执行 DROP/UPDATE）。
 5. 定位：用于理解路由原理的轻量自研组件，**不是**生产级 ShardingSphere 替代品；本次重构不重写该 repo。
 
 抽奖请求归属、未完成请求恢复和两库约束迁移见 [抽奖幂等接口说明](draw-request-idempotency.md)。
+
+最终一轮的活动创建、分页、预热恢复、库存分歧及真实 HTTP 主链路证据见[最终正确性与 E2E 报告](final-correctness-e2e.md)。
