@@ -1,0 +1,3 @@
+1	UPDATE	strategy_detail	NULL	index	NULL	PRIMARY	8	NULL	75	100.00	Using where
+1	UPDATE	user_strategy_export_000	NULL	range	idx_u_id_take_id	idx_u_id_take_id	131	const	1	100.00	Using where
+1	UPDATE	user_take_activity_count	NULL	range	idx_uId_activityId	idx_uId_activityId	92	const,const	1	100.00	Using where

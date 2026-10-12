@@ -1,0 +1,112 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<jmeterTestPlan version="1.2" properties="5.0" jmeter="5.6.3">
+  <hashTree>
+    <TestPlan guiclass="TestPlanGui" testclass="TestPlan" testname="Lottery 真实抽奖压测">
+      <stringProp name="TestPlan.comments">隔离环境；预热与稳定窗口由运行器记录；所有独立操作使用新的请求号。</stringProp>
+      <boolProp name="TestPlan.tearDown_on_shutdown">true</boolProp>
+      <elementProp name="TestPlan.user_defined_variables" elementType="Arguments" guiclass="ArgumentsPanel" testclass="Arguments" testname="User Defined Variables">
+        <collectionProp name="Arguments.arguments" />
+      </elementProp>
+    </TestPlan>
+    <hashTree>
+      <ThreadGroup guiclass="ThreadGroupGui" testclass="ThreadGroup" testname="Throughput Users">
+        <stringProp name="ThreadGroup.num_threads">${__P(threads,10)}</stringProp>
+        <stringProp name="ThreadGroup.ramp_time">${__P(ramp,5)}</stringProp>
+        <boolProp name="ThreadGroup.same_user_on_next_iteration">true</boolProp>
+        <stringProp name="ThreadGroup.on_sample_error">continue</stringProp>
+        <elementProp name="ThreadGroup.main_controller" elementType="LoopController" guiclass="LoopControlPanel" testclass="LoopController" testname="Loop Controller">
+          <stringProp name="LoopController.loops">-1</stringProp>
+          <boolProp name="LoopController.continue_forever">false</boolProp>
+        </elementProp>
+        <boolProp name="ThreadGroup.scheduler">true</boolProp>
+        <stringProp name="ThreadGroup.duration">${__P(duration,80)}</stringProp>
+        <stringProp name="ThreadGroup.delay">0</stringProp>
+      </ThreadGroup>
+      <hashTree>
+        <ConfigTestElement guiclass="HttpDefaultsGui" testclass="ConfigTestElement" testname="HTTP Defaults">
+          <stringProp name="HTTPSampler.connect_timeout">3000</stringProp>
+          <stringProp name="HTTPSampler.response_timeout">10000</stringProp>
+          <stringProp name="HTTPSampler.domain">127.0.0.1</stringProp>
+          <stringProp name="HTTPSampler.port">18090</stringProp>
+          <stringProp name="HTTPSampler.protocol">http</stringProp>
+          <stringProp name="HTTPSampler.contentEncoding">UTF-8</stringProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments" guiclass="HTTPArgumentsPanel" testclass="Arguments" testname="HTTP Arguments">
+            <collectionProp name="Arguments.arguments" />
+          </elementProp>
+          <stringProp name="HTTPSampler.implementation" />
+        </ConfigTestElement>
+        <hashTree />
+        <HeaderManager guiclass="HeaderPanel" testclass="HeaderManager" testname="JSON Headers">
+          <collectionProp name="HeaderManager.headers">
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">Content-Type</stringProp>
+              <stringProp name="Header.value">application/json</stringProp>
+            </elementProp>
+            <elementProp name="" elementType="Header">
+              <stringProp name="Header.name">Accept</stringProp>
+              <stringProp name="Header.value">application/json</stringProp>
+            </elementProp>
+          </collectionProp>
+        </HeaderManager>
+        <hashTree />
+        <JSR223PreProcessor guiclass="TestBeanGUI" testclass="JSR223PreProcessor" testname="真实独立抽奖身份">
+          <stringProp name="cacheKey">true</stringProp>
+          <stringProp name="filename" />
+          <stringProp name="parameters" />
+          <stringProp name="scriptLanguage">groovy</stringProp>
+          <stringProp name="script">// 所有线程共享单调序号，用户只访问自己的真实路由分片。
+long index = org.apache.jmeter.util.JMeterUtils.getJMeterProperties().computeIfAbsent('perf.counter', {new java.util.concurrent.atomic.AtomicLong()}).getAndIncrement()
+// 预置用户不足必须使运行失败，不能复用样本掩盖数据不足。
+if (index &gt;= Long.parseLong(props.getProperty('users'))) {
+    // 预处理器的普通异常会被 JMeter 记录后继续采样，必须显式停止线程与引擎。
+    ctx.getThread().stop()
+    // 停止整个负载，避免继续使用上次 uId/requestId 制造幂等回放吞吐。
+    ctx.getEngine().stopTest(true)
+    throw new IllegalStateException('[PERF_USER_EXHAUSTED] 压测用户耗尽')
+}
+vars.put('uId', props.getProperty('prefix') + String.format('%07d', index))
+vars.put('activityId', props.getProperty('activity'))
+// 每次独立操作使用新的业务幂等号，不把回放吞吐混入新抽奖吞吐。
+vars.put('requestId', props.getProperty('run') + '-' + index)
+</stringProp>
+        </JSR223PreProcessor>
+        <hashTree />
+        <HTTPSamplerProxy guiclass="HttpTestSampleGui" testclass="HTTPSamplerProxy" testname="POST /api/v1/draw">
+          <stringProp name="HTTPSampler.path">/api/v1/draw</stringProp>
+          <boolProp name="HTTPSampler.follow_redirects">true</boolProp>
+          <stringProp name="HTTPSampler.method">POST</stringProp>
+          <boolProp name="HTTPSampler.use_keepalive">true</boolProp>
+          <boolProp name="HTTPSampler.postBodyRaw">true</boolProp>
+          <elementProp name="HTTPsampler.Arguments" elementType="Arguments">
+            <collectionProp name="Arguments.arguments">
+              <elementProp name="" elementType="HTTPArgument">
+                <boolProp name="HTTPArgument.always_encode">false</boolProp>
+                <stringProp name="Argument.value">{"userId":"${uId}","activityId":${activityId},"requestId":"${requestId}"}</stringProp>
+                <stringProp name="Argument.metadata">=</stringProp>
+              </elementProp>
+            </collectionProp>
+          </elementProp>
+          <stringProp name="HTTPSampler.implementation">HttpClient4</stringProp>
+        </HTTPSamplerProxy>
+        <hashTree>
+          <JSR223PostProcessor guiclass="TestBeanGUI" testclass="JSR223PostProcessor" testname="记录业务结果与持久ID">
+            <stringProp name="cacheKey">true</stringProp>
+            <stringProp name="filename" />
+            <stringProp name="parameters" />
+            <stringProp name="scriptLanguage">groovy</stringProp>
+            <stringProp name="script">// HTTP 200 只说明传输完成，业务码决定是否完成抽奖。
+def result = new groovy.json.JsonSlurper().parseText(prev.getResponseDataAsString())
+vars.put('businessCode', String.valueOf(result.code))
+vars.put('takeId', result.takeId == null ? '' : String.valueOf(result.takeId))
+vars.put('orderId', result.orderId == null ? '' : String.valueOf(result.orderId))
+// 正常压测只允许成功或真实未中奖；库存竞争允许预期活动售罄。
+def accepted = props.getProperty('finite', 'false') == 'true' ? ['0000','D001','D004'] : ['0000','D001']
+if (!accepted.contains(result.code)) { prev.setSuccessful(false); prev.setResponseMessage('业务码:' + result.code) }
+</stringProp>
+          </JSR223PostProcessor>
+          <hashTree />
+        </hashTree>
+      </hashTree>
+    </hashTree>
+  </hashTree>
+</jmeterTestPlan>

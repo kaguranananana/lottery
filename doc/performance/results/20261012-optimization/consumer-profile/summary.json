@@ -1,0 +1,110 @@
+{
+  "name": "consumer-profile",
+  "threads": 30,
+  "windowSeconds": 40.0,
+  "totalSamples": 4821,
+  "measuredSamples": 3200,
+  "rps": 80.0,
+  "newDrawRps": 80.0,
+  "newDrawsWindow": 3200,
+  "newDrawsTotal": 4821,
+  "ordersTotal": 4821,
+  "meanMs": 13.939375,
+  "p50Ms": 12,
+  "p95Ms": 25,
+  "p99Ms": 34,
+  "maxMs": 67,
+  "httpErrorRate": 0.0,
+  "systemErrorRate": 0.0,
+  "businessCodes": {
+    "0000": 3200
+  },
+  "cpuMeanPercentOfOneCore": 47.04160209744319,
+  "heapMaxObservedMiB": 317.2361755371094,
+  "gcMs": 39,
+  "gcPauseRatio": 0.0009990265894769198,
+  "pools": {
+    "HikariPool-1": {
+      "url": "lottery_01",
+      "maxActive": 8,
+      "maxWaiting": 0,
+      "acquireMeanMs": 0.00790120872795772,
+      "timeouts": 0
+    },
+    "HikariPool-2": {
+      "url": "lottery_02",
+      "maxActive": 7,
+      "maxWaiting": 0,
+      "acquireMeanMs": 0.006966268594175571,
+      "timeouts": 0
+    },
+    "HikariPool-3": {
+      "url": "lottery",
+      "maxActive": 3,
+      "maxWaiting": 0,
+      "acquireMeanMs": 0.018389346861128725,
+      "timeouts": 0
+    }
+  },
+  "tomcatMaxBusy": 4,
+  "backlog": [
+    [
+      1791825914938,
+      {
+        "orders": 1810,
+        "stockPending": 94,
+        "grantPending": 94,
+        "blocked": 0
+      }
+    ],
+    [
+      1791825923948,
+      {
+        "orders": 2614,
+        "stockPending": 47,
+        "grantPending": 47,
+        "blocked": 0
+      }
+    ],
+    [
+      1791825932952,
+      {
+        "orders": 3330,
+        "stockPending": 48,
+        "grantPending": 109,
+        "blocked": 0
+      }
+    ],
+    [
+      1791825941969,
+      {
+        "orders": 4053,
+        "stockPending": 43,
+        "grantPending": 98,
+        "blocked": 0
+      }
+    ],
+    [
+      1791825950974,
+      {
+        "orders": 4697,
+        "stockPending": 38,
+        "grantPending": 38,
+        "blocked": 0
+      }
+    ]
+  ],
+  "rpsBuckets": [
+    79.8,
+    80.1,
+    80.1,
+    79.95,
+    79.95,
+    80.1
+  ],
+  "drainSeconds": 0.2914769649505615,
+  "asyncP95LowerMs": 1337,
+  "asyncP95UpperMs": 2337,
+  "audit": "PASS",
+  "observedThreads": 30
+}

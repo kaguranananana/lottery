@@ -58,7 +58,7 @@ public class PerfHarness {
 
     private static void launch(String[] args) throws Exception {
         // 主应用与测试控制器使用同一真实 Spring 上下文，不替换业务组件。
-        context = SpringApplication.run(new Class<?>[]{LotteryApplication.class, PerfHarness.class}, args);
+        context = SpringApplication.run(new Class<?>[]{LotteryApplication.class, PerfHarness.class, PerfTiming.class}, args);
         // 读取路由数据源实际物理连接池，包含全局库和两个用户分库。
         AbstractRoutingDataSource routing = (AbstractRoutingDataSource) context.getBean("mysqlDataSource", DataSource.class);
         for (String fieldName : Arrays.asList("resolvedDataSources", "resolvedDefaultDataSource")) {
@@ -185,6 +185,23 @@ public class PerfHarness {
         return context.getBean(IActivityPartake.class).doPartake(new PartakeReq(user, id, request));
     }
 
+    @PostMapping("/__perf/replay")
+    public void replay(@RequestParam("strategy") long strategy, @RequestParam("user") String user,
+            @RequestParam("order") long order, @RequestParam("award") String award) throws Exception {
+        com.anontokyo.lottery.domain.award.service.order.IAwardOrder orders = context.getBean(com.anontokyo.lottery.domain.award.service.order.IAwardOrder.class);
+        com.anontokyo.lottery.domain.award.model.vo.InvoiceVO invoice = orders.queryInvoiceByOrderId(user, order);
+        // 只重投已有订单；测试控制面不创建订单，也不修改库存或完成状态。
+        if (invoice == null) throw new IllegalArgumentException("重投订单不存在 " + order);
+        com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO stock = new com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO();
+        stock.setuId(user); stock.setOrderId(order); stock.setStrategyId(strategy); stock.setAwardId(award);
+        com.anontokyo.lottery.application.mq.producer.KafkaProducer producer = context.getBean(com.anontokyo.lottery.application.mq.producer.KafkaProducer.class);
+        // 两次实际 broker 确认后返回，消费者仍由真实 Kafka 异步驱动。
+        for (int i = 0; i < 2; i++) {
+            producer.sendStrategyAwardStock(stock).get(5, TimeUnit.SECONDS);
+            producer.sendLotteryInvoice(invoice).get(5, TimeUnit.SECONDS);
+        }
+    }
+
     @GetMapping("/__perf/metrics")
     public Map<String, Object> metrics() throws Exception {
         Map<String, Object> result = new LinkedHashMap<>();
@@ -213,6 +230,15 @@ public class PerfHarness {
         result.put("pools", poolStats);
         result.put("jobCalls", jobCalls.sum()); result.put("jobNanos", jobNanos.sum());
         result.put("jobFailure", jobFailure == null ? null : jobFailure.toString());
+        // 可选诊断仅在测试启动器中提供，业务阶段与 SQL 计时均为累计值。
+        result.put("timing", PerfTiming.snapshot());
+        // 保存实际监听器提交策略，不能仅由配置文件推断 acknowledge 是否同步等待 broker。
+        Map<String, Object> listeners = new LinkedHashMap<>();
+        for (org.springframework.kafka.listener.MessageListenerContainer listener : context.getBean(org.springframework.kafka.config.KafkaListenerEndpointRegistry.class).getListenerContainers()) {
+            org.springframework.kafka.listener.ContainerProperties properties = listener.getContainerProperties();
+            listeners.put(listener.getListenerId(), Arrays.asList(properties.getAckMode().toString(), properties.isSyncCommits()));
+        }
+        result.put("listeners", listeners);
         Map<String, Object> tomcat = new LinkedHashMap<>();
         javax.management.MBeanServer server = ManagementFactory.getPlatformMBeanServer();
         for (javax.management.ObjectName name : server.queryNames(new javax.management.ObjectName("*:type=ThreadPool,*"), null)) {

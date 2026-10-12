@@ -1,0 +1,58 @@
+{
+  "base-c30": {
+    "quota": "always upsert",
+    "stockIndex": false,
+    "outboxPreRead": true,
+    "totalTypeFix": false
+  },
+  "quota-c30": {
+    "quota": "read before initialize",
+    "stockIndex": false,
+    "outboxPreRead": true,
+    "totalTypeFix": false
+  },
+  "index-c30": {
+    "quota": "read before initialize",
+    "stockIndex": true,
+    "outboxPreRead": true,
+    "totalTypeFix": false
+  },
+  "index-rate80": {
+    "outboxPreRead": true,
+    "totalTypeFix": false,
+    "parallelValidationInterference": true
+  },
+  "outbox-rate80": {
+    "outboxPreRead": false,
+    "totalTypeFix": false
+  },
+  "outbox-rate80-confirm": {
+    "outboxPreRead": false,
+    "totalTypeFix": false
+  },
+  "quiet-before-rate80": {
+    "outboxPreRead": true,
+    "totalTypeFix": true,
+    "parallelValidationInterference": false
+  },
+  "quiet-after-rate80": {
+    "outboxPreRead": false,
+    "totalTypeFix": true,
+    "parallelValidationInterference": false
+  },
+  "consumer-profile": {
+    "outboxPreRead": false,
+    "totalTypeFix": true,
+    "ackTimingDelegatesOriginal": true,
+    "listeners": {
+      "org.springframework.kafka.KafkaListenerEndpointContainer#0": [
+        "MANUAL_IMMEDIATE",
+        true
+      ],
+      "org.springframework.kafka.KafkaListenerEndpointContainer#1": [
+        "MANUAL_IMMEDIATE",
+        true
+      ]
+    }
+  }
+}

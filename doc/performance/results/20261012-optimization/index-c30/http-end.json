@@ -1,0 +1,21 @@
+{
+  "time": 1791820733674,
+  "pending": {
+    "orders": 19107,
+    "stockPending": 15465,
+    "grantPending": 16335,
+    "blocked": 0
+  },
+  "lag": {
+    "lottery-perf-stock": [
+      231607,
+      554,
+      8
+    ],
+    "lottery-perf-invoice": [
+      229600,
+      76,
+      8
+    ]
+  }
+}

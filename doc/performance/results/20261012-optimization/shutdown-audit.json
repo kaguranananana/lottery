@@ -1,0 +1,20 @@
+{
+  "initialStopTimeoutSeconds": 1,
+  "initialExitCode": 137,
+  "initialOOMKilled": false,
+  "recoveryAudit": "PASS",
+  "recoveryFacts": {
+    "orders": "155557\t155557\t155557\t0\t0\t0",
+    "takes": "187331\t0\t0\t0",
+    "ledger": "155557\t155557",
+    "ledgerMismatch": "0",
+    "takeMismatch": "0",
+    "negativeStock": "0",
+    "quota": "93641\t0\n93690\t0"
+  },
+  "durability": "1\t1",
+  "stopTimeoutChangedToSeconds": 60,
+  "finalExitCode": 0,
+  "finalOOMKilled": false,
+  "finalState": "exited"
+}

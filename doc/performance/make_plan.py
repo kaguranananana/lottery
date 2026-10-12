@@ -38,7 +38,13 @@ def props(node, script):
 props(pre, '''// 所有线程共享单调序号，用户只访问自己的真实路由分片。
 long index = org.apache.jmeter.util.JMeterUtils.getJMeterProperties().computeIfAbsent('perf.counter', {new java.util.concurrent.atomic.AtomicLong()}).getAndIncrement()
 // 预置用户不足必须使运行失败，不能复用样本掩盖数据不足。
-if (index >= Long.parseLong(props.getProperty('users'))) throw new IllegalStateException('压测用户耗尽')
+if (index >= Long.parseLong(props.getProperty('users'))) {
+    // 预处理器的普通异常会被 JMeter 记录后继续采样，必须显式停止线程与引擎。
+    ctx.getThread().stop()
+    // 停止整个负载，避免继续使用上次 uId/requestId 制造幂等回放吞吐。
+    ctx.getEngine().stopTest(true)
+    throw new IllegalStateException('[PERF_USER_EXHAUSTED] 压测用户耗尽')
+}
 vars.put('uId', props.getProperty('prefix') + String.format('%07d', index))
 vars.put('activityId', props.getProperty('activity'))
 // 每次独立操作使用新的业务幂等号，不把回放吞吐混入新抽奖吞吐。

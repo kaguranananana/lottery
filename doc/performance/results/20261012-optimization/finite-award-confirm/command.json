@@ -1,0 +1,21 @@
+[
+  "/tmp/apache-jmeter-5.6.3/bin/jmeter",
+  "-n",
+  "-t",
+  "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/doc/performance/draw.jmx",
+  "-l",
+  "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/doc/performance/results/20261012-optimization/finite-award-confirm/samples.jtl",
+  "-j",
+  "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/doc/performance/results/20261012-optimization/finite-award-confirm/jmeter.log",
+  "-Jthreads=30",
+  "-Jduration=15",
+  "-Jramp=5",
+  "-Jactivity=730104",
+  "-Jprefix=finiteawardc_",
+  "-Jusers=100000",
+  "-Jrun=finite-award-confirm",
+  "-Jfinite=true",
+  "-Jsample_variables=uId,activityId,requestId,businessCode,takeId,orderId",
+  "-Jjmeter.save.saveservice.timestamp_format=ms",
+  "-JtargetRpm=0"
+]

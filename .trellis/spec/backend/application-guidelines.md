@@ -26,6 +26,8 @@
 
 源码在 [LotteryXxlJob.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryXxlJob.java)。扫描通过领域接口进入仓储显式分片遍历，不能改成每实例 @Scheduled 扫描全量用户表。
 
+库存扫描 SQL 已排除 COMPLETE，投递时不再逐条重复读取 isStockMqCompleted。仍保留 Redis dispatch claim、发送回调 CAS 与消费端账本幂等；扫描后并发完成可能产生重复消息，预读不能消除这个窗口。迟到通知与重复消费契约保持下述状态矩阵，回归见 MqCallbackStateTest 和 MqStateCasManualIT。
+
 ## 消息状态 CAS 契约
 
 ### 1. 范围与触发
@@ -34,7 +36,7 @@
 
 ### 2. 签名
 
-`IOrderRepository`、`IAwardOrder` 保留 `void updateStockMqState(String uId, Long orderId, Integer stockMqState)` 与 `void updateInvoiceMqState(String uId, Long orderId, Integer mqState)`，新增 `void markStockSettlementFailed(String uId, Long orderId)` 表达库存业务分歧；DAO 零更新时仓储回读，确认 COMPLETE/BLOCKED 后才正常返回。对应 DAO 返回 int 影响行数，均按 uId 路由；扫描仍由仓储显式设置分片。
+`IOrderRepository`、`IAwardOrder` 保留 `void updateStockMqState(String uId, Long orderId, Integer stockMqState)` 与 `void updateInvoiceMqState(String uId, Long orderId, Integer mqState)`，`void markStockSettlementFailed(String uId, Long orderId)` 表达库存业务分歧。实际源码只有库存分歧入口在 DAO 零更新时回读、确认 COMPLETE/BLOCKED 后才正常返回；常规消息状态入口执行原子 CAS，不额外回读，SQL 异常原样传播。对应 DAO 返回 int 影响行数，均按 uId 路由；扫描仍由仓储显式设置分片。
 
 ### 3. 数据与补偿契约
 

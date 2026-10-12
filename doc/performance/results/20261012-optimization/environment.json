@@ -1,0 +1,51 @@
+[
+  {
+    "name": "/lottery-perf-mysql-1",
+    "image": "mysql:8.0",
+    "cpus": 2000000000,
+    "memory": 2147483648,
+    "ports": {
+      "3306/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "13329"
+        }
+      ]
+    }
+  },
+  {
+    "name": "/lottery-perf-kafka-1",
+    "image": "wurstmeister/kafka:2.13-2.8.1",
+    "cpus": 2000000000,
+    "memory": 1073741824,
+    "ports": {
+      "9092/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "29092"
+        }
+      ]
+    }
+  },
+  {
+    "name": "/lottery-perf-redis-1",
+    "image": "redis:7.2",
+    "cpus": 1000000000,
+    "memory": 268435456,
+    "ports": {
+      "6379/tcp": [
+        {
+          "HostIp": "127.0.0.1",
+          "HostPort": "17379"
+        }
+      ]
+    }
+  },
+  {
+    "name": "/lottery-perf-zookeeper-1",
+    "image": "zookeeper:3.8",
+    "cpus": 500000000,
+    "memory": 402653184,
+    "ports": {}
+  }
+]

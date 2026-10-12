@@ -1,0 +1,12 @@
+{
+  "seconds": 0.2886350154876709,
+  "samples": [
+    {
+      "time": 1791826306441,
+      "orders": 50,
+      "stockPending": 0,
+      "grantPending": 0,
+      "blocked": 0
+    }
+  ]
+}

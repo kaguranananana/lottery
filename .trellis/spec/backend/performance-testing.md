@@ -35,7 +35,9 @@ XXL handler由一秒固定延迟触发，消费者真实运行；该方式不证
 
 逐ID核对HTTP→take→order→ledger；参与数等于次数消耗与Redis活动消耗，各奖品Redis/MySQL消耗等于中奖订单与账本。检查重复订单、重复take订单、未消费记录、负库存、BLOCKED、最终消息/发奖状态及Kafka八分区Lag。稳定标准在持续测试前写定，入口峰值和最大通过的端到端速率分别报告。
 
-当前创建缺陷：StrategyDetailVO.awardCount为Integer、PO为String，BeanUtils不复制，总库存列NULL；剩余库存正常初始化。该缺陷未在压测任务中修复，应另开业务任务统一类型并验证总/剩余字段。活动MySQL剩余库存未实时扣减，消耗需由Redis与take事实解释。
+首次压测创建缺陷：StrategyDetailVO.awardCount为Integer、PO为String，BeanUtils不复制，总库存列NULL；剩余库存正常初始化。独立优化任务已统一创建/PO/快照总库存为Integer，并验证总/剩余字段；原始压测数据没有回填。活动MySQL剩余库存未实时扣减，消耗需由Redis与take事实解释。
+
+后续定向诊断与源码优化见[独立优化契约](./performance-optimization.md)和[优化报告](../../../doc/performance/optimization-report.md)。测试启动器增加包含式阶段和客户端 SQL 累计计时，资源采样同时保存实际锁索引/数据与主动换页；不能将嵌套阶段、数据库 CPU、锁累计时间相加解释为墙钟耗时。
 
 ## 7. 错误与正确示例
 

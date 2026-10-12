@@ -1,0 +1,5 @@
+{
+  "valid": false,
+  "reason": "预置用户耗尽，旧 JMeter 预处理器异常后沿用旧请求变量；不得作为独立新请求压测结果",
+  "businessAuditSeparatelyPreserved": true
+}

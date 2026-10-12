@@ -82,6 +82,17 @@ def monitor(stop, directory, id):
                 # Docker 采样包含旧容器，记录共享宿主机背景负载。
                 sample['docker']=command(['docker','stats','--no-stream','--format','{{json .}}']).strip().splitlines()
                 sample['processes']=command(['ps','-axo','pid,pcpu,rss,comm']).splitlines()
+                # 换页增量用于识别宿主机干扰；已有 Swap 占用本身不等于正在换页。
+                sample['hostVm']=command(['vm_stat'])
+                # 同时保存等待方、阻塞方、实际索引与锁数据，避免凭等待数量猜根因。
+                sample['lockWaits']=sql("""SELECT r.OBJECT_SCHEMA,r.OBJECT_NAME,r.INDEX_NAME,r.LOCK_TYPE,r.LOCK_MODE,r.LOCK_DATA,
+                    b.INDEX_NAME,b.LOCK_MODE,b.LOCK_DATA,w.REQUESTING_ENGINE_TRANSACTION_ID,w.BLOCKING_ENGINE_TRANSACTION_ID,
+                    rt.trx_query,bt.trx_query,TIMESTAMPDIFF(MICROSECOND,bt.trx_started,NOW())/1000
+                    FROM performance_schema.data_lock_waits w
+                    JOIN performance_schema.data_locks r ON r.ENGINE_LOCK_ID=w.REQUESTING_ENGINE_LOCK_ID
+                    JOIN performance_schema.data_locks b ON b.ENGINE_LOCK_ID=w.BLOCKING_ENGINE_LOCK_ID
+                    LEFT JOIN information_schema.innodb_trx rt ON rt.trx_id=w.REQUESTING_ENGINE_TRANSACTION_ID
+                    LEFT JOIN information_schema.innodb_trx bt ON bt.trx_id=w.BLOCKING_ENGINE_TRANSACTION_ID;""")
                 if index%3==0:
                     sample['mysql']=mysql_metrics()
                     sample['redis']=redis('INFO','ALL')
@@ -124,6 +135,9 @@ def run(args):
             result=subprocess.run(cli,env=jenv,stdout=output,stderr=subprocess.STDOUT,timeout=args.duration+60)
         if result.returncode:
             raise RuntimeError('JMeter 失败，查看 stdout.txt')
+        # JMeter 主进程可能正常退出；真实用户耗尽必须向调用方明确返回失败。
+        if '[PERF_USER_EXHAUSTED]' in (directory/'jmeter.log').read_text():
+            raise RuntimeError('压测用户耗尽，负载已停止；本轮不能作为独立新抽奖性能结果')
         if stop.is_set():
             raise RuntimeError('指标采集失败，查看 monitor-error.json')
         # 保存 HTTP 停止后的真实积压；不把发送成功视为结算/发奖成功。

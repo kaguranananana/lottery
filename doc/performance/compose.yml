@@ -3,6 +3,8 @@ name: lottery-perf
 services:
   mysql:
     image: mysql:8.0.46
+    # 本轮实际关闭超时触发了退出 137；保留持久化，延长正常关闭宽限。
+    stop_grace_period: 60s
     cpus: 2
     mem_limit: 2g
     environment:

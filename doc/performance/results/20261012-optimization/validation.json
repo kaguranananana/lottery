@@ -1,0 +1,75 @@
+{
+  "tests": 54,
+  "failures": 0,
+  "errors": 0,
+  "suites": [
+    {
+      "name": "com.anontokyo.lottery.test.domain.DrawRequestIdempotencyTest",
+      "tests": "7",
+      "errors": "0",
+      "failures": "0",
+      "time": "0.026"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.manual.MqStateCasManualIT",
+      "tests": "13",
+      "errors": "0",
+      "failures": "0",
+      "time": "8.505"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.domain.PartakeRequestOwnershipTest",
+      "tests": "4",
+      "errors": "0",
+      "failures": "0",
+      "time": "0.001"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.infrastructure.lock.RedisActivityDrawProcessGuardTest",
+      "tests": "5",
+      "errors": "0",
+      "failures": "0",
+      "time": "0.011"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.web.DrawHttpOwnershipTest",
+      "tests": "3",
+      "errors": "0",
+      "failures": "0",
+      "time": "0.535"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.domain.WeightedRandomSelectorTest",
+      "tests": "7",
+      "errors": "0",
+      "failures": "0",
+      "time": "0.001"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.mq.MqCallbackStateTest",
+      "tests": "9",
+      "errors": "0",
+      "failures": "0",
+      "time": "0.085"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.manual.PerformanceSqlManualIT",
+      "tests": "6",
+      "errors": "0",
+      "failures": "0",
+      "time": "1.036"
+    }
+  ],
+  "expectedRegressionFailures": [
+    "quota-red: 原实现等待无关用户 supremum，1 个 Timeout",
+    "outbox-red: 原实现存在重复预读，1 个失败",
+    "mapping-red: 原实现总库存 NULL，1 个失败"
+  ],
+  "pythonCompile": "PASS",
+  "shellSyntax": "PASS",
+  "gitDiffCheck": "PASS",
+  "jmeterExhaustionRegression": "PASS: 明确停止并非零退出",
+  "consumerAckDelegation": "PASS: 4821 库存/发奖各原生 ACK，真实 Kafka 审计完成",
+  "composeConfig": "PASS",
+  "mysqlRecoveryAndGracefulShutdown": "PASS: 所有业务事实一致，持久化1/1，退出0"
+}

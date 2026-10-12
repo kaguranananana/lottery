@@ -1,0 +1,4 @@
+strategy_detail	0	PRIMARY	1	id	A	30	NULL	NULL		BTREE			YES	NULL
+strategy_detail	1	idx_strategy_id_award_id	1	strategy_id	A	17	NULL	NULL		BTREE		strategy award stock update	YES	NULL
+strategy_detail	1	idx_strategy_id_award_id	2	award_id	A	85	NULL	NULL	YES	BTREE		strategy award stock update	YES	NULL
+1	UPDATE	strategy_detail	NULL	range	idx_strategy_id_award_id	idx_strategy_id_award_id	267	const,const	1	100.00	Using where

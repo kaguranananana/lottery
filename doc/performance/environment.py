@@ -63,7 +63,8 @@ if __name__ == '__main__':
         apply_stock_index()
     elif action == 'stop':
         verify()
-        subprocess.run(COMPOSE + ['stop'], check=True)
+        # 真实数据量下默认关闭宽限曾导致 MySQL 被 SIGKILL；给予持久化关闭足够时间。
+        subprocess.run(COMPOSE + ['stop', '--timeout', '60'], check=True)
     elif action == 'clean':
         # down -v 只针对此专用项目；保留仓库中的全部原始结果。
         verify()

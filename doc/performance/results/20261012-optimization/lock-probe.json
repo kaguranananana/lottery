@@ -1,0 +1,26 @@
+{
+  "schema": "lottery_perf_probe_1791820237880",
+  "heldSeconds": 3,
+  "upsert": {
+    "otherSeconds": 3.0501501669641584,
+    "completedBeforeHeldRollback": false,
+    "waits": "PRIMARY\tX,INSERT_INTENTION\tsupremum pseudo-record\tPRIMARY\tX\tsupremum pseudo-record\n"
+  },
+  "readThenUpdate": {
+    "otherSeconds": 0.25183533399831504,
+    "completedBeforeHeldRollback": true,
+    "waits": ""
+  },
+  "stockPlanBefore": "1\tUPDATE\tstrategy_detail\tNULL\tindex\tNULL\tPRIMARY\t8\tNULL\t74\t100.00\tUsing where\n",
+  "stockWithoutIndex": {
+    "otherSeconds": 2.9954539999598637,
+    "completedBeforeHeldRollback": false,
+    "waits": "PRIMARY\tX\t1\tPRIMARY\tX\t1\n"
+  },
+  "stockPlanAfter": "1\tUPDATE\tstrategy_detail\tNULL\trange\tidx_strategy_id_award_id\tidx_strategy_id_award_id\t267\tconst,const\t1\t100.00\tUsing where\n",
+  "stockWithIndex": {
+    "otherSeconds": 0.123106750077568,
+    "completedBeforeHeldRollback": true,
+    "waits": ""
+  }
+}

@@ -1,0 +1,21 @@
+[
+  "/tmp/apache-jmeter-5.6.3/bin/jmeter",
+  "-n",
+  "-t",
+  "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/doc/performance/paced.jmx",
+  "-l",
+  "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/doc/performance/results/20261012-optimization/outbox-rate80-confirm/samples.jtl",
+  "-j",
+  "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/doc/performance/results/20261012-optimization/outbox-rate80-confirm/jmeter.log",
+  "-Jthreads=30",
+  "-Jduration=320",
+  "-Jramp=5",
+  "-Jactivity=730006",
+  "-Jprefix=outboxrate80_",
+  "-Jusers=100000",
+  "-Jrun=outbox-rate80-confirm",
+  "-Jfinite=false",
+  "-Jsample_variables=uId,activityId,requestId,businessCode,takeId,orderId",
+  "-Jjmeter.save.saveservice.timestamp_format=ms",
+  "-JtargetRpm=4800.0"
+]

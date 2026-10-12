@@ -1,0 +1,3 @@
+{
+  "traceback": "Traceback (most recent call last):\n  File \"/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/doc/performance/run.py\", line 180, in <module>\n    run(args)\n    ~~~^^^^^^\n  File \"/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/doc/performance/run.py\", line 140, in run\n    raise RuntimeError('压测用户耗尽，负载已停止；本轮不能作为独立新抽奖性能结果')\nRuntimeError: 压测用户耗尽，负载已停止；本轮不能作为独立新抽奖性能结果\n"
+}

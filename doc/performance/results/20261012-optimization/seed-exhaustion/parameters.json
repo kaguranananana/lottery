@@ -1,0 +1,14 @@
+{
+  "session": "20261012-optimization",
+  "name": "seed-exhaustion",
+  "id": 730105,
+  "threads": 2,
+  "duration": 10,
+  "warmup": 0,
+  "stock": 1000000,
+  "award_stock": -1,
+  "users": 1,
+  "jmeter": "/tmp/apache-jmeter-5.6.3/bin/jmeter",
+  "target_rps": 0,
+  "drain_timeout": 180
+}

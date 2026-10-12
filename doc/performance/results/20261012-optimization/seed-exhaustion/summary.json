@@ -1,0 +1,6 @@
+{
+  "expectedFailure": true,
+  "exitCode": 1,
+  "reason": "预置用户耗尽明确停止负载并报错",
+  "auditAfterStop": "completed"
+}

@@ -18,7 +18,7 @@ domain 定义 Repository，infrastructure 实现 VO/PO 转换与 DAO 调用；My
 
 ## 事务与幂等
 
-[UserTakeActivityRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/UserTakeActivityRepository.java) 的 takeParticipation 在用户路由事务内扣剩余次数并插入 take；次数行初始化后使用 left_count>0 的条件 UPDATE，零影响行数与唯一冲突会回滚。[OrderRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java) 的 saveDrawOrderWithTakeLock 在同一用户路由事务内用 state=0 条件消费 take，然后插入订单和初始 Outbox 状态。手动路由均须在 finally 清理，避免线程复用时串库。
+[UserTakeActivityRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/UserTakeActivityRepository.java) 的 takeParticipation 在用户路由事务内扣剩余次数并插入 take；先普通读取确认次数行，只有不存在才 initializeCount，再使用 left_count>0 的条件 UPDATE，零影响行数与唯一冲突会回滚。普通读取仅判断存在性，不将读取的余量用于覆盖写回。无变化 upsert 在 MySQL 8.0.46/RR 可使不同已有用户竞争 PRIMARY supremum；真实复现与测试见[独立优化契约](./performance-optimization.md)。[OrderRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java) 的 saveDrawOrderWithTakeLock 在同一用户路由事务内用 state=0 条件消费 take，然后插入订单和初始 Outbox 状态。手动路由均须在 finally 清理，避免线程复用时串库。
 
 [StrategyRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java) 的 settleAwardStock 在全局库本地事务中插入 UNIQUE(order_id) 的账本并条件扣减策略库存；重复账本返回已处理，库存不足回滚本次账本插入。[StrategyDetail_Mapper.xml](../../../lottery-interfaces/src/main/resources/mybatis/mapper/StrategyDetail_Mapper.xml) 的扣减条件包含 award_surplus_count > 0，不能改成查询后无条件写回。
 
@@ -39,3 +39,5 @@ requestId 用于参与记录查询与唯一约束，takeId 关联抽奖结果，
 ## 活动创建与启动持久化契约
 
 创建聚合由 StrategyVO.strategyId 绑定 ActivityVO.strategyId 及明细所属策略；新活动 stock_surplus_count 从 stock_count 初始化，新策略明细剩余库存从 award_count 初始化。Activity_Mapper INSERT 显式携带 strategy_id 与 stock_surplus_count。scanToDoActivityList 使用自增 id 的十条游标分页，SELECT 必须返回 id。启动使用全局 TransactionTemplate + queryActivityForUpdate 的 FOR UPDATE，锁内预热后 CAS DOING；不要只在 worker 改调用顺序而允许其它入口绕过。回归见 FinalBusinessE2eManualIT。
+
+StrategyDetailVO、StrategyDetail PO 与 StrategyDetailBriefVO 的 awardCount 均为 Integer，与 MySQL INT 一致；不要再依赖 BeanUtils 进行 Integer→String 隐式转换。旧压测活动的 NULL 总库存保留为历史事实，不能用剩余库存反推回填。真实创建 Mapper 回归见 PerformanceSqlManualIT。
