@@ -75,6 +75,8 @@ public class LotteryController {
         response.setInfo(result.getInfo());
         response.setRequestId(request.getRequestId());
         response.setTakeId(result.getTakeId());
+        // 原请求号通过独立字段返回，避免客户端误以为 B 已绑定 A。
+        response.setPendingRequestId(result.getPendingRequestId());
         response.setOrderId(result.getOrderId());
 
         boolean success = Constants.ResponseCode.SUCCESS.getCode().equals(result.getCode());

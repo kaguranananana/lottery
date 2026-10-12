@@ -10,15 +10,20 @@
         <id column="create_time" property="createTime"/>
         <id column="update_time" property="updateTime"/>
     </resultMap>
-    <insert id="subtractionLeftCount" parameterType="com.anontokyo.lottery.infrastructure.po.UserTakeActivityCount">
+    <!-- 先建立次数行；重复用户活动只锁定现有行，不在这里扣次数。 -->
+    <insert id="initializeCount" parameterType="com.anontokyo.lottery.infrastructure.po.UserTakeActivityCount">
         INSERT INTO user_take_activity_count
             (u_id, activity_id, total_count, left_count, create_time, update_time)
-        VALUES
-            (#{uId}, #{activityId}, #{totalCount}, #{leftCount}, NOW(), NOW())
-        ON DUPLICATE KEY UPDATE
-            left_count = IF(left_count > 0, left_count - 1, left_count),
-            update_time = IF(left_count > 0, NOW(), update_time)
+        VALUES (#{uId}, #{activityId}, #{totalCount}, #{totalCount}, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE u_id = u_id
     </insert>
+
+    <!-- 条件更新在次数耗尽时明确返回零，避免 JDBC matched rows 将无变化视为扣减成功。 -->
+    <update id="subtractionLeftCount" parameterType="com.anontokyo.lottery.infrastructure.po.UserTakeActivityCount">
+        UPDATE user_take_activity_count
+        SET left_count = left_count - 1, update_time = NOW()
+        WHERE u_id = #{uId} AND activity_id = #{activityId} AND left_count > 0
+    </update>
 
     <select id="queryUserTakeActivityCount" parameterType="com.anontokyo.lottery.infrastructure.po.UserTakeActivityCount" resultMap="userTakeActivityCountMap">
         SELECT total_count, left_count

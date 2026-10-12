@@ -17,6 +17,11 @@ public class PartakeResult extends Result {
      * 活动领取id
      */
     private Long takeId;
+    /** 被阻塞时待恢复的原请求号，不表示当前请求取得该参与记录。 */
+    private String pendingRequestId;
+
+    public String getPendingRequestId() { return pendingRequestId; }
+    public void setPendingRequestId(String pendingRequestId) { this.pendingRequestId = pendingRequestId; }
     /** 库存 */
     private Integer stockCount;
     /** activity 库存剩余 */

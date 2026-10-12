@@ -1,20 +1,14 @@
 package com.anontokyo.lottery.infrastructure.repository;
 
-import com.alibaba.fastjson.JSON;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
 import com.anontokyo.lottery.domain.activity.model.vo.UserTakeActivityVO;
 import com.anontokyo.lottery.domain.activity.repository.IUserTakeActivityRepository;
-import com.anontokyo.lottery.infrastructure.cache.CacheConfigProperties;
-import com.anontokyo.lottery.infrastructure.cache.TwoLevelCacheService;
-import com.anontokyo.lottery.infrastructure.dao.IActivityDao;
 import com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityCountDao;
 import com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityDao;
-import com.anontokyo.lottery.infrastructure.po.Activity;
 import com.anontokyo.lottery.infrastructure.po.UserTakeActivity;
 import com.anontokyo.lottery.infrastructure.po.UserTakeActivityCount;
 import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
-import com.anontokyo.lottery.infrastructure.utils.RedisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
@@ -30,9 +24,6 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
     private final Logger logger = LoggerFactory.getLogger(UserTakeActivityRepository.class);
 
     @Resource
-    private IActivityDao activityDao;
-
-    @Resource
     private IUserTakeActivityCountDao userTakeActivityCountDao;
 
     @Resource
@@ -44,22 +35,15 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
     @Resource
     private TransactionTemplate transactionTemplate;
 
-    @Resource
-    private RedisUtil redisUtil;
-
-    @Resource
-    private CacheConfigProperties cacheConfigProperties;
-
-    @Resource
-    private TwoLevelCacheService twoLevelCacheService;
-
     @Override
     public int subtractionLeftCount(ActivityBillVO bill) {
         UserTakeActivityCount userTakeActivityCount = new UserTakeActivityCount();
         userTakeActivityCount.setuId(bill.getuId());
         userTakeActivityCount.setActivityId(bill.getActivityId());
         userTakeActivityCount.setTotalCount(bill.getTakeCount());
-        userTakeActivityCount.setLeftCount(bill.getTakeCount() - 1);
+        // 初始化与条件扣减都在同一个参与事务内，行锁串行化同用户活动的扣减。
+        userTakeActivityCountDao.initializeCount(userTakeActivityCount);
+        // 次数耗尽时 UPDATE 匹配零行，不依赖 JDBC 是否返回匹配行数。
         return userTakeActivityCountDao.subtractionLeftCount(userTakeActivityCount);
     }
 
@@ -76,47 +60,17 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
         userTakeActivity.setRequestId(requestId);
 
         userTakeActivityDao.insert(userTakeActivity);
-        cacheNoConsumedTakeActivityOrder(userTakeActivity);
-    }
-
-    @Override
-    public UserTakeActivityVO queryNoConsumedTakeActivityOrderFromCache(Long activityId, String uId) {
-        String cacheKey = Constants.RedisKey.KEY_LOTTERY_USER_TAKE_NO_CONSUMED(activityId, uId);
-        try {
-            String cacheValue = redisUtil.get(cacheKey);
-            if (cacheValue != null && cacheValue.length() > 0) {
-                return JSON.parseObject(cacheValue, UserTakeActivityVO.class);
-            }
-        } catch (Exception e) {
-            logger.warn("query no consumed order cache failed, cacheKey:{}", cacheKey, e);
-        }
-        return null;
     }
 
     @Override
     public UserTakeActivityVO queryNoConsumedTakeActivityOrder(Long activityId, String uId) {
-        String cacheKey = Constants.RedisKey.KEY_LOTTERY_USER_TAKE_NO_CONSUMED(activityId, uId);
-        UserTakeActivityVO cachedOrder = queryNoConsumedTakeActivityOrderFromCache(activityId, uId);
-        if (cachedOrder != null) {
-            return cachedOrder;
-        }
-
-        UserTakeActivity userTakeActivity = new UserTakeActivity();
-        userTakeActivity.setuId(uId);
-        userTakeActivity.setActivityId(activityId);
-        UserTakeActivity noConsumedTakeActivityOrder = userTakeActivityDao.queryNoConsumedTakeActivityOrder(userTakeActivity);
-        if (noConsumedTakeActivityOrder == null) {
-            return null;
-        }
-
-        UserTakeActivityVO userTakeActivityVO = buildUserTakeActivityVO(noConsumedTakeActivityOrder);
-        try {
-            redisUtil.setWithExpire(cacheKey, JSON.toJSONString(userTakeActivityVO),
-                    cacheConfigProperties.getNoConsumedOrderRedisTtlSeconds());
-        } catch (Exception e) {
-            logger.warn("set no consumed order cache failed, cacheKey:{}", cacheKey, e);
-        }
-        return userTakeActivityVO;
+        // 查询必须成功才能认定没有未完成参与；数据库异常直接传播。
+        UserTakeActivity req = new UserTakeActivity();
+        req.setuId(uId);
+        req.setActivityId(activityId);
+        UserTakeActivity take = userTakeActivityDao.queryNoConsumedTakeActivityOrder(req);
+        // 映射请求归属，不能使用过期或缺字段的 Redis 数据替代数据库事实。
+        return take == null ? null : buildUserTakeActivityVO(take);
     }
 
     @Override
@@ -125,15 +79,7 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
         userTakeActivity.setuId(uId);
         userTakeActivity.setActivityId(activityId);
         userTakeActivity.setTakeId(takeId);
-        int lockCount = userTakeActivityDao.lockTakeActivity(userTakeActivity);
-        if (lockCount > 0) {
-            try {
-                redisUtil.delStringKey(Constants.RedisKey.KEY_LOTTERY_USER_TAKE_NO_CONSUMED(activityId, uId));
-            } catch (Exception e) {
-                logger.warn("delete no consumed order cache failed, uId:{} activityId:{}", uId, activityId, e);
-            }
-        }
-        return lockCount;
+        return userTakeActivityDao.lockTakeActivity(userTakeActivity);
     }
 
     /**
@@ -197,24 +143,14 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
         return order == null ? null : buildUserTakeActivityVO(order);
     }
 
-    private void cacheNoConsumedTakeActivityOrder(UserTakeActivity userTakeActivity) {
-        UserTakeActivityVO userTakeActivityVO = buildUserTakeActivityVO(userTakeActivity);
-        String cacheKey = Constants.RedisKey.KEY_LOTTERY_USER_TAKE_NO_CONSUMED(
-                userTakeActivity.getActivityId(), userTakeActivity.getuId());
-        try {
-            redisUtil.setWithExpire(cacheKey, JSON.toJSONString(userTakeActivityVO),
-                    cacheConfigProperties.getNoConsumedOrderRedisTtlSeconds());
-        } catch (Exception e) {
-            logger.warn("cache no consumed order failed, cacheKey:{}", cacheKey, e);
-        }
-    }
-
     private UserTakeActivityVO buildUserTakeActivityVO(UserTakeActivity userTakeActivity) {
         UserTakeActivityVO userTakeActivityVO = new UserTakeActivityVO();
         userTakeActivityVO.setActivityId(userTakeActivity.getActivityId());
         userTakeActivityVO.setTakeId(userTakeActivity.getTakeId());
         userTakeActivityVO.setStrategyId(userTakeActivity.getStrategyId());
         userTakeActivityVO.setState(userTakeActivity.getState());
+        // 请求号必须随记录返回，否则无法区分恢复 A 与新请求 B。
+        userTakeActivityVO.setRequestId(userTakeActivity.getRequestId());
         return userTakeActivityVO;
     }
 }

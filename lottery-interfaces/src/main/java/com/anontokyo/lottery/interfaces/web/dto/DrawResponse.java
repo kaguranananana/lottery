@@ -10,6 +10,11 @@ public class DrawResponse {
     private String info;
     private String requestId;
     private Long takeId;
+    /** 被阻塞时待恢复的原请求号，不表示当前请求取得该参与记录。 */
+    private String pendingRequestId;
+
+    public String getPendingRequestId() { return pendingRequestId; }
+    public void setPendingRequestId(String pendingRequestId) { this.pendingRequestId = pendingRequestId; }
     private Long orderId;
     private boolean win;
     private AwardVO award;

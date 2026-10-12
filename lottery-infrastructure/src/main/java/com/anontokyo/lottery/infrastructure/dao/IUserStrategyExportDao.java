@@ -37,6 +37,8 @@ public interface IUserStrategyExportDao {
     @DBRouter(key = "uId")
     UserStrategyExport queryUserStrategyExportByUuid(UserStrategyExport userStrategyExport);
 
+    /** 回放查询必须按用户同时路由库与订单分表。 */
+    @DBRouter(key = "uId")
     UserStrategyExport queryUserStrategyExportByTakeId(UserStrategyExport userStrategyExport);
 
     /**

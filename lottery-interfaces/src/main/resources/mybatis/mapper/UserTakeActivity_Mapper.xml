@@ -31,7 +31,7 @@
     </update>
 
     <select id="queryNoConsumedTakeActivityOrder"
-            resultType="com.anontokyo.lottery.infrastructure.po.UserTakeActivity">
+            resultMap="userTakeActivityMap">
         SELECT activity_id, take_id, strategy_id, state, request_id
         FROM user_take_activity
         WHERE u_id = #{uId} AND activity_id = #{activityId} AND state = 0
@@ -40,7 +40,7 @@
     </select>
 
     <select id="queryTakeActivityByRequestId"
-            resultType="com.anontokyo.lottery.infrastructure.po.UserTakeActivity">
+            resultMap="userTakeActivityMap">
         SELECT activity_id, take_id, strategy_id, state, request_id
         FROM user_take_activity
         WHERE u_id = #{uId} AND activity_id = #{activityId} AND request_id = #{requestId}

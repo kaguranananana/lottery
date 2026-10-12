@@ -22,7 +22,6 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -96,6 +95,7 @@ public class DrawRequestIdempotencyTest {
     public void retryWithSameRequestIdReplaysConsumedTakeWithoutSideEffects() {
         // 已消费的 take + 已存在的订单：第二次请求必须直接回放
         UserTakeActivityVO consumed = new UserTakeActivityVO();
+        consumed.setRequestId("req-1");
         consumed.setTakeId(777L);
         consumed.setState(Constants.TaskState.USED.getCode());
         when(userTakeActivityRepository.queryTakeActivityByRequestId(100001L, "u1", "req-1")).thenReturn(consumed);
@@ -123,6 +123,7 @@ public class DrawRequestIdempotencyTest {
     public void interruptedTakeIsReusedNotDuplicated() {
         // 上次中断遗留的未消费 take：复用继续抽奖，不允许新建 take / 再次消耗次数
         UserTakeActivityVO unfinished = new UserTakeActivityVO();
+        unfinished.setRequestId("req-1");
         unfinished.setTakeId(777L);
         unfinished.setStrategyId(10001L);
         unfinished.setState(Constants.TaskState.NO_USED.getCode());
@@ -153,11 +154,64 @@ public class DrawRequestIdempotencyTest {
 
         try {
             process.doDrawProcess(new DrawProcessReq("u1", 100001L, "req-1"));
+            org.junit.Assert.fail("必须传播参与异常");
         } catch (RuntimeException expected) {
+            assertEquals("boom", expected.getMessage());
             // 传播异常也必须释放锁
         }
-        AtomicReference<String> token = new AtomicReference<>();
         verify(guard).release(eq(100001L), eq("u1"), any());
+    }
+
+    @Test
+    public void queryFailureStopsBeforeAnySideEffects() {
+        when(userTakeActivityRepository.queryTakeActivityByRequestId(100001L, "u1", "req-1"))
+                .thenThrow(new IllegalStateException("query failed"));
+        try {
+            process.doDrawProcess(new DrawProcessReq("u1", 100001L, "req-1"));
+            org.junit.Assert.fail("查询失败不能继续抽奖");
+        } catch (IllegalStateException expected) {
+            assertEquals("query failed", expected.getMessage());
+        }
+        verify(activityPartake, never()).doPartake(any());
+        verify(drawExec, never()).doDrawExec(any());
+        verify(guard).release(eq(100001L), eq("u1"), anyString());
+    }
+
+    @Test
+    public void unfinishedConflictIsForwardedWithoutDrawing() {
+        PartakeResult conflict = new PartakeResult(Constants.ResponseCode.UNFINISHED_DRAW.getCode(),
+                Constants.ResponseCode.UNFINISHED_DRAW.getInfo());
+        conflict.setPendingRequestId("A");
+        when(activityPartake.doPartake(any())).thenReturn(conflict);
+        DrawProcessResult result = process.doDrawProcess(new DrawProcessReq("u1", 100001L, "B"));
+        assertEquals(Constants.ResponseCode.UNFINISHED_DRAW.getCode(), result.getCode());
+        assertEquals("A", result.getPendingRequestId());
+        org.junit.Assert.assertNull(result.getTakeId());
+        verify(drawExec, never()).doDrawExec(any());
+    }
+
+    @Test
+    public void losingCasConflictReplaysConcurrentWinningOrder() {
+        UserTakeActivityVO take = new UserTakeActivityVO();
+        take.setRequestId("req-1");
+        take.setTakeId(777L);
+        take.setStrategyId(10001L);
+        take.setState(Constants.TaskState.NO_USED.getCode());
+        UserTakeActivityVO completed = new UserTakeActivityVO();
+        completed.setRequestId("req-1");
+        completed.setTakeId(777L);
+        completed.setState(Constants.TaskState.USED.getCode());
+        when(userTakeActivityRepository.queryTakeActivityByRequestId(100001L, "u1", "req-1"))
+                .thenReturn(take, completed);
+        when(drawExec.doDrawExec(any())).thenReturn(new DrawResult("u1", 10001L, Constants.DrawState.FAIL.getCode()));
+        when(activityPartake.consumeTakeActivity("u1", 100001L, 777L))
+                .thenReturn(com.anontokyo.lottery.common.Result.buildResult(Constants.ResponseCode.NO_UPDATE));
+        InvoiceVO invoice = new InvoiceVO();
+        invoice.setOrderId(999L);
+        when(orderRepository.queryOrderByTakeId("u1", 777L)).thenReturn(invoice);
+        DrawProcessResult result = process.doDrawProcess(new DrawProcessReq("u1", 100001L, "req-1"));
+        assertEquals(Constants.ResponseCode.SUCCESS.getCode(), result.getCode());
+        assertEquals(Long.valueOf(999L), result.getOrderId());
     }
 
     private PartakeResult partakeResult() {

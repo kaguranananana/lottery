@@ -21,11 +21,16 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
 
     @Override
     public PartakeResult doPartake(PartakeReq req) {
-        UserTakeActivityVO userTakeActivityVO = this.queryNoConsumedTakeActivityOrderFromCache(
+        // 没有请求号就无法保证持久幂等，直接拒绝参与。
+        if (req.getRequestId() == null || req.getRequestId().trim().isEmpty()) {
+            return new PartakeResult(Constants.ResponseCode.ILLEGAL_PARAMETER.getCode(),
+                    Constants.ResponseCode.ILLEGAL_PARAMETER.getInfo());
+        }
+        // 每次创建前查询数据库，缓存失效不等于没有未完成记录。
+        UserTakeActivityVO userTakeActivityVO = this.queryNoConsumedTakeActivityOrder(
                 req.getActivityId(), req.getuId());
         if (userTakeActivityVO != null) {
-            return buildPartakeResult(userTakeActivityVO.getStrategyId(), userTakeActivityVO.getTakeId(),
-                    Constants.ResponseCode.NOT_CONSUMED_TAKE);
+            return resolveUnfinishedTake(req, userTakeActivityVO);
         }
 
         ActivityBillVO activityBillVO = super.queryActivityBill(req);
@@ -34,7 +39,7 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
             return new PartakeResult(checkResult.getCode(), checkResult.getInfo());
         }
 
-        // Redis keeps remaining inventory; first miss backfills from DB remaining stock.
+        // 活动库存仍使用现有 Redis 预扣逻辑，运行期缺失库存不会回填。
         StockResult subtractionActivityResult = this.substractionActivityStockByRedis(req.getuId(), req.getActivityId());
         if (!Constants.ResponseCode.SUCCESS.getCode().equals(subtractionActivityResult.getCode())) {
             return new PartakeResult(subtractionActivityResult.getCode(), subtractionActivityResult.getInfo());
@@ -55,8 +60,8 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
                 UserTakeActivityVO noConsumedTakeActivityOrder = this.queryNoConsumedTakeActivityOrder(
                         req.getActivityId(), req.getuId());
                 if (noConsumedTakeActivityOrder != null) {
-                    return buildPartakeResult(noConsumedTakeActivityOrder.getStrategyId(),
-                            noConsumedTakeActivityOrder.getTakeId(), Constants.ResponseCode.NOT_CONSUMED_TAKE);
+                    // 唯一约束竞争失败后也必须核对归属，不能把 A 交给 B。
+                    return resolveUnfinishedTake(req, noConsumedTakeActivityOrder);
                 }
             }
             return new PartakeResult(grabResult.getCode(), grabResult.getInfo());
@@ -66,11 +71,28 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
                 subtractionActivityResult.getStockSurplusCount(), Constants.ResponseCode.SUCCESS);
     }
 
+    private PartakeResult resolveUnfinishedTake(PartakeReq req, UserTakeActivityVO take) {
+        // 无归属历史记录不能自动绑定到新请求，保留机会并显式要求核查。
+        if (take.getRequestId() == null || take.getRequestId().trim().isEmpty()
+                || !Constants.TaskState.NO_USED.getCode().equals(take.getState())) {
+            return new PartakeResult(Constants.ResponseCode.TAKE_STATE_ERROR.getCode(),
+                    Constants.ResponseCode.TAKE_STATE_ERROR.getInfo());
+        }
+        // 仅创建记录的原请求可以继续消费同一 take。
+        if (req.getRequestId().equals(take.getRequestId())) {
+            return buildPartakeResult(take.getStrategyId(), take.getTakeId(),
+                    Constants.ResponseCode.NOT_CONSUMED_TAKE);
+        }
+        // 新请求只取得原请求号用于恢复，不取得 take 的消费资格。
+        PartakeResult result = new PartakeResult(Constants.ResponseCode.UNFINISHED_DRAW.getCode(),
+                Constants.ResponseCode.UNFINISHED_DRAW.getInfo());
+        result.setPendingRequestId(take.getRequestId());
+        return result;
+    }
+
     protected abstract void recoverActivityStockByRedis(Long activityId);
 
     protected abstract StockResult substractionActivityStockByRedis(String uId, Long activityId);
-
-    protected abstract UserTakeActivityVO queryNoConsumedTakeActivityOrderFromCache(Long activityId, String uId);
 
     protected abstract UserTakeActivityVO queryNoConsumedTakeActivityOrder(Long activityId, String uId);
 

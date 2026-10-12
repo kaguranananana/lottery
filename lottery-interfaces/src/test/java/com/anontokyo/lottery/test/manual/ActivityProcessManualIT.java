@@ -32,6 +32,8 @@ public class ActivityProcessManualIT {
         DrawProcessReq req = new DrawProcessReq();
         req.setuId("anontokyo4");
         req.setActivityId(100001L);
+        // 重复执行该用例回放或恢复同一操作；要测试新一轮须使用新请求号。
+        req.setRequestId("manual-draw-A");
         DrawProcessResult drawProcessResult = activityProcess.doDrawProcess(req);
 
         logger.info("请求入参：{}", JSON.toJSONString(req));

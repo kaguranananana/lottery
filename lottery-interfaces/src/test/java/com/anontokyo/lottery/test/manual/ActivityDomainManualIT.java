@@ -167,7 +167,8 @@ public class ActivityDomainManualIT {
 
     @Test
     public void test_activityPartake() {
-        PartakeReq req = new PartakeReq("Uhdgkw766120d", 100001L);
+        // 手工恢复同一次参与时保留请求号；新一轮应改为新的请求号。
+        PartakeReq req = new PartakeReq("Uhdgkw766120d", 100001L, "manual-partake-A");
         PartakeResult res = activityPartake.doPartake(req);
         logger.info("请求参数：{}", JSON.toJSONString(req));
         logger.info("测试结果：{}", JSON.toJSONString(res));

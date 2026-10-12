@@ -76,11 +76,6 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
     }
 
     @Override
-    protected UserTakeActivityVO queryNoConsumedTakeActivityOrderFromCache(Long activityId, String uId) {
-        return userTakeActivityRepository.queryNoConsumedTakeActivityOrderFromCache(activityId, uId);
-    }
-
-    @Override
     protected UserTakeActivityVO queryNoConsumedTakeActivityOrder(Long activityId, String uId) {
         return userTakeActivityRepository.queryNoConsumedTakeActivityOrder(activityId, uId);
     }

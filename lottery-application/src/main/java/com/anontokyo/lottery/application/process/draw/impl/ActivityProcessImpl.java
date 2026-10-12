@@ -61,6 +61,11 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
 
     @Override
     public DrawProcessResult doDrawProcess(DrawProcessReq req) {
+        // 应用调用也必须提供请求号，不能绕过 HTTP 校验创建无归属参与。
+        if (StringUtils.isBlank(req.getRequestId())) {
+            return new DrawProcessResult(Constants.ResponseCode.ILLEGAL_PARAMETER.getCode(),
+                    Constants.ResponseCode.ILLEGAL_PARAMETER.getInfo());
+        }
         // 并发防重入锁：token 为本请求随机值，只有属主可释放（Lua compare-and-delete）
         String token = UUID.randomUUID().toString();
         boolean inflightClaimed = activityDrawProcessGuard.tryClaim(req.getActivityId(), req.getuId(), token);
@@ -76,6 +81,12 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
         try {
             // requestId 幂等快速路径：同 requestId 的重试永远回到同一个 take / order
             UserTakeActivityVO existingTake = findTakeByRequestId(req);
+            // 精确查询的记录必须有明确归属和有效状态，异常数据不能进入新建分支。
+            if (existingTake != null && (!req.getRequestId().equals(existingTake.getRequestId())
+                    || (!Constants.TaskState.USED.getCode().equals(existingTake.getState())
+                    && !Constants.TaskState.NO_USED.getCode().equals(existingTake.getState())))) {
+                throw new IllegalStateException("Invalid take ownership/state: " + existingTake.getTakeId());
+            }
             Long strategyId;
             Long takeId;
             if (existingTake != null
@@ -98,7 +109,16 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
                 partakeCostMs = elapsedMillis(stageStart);
                 if (!Constants.ResponseCode.SUCCESS.getCode().equals(partakeResult.getCode())
                         && !Constants.ResponseCode.NOT_CONSUMED_TAKE.getCode().equals(partakeResult.getCode())) {
+                    // 锁过期时同请求可能已由另一个线程完成；唯一冲突后只回放已提交结果。
+                    if (Constants.ResponseCode.INDEX_DUP.getCode().equals(partakeResult.getCode())
+                            || Constants.ResponseCode.NO_UPDATE.getCode().equals(partakeResult.getCode())) {
+                        UserTakeActivityVO completed = findTakeByRequestId(req);
+                        if (completed != null && Constants.TaskState.USED.getCode().equals(completed.getState())) {
+                            return replayConsumedTake(req, completed);
+                        }
+                    }
                     DrawProcessResult result = new DrawProcessResult(partakeResult.getCode(), partakeResult.getInfo());
+                    result.setPendingRequestId(partakeResult.getPendingRequestId());
                     logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, drawCostMs, settleCostMs);
                     return result;
                 }
@@ -113,8 +133,11 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
                 stageStart = System.nanoTime();
                 Result consumeTakeResult = activityPartake.consumeTakeActivity(req.getuId(), req.getActivityId(), takeId);
                 settleCostMs = elapsedMillis(stageStart);
-                if (!Constants.ResponseCode.SUCCESS.getCode().equals(consumeTakeResult.getCode())
-                        && !Constants.ResponseCode.NO_UPDATE.getCode().equals(consumeTakeResult.getCode())) {
+                // CAS 零更新说明消费权已被其他线程取得，必须回读最终结果，不能臆断未中奖。
+                if (Constants.ResponseCode.NO_UPDATE.getCode().equals(consumeTakeResult.getCode())) {
+                    return replayAfterConsumptionConflict(req);
+                }
+                if (!Constants.ResponseCode.SUCCESS.getCode().equals(consumeTakeResult.getCode())) {
                     DrawProcessResult result = new DrawProcessResult(consumeTakeResult.getCode(),
                             consumeTakeResult.getInfo());
                     logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, drawCostMs, settleCostMs);
@@ -134,6 +157,10 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
             settleCostMs = elapsedMillis(stageStart);
             if (!Constants.ResponseCode.SUCCESS.getCode().equals(orderResult.getCode())) {
                 drawExec.recoverDrawAwardStock(strategyId, drawAwardInfo.getAwardId());
+                // 下单竞争失败已回补本线程预扣库存，回放取得消费权的线程提交的结果。
+                if (Constants.ResponseCode.NO_UPDATE.getCode().equals(orderResult.getCode())) {
+                    return replayAfterConsumptionConflict(req);
+                }
                 DrawProcessResult result = new DrawProcessResult(orderResult.getCode(), orderResult.getInfo());
                 logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, drawCostMs, settleCostMs);
                 return result;
@@ -154,17 +181,24 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
     }
 
     private UserTakeActivityVO findTakeByRequestId(DrawProcessReq req) {
-        if (StringUtils.isBlank(req.getRequestId())) {
-            return null;
-        }
         try {
+            // 查询失败不是记录不存在，禁止继续扣减次数或创建参与记录。
             return userTakeActivityRepository.queryTakeActivityByRequestId(
                     req.getActivityId(), req.getuId(), req.getRequestId());
-        } catch (Exception e) {
-            logger.warn("query take by requestId failed, degrade to normal flow. uId:{} activityId:{} requestId:{}",
+        } catch (RuntimeException e) {
+            logger.error("query take by requestId failed uId:{} activityId:{} requestId:{}",
                     req.getuId(), req.getActivityId(), req.getRequestId(), e);
-            return null;
+            throw e;
         }
+    }
+
+    private DrawProcessResult replayAfterConsumptionConflict(DrawProcessReq req) {
+        // CAS 在另一个事务提交后返回零更新，随后查询已提交的持久事实。
+        UserTakeActivityVO completed = findTakeByRequestId(req);
+        if (completed == null || !Constants.TaskState.USED.getCode().equals(completed.getState())) {
+            throw new IllegalStateException("Consumption conflict without completed take: " + req.getRequestId());
+        }
+        return replayConsumedTake(req, completed);
     }
 
     /**

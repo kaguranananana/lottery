@@ -54,7 +54,7 @@ Redis `DECR` 为准实时控制，扣到 -1 立即 INCR 归还并判售罄，天
 * 快路径：查 `user_take_activity.request_id`（UNIQUE 兜底）。
   已消费 → 用 take 关联列查出订单，回放原来的中奖结果或未中奖结果；
   未消费 → 复用该 takeId 继续抽奖，绝不新建记录、不再扣次数。
-* 慢路径（新请求）：参与+下单正常流程，唯一约束在并发同 requestId 双写时保证只有一个 take 生成。
+* 慢路径（新请求）：先从 DB 核对同用户活动未完成记录；B 遇到 A 返回 D007 与 pendingRequestId=A，不能取得 A 的 take。确认没有未完成记录才参与+下单；请求唯一键与未完成唯一键共同兜底并发。具体客户端恢复及可执行迁移见 [接口说明](draw-request-idempotency.md)。
 * 并发防重入锁只是性能优化：value 是随机 token，释放走 Lua compare-and-delete，
   “A 超时、B 获锁、A finally 释放” 不再误删 B 的锁。
 

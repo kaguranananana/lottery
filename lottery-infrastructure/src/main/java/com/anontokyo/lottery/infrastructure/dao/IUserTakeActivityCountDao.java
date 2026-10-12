@@ -19,5 +19,8 @@ public interface IUserTakeActivityCountDao {
     @DBRouter
     UserTakeActivityCount queryUserTakeActivityCount(UserTakeActivityCount userTakeActivityCountReq);
 
+    /** 在参与事务中初始化或锁定用户活动次数行。 */
+    void initializeCount(UserTakeActivityCount userTakeActivityCount);
+
     int subtractionLeftCount(UserTakeActivityCount userTakeActivityCount);
 }

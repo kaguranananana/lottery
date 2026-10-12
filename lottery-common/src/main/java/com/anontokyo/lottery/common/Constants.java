@@ -17,7 +17,9 @@ public class Constants {
         NOT_CONSUMED_TAKE("D003", "未消费活动领取记录"),
         OUT_OF_STOCK("D004", "活动无库存"),
         STOCK_STATE_ERROR("D005", "系统繁忙，请稍后重试"),
-        DRAW_IN_PROGRESS("D006", "抽奖处理中，请勿重复点击");
+        DRAW_IN_PROGRESS("D006", "抽奖处理中，请使用原请求号重试"),
+        UNFINISHED_DRAW("D007", "存在未完成抽奖，请恢复原请求"),
+        TAKE_STATE_ERROR("D008", "参与记录归属或状态异常，请联系服务端核查");
 
 
         private String code;

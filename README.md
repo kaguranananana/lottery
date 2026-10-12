@@ -147,3 +147,5 @@ mvn test -Dtest='*ManualIT'
 ```
 
 测试运行说明与手工环境要求见 `docs/architecture.md`。SQL 初始化使用 `doc/sql/`（基线）+ `docs/sql/V2__architecture_simplification.sql`（本次重构迁移，幂等列/账本/索引）。
+
+抽奖请求号、未完成参与恢复与发布前迁移见 [抽奖幂等接口说明](docs/draw-request-idempotency.md)。

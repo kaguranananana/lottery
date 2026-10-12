@@ -29,6 +29,12 @@ public class UserTakeActivityVO {
      */
     private Integer state;
 
+    /** 创建这条参与记录的逻辑请求，历史记录可能为空。 */
+    private String requestId;
+
+    public String getRequestId() { return requestId; }
+    public void setRequestId(String requestId) { this.requestId = requestId; }
+
     public Long getStrategyId() {
         return strategyId;
     }
