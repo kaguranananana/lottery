@@ -14,6 +14,7 @@ import com.anontokyo.lottery.domain.award.service.fulfillment.AwardFulfillmentRe
 import com.anontokyo.lottery.domain.award.service.order.IAwardOrder;
 import com.anontokyo.lottery.domain.strategy.repository.IStrategyRepository;
 import com.anontokyo.lottery.domain.support.lock.IInvoiceMqProcessGuard;
+import com.anontokyo.lottery.domain.support.lock.IStrategyAwardStockMqGuard;
 import com.xxl.job.core.context.XxlJobContext;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.After;
@@ -60,6 +61,37 @@ public class MqCallbackStateTest {
         future.set(null);
         verify(order).updateInvoiceMqState("mq-test", 1L, Constants.MQState.SENT.getCode());
         verify(order, never()).updateInvoiceMqState(anyString(), anyLong(), eq(Constants.MQState.COMPLETE.getCode()));
+    }
+
+    @Test
+    public void stockOutboxDispatchUsesScanWithoutPerOrderRead() {
+        IAwardOrder order = mock(IAwardOrder.class);
+        KafkaProducer producer = mock(KafkaProducer.class);
+        IStrategyAwardStockMqGuard guard = mock(IStrategyAwardStockMqGuard.class);
+        AwardStockSettlementVO candidate = new AwardStockSettlementVO();
+        candidate.setuId("mq-test"); candidate.setOrderId(1L);
+        SettableListenableFuture<SendResult<String, Object>> future = new SettableListenableFuture<>();
+        when(order.shardingDbCount()).thenReturn(1);
+        when(order.shardingTableCount()).thenReturn(1);
+        when(order.scanAwardStockMqState(1, 0, 200)).thenReturn(Collections.singletonList(candidate));
+        when(guard.tryClaimDispatch(1L)).thenReturn(true);
+        when(producer.sendStrategyAwardStock(candidate)).thenReturn(future);
+        LotteryXxlJob job = new LotteryXxlJob();
+        ReflectionTestUtils.setField(job, "awardOrder", order);
+        ReflectionTestUtils.setField(job, "kafkaProducer", producer);
+        ReflectionTestUtils.setField(job, "strategyAwardStockMqGuard", guard);
+        ReflectionTestUtils.setField(job, "stockSettlementDispatchBatchSize", 200);
+        XxlJobContext.setXxlJobContext(new XxlJobContext(1, "1", null, 0, 1));
+        job.awardStockSettlementOutboxJobHandler();
+        // 扫描已过滤 COMPLETE；逐条预读不能防止消费在读后完成，状态保护仍由回调 CAS 承担。
+        verify(order, never()).isStockMqCompleted(anyString(), anyLong());
+        verify(guard).tryClaimDispatch(1L);
+        verify(producer).sendStrategyAwardStock(candidate);
+        // Future 完成前不得宣布已发送；成功通知仍只推进 SENT，并释放原有 marker。
+        verify(order, never()).updateStockMqState(anyString(), anyLong(), anyInt());
+        future.set(null);
+        verify(order).updateStockMqState("mq-test", 1L, Constants.MQState.SENT.getCode());
+        verify(guard).clearDispatchMarker(1L);
     }
 
     @Test

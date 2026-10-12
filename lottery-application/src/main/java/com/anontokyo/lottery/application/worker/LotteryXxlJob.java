@@ -233,10 +233,8 @@ public class LotteryXxlJob {
             return;
         }
         Long orderId = settlementVO.getOrderId();
-        if (awardOrder.isStockMqCompleted(settlementVO.getuId(), orderId)) {
-            strategyAwardStockMqGuard.clearDispatchMarker(orderId);
-            return;
-        }
+        // 扫描 SQL 已排除 COMPLETE；逐条预读既重复访问数据库，也不能阻止读后的消费竞争。
+        // 并发完成后的重复消息由消费者和账本去重，迟到发送通知仍由数据库 CAS 保护终态。
         // DISPATCHING 标记用于防止同一轮内多 worker 对同一条记录并发重复投递
         if (!strategyAwardStockMqGuard.tryClaimDispatch(orderId)) {
             return;
