@@ -1,0 +1,4 @@
+{"file": ".trellis/spec/index.md", "reason": "项目规范入口与适用范围"}
+{"file": ".trellis/spec/project-context.md", "reason": "现有架构、模块依赖与运行边界"}
+{"file": ".trellis/spec/backend/index.md", "reason": "全部后端主题与检查入口"}
+{"file": ".trellis/spec/backend/quality-guidelines.md", "reason": "按本次文档改动选择验证范围"}

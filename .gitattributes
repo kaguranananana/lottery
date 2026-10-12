@@ -1,0 +1,2 @@
+# Trellis 开发日志按会话追加；合并时保留双方新增记录。
+.trellis/workspace/*/journal-*.md merge=union

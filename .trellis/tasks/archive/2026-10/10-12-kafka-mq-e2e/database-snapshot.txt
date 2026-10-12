@@ -1,0 +1,6 @@
+orders	stock_complete	invoice_complete	grant_complete
+17	17	17	17
+settlements
+17
+strategies	total_deducted
+8	17

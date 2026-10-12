@@ -1,0 +1,19 @@
+
+GROUP                             TOPIC           PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG             CONSUMER-ID     HOST            CLIENT-ID
+lottery-e2e-invoice-1791784213504 lottery_invoice 2          1               1               0               -               -               -
+lottery-e2e-invoice-1791784213504 lottery_invoice 1          1               1               0               -               -               -
+lottery-e2e-invoice-1791784213504 lottery_invoice 4          4               4               0               -               -               -
+lottery-e2e-invoice-1791784213504 lottery_invoice 6          2               2               0               -               -               -
+lottery-e2e-invoice-1791784213504 lottery_invoice 5          5               5               0               -               -               -
+lottery-e2e-invoice-1791784213504 lottery_invoice 7          3               3               0               -               -               -
+lottery-e2e-invoice-1791784213504 lottery_invoice 0          4               4               0               -               -               -
+
+
+GROUP                           TOPIC                        PARTITION  CURRENT-OFFSET  LOG-END-OFFSET  LAG             CONSUMER-ID     HOST            CLIENT-ID
+lottery-e2e-stock-1791784213504 lottery_strategy_award_stock 0          3               3               0               -               -               -
+lottery-e2e-stock-1791784213504 lottery_strategy_award_stock 1          1               1               0               -               -               -
+lottery-e2e-stock-1791784213504 lottery_strategy_award_stock 2          1               1               0               -               -               -
+lottery-e2e-stock-1791784213504 lottery_strategy_award_stock 4          6               6               0               -               -               -
+lottery-e2e-stock-1791784213504 lottery_strategy_award_stock 5          6               6               0               -               -               -
+lottery-e2e-stock-1791784213504 lottery_strategy_award_stock 6          2               2               0               -               -               -
+lottery-e2e-stock-1791784213504 lottery_strategy_award_stock 7          3               3               0               -               -               -
