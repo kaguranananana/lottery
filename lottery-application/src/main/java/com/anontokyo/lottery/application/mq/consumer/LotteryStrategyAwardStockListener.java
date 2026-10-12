@@ -80,9 +80,8 @@ public class LotteryStrategyAwardStockListener {
 
             boolean settled = strategyRepository.settleAwardStock(settlementVO);
             if (!settled) {
-                // 条件扣减失败：Redis 与 DB 状态出现分歧，显式落 FAIL 并停止重试等待人工对账
-                awardOrder.updateStockMqState(settlementVO.getuId(), settlementVO.getOrderId(),
-                        Constants.MQState.FAIL.getCode());
+                // 条件扣减失败：独立消费事件可将 SENT 转 FAIL；Outbox 仍会重扫，并需人工对账。
+                awardOrder.markStockSettlementFailed(settlementVO.getuId(), settlementVO.getOrderId());
                 logger.error("settle award stock failed (stock gap), needs reconciliation "
                                 + "uId:{} orderId:{} strategyId:{} awardId:{}",
                         settlementVO.getuId(), settlementVO.getOrderId(), settlementVO.getStrategyId(),

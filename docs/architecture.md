@@ -43,7 +43,8 @@ Redis 不承担任何“最终是否处理过”的事实判定：DONE 类 guard
 
 ### Outbox 为什么存在？
 避免 “DB 提交成功 → JVM crash → 消息永远没有发出去”。订单写入与 `stock_mq_state=0`
-在同一事务落库，之后由 XXL-Job 扫描 `IN(0,2)` 补偿投递。
+在同一事务落库，之后由 XXL-Job 扫描 `IN(0,2)` 及超时 10 分钟的 SENT 补偿投递。
+发送与消费事件以 SQL 条件更新推进状态，迟到发送回调不能覆盖 COMPLETE；发奖发送成功统一为 SENT，消费确认 grant_state 后才收口 COMPLETE。详见[消息状态修复说明](kafka-mq-state-cas.md)。
 
 ### settlement ledger 为什么存在？
 保证 Kafka duplicate delivery / consumer crash 后的重复消费不会让同一个 orderId 扣两次库存。

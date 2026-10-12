@@ -124,6 +124,17 @@ public class OrderRepository implements IOrderRepository {
     }
 
     @Override
+    public void markStockSettlementFailed(String uId, Long orderId) {
+        // 用户标识提供分库分表路由键。
+        UserStrategyExport userStrategyExport = new UserStrategyExport();
+        userStrategyExport.setuId(uId);
+        // 按订单限定本次结算失败的更新范围。
+        userStrategyExport.setOrderId(orderId);
+        // SQL 条件决定是否更新；零行是终态保护或重复失败，SQL 异常仍向上传播。
+        userStrategyExportDao.markStockSettlementFailed(userStrategyExport);
+    }
+
+    @Override
     public List<InvoiceVO> scanInvoiceMqState(int limit) {
         List<UserStrategyExport> userStrategyExportList = userStrategyExportDao.scanInvoiceMqState(limit);
         List<InvoiceVO> invoiceVOList = new ArrayList<>(userStrategyExportList.size());

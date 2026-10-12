@@ -60,16 +60,16 @@ sequenceDiagram
 
 ```text
 AwardOrder(本地事务写入 stock_mq_state=0)          ← Outbox 写入点
-  → XXL-Job awardStockSettlementOutboxJobHandler 按 dbIdx 分片扫描 INIT/FAIL
+  → XXL-Job awardStockSettlementOutboxJobHandler 按 dbIdx 分片扫描 INIT/FAIL/超时 SENT
       → Kafka lottery_strategy_award_stock (key=orderId)
-      → 发送成功落 SENT(3)，失败落 FAIL(2) 等待下轮重扫
+      → 发送回调条件更新：INIT/FAIL → SENT(3)，INIT → FAIL(2)；保护 COMPLETE
   → StockSettlementListener
       → 本地事务: INSERT award_stock_settlement(UNIQUE order_id)
                   + UPDATE strategy_detail ... award_surplus_count > 0
       → duplicate key ⇒ 该订单早已结算，直接返回成功（绝不二次扣减）
       → stock_mq_state=COMPLETE → 投递发奖消息
   → InvoiceListener → FulfillmentHandler.fulfill(orderId,...)（adapter stub）
-      → grant_state CAS 标记完成
+      → grant_state CAS 标记完成，再将 mq_state 收口 COMPLETE 后 ack
 ```
 
 后台任务统一由 XXL-Job 管理（多实例部署时按参数 `"1"` / `"1,2"` 分片指定各自负责的分库）：
@@ -90,7 +90,7 @@ lotteryOrderMQStateJobHandler         发奖消息补偿重发
   * 不自动增加任何库存。
 * **MySQL**：持久化库存与最终账本。活动配置为初始事实源；`strategy_detail.award_surplus_count > 0` 条件更新保证不超卖。
 * **Settlement Ledger（`award_stock_settlement`）**：Kafka 消费幂等。`INSERT 账本 + 条件扣减`在同一本地事务（同库 db00）；`UNIQUE(order_id)` 使“同一 orderId 只可能扣一次数据库库存”。
-* **Outbox**：创建订单与置待发送状态同事务；后续由调度扫描可靠投递。状态机 `INIT(0) → SENT(3) → COMPLETE(1) / FAIL(2)`。
+* **Outbox**：创建订单与置待发送状态同事务；后续由调度扫描可靠投递。状态由 SQL 条件推进：发送成功 `INIT/FAIL → SENT`，消费完成 `INIT/FAIL/SENT → COMPLETE`，迟到发送回调不能覆盖 COMPLETE；库存 SENT 超时 10 分钟可重投，详见[消息状态修复说明](docs/kafka-mq-state-cas.md)。
 
 ## 4. Failure Cases
 

@@ -75,8 +75,8 @@ crash 发生在任何一步之后，redelivery 都会撞上唯一键——**同�
 PROCESSING Redis 锁保留为并发优化，但文档里明确它不是事实来源。
 
 ### 4.4 Outbox 可靠投递
-订单创建与 `stock_mq_state=INIT` 在同一事务；调度任务扫 `IN(0,2)` 投递并落 SENT；
-发送失败留 FAIL 下轮重投。crash 在“发送成功落 SENT 前”最多导致一次重复投递——由 4.3 的账本消化。
+订单创建与 `stock_mq_state=INIT` 在同一事务；调度任务扫 `IN(0,2)` 及超时 10 分钟的 SENT，发送成功条件推进 SENT；
+发送失败仅 INIT 转 FAIL，迟到失败不覆盖 SENT/COMPLETE，FAIL 下轮重投。crash 在“发送成功落 SENT 前”最多导致一次重复投递——由 4.3 的账本消化。
 `(stock_mq_state, create_time)` 联合索引支撑扫描查询，invoice 补偿 scan 加了 LIMIT 防全表拖库。
 
 ### 4.5 发奖幂等

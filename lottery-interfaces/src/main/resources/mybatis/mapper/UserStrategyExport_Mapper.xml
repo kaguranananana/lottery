@@ -42,10 +42,29 @@
     <update id="updateInvoiceMqState">
         UPDATE user_strategy_export SET mq_state = #{mqState}, update_time = now()
         WHERE u_id = #{uId} AND order_id = #{orderId}
+          <!-- 消费完成必须有本地发奖事实；终态与重复事件不再更新。 -->
+          AND ((#{mqState} = 1 AND grant_state = 1 AND mq_state IN (0, 2, 3))
+          <!-- 任意一次发送成功可推进失败状态；迟到成功不能刷新 SENT 的补偿时间。 -->
+           OR (#{mqState} = 3 AND mq_state IN (0, 2))
+          <!-- 发送失败不能覆盖已发送或已消费；FAIL 重复通知也不刷新时间。 -->
+           OR (#{mqState} = 2 AND mq_state = 0))
     </update>
     <update id="updateStockMqState">
         UPDATE user_strategy_export SET stock_mq_state = #{stockMqState}, update_time = now()
         WHERE u_id = #{uId} AND order_id = #{orderId}
+          <!-- 消费可能早于发送回调，所以允许从所有未完成状态直接收口。 -->
+          AND ((#{stockMqState} = 1 AND stock_mq_state IN (0, 2, 3))
+          <!-- 重试成功可从 FAIL 推进 SENT；不能覆盖 COMPLETE 或刷新已有 SENT。 -->
+           OR (#{stockMqState} = 3 AND stock_mq_state IN (0, 2))
+          <!-- 这里只处理发送失败，迟到失败不能推翻任何一次发送成功。 -->
+           OR (#{stockMqState} = 2 AND stock_mq_state = 0))
+    </update>
+    <update id="markStockSettlementFailed">
+        <!-- 消费侧库存分歧是真实业务失败，与发送失败回调分开处理。 -->
+        UPDATE user_strategy_export SET stock_mq_state = 2, update_time = now()
+        WHERE u_id = #{uId} AND order_id = #{orderId}
+          <!-- 消费失败允许 SENT 回到可重试状态，但不能覆盖并发消费的 COMPLETE。 -->
+          AND stock_mq_state IN (0, 3)
     </update>
 
     <select id="queryUserStrategyExportByUId" parameterType="java.lang.String" resultMap="userStrategyExportMap">
@@ -82,15 +101,20 @@
         SELECT u_id, order_id, take_id, award_id, award_type, award_name, award_content, grant_type, grant_date
         FROM user_strategy_export
         WHERE stock_mq_state = 1
+          <!-- 发奖事实已完成的订单不再补偿。 -->
+          AND grant_state != 1
           AND (mq_state = 2
            OR (mq_state = 0 AND create_time &lt; DATE_SUB(NOW(), INTERVAL 30 MINUTE))
-           OR (mq_state = 3 AND update_time &lt; DATE_SUB(NOW(), INTERVAL 10 MINUTE)))
+           <!-- 旧补偿发送成功曾误写 1；未发奖的这类历史行也按超时发送恢复。 -->
+           OR (mq_state IN (1, 3) AND update_time &lt; DATE_SUB(NOW(), INTERVAL 10 MINUTE)))
         LIMIT #{limit}
     </select>
     <select id="scanAwardStockMqState" resultType="com.anontokyo.lottery.infrastructure.po.UserStrategyExport">
         SELECT u_id, order_id, strategy_id, award_id
         FROM user_strategy_export
         WHERE stock_mq_state IN (0, 2)
+           <!-- 任意一次发送成功后，消费长期未完成仍可重投，由库存账本保证幂等。 -->
+           OR (stock_mq_state = 3 AND update_time &lt; DATE_SUB(NOW(), INTERVAL 10 MINUTE))
         ORDER BY create_time ASC
         LIMIT #{limit}
     </select>

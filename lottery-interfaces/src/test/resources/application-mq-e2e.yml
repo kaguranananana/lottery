@@ -1,0 +1,46 @@
+# 只用于独立 Docker 测试栈，生产 application.yml 保持原样。
+spring:
+  redis:
+    host: 127.0.0.1
+    port: 16379
+    password: ""
+  kafka:
+    bootstrap-servers: 127.0.0.1:19092
+    producer:
+      properties:
+        # 停机验证使用真实 Kafka 超时，不让测试等待默认的数分钟。
+        delivery.timeout.ms: 5000
+        request.timeout.ms: 1000
+        max.block.ms: 5000
+    consumer:
+      auto-offset-reset: earliest
+    listener:
+      # 建表和 fixture 准备完成后由测试启动真实监听容器。
+      auto-startup: false
+lottery:
+  kafka:
+    consumer:
+      invoice-group-id: lottery-e2e-invoice-${lottery.e2e.run}
+      strategy-award-stock-group-id: lottery-e2e-stock-${lottery.e2e.run}
+mini-db-router:
+  jdbc:
+    datasource:
+      global:
+        pool:
+          maximum-pool-size: 8
+          minimum-idle: 1
+      db00:
+        url: jdbc:mysql://127.0.0.1:13309/lottery?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+      db01:
+        url: jdbc:mysql://127.0.0.1:13309/lottery_01?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+      db02:
+        url: jdbc:mysql://127.0.0.1:13309/lottery_02?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+xxl:
+  job:
+    admin:
+      # 调度 handler 直接调用，测试不连接现有 admin。
+      addresses: ""
+    executor:
+      port: 19999
+      address: http://127.0.0.1:19999
+      logpath: ${java.io.tmpdir}/lottery-mq-e2e-xxl

@@ -159,14 +159,17 @@ public class LotteryXxlJob {
 
                         @Override
                         public void onSuccess(SendResult<String, Object> stringObjectSendResult) {
-                            // MQ 消息发送完成，更新数据库表 user_strategy_export.mq_state = 1
-                            awardOrder.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(), Constants.MQState.COMPLETE.getCode());
+                            // 发送成功只推进 SENT；COMPLETE 由发奖消费者确认，CAS 保护迟到回调。
+                            awardOrder.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(), Constants.MQState.SENT.getCode());
                         }
 
                         @Override
                         public void onFailure(Throwable throwable) {
-                            // MQ 消息发送失败，更新数据库表 user_strategy_export.mq_state = 2 【等待定时任务扫码补偿MQ消息】
+                            // 仅未发送状态可进入 FAIL，迟到失败不能覆盖已发送或已完成。
                             awardOrder.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(), Constants.MQState.FAIL.getCode());
+                            // 保留失败 cause 和订单标识，便于定位补偿发送异常。
+                            logger.error("invoice mq compensation send failed uId:{} orderId:{}",
+                                    invoiceVO.getuId(), invoiceVO.getOrderId(), throwable);
                         }
 
                     });
@@ -182,7 +185,7 @@ public class LotteryXxlJob {
      * 库存结算 Outbox 扫描投递任务（原 @Scheduled dispatcher 迁移至此）。
      * 任务参数指定本 worker 负责的分库编号，逗号分隔，如 "1" 或 "1,2"：
      * 多实例部署时在 XXL-Job 中配置不同分片参数即可，无需每个实例扫描全部分库。
-     * 状态机：INIT(0)/FAIL(2) 扫描 → 投递成功落 SENT(3) → 消费完成 COMPLETE(1)。
+     * 状态机：INIT(0)/FAIL(2)/超时 SENT(3) 扫描 → 投递成功落 SENT(3) → 消费完成 COMPLETE(1)。
      * crash 在发送与落状态之间最多造成一次重复投递，由 settlement 账本兜底幂等。
      */
     @XxlJob("awardStockSettlementOutboxJobHandler")

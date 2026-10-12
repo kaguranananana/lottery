@@ -70,6 +70,10 @@ public class LotteryInvoiceListener {
 
             // DB 兜底：已发奖完成的订单直接跳过（重复投递安全）
             if (orderRepository.isAwardCompleted(invoiceVO.getuId(), invoiceVO.getOrderId())) {
+                // 重放时修复发奖已完成但消息尚未收口的窗口，更新失败则交还 Kafka 重投。
+                orderRepository.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(),
+                        Constants.MQState.COMPLETE.getCode());
+                // 只有数据库收口调用成功返回后才提交消费位点。
                 ack.acknowledge();
                 return;
             }
@@ -96,6 +100,10 @@ public class LotteryInvoiceListener {
                             + invoiceVO.getOrderId());
                 }
             }
+            // 本消费者发奖成功，或已确认并发消费者完成后，统一收口消息状态。
+            orderRepository.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(),
+                    Constants.MQState.COMPLETE.getCode());
+            // 先持久化消费结果，再提交位点，重放可以修复中途失败。
             ack.acknowledge();
         } catch (Exception e) {
             logger.error("consume mq invoice failed, topic:{} message:{}", topic, message.get(), e);

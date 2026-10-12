@@ -49,17 +49,22 @@ public interface IUserStrategyExportDao {
     int markUserAwardGranted(UserStrategyExport userStrategyExport);
 
     /**
-     * 更新发送MQ状态
-     * @param userStrategyExport
+     * 按消息事件条件更新发奖状态，完成事件还须满足 grant_state=1。
+     * @return 1 表示状态推进；0 表示重复事件或不满足源状态条件
      */
     @DBRouter
-    void updateInvoiceMqState(UserStrategyExport userStrategyExport);
+    int updateInvoiceMqState(UserStrategyExport userStrategyExport);
 
     /**
-     * Update award stock settlement MQ state.
+     * 按发送或完成事件条件更新库存消息状态，不允许覆盖 COMPLETE。
+     * @return 1 表示状态推进；0 表示重复事件或不满足源状态条件
      */
     @DBRouter
-    void updateStockMqState(UserStrategyExport userStrategyExport);
+    int updateStockMqState(UserStrategyExport userStrategyExport);
+
+    /** 消费失败按 uId 路由，以条件更新保留并发完成的终态。 */
+    @DBRouter(key = "uId")
+    int markStockSettlementFailed(UserStrategyExport userStrategyExport);
 
     List<UserStrategyExport> scanInvoiceMqState(int limit);
 

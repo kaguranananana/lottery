@@ -69,6 +69,12 @@ public class AwardOrderImpl implements IAwardOrder {
     }
 
     @Override
+    public void markStockSettlementFailed(String uId, Long orderId) {
+        // 消费失败事件独立透传，不能复用发送失败的状态条件。
+        orderRepository.markStockSettlementFailed(uId, orderId);
+    }
+
+    @Override
     public List<InvoiceVO> scanInvoiceMqState(int dbCount, int tbCount, int limit) {
         return orderRepository.scanInvoiceMqStateByShard(dbCount, tbCount, limit);
     }
