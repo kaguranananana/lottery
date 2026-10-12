@@ -18,17 +18,17 @@ public class StrategyDetailBriefVO {
     // 奖品ID
     private String awardId;
 
-    // 奖品数量
-    private String awardCount;
+    // 总库存沿持久化读取到策略快照保持 INT 语义，不进行字符串转换。
+    private Integer awardCount;
 
     // 中奖概率
     private BigDecimal awardRate;
 
-    public String getAwardCount() {
+    public Integer getAwardCount() {
         return awardCount;
     }
 
-    public void setAwardCount(String awardCount) {
+    public void setAwardCount(Integer awardCount) {
         this.awardCount = awardCount;
     }
 

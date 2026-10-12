@@ -3,10 +3,13 @@ package com.anontokyo.lottery.test.manual;
 import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
+import com.anontokyo.lottery.domain.activity.model.vo.StrategyDetailVO;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
+import com.anontokyo.lottery.infrastructure.cache.TwoLevelCacheService;
 import com.anontokyo.lottery.infrastructure.dao.*;
 import com.anontokyo.lottery.infrastructure.po.UserTakeActivityCount;
 import com.anontokyo.lottery.infrastructure.repository.StrategyRepository;
+import com.anontokyo.lottery.infrastructure.repository.ActivityRepository;
 import com.anontokyo.lottery.infrastructure.repository.UserTakeActivityRepository;
 import org.junit.*;
 import org.mybatis.spring.SqlSessionFactoryBean;
@@ -172,6 +175,19 @@ public class PerformanceSqlManualIT {
         AwardStockSettlementVO vo = new AwardStockSettlementVO();
         vo.setOrderId(order); vo.setuId("settlementUser"); vo.setStrategyId(5L); vo.setAwardId("A");
         return vo;
+    }
+
+    @Test public void totalStockMustPersistThroughRealCreationMapper() throws Exception {
+        ActivityRepository activities = new ActivityRepository();
+        ReflectionTestUtils.setField(activities, "strategyDetailDao", session.getMapper(IStrategyDetailDao.class));
+        ReflectionTestUtils.setField(activities, "twoLevelCacheService", mock(TwoLevelCacheService.class));
+        StrategyDetailVO detail = new StrategyDetailVO();
+        detail.setStrategyId(6L); detail.setAwardId("total"); detail.setAwardCount(37); detail.setAwardSurplusCount(37);
+        activities.addStrategyDetailList(Collections.singletonList(detail));
+        // IS NULL 断言防止 JDBC getLong 将 NULL 隐式视为零，掩盖字段映射缺陷。
+        assertEquals(0, number("SELECT COUNT(*) FROM strategy_detail WHERE award_count IS NULL"));
+        assertEquals(37, number("SELECT award_count FROM strategy_detail"));
+        assertEquals(37, number("SELECT award_surplus_count FROM strategy_detail"));
     }
 
 }

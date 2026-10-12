@@ -21,8 +21,8 @@ public class StrategyDetail {
     // 奖品名称
     private String awardName;
 
-    // 奖品数量
-    private String awardCount;
+    // 奖品总库存与数据库 INT、创建 VO 保持同一类型，避免 BeanUtils 跳过属性复制。
+    private Integer awardCount;
 
     // 奖品剩余数量
     private Integer awardSurplusCount;
@@ -68,11 +68,11 @@ public class StrategyDetail {
         this.awardName = awardName;
     }
 
-    public String getAwardCount() {
+    public Integer getAwardCount() {
         return awardCount;
     }
 
-    public void setAwardCount(String awardCount) {
+    public void setAwardCount(Integer awardCount) {
         this.awardCount = awardCount;
     }
 
