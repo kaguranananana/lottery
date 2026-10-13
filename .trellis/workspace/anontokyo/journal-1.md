@@ -179,3 +179,46 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 9: 资源受限的新一轮性能复诊与补偿扫描计划
+
+**Date**: 2026-10-13
+**Task**: 资源受限的新一轮性能复诊与补偿扫描计划
+**Branch**: `codex/perf-rediagnosis-20261013`
+
+### Summary
+
+基于 main 34cd882；两段空闲仍换页，仅启动专用 MySQL 只读核对，96 次生产 SQL ANALYZE 确认补偿每轮扫描 341311 历史订单返回零。381439 参与与次数、341311 订单/账本及关联核对一致；原有五实例未改，MySQL 正常退出。环境停止，零业务优化，无新 RPS/真实链路结果；原始包本地保留，诊断工具与报告提交 b198ed6。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b198ed6` | (see git log) |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 10: 重启后零换页环境的80 RPS真实链路基线确认
+
+**Date**: 2026-10-13
+**Task**: 重启后零换页环境的80 RPS真实链路基线确认
+**Branch**: `codex/perf-rediagnosis-20261013`
+
+### Summary
+
+依据b198ed6恢复原四容器与原Volume，不改其它五实例、不清数据。四阶段60秒和180/300秒80 RPS测量全程零Swap，两轮原标准全通过，P99 23/22ms，异步P95上界2.105/2.116s，约0.33s排空。幂等/超时/D007及真实Kafka重投通过；41624新增订单/参与/账本一致，最终全局382935订单/账本、423063参与。真实stop.py进程名解析失败最小修复并独立提交；所有原资源/数据保留，工具失败和7.45MiB原始包保留，未升压或业务优化。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `7b7de68` | (see git log) |
+| `aa38c37` | (see git log) |
+
+### Status
+
+[OK] **Completed**
