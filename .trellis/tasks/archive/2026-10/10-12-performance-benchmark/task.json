@@ -1,0 +1,29 @@
+{
+  "id": "performance-benchmark",
+  "name": "performance-benchmark",
+  "title": "Lottery 隔离环境性能压测与一致性诊断",
+  "description": "执行独立Docker真实HTTP压测、并发/定速/幂等/库存场景与全量ID对账，交付原始证据、曲线和本地容量报告",
+  "status": "completed",
+  "dev_type": null,
+  "scope": "performance",
+  "package": null,
+  "priority": "P2",
+  "creator": "anontokyo",
+  "assignee": "anontokyo",
+  "createdAt": "2026-10-12",
+  "completedAt": "2026-10-12",
+  "branch": null,
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": null,
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": null,
+  "relatedFiles": [
+    "doc/performance/",
+    ".trellis/spec/backend/performance-testing.md"
+  ],
+  "notes": "",
+  "meta": {}
+}

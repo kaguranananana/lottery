@@ -114,3 +114,68 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 6: 最终正确性修复与真实 HTTP/中间件 E2E
+
+**Date**: 2026-10-12
+**Task**: 最终正确性修复与真实 HTTP/中间件 E2E
+**Branch**: `main`
+
+### Summary
+
+修复活动创建、分页、库存 BLOCKED 对账与行锁内预热启动。Java 8 编译打包成功，34 单测、22 真实 SQL 集成、23 真实中间件 E2E 共79通过。四项修复前故障均复现；报告与证据索引已推送 main。外部奖品渠道和 XXL-Job Admin 未覆盖，生产高可用与跨系统崩溃窗口仍属边界。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `b398d32` | (see git log) |
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 7: Lottery 实际性能压测与环境瓶颈诊断
+
+**Date**: 2026-10-12
+**Task**: Lottery 实际性能压测与环境瓶颈诊断
+**Branch**: `main`
+
+### Summary
+
+完成独立Docker真实HTTP并发/持续速率/幂等/有限库存测试；50并发328.9新抽奖RPS、P95/P99 362/574ms，正式164868中奖订单逐ID对账通过。持续60/70/80/90未全部通过预设标准，后段宿主机11.9GiB swap及主动换页，最大稳定容量未确认。34默认单测、Java/Python/shell/Compose检查通过；交付report.md、曲线、复现脚本及原始证据包。专用栈停止、原有5容器保留，未改生产业务/测试。
+
+### Git Commits
+
+(No commits - planning session)
+
+### Status
+
+[OK] **Completed**
+
+
+## Session 8: 真实性能诊断与独立优化验证
+
+**Date**: 2026-10-13
+**Task**: 真实性能诊断与独立优化验证
+**Branch**: `main`
+
+### Summary
+
+完成已有次数行跳过无变化 upsert、复用库存组合索引、Outbox 删除重复读取三个独立优化，另修复总库存 Integer 映射。54 项自动化测试通过，155557 订单/账本和187331参与一致；配对80RPS前后均通过，异步订单SELECT每单4→3，300秒候选复核通过。主动换页与数据增长限制下不认证最大容量或整体提升率。修复真实JMeter用户耗尽失效；专用MySQL一秒关闭宽限恢复后事实一致，60秒正常退出。报告与30.82MiB原始包保留，专用栈停止，用户其他容器/原始结果未清理。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `170e8f5` | (see git log) |
+| `5a8c3e6` | (see git log) |
+| `e79d347` | (see git log) |
+| `6be1963` | (see git log) |
+| `90801f0` | (see git log) |
+
+### Status
+
+[OK] **Completed**

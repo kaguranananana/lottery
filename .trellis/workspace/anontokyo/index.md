@@ -8,8 +8,8 @@
 
 <!-- @@@auto:current-status -->
 - **Active File**: `journal-1.md`
-- **Total Sessions**: 5
-- **Last Active**: 2026-10-12
+- **Total Sessions**: 8
+- **Last Active**: 2026-10-13
 <!-- @@@/auto:current-status -->
 
 ---
@@ -19,7 +19,7 @@
 <!-- @@@auto:active-documents -->
 | File | Lines | Status |
 |------|-------|--------|
-| `journal-1.md` | ~116 | Active |
+| `journal-1.md` | ~181 | Active |
 <!-- @@@/auto:active-documents -->
 
 ---
@@ -29,6 +29,9 @@
 <!-- @@@auto:session-history -->
 | # | Date | Title | Commits | Branch |
 |---|------|-------|---------|--------|
+| 8 | 2026-10-13 | 真实性能诊断与独立优化验证 | `170e8f5`, `5a8c3e6`, `e79d347`, `6be1963`, `90801f0` | `main` |
+| 7 | 2026-10-12 | Lottery 实际性能压测与环境瓶颈诊断 | - | `main` |
+| 6 | 2026-10-12 | 最终正确性修复与真实 HTTP/中间件 E2E | `b398d32` | `main` |
 | 5 | 2026-10-12 | 提交当前 Lottery 交付结果 | - | `main` |
 | 4 | 2026-10-12 | Kafka 状态修复的真实 Docker 端到端验证 | - | `main` |
 | 3 | 2026-10-12 | Kafka 消息状态 CAS 修复 | - | `main` |
