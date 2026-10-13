@@ -1,0 +1,87 @@
+{
+  "driverBefore": "8.0.28",
+  "driverAfter": "8.0.29",
+  "testsUnchangedDuringFix": true,
+  "failedBefore": "Spring rollback false通过、true模式漏发SET autocommit=0，行自动提交；日志原样保留",
+  "manual": [
+    {
+      "name": "com.anontokyo.lottery.test.manual.JdbcLocalSessionStateManualIT",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.manual.InvoiceCompensationIndexManualIT",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.manual.PerformanceSqlManualIT",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    }
+  ],
+  "unit": [
+    {
+      "name": "com.anontokyo.lottery.test.domain.DrawRequestIdempotencyTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.domain.PartakeRequestOwnershipTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.infrastructure.lock.RedisActivityDrawProcessGuardTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.web.DrawHttpOwnershipTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.domain.WeightedRandomSelectorTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.mq.MqCallbackStateTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    }
+  ],
+  "total": 46,
+  "failures": 0,
+  "errors": 0,
+  "queryProbe": {
+    "tenIsReadOnlyFalse": 10,
+    "tenIsReadOnlyTrue": 0
+  },
+  "officialBug": "https://bugs.mysql.com/bug.php?id=106435",
+  "release": "https://dev.mysql.com/doc/relnotes/connector-j/en/news-8-0-29.html",
+  "productionTrueWasNeverStartedOn8.0.28": true,
+  "generalLogRestored": {
+    "generalLog": "0\tTABLE",
+    "raw": "transaction-wire-trace.tsv"
+  }
+}

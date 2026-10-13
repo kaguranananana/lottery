@@ -52,7 +52,8 @@
             <dependency>
                 <groupId>mysql</groupId>
                 <artifactId>mysql-connector-java</artifactId>
-                <version>8.0.28</version>
+                <!-- 8.0.28 的连接池会话缓存漏发关闭自动提交已真实复现；8.0.29 首次修复官方缺陷 #106435。 -->
+                <version>8.0.29</version>
             </dependency>
 
             <dependency>
