@@ -1,0 +1,13 @@
+{
+  "pid": 3567,
+  "actualComm": "java",
+  "mainClassConfirmed": true,
+  "oldGuardAccepted": false,
+  "fixedGuardAccepted": true,
+  "originalFailureLog": "application-stop.log",
+  "cause": "comm返回可执行文件名java，旧guard错误要求/java后缀",
+  "fixedStopToolExitCode": 0,
+  "fixedStopLog": "application-stop-fixed.log",
+  "nonDedicatedProcessReadOnlyCheck": "REJECTED，未发送信号",
+  "businessImplementationChanged": false
+}
