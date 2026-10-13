@@ -1,0 +1,5 @@
+{
+  "indexSizePages": "lottery_01\tuser_strategy_export_000\tidx_invoice_grant_state\t97\nlottery_01\tuser_strategy_export_001\tidx_invoice_grant_state\t97\nlottery_01\tuser_strategy_export_002\tidx_invoice_grant_state\t97\nlottery_01\tuser_strategy_export_003\tidx_invoice_grant_state\t97\nlottery_02\tuser_strategy_export_000\tidx_invoice_grant_state\t97\nlottery_02\tuser_strategy_export_001\tidx_invoice_grant_state\t97\nlottery_02\tuser_strategy_export_002\tidx_invoice_grant_state\t97\nlottery_02\tuser_strategy_export_003\tidx_invoice_grant_state\t97",
+  "innodbPageBytes": "16384",
+  "note": "InnoDB索引分配页，不当作进程内存；只保留本次新增索引大小"
+}

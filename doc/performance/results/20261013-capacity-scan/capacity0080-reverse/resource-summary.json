@@ -1,0 +1,36 @@
+{
+  "mysql": {
+    "cpuMean": 50.93516666666667,
+    "cpuMax": 85.83,
+    "memoryPeak": "791.8MiB / 2GiB"
+  },
+  "redis": {
+    "cpuMean": 2.2425,
+    "cpuMax": 3.31,
+    "memoryPeak": "9.773MiB / 256MiB"
+  },
+  "kafka": {
+    "cpuMean": 72.35733333333333,
+    "cpuMax": 186.26,
+    "memoryPeak": "782.6MiB / 1GiB"
+  },
+  "mysqlStatuses": {
+    "maxConnections": 47,
+    "maxRunning": 8,
+    "rowLockWaitsDelta": 2549,
+    "rowLockTimeMsDelta": 2823
+  },
+  "kafkaLag": {
+    "maxStockLag": 53,
+    "maxInvoiceLag": 50
+  },
+  "kafkaCommittedPerSecond": {
+    "lottery-perf-stock": 79.57055860110107,
+    "lottery-perf-invoice": 79.83355346977898
+  },
+  "gcCountDelta": {
+    "G1 Young Generation": 67,
+    "G1 Old Generation": 0
+  },
+  "collectionMaxMs": 2512
+}

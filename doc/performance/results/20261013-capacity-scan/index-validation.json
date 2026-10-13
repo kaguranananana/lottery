@@ -1,0 +1,28 @@
+{
+  "defaultUnitTests": 35,
+  "manualSuites": [
+    {
+      "name": "com.anontokyo.lottery.test.manual.InvoiceCompensationIndexManualIT",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.manual.PerformanceSqlManualIT",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    }
+  ],
+  "total": 43,
+  "commands": [
+    "mvn -q test",
+    "mvn -q test -Dtest=InvoiceCompensationIndexManualIT,PerformanceSqlManualIT -Dsurefire.failIfNoSpecifiedTests=false -Dlottery.perf.mysql=jdbc:mysql://127.0.0.1:13329/"
+  ],
+  "javaProductionChange": false,
+  "sqlPredicateChange": false,
+  "persistenceOrPoolChange": false,
+  "freshEnvironmentInitialization": "新增迁移路由已做语法/定义核对；保留旧数据，未执行新的init/clean"
+}

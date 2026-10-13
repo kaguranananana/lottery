@@ -1,0 +1,14 @@
+{
+  "session": "20261013-capacity-scan",
+  "name": "capacity0150-index",
+  "id": 741150,
+  "threads": 30,
+  "duration": 200,
+  "warmup": 20,
+  "stock": 1000000,
+  "award_stock": -1,
+  "users": 100000,
+  "jmeter": "/Users/anontokyo/.cache/lottery-perf/apache-jmeter-5.6.3/bin/jmeter",
+  "target_rps": 150.0,
+  "drain_timeout": 180
+}

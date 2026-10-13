@@ -1,0 +1,8 @@
+{
+  "decision": "PROCEED_RATE80_WITH_RESOURCE_MONITORING",
+  "reason": "恢复后的约60秒换页复核见source；压力level1、memory_pressure free71%，只存在本轮PerfHarness，未发现残留Maven/JMeter/其它JVM；其它五容器停止",
+  "source": "application-idle-recheck/resource-summary.json",
+  "initialSwapBurstRetained": true,
+  "stableStandard": "stability.md unchanged",
+  "manualKill": "未找到可明确判定多余的进程；ChatGPT是当前Codex宿主且在前台，Docker VM为专用栈必需"
+}

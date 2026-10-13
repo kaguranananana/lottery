@@ -1,0 +1,69 @@
+{
+  "samplingSeconds": 60.002,
+  "sampleCount": 13,
+  "intervals": [
+    {
+      "seconds": 5.035,
+      "swapInMiB": 339.515625,
+      "swapOutMiB": 34.1875
+    },
+    {
+      "seconds": 5.05,
+      "swapInMiB": 1.453125,
+      "swapOutMiB": 0.0
+    },
+    {
+      "seconds": 5.034,
+      "swapInMiB": 0.46875,
+      "swapOutMiB": 0.0
+    },
+    {
+      "seconds": 5.029,
+      "swapInMiB": 0.125,
+      "swapOutMiB": 0.0
+    },
+    {
+      "seconds": 5.041,
+      "swapInMiB": 0.0,
+      "swapOutMiB": 0.0
+    },
+    {
+      "seconds": 5.033,
+      "swapInMiB": 0.375,
+      "swapOutMiB": 0.0
+    },
+    {
+      "seconds": 5.039,
+      "swapInMiB": 0.0625,
+      "swapOutMiB": 0.0
+    },
+    {
+      "seconds": 5.058,
+      "swapInMiB": 0.0625,
+      "swapOutMiB": 0.0
+    },
+    {
+      "seconds": 5.036,
+      "swapInMiB": 0.0,
+      "swapOutMiB": 0.0
+    },
+    {
+      "seconds": 5.044,
+      "swapInMiB": 0.4375,
+      "swapOutMiB": 0.0
+    },
+    {
+      "seconds": 5.039,
+      "swapInMiB": 0.0,
+      "swapOutMiB": 0.0
+    },
+    {
+      "seconds": 4.564,
+      "swapInMiB": 0.09375,
+      "swapOutMiB": 0.0
+    }
+  ],
+  "swapInMiB": 342.59375,
+  "swapOutMiB": 34.1875,
+  "observationOnly": true
+}

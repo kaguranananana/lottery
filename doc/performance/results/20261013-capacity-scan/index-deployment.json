@@ -1,0 +1,8 @@
+{
+  "migration": "doc/sql/20261013_invoice_compensation_index.sql",
+  "result": "",
+  "indexes": "lottery_01\tuser_strategy_export_000\tidx_invoice_grant_state\tgrant_state\nlottery_01\tuser_strategy_export_001\tidx_invoice_grant_state\tgrant_state\nlottery_01\tuser_strategy_export_002\tidx_invoice_grant_state\tgrant_state\nlottery_01\tuser_strategy_export_003\tidx_invoice_grant_state\tgrant_state\nlottery_02\tuser_strategy_export_000\tidx_invoice_grant_state\tgrant_state\nlottery_02\tuser_strategy_export_001\tidx_invoice_grant_state\tgrant_state\nlottery_02\tuser_strategy_export_002\tidx_invoice_grant_state\tgrant_state\nlottery_02\tuser_strategy_export_003\tidx_invoice_grant_state\tgrant_state",
+  "appStopped": true,
+  "baselineOrders": 398941,
+  "correctnessTests": "InvoiceCompensationIndexManualIT 2 passed"
+}

@@ -1,0 +1,982 @@
+[
+  {
+    "schema": "lottery",
+    "sql": "COMMIT",
+    "baselinePresent": true,
+    "count": 29947,
+    "waitSeconds": 75.75480000000002,
+    "meanMs": 2.5296290112532147,
+    "lockSeconds": 0.0001,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "COMMIT",
+    "baselinePresent": true,
+    "count": 29876,
+    "waitSeconds": 73.50919999999999,
+    "meanMs": 2.4604766367652964,
+    "lockSeconds": 0.0065,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "COMMIT",
+    "baselinePresent": true,
+    "count": 30035,
+    "waitSeconds": 72.2236,
+    "meanMs": 2.4046479107707674,
+    "lockSeconds": 0.0075,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "UPDATE `user_strategy_export_000` SET `stock_mq_state` = ? , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND ( ( ? = ? AND `stock_mq_state` IN (...) ) OR ( ? = ? AND `stock_mq_state` IN (...) ) OR ( ? = ? AND `stock_mq_state` = ? ) )",
+    "baselinePresent": true,
+    "count": 7502,
+    "waitSeconds": 16.983299999999996,
+    "meanMs": 2.2638363103172483,
+    "lockSeconds": 0.42410000000000003,
+    "rowsExamined": 7500
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "UPDATE `user_strategy_export_001` SET `stock_mq_state` = ? , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND ( ( ? = ? AND `stock_mq_state` IN (...) ) OR ( ? = ? AND `stock_mq_state` IN (...) ) OR ( ? = ? AND `stock_mq_state` = ? ) )",
+    "baselinePresent": true,
+    "count": 7478,
+    "waitSeconds": 15.618699999999997,
+    "meanMs": 2.0886199518587856,
+    "lockSeconds": 0.17369999999999997,
+    "rowsExamined": 7478
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "UPDATE `user_strategy_export_003` SET `stock_mq_state` = ? , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND ( ( ? = ? AND `stock_mq_state` IN (...) ) OR ( ? = ? AND `stock_mq_state` IN (...) ) OR ( ? = ? AND `stock_mq_state` = ? ) )",
+    "baselinePresent": true,
+    "count": 7460,
+    "waitSeconds": 15.604099999999999,
+    "meanMs": 2.0917024128686323,
+    "lockSeconds": 0.1099,
+    "rowsExamined": 7462
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "UPDATE `user_strategy_export_000` SET `stock_mq_state` = ? , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND ( ( ? = ? AND `stock_mq_state` IN (...) ) OR ( ? = ? AND `stock_mq_state` IN (...) ) OR ( ? = ? AND `stock_mq_state` = ? ) )",
+    "baselinePresent": true,
+    "count": 7489,
+    "waitSeconds": 15.518199999999997,
+    "meanMs": 2.0721324609427154,
+    "lockSeconds": 0.12769999999999998,
+    "rowsExamined": 7490
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "UPDATE `user_strategy_export_002` SET `stock_mq_state` = ? , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND ( ( ? = ? AND `stock_mq_state` IN (...) ) OR ( ? = ? AND `stock_mq_state` IN (...) ) OR ( ? = ? AND `stock_mq_state` = ? ) )",
+    "baselinePresent": true,
+    "count": 7468,
+    "waitSeconds": 15.4316,
+    "meanMs": 2.0663631494376005,
+    "lockSeconds": 0.1043,
+    "rowsExamined": 7469
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "UPDATE `user_strategy_export_002` SET `stock_mq_state` = ? , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND ( ( ? = ? AND `stock_mq_state` IN (...) ) OR ( ? = ? AND `stock_mq_state` IN (...) ) OR ( ? = ? AND `stock_mq_state` = ? ) )",
+    "baselinePresent": true,
+    "count": 7517,
+    "waitSeconds": 15.142800000000001,
+    "meanMs": 2.0144738592523614,
+    "lockSeconds": 0.09609999999999996,
+    "rowsExamined": 7520
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "UPDATE `user_strategy_export_003` SET `stock_mq_state` = ? , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND ( ( ? = ? AND `stock_mq_state` IN (...) ) OR ( ? = ? AND `stock_mq_state` IN (...) ) OR ( ? = ? AND `stock_mq_state` = ? ) )",
+    "baselinePresent": true,
+    "count": 7525,
+    "waitSeconds": 14.906999999999996,
+    "meanMs": 1.9809966777408634,
+    "lockSeconds": 0.12459999999999999,
+    "rowsExamined": 7525
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "UPDATE `user_strategy_export_001` SET `stock_mq_state` = ? , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND ( ( ? = ? AND `stock_mq_state` IN (...) ) OR ( ? = ? AND `stock_mq_state` IN (...) ) OR ( ? = ? AND `stock_mq_state` = ? ) )",
+    "baselinePresent": true,
+    "count": 7511,
+    "waitSeconds": 14.3157,
+    "meanMs": 1.90596458527493,
+    "lockSeconds": 0.1442,
+    "rowsExamined": 7513
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "UPDATE `user_strategy_export_003` SET `mq_state` = ? , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND ( ( ? = ? AND `grant_state` = ? AND `mq_state` IN (...) ) OR ( ? = ? AND `mq_state` IN (...) ) OR ( ? = ? AND `mq_state` = ? ) )",
+    "baselinePresent": true,
+    "count": 7462,
+    "waitSeconds": 12.4891,
+    "meanMs": 1.6736933797909408,
+    "lockSeconds": 0.1612,
+    "rowsExamined": 7464
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "UPDATE `user_strategy_export_003` SET `mq_state` = ? , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND ( ( ? = ? AND `grant_state` = ? AND `mq_state` IN (...) ) OR ( ? = ? AND `mq_state` IN (...) ) OR ( ? = ? AND `mq_state` = ? ) )",
+    "baselinePresent": true,
+    "count": 7522,
+    "waitSeconds": 12.292100000000001,
+    "meanMs": 1.6341531507577776,
+    "lockSeconds": 0.05199999999999999,
+    "rowsExamined": 7526
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "UPDATE `user_strategy_export_000` SET `mq_state` = ? , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND ( ( ? = ? AND `grant_state` = ? AND `mq_state` IN (...) ) OR ( ? = ? AND `mq_state` IN (...) ) OR ( ? = ? AND `mq_state` = ? ) )",
+    "baselinePresent": true,
+    "count": 7486,
+    "waitSeconds": 12.179299999999998,
+    "meanMs": 1.6269436281057972,
+    "lockSeconds": 0.0822,
+    "rowsExamined": 7489
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "UPDATE `user_strategy_export_002` SET `mq_state` = ? , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND ( ( ? = ? AND `grant_state` = ? AND `mq_state` IN (...) ) OR ( ? = ? AND `mq_state` IN (...) ) OR ( ? = ? AND `mq_state` = ? ) )",
+    "baselinePresent": true,
+    "count": 7468,
+    "waitSeconds": 12.1678,
+    "meanMs": 1.6293251205141939,
+    "lockSeconds": 0.17410000000000003,
+    "rowsExamined": 7466
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "UPDATE `user_strategy_export_001` SET `mq_state` = ? , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND ( ( ? = ? AND `grant_state` = ? AND `mq_state` IN (...) ) OR ( ? = ? AND `mq_state` IN (...) ) OR ( ? = ? AND `mq_state` = ? ) )",
+    "baselinePresent": true,
+    "count": 7477,
+    "waitSeconds": 12.081299999999999,
+    "meanMs": 1.6157951049886317,
+    "lockSeconds": 0.09539999999999998,
+    "rowsExamined": 7480
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "UPDATE `user_strategy_export_002` SET `mq_state` = ? , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND ( ( ? = ? AND `grant_state` = ? AND `mq_state` IN (...) ) OR ( ? = ? AND `mq_state` IN (...) ) OR ( ? = ? AND `mq_state` = ? ) )",
+    "baselinePresent": true,
+    "count": 7515,
+    "waitSeconds": 12.0412,
+    "meanMs": 1.60228875582169,
+    "lockSeconds": 0.02679999999999999,
+    "rowsExamined": 7520
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "UPDATE `user_strategy_export_000` SET `mq_state` = ? , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND ( ( ? = ? AND `grant_state` = ? AND `mq_state` IN (...) ) OR ( ? = ? AND `mq_state` IN (...) ) OR ( ? = ? AND `mq_state` = ? ) )",
+    "baselinePresent": true,
+    "count": 7494,
+    "waitSeconds": 11.964100000000002,
+    "meanMs": 1.5964905257539368,
+    "lockSeconds": 0.031700000000000006,
+    "rowsExamined": 7498
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "UPDATE `user_strategy_export_001` SET `mq_state` = ? , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND ( ( ? = ? AND `grant_state` = ? AND `mq_state` IN (...) ) OR ( ? = ? AND `mq_state` IN (...) ) OR ( ? = ? AND `mq_state` = ? ) )",
+    "baselinePresent": true,
+    "count": 7511,
+    "waitSeconds": 11.8184,
+    "meanMs": 1.5734788976168286,
+    "lockSeconds": 0.0232,
+    "rowsExamined": 7514
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "UPDATE `user_strategy_export_000` SET `grant_state` = ? , `grant_date` = NOW ( ) , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND `award_id` = ? AND `grant_state` != ?",
+    "baselinePresent": true,
+    "count": 3744,
+    "waitSeconds": 11.1434,
+    "meanMs": 2.97633547008547,
+    "lockSeconds": 0.035199999999999995,
+    "rowsExamined": 3749
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "UPDATE `user_strategy_export_002` SET `grant_state` = ? , `grant_date` = NOW ( ) , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND `award_id` = ? AND `grant_state` != ?",
+    "baselinePresent": true,
+    "count": 3757,
+    "waitSeconds": 11.0273,
+    "meanMs": 2.935134415757253,
+    "lockSeconds": 0.024900000000000002,
+    "rowsExamined": 3757
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "UPDATE `user_strategy_export_001` SET `grant_state` = ? , `grant_date` = NOW ( ) , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND `award_id` = ? AND `grant_state` != ?",
+    "baselinePresent": true,
+    "count": 3750,
+    "waitSeconds": 10.700300000000002,
+    "meanMs": 2.853413333333334,
+    "lockSeconds": 0.009899999999999999,
+    "rowsExamined": 3753
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "UPDATE `user_strategy_export_000` SET `grant_state` = ? , `grant_date` = NOW ( ) , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND `award_id` = ? AND `grant_state` != ?",
+    "baselinePresent": true,
+    "count": 3743,
+    "waitSeconds": 10.607400000000002,
+    "meanMs": 2.833930002671654,
+    "lockSeconds": 0.025499999999999995,
+    "rowsExamined": 3744
+  },
+  {
+    "schema": "lottery",
+    "sql": "UPDATE `strategy_detail` SET `award_surplus_count` = `award_surplus_count` - ? WHERE `strategy_id` = ? AND `award_id` = ? AND `award_surplus_count` > ?",
+    "baselinePresent": true,
+    "count": 29964,
+    "waitSeconds": 10.560200000000002,
+    "meanMs": 0.35242958216526504,
+    "lockSeconds": 6.6913,
+    "rowsExamined": 29978
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "UPDATE `user_strategy_export_003` SET `grant_state` = ? , `grant_date` = NOW ( ) , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND `award_id` = ? AND `grant_state` != ?",
+    "baselinePresent": true,
+    "count": 3759,
+    "waitSeconds": 10.501100000000001,
+    "meanMs": 2.793588720404363,
+    "lockSeconds": 0.0276,
+    "rowsExamined": 3763
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "UPDATE `user_strategy_export_001` SET `grant_state` = ? , `grant_date` = NOW ( ) , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND `award_id` = ? AND `grant_state` != ?",
+    "baselinePresent": true,
+    "count": 3740,
+    "waitSeconds": 9.843799999999998,
+    "meanMs": 2.6320320855614967,
+    "lockSeconds": 0.03380000000000001,
+    "rowsExamined": 3740
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "UPDATE `user_strategy_export_002` SET `grant_state` = ? , `grant_date` = NOW ( ) , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND `award_id` = ? AND `grant_state` != ?",
+    "baselinePresent": true,
+    "count": 3733,
+    "waitSeconds": 9.274699999999998,
+    "meanMs": 2.484516474685239,
+    "lockSeconds": 0.0665,
+    "rowsExamined": 3735
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "UPDATE `user_strategy_export_003` SET `grant_state` = ? , `grant_date` = NOW ( ) , `update_time` = NOW ( ) WHERE `u_id` = ? AND `order_id` = ? AND `award_id` = ? AND `grant_state` != ?",
+    "baselinePresent": true,
+    "count": 3731,
+    "waitSeconds": 8.959200000000001,
+    "meanMs": 2.401286518359689,
+    "lockSeconds": 0.04620000000000002,
+    "rowsExamined": 3732
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SELECT @@SESSION . `transaction_read_only`",
+    "baselinePresent": true,
+    "count": 134848,
+    "waitSeconds": 6.0175,
+    "meanMs": 0.044624317750355955,
+    "lockSeconds": 0.0,
+    "rowsExamined": 135059
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SELECT @@SESSION . `transaction_read_only`",
+    "baselinePresent": true,
+    "count": 134215,
+    "waitSeconds": 5.960000000000001,
+    "meanMs": 0.04440636292515741,
+    "lockSeconds": 0.0,
+    "rowsExamined": 134333
+  },
+  {
+    "schema": "lottery",
+    "sql": "INSERT INTO `award_stock_settlement` ( `order_id` , `u_id` , `strategy_id` , `award_id` , `create_time` ) VALUES ( ?, ... , NOW ( ) )",
+    "baselinePresent": true,
+    "count": 29959,
+    "waitSeconds": 3.0841000000000003,
+    "meanMs": 0.10294402349878168,
+    "lockSeconds": 0.0281,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery",
+    "sql": "SELECT @@SESSION . `transaction_read_only`",
+    "baselinePresent": true,
+    "count": 59839,
+    "waitSeconds": 2.7960000000000003,
+    "meanMs": 0.04672537976904695,
+    "lockSeconds": 0.0,
+    "rowsExamined": 59910
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "UPDATE `user_take_activity` SET `state` = ? WHERE `u_id` = ? AND `activity_id` = ? AND `take_id` = ? AND `state` = ?",
+    "baselinePresent": true,
+    "count": 15031,
+    "waitSeconds": 2.7089,
+    "meanMs": 0.18022087685450067,
+    "lockSeconds": 0.012599999999999997,
+    "rowsExamined": 15032
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "UPDATE `user_take_activity` SET `state` = ? WHERE `u_id` = ? AND `activity_id` = ? AND `take_id` = ? AND `state` = ?",
+    "baselinePresent": true,
+    "count": 14950,
+    "waitSeconds": 2.69,
+    "meanMs": 0.17993311036789297,
+    "lockSeconds": 0.0133,
+    "rowsExamined": 14951
+  },
+  {
+    "schema": "lottery",
+    "sql": "SET `autocommit` = ?",
+    "baselinePresent": true,
+    "count": 59845,
+    "waitSeconds": 2.4144000000000005,
+    "meanMs": 0.040344222574985385,
+    "lockSeconds": 0.0,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SET `autocommit` = ?",
+    "baselinePresent": true,
+    "count": 59747,
+    "waitSeconds": 2.2171999999999996,
+    "meanMs": 0.03710981304500644,
+    "lockSeconds": 0.0,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SET `autocommit` = ?",
+    "baselinePresent": true,
+    "count": 60068,
+    "waitSeconds": 2.2162,
+    "meanMs": 0.03689485250049944,
+    "lockSeconds": 0.0,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SELECT `activity_id` , `take_id` , `strategy_id` , `state` , `request_id` FROM `user_take_activity` WHERE `u_id` = ? AND `activity_id` = ? AND `state` = ? ORDER BY `id` DESC LIMIT ?",
+    "baselinePresent": true,
+    "count": 15030,
+    "waitSeconds": 2.1517,
+    "meanMs": 0.14316034597471722,
+    "lockSeconds": 0.0126,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SELECT `activity_id` , `take_id` , `strategy_id` , `state` , `request_id` FROM `user_take_activity` WHERE `u_id` = ? AND `activity_id` = ? AND `state` = ? ORDER BY `id` DESC LIMIT ?",
+    "baselinePresent": true,
+    "count": 14946,
+    "waitSeconds": 2.1220000000000003,
+    "meanMs": 0.1419777866987823,
+    "lockSeconds": 0.0119,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "INSERT INTO `user_take_activity` ( `u_id` , `take_id` , `activity_id` , `activity_name` , `take_date` , `strategy_id` , `state` , `request_id` , `create_time` , `update_time` ) VALUES ( ?, ... , NOW ( ) , NOW ( ) )",
+    "baselinePresent": true,
+    "count": 15033,
+    "waitSeconds": 2.0188,
+    "meanMs": 0.13429122596953372,
+    "lockSeconds": 0.0087,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "INSERT INTO `user_take_activity` ( `u_id` , `take_id` , `activity_id` , `activity_name` , `take_date` , `strategy_id` , `state` , `request_id` , `create_time` , `update_time` ) VALUES ( ?, ... , NOW ( ) , NOW ( ) )",
+    "baselinePresent": true,
+    "count": 14951,
+    "waitSeconds": 1.9627999999999997,
+    "meanMs": 0.13128218848237574,
+    "lockSeconds": 0.009399999999999999,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "UPDATE `user_take_activity_count` SET `left_count` = `left_count` - ? , `update_time` = NOW ( ) WHERE `u_id` = ? AND `activity_id` = ? AND `left_count` > ?",
+    "baselinePresent": true,
+    "count": 15029,
+    "waitSeconds": 1.7891999999999997,
+    "meanMs": 0.11904983698183509,
+    "lockSeconds": 0.008499999999999999,
+    "rowsExamined": 15031
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "UPDATE `user_take_activity_count` SET `left_count` = `left_count` - ? , `update_time` = NOW ( ) WHERE `u_id` = ? AND `activity_id` = ? AND `left_count` > ?",
+    "baselinePresent": true,
+    "count": 14951,
+    "waitSeconds": 1.7851,
+    "meanMs": 0.11939669587318573,
+    "lockSeconds": 0.0086,
+    "rowsExamined": 14952
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SELECT `activity_id` , `take_id` , `strategy_id` , `state` , `request_id` FROM `user_take_activity` WHERE `u_id` = ? AND `activity_id` = ? AND `request_id` = ? LIMIT ?",
+    "baselinePresent": true,
+    "count": 15027,
+    "waitSeconds": 1.5102000000000002,
+    "meanMs": 0.10049910161708926,
+    "lockSeconds": 0.013600000000000001,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SELECT `activity_id` , `take_id` , `strategy_id` , `state` , `request_id` FROM `user_take_activity` WHERE `u_id` = ? AND `activity_id` = ? AND `request_id` = ? LIMIT ?",
+    "baselinePresent": true,
+    "count": 14943,
+    "waitSeconds": 1.4930999999999996,
+    "meanMs": 0.09991969484039348,
+    "lockSeconds": 0.014200000000000004,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SELECT `total_count` , `left_count` FROM `user_take_activity_count` WHERE `u_id` = ? AND `activity_id` = ?",
+    "baselinePresent": true,
+    "count": 14949,
+    "waitSeconds": 1.4305999999999999,
+    "meanMs": 0.09569870894374205,
+    "lockSeconds": 0.014600000000000002,
+    "rowsExamined": 14950
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SELECT `total_count` , `left_count` FROM `user_take_activity_count` WHERE `u_id` = ? AND `activity_id` = ?",
+    "baselinePresent": true,
+    "count": 15032,
+    "waitSeconds": 1.401,
+    "meanMs": 0.09320117083555082,
+    "lockSeconds": 0.018899999999999997,
+    "rowsExamined": 15033
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SELECT `id` , `u_id` , `activity_id` , `order_id` , `take_id` , `strategy_id` , `strategy_mode` , `grant_type` , `grant_date` , `grant_state` , `award_id` , `award_type` , `award_name` , `award_content` , `uuid` , `mq_state` , `stock_mq_state` , `create_time` , `update_time` FROM `user_strategy_export_000` WHERE `u_id` = ? AND `uuid` = ? LIMIT ?",
+    "baselinePresent": true,
+    "count": 11242,
+    "waitSeconds": 1.3982999999999999,
+    "meanMs": 0.12438178260096068,
+    "lockSeconds": 0.0144,
+    "rowsExamined": 11244
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SELECT `id` , `u_id` , `activity_id` , `order_id` , `take_id` , `strategy_id` , `strategy_mode` , `grant_type` , `grant_date` , `grant_state` , `award_id` , `award_type` , `award_name` , `award_content` , `uuid` , `mq_state` , `stock_mq_state` , `create_time` , `update_time` FROM `user_strategy_export_000` WHERE `u_id` = ? AND `uuid` = ? LIMIT ?",
+    "baselinePresent": true,
+    "count": 11233,
+    "waitSeconds": 1.298,
+    "meanMs": 0.11555239027864328,
+    "lockSeconds": 0.010700000000000001,
+    "rowsExamined": 11236
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SELECT `id` , `u_id` , `activity_id` , `order_id` , `take_id` , `strategy_id` , `strategy_mode` , `grant_type` , `grant_date` , `grant_state` , `award_id` , `award_type` , `award_name` , `award_content` , `uuid` , `mq_state` , `stock_mq_state` , `create_time` , `update_time` FROM `user_strategy_export_003` WHERE `u_id` = ? AND `uuid` = ? LIMIT ?",
+    "baselinePresent": true,
+    "count": 11286,
+    "waitSeconds": 1.2749000000000001,
+    "meanMs": 0.11296296296296297,
+    "lockSeconds": 0.0104,
+    "rowsExamined": 11289
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SELECT `id` , `u_id` , `activity_id` , `order_id` , `take_id` , `strategy_id` , `strategy_mode` , `grant_type` , `grant_date` , `grant_state` , `award_id` , `award_type` , `award_name` , `award_content` , `uuid` , `mq_state` , `stock_mq_state` , `create_time` , `update_time` FROM `user_strategy_export_001` WHERE `u_id` = ? AND `uuid` = ? LIMIT ?",
+    "baselinePresent": true,
+    "count": 11265,
+    "waitSeconds": 1.2688000000000001,
+    "meanMs": 0.11263204616067467,
+    "lockSeconds": 0.0104,
+    "rowsExamined": 11271
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SELECT `id` , `u_id` , `activity_id` , `order_id` , `take_id` , `strategy_id` , `strategy_mode` , `grant_type` , `grant_date` , `grant_state` , `award_id` , `award_type` , `award_name` , `award_content` , `uuid` , `mq_state` , `stock_mq_state` , `create_time` , `update_time` FROM `user_strategy_export_001` WHERE `u_id` = ? AND `uuid` = ? LIMIT ?",
+    "baselinePresent": true,
+    "count": 11218,
+    "waitSeconds": 1.2542,
+    "meanMs": 0.11180246033160991,
+    "lockSeconds": 0.0104,
+    "rowsExamined": 11220
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SELECT `id` , `u_id` , `activity_id` , `order_id` , `take_id` , `strategy_id` , `strategy_mode` , `grant_type` , `grant_date` , `grant_state` , `award_id` , `award_type` , `award_name` , `award_content` , `uuid` , `mq_state` , `stock_mq_state` , `create_time` , `update_time` FROM `user_strategy_export_002` WHERE `u_id` = ? AND `uuid` = ? LIMIT ?",
+    "baselinePresent": true,
+    "count": 11275,
+    "waitSeconds": 1.2508,
+    "meanMs": 0.11093569844789357,
+    "lockSeconds": 0.010699999999999998,
+    "rowsExamined": 11275
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SELECT `id` , `u_id` , `activity_id` , `order_id` , `take_id` , `strategy_id` , `strategy_mode` , `grant_type` , `grant_date` , `grant_state` , `award_id` , `award_type` , `award_name` , `award_content` , `uuid` , `mq_state` , `stock_mq_state` , `create_time` , `update_time` FROM `user_strategy_export_003` WHERE `u_id` = ? AND `uuid` = ? LIMIT ?",
+    "baselinePresent": true,
+    "count": 11192,
+    "waitSeconds": 1.2290999999999999,
+    "meanMs": 0.10981951393852751,
+    "lockSeconds": 0.0103,
+    "rowsExamined": 11195
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SELECT `id` , `u_id` , `activity_id` , `order_id` , `take_id` , `strategy_id` , `strategy_mode` , `grant_type` , `grant_date` , `grant_state` , `award_id` , `award_type` , `award_name` , `award_content` , `uuid` , `mq_state` , `stock_mq_state` , `create_time` , `update_time` FROM `user_strategy_export_002` WHERE `u_id` = ? AND `uuid` = ? LIMIT ?",
+    "baselinePresent": true,
+    "count": 11201,
+    "waitSeconds": 1.2273,
+    "meanMs": 0.10957057405588787,
+    "lockSeconds": 0.0103,
+    "rowsExamined": 11205
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "INSERT INTO `user_strategy_export_000` ( `u_id` , `activity_id` , `order_id` , `take_id` , `strategy_id` , `strategy_mode` , `grant_type` , `grant_date` , `grant_state` , `award_id` , `award_type` , `award_name` , `award_content` , `uuid` , `mq_state` , `stock_mq_state` , `create_time` , `update_time` ) VALUES ( ?, ... , NOW ( ) , NOW ( ) )",
+    "baselinePresent": true,
+    "count": 3753,
+    "waitSeconds": 0.524,
+    "meanMs": 0.13962163602451372,
+    "lockSeconds": 0.013200000000000003,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "INSERT INTO `user_strategy_export_002` ( `u_id` , `activity_id` , `order_id` , `take_id` , `strategy_id` , `strategy_mode` , `grant_type` , `grant_date` , `grant_state` , `award_id` , `award_type` , `award_name` , `award_content` , `uuid` , `mq_state` , `stock_mq_state` , `create_time` , `update_time` ) VALUES ( ?, ... , NOW ( ) , NOW ( ) )",
+    "baselinePresent": true,
+    "count": 3735,
+    "waitSeconds": 0.5126000000000001,
+    "meanMs": 0.13724230254350736,
+    "lockSeconds": 0.0024,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "INSERT INTO `user_strategy_export_002` ( `u_id` , `activity_id` , `order_id` , `take_id` , `strategy_id` , `strategy_mode` , `grant_type` , `grant_date` , `grant_state` , `award_id` , `award_type` , `award_name` , `award_content` , `uuid` , `mq_state` , `stock_mq_state` , `create_time` , `update_time` ) VALUES ( ?, ... , NOW ( ) , NOW ( ) )",
+    "baselinePresent": true,
+    "count": 3760,
+    "waitSeconds": 0.4961,
+    "meanMs": 0.1319414893617021,
+    "lockSeconds": 0.0023999999999999994,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "INSERT INTO `user_strategy_export_003` ( `u_id` , `activity_id` , `order_id` , `take_id` , `strategy_id` , `strategy_mode` , `grant_type` , `grant_date` , `grant_state` , `award_id` , `award_type` , `award_name` , `award_content` , `uuid` , `mq_state` , `stock_mq_state` , `create_time` , `update_time` ) VALUES ( ?, ... , NOW ( ) , NOW ( ) )",
+    "baselinePresent": true,
+    "count": 3732,
+    "waitSeconds": 0.4887999999999999,
+    "meanMs": 0.13097534833869237,
+    "lockSeconds": 0.0021,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "INSERT INTO `user_strategy_export_003` ( `u_id` , `activity_id` , `order_id` , `take_id` , `strategy_id` , `strategy_mode` , `grant_type` , `grant_date` , `grant_state` , `award_id` , `award_type` , `award_name` , `award_content` , `uuid` , `mq_state` , `stock_mq_state` , `create_time` , `update_time` ) VALUES ( ?, ... , NOW ( ) , NOW ( ) )",
+    "baselinePresent": true,
+    "count": 3763,
+    "waitSeconds": 0.48550000000000004,
+    "meanMs": 0.1290193994153601,
+    "lockSeconds": 0.0025,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "INSERT INTO `user_strategy_export_001` ( `u_id` , `activity_id` , `order_id` , `take_id` , `strategy_id` , `strategy_mode` , `grant_type` , `grant_date` , `grant_state` , `award_id` , `award_type` , `award_name` , `award_content` , `uuid` , `mq_state` , `stock_mq_state` , `create_time` , `update_time` ) VALUES ( ?, ... , NOW ( ) , NOW ( ) )",
+    "baselinePresent": true,
+    "count": 3740,
+    "waitSeconds": 0.4847999999999999,
+    "meanMs": 0.12962566844919785,
+    "lockSeconds": 0.0025,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "INSERT INTO `user_strategy_export_001` ( `u_id` , `activity_id` , `order_id` , `take_id` , `strategy_id` , `strategy_mode` , `grant_type` , `grant_date` , `grant_state` , `award_id` , `award_type` , `award_name` , `award_content` , `uuid` , `mq_state` , `stock_mq_state` , `create_time` , `update_time` ) VALUES ( ?, ... , NOW ( ) , NOW ( ) )",
+    "baselinePresent": true,
+    "count": 3757,
+    "waitSeconds": 0.4707,
+    "meanMs": 0.12528613255256854,
+    "lockSeconds": 0.0022000000000000006,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "INSERT INTO `user_strategy_export_000` ( `u_id` , `activity_id` , `order_id` , `take_id` , `strategy_id` , `strategy_mode` , `grant_type` , `grant_date` , `grant_state` , `award_id` , `award_type` , `award_name` , `award_content` , `uuid` , `mq_state` , `stock_mq_state` , `create_time` , `update_time` ) VALUES ( ?, ... , NOW ( ) , NOW ( ) )",
+    "baselinePresent": true,
+    "count": 3745,
+    "waitSeconds": 0.4658000000000001,
+    "meanMs": 0.12437917222963955,
+    "lockSeconds": 0.0021000000000000003,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SELECT @@SESSION . `auto_increment_increment` AS `auto_increment_increment` , @@`character_set_client` AS `character_set_client` , @@`character_set_connection` AS `character_set_connection` , @@`character_set_results` AS `character_set_results` , @@`character_set_server` AS `character_set_server` , @@`collation_server` AS `collation_server` , @@`collation_connection` AS `collation_connection` , @@`init_connect` AS `init_connect` , @@`interactive_timeout` AS `interactive_timeout` , @@`license` AS `license` , @@`lower_case_table_names` AS `lower_case_table_names` , @@`max_allowed_packet` AS `max_allowed_packet` , @@`net_write_timeout` AS `net_write_timeout` , @@`performance_schema` AS `performance_schema` , @@`sql_mode` AS `sql_mode` , @@`system_time_zone` AS `system_time_zone` , @@`time_zone` AS `time_zone` , @@`transaction_isolation` AS `transaction_isolation` , @@`wait_timeout` AS `wait_timeout`",
+    "baselinePresent": true,
+    "count": 12,
+    "waitSeconds": 0.0929,
+    "meanMs": 7.741666666666666,
+    "lockSeconds": 0.0068,
+    "rowsExamined": 12
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SELECT `u_id` , `order_id` , `strategy_id` , `award_id` FROM `user_strategy_export_003` WHERE `stock_mq_state` IN (...) OR ( `stock_mq_state` = ? AND `update_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) ORDER BY `create_time` ASC LIMIT ?",
+    "baselinePresent": true,
+    "count": 188,
+    "waitSeconds": 0.0552,
+    "meanMs": 0.2936170212765957,
+    "lockSeconds": 0.00019999999999999987,
+    "rowsExamined": 7597
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SELECT `u_id` , `order_id` , `take_id` , `award_id` , `award_type` , `award_name` , `award_content` , `grant_type` , `grant_date` FROM `user_strategy_export_001` WHERE `stock_mq_state` = ? AND `grant_state` != ? AND ( `mq_state` = ? OR ( `mq_state` = ? AND `create_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) OR ( `mq_state` IN (...) AND `update_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) ) LIMIT ?",
+    "baselinePresent": true,
+    "count": 188,
+    "waitSeconds": 0.04400000000000048,
+    "meanMs": 0.23404255319149192,
+    "lockSeconds": 0.0002000000000000001,
+    "rowsExamined": 4453
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SELECT `u_id` , `order_id` , `take_id` , `award_id` , `award_type` , `award_name` , `award_content` , `grant_type` , `grant_date` FROM `user_strategy_export_001` WHERE `stock_mq_state` = ? AND `grant_state` != ? AND ( `mq_state` = ? OR ( `mq_state` = ? AND `create_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) OR ( `mq_state` IN (...) AND `update_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) ) LIMIT ?",
+    "baselinePresent": true,
+    "count": 188,
+    "waitSeconds": 0.04350000000000165,
+    "meanMs": 0.231382978723413,
+    "lockSeconds": 0.00019999999999999987,
+    "rowsExamined": 4286
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SELECT `u_id` , `order_id` , `take_id` , `award_id` , `award_type` , `award_name` , `award_content` , `grant_type` , `grant_date` FROM `user_strategy_export_000` WHERE `stock_mq_state` = ? AND `grant_state` != ? AND ( `mq_state` = ? OR ( `mq_state` = ? AND `create_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) OR ( `mq_state` IN (...) AND `update_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) ) LIMIT ?",
+    "baselinePresent": true,
+    "count": 188,
+    "waitSeconds": 0.04049999999999798,
+    "meanMs": 0.2154255319148829,
+    "lockSeconds": 0.0002000000000000001,
+    "rowsExamined": 2447
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SELECT `u_id` , `order_id` , `strategy_id` , `award_id` FROM `user_strategy_export_001` WHERE `stock_mq_state` IN (...) OR ( `stock_mq_state` = ? AND `update_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) ORDER BY `create_time` ASC LIMIT ?",
+    "baselinePresent": true,
+    "count": 188,
+    "waitSeconds": 0.04000000000000001,
+    "meanMs": 0.21276595744680854,
+    "lockSeconds": 9.999999999999983e-05,
+    "rowsExamined": 7576
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SELECT `u_id` , `order_id` , `take_id` , `award_id` , `award_type` , `award_name` , `award_content` , `grant_type` , `grant_date` FROM `user_strategy_export_003` WHERE `stock_mq_state` = ? AND `grant_state` != ? AND ( `mq_state` = ? OR ( `mq_state` = ? AND `create_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) OR ( `mq_state` IN (...) AND `update_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) ) LIMIT ?",
+    "baselinePresent": true,
+    "count": 188,
+    "waitSeconds": 0.03979999999999961,
+    "meanMs": 0.21170212765957241,
+    "lockSeconds": 0.0002000000000000001,
+    "rowsExamined": 4493
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SELECT `u_id` , `order_id` , `take_id` , `award_id` , `award_type` , `award_name` , `award_content` , `grant_type` , `grant_date` FROM `user_strategy_export_002` WHERE `stock_mq_state` = ? AND `grant_state` != ? AND ( `mq_state` = ? OR ( `mq_state` = ? AND `create_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) OR ( `mq_state` IN (...) AND `update_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) ) LIMIT ?",
+    "baselinePresent": true,
+    "count": 188,
+    "waitSeconds": 0.039699999999999847,
+    "meanMs": 0.21117021276595663,
+    "lockSeconds": 0.00019999999999999987,
+    "rowsExamined": 4464
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SELECT `u_id` , `order_id` , `strategy_id` , `award_id` FROM `user_strategy_export_000` WHERE `stock_mq_state` IN (...) OR ( `stock_mq_state` = ? AND `update_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) ORDER BY `create_time` ASC LIMIT ?",
+    "baselinePresent": true,
+    "count": 188,
+    "waitSeconds": 0.03939999999999999,
+    "meanMs": 0.20957446808510632,
+    "lockSeconds": 0.00019999999999999987,
+    "rowsExamined": 7580
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SELECT `u_id` , `order_id` , `strategy_id` , `award_id` FROM `user_strategy_export_002` WHERE `stock_mq_state` IN (...) OR ( `stock_mq_state` = ? AND `update_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) ORDER BY `create_time` ASC LIMIT ?",
+    "baselinePresent": true,
+    "count": 188,
+    "waitSeconds": 0.03920000000000001,
+    "meanMs": 0.2085106382978724,
+    "lockSeconds": 0.0002000000000000001,
+    "rowsExamined": 7577
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SELECT `u_id` , `order_id` , `strategy_id` , `award_id` FROM `user_strategy_export_001` WHERE `stock_mq_state` IN (...) OR ( `stock_mq_state` = ? AND `update_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) ORDER BY `create_time` ASC LIMIT ?",
+    "baselinePresent": true,
+    "count": 188,
+    "waitSeconds": 0.03849999999999998,
+    "meanMs": 0.20478723404255308,
+    "lockSeconds": 0.00019999999999999987,
+    "rowsExamined": 7542
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SELECT `u_id` , `order_id` , `take_id` , `award_id` , `award_type` , `award_name` , `award_content` , `grant_type` , `grant_date` FROM `user_strategy_export_000` WHERE `stock_mq_state` = ? AND `grant_state` != ? AND ( `mq_state` = ? OR ( `mq_state` = ? AND `create_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) OR ( `mq_state` IN (...) AND `update_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) ) LIMIT ?",
+    "baselinePresent": true,
+    "count": 188,
+    "waitSeconds": 0.038399999999999324,
+    "meanMs": 0.20425531914893258,
+    "lockSeconds": 0.0002000000000000001,
+    "rowsExamined": 4452
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SELECT `u_id` , `order_id` , `take_id` , `award_id` , `award_type` , `award_name` , `award_content` , `grant_type` , `grant_date` FROM `user_strategy_export_002` WHERE `stock_mq_state` = ? AND `grant_state` != ? AND ( `mq_state` = ? OR ( `mq_state` = ? AND `create_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) OR ( `mq_state` IN (...) AND `update_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) ) LIMIT ?",
+    "baselinePresent": true,
+    "count": 188,
+    "waitSeconds": 0.03790000000000049,
+    "meanMs": 0.20159574468085367,
+    "lockSeconds": 0.00010000000000000005,
+    "rowsExamined": 4486
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SELECT `u_id` , `order_id` , `strategy_id` , `award_id` FROM `user_strategy_export_003` WHERE `stock_mq_state` IN (...) OR ( `stock_mq_state` = ? AND `update_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) ORDER BY `create_time` ASC LIMIT ?",
+    "baselinePresent": true,
+    "count": 188,
+    "waitSeconds": 0.03789999999999999,
+    "meanMs": 0.201595744680851,
+    "lockSeconds": 0.0002000000000000001,
+    "rowsExamined": 7641
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SELECT `u_id` , `order_id` , `strategy_id` , `award_id` FROM `user_strategy_export_002` WHERE `stock_mq_state` IN (...) OR ( `stock_mq_state` = ? AND `update_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) ORDER BY `create_time` ASC LIMIT ?",
+    "baselinePresent": true,
+    "count": 188,
+    "waitSeconds": 0.0378,
+    "meanMs": 0.20106382978723403,
+    "lockSeconds": 0.0002999999999999999,
+    "rowsExamined": 7550
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SELECT `u_id` , `order_id` , `strategy_id` , `award_id` FROM `user_strategy_export_000` WHERE `stock_mq_state` IN (...) OR ( `stock_mq_state` = ? AND `update_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) ORDER BY `create_time` ASC LIMIT ?",
+    "baselinePresent": true,
+    "count": 188,
+    "waitSeconds": 0.0373,
+    "meanMs": 0.19840425531914893,
+    "lockSeconds": 0.00010000000000000026,
+    "rowsExamined": 7526
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SELECT `u_id` , `order_id` , `take_id` , `award_id` , `award_type` , `award_name` , `award_content` , `grant_type` , `grant_date` FROM `user_strategy_export_003` WHERE `stock_mq_state` = ? AND `grant_state` != ? AND ( `mq_state` = ? OR ( `mq_state` = ? AND `create_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) OR ( `mq_state` IN (...) AND `update_time` < DATE_SUB ( NOW ( ) , INTERVAL ? SQL_TSI_MINUTE ) ) ) LIMIT ?",
+    "baselinePresent": true,
+    "count": 188,
+    "waitSeconds": 0.03669999999999973,
+    "meanMs": 0.19521276595744538,
+    "lockSeconds": 0.00010000000000000005,
+    "rowsExamined": 4485
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SELECT @@SESSION . `auto_increment_increment` AS `auto_increment_increment` , @@`character_set_client` AS `character_set_client` , @@`character_set_connection` AS `character_set_connection` , @@`character_set_results` AS `character_set_results` , @@`character_set_server` AS `character_set_server` , @@`collation_server` AS `collation_server` , @@`collation_connection` AS `collation_connection` , @@`init_connect` AS `init_connect` , @@`interactive_timeout` AS `interactive_timeout` , @@`license` AS `license` , @@`lower_case_table_names` AS `lower_case_table_names` , @@`max_allowed_packet` AS `max_allowed_packet` , @@`net_write_timeout` AS `net_write_timeout` , @@`performance_schema` AS `performance_schema` , @@`sql_mode` AS `sql_mode` , @@`system_time_zone` AS `system_time_zone` , @@`time_zone` AS `time_zone` , @@`transaction_isolation` AS `transaction_isolation` , @@`wait_timeout` AS `wait_timeout`",
+    "baselinePresent": true,
+    "count": 16,
+    "waitSeconds": 0.0026,
+    "meanMs": 0.1625,
+    "lockSeconds": 0.0,
+    "rowsExamined": 16
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SET `character_set_results` = ?",
+    "baselinePresent": true,
+    "count": 12,
+    "waitSeconds": 0.0023000000000000004,
+    "meanMs": 0.19166666666666668,
+    "lockSeconds": 0.0,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SET `character_set_results` = ?",
+    "baselinePresent": true,
+    "count": 16,
+    "waitSeconds": 0.0022000000000000006,
+    "meanMs": 0.13750000000000004,
+    "lockSeconds": 0.0,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery",
+    "sql": "SELECT `activity_id` , `activity_name` , `activity_desc` , `begin_date_time` , `end_date_time` , `strategy_id` , `stock_count` , `stock_surplus_count` , `take_count` , `state` , `creator` , `create_time` , `update_time` FROM `activity` WHERE `activity_id` = ?",
+    "baselinePresent": true,
+    "count": 2,
+    "waitSeconds": 0.0004000000000000002,
+    "meanMs": 0.2000000000000001,
+    "lockSeconds": 0.0,
+    "rowsExamined": 2
+  },
+  {
+    "schema": "lottery",
+    "sql": "SELECT `id` , `award_id` , `award_type` , `award_name` , `award_content` , `create_time` , `update_time` FROM `award` WHERE `award_id` = ?",
+    "baselinePresent": true,
+    "count": 5,
+    "waitSeconds": 0.00039999999999999975,
+    "meanMs": 0.07999999999999995,
+    "lockSeconds": 0.0,
+    "rowsExamined": 5
+  },
+  {
+    "schema": "lottery",
+    "sql": "SELECT `id` , `strategy_id` , `strategy_desc` , `strategy_mode` , `grant_type` , `grant_date` , `ext_info` , `create_time` , `update_time` FROM `strategy` WHERE `strategy_id` = ?",
+    "baselinePresent": true,
+    "count": 1,
+    "waitSeconds": 0.0002000000000000001,
+    "meanMs": 0.2000000000000001,
+    "lockSeconds": 0.0,
+    "rowsExamined": 1
+  },
+  {
+    "schema": "lottery",
+    "sql": "SELECT `id` , `strategy_id` , `award_id` , `award_count` , `award_rate` , `award_surplus_count` , `create_time` , `update_time` FROM `strategy_detail` WHERE `strategy_id` = ?",
+    "baselinePresent": true,
+    "count": 1,
+    "waitSeconds": 0.00010000000000000005,
+    "meanMs": 0.10000000000000005,
+    "lockSeconds": 0.0,
+    "rowsExamined": 5
+  },
+  {
+    "schema": "lottery",
+    "sql": "SELECT @@SESSION . `auto_increment_increment` AS `auto_increment_increment` , @@`character_set_client` AS `character_set_client` , @@`character_set_connection` AS `character_set_connection` , @@`character_set_results` AS `character_set_results` , @@`character_set_server` AS `character_set_server` , @@`collation_server` AS `collation_server` , @@`collation_connection` AS `collation_connection` , @@`init_connect` AS `init_connect` , @@`interactive_timeout` AS `interactive_timeout` , @@`license` AS `license` , @@`lower_case_table_names` AS `lower_case_table_names` , @@`max_allowed_packet` AS `max_allowed_packet` , @@`net_write_timeout` AS `net_write_timeout` , @@`performance_schema` AS `performance_schema` , @@`sql_mode` AS `sql_mode` , @@`system_time_zone` AS `system_time_zone` , @@`time_zone` AS `time_zone` , @@`transaction_isolation` AS `transaction_isolation` , @@`wait_timeout` AS `wait_timeout`",
+    "baselinePresent": true,
+    "count": 1,
+    "waitSeconds": 0.0,
+    "meanMs": 0.0,
+    "lockSeconds": 0.0,
+    "rowsExamined": 1
+  },
+  {
+    "schema": "lottery",
+    "sql": "INSERT INTO `award` ( `award_id` , `award_type` , `award_name` , `award_content` , `create_time` , `update_time` ) VALUES ( ?, ... , NOW ( ) , NOW ( ) ) , ( ?, ... , NOW ( ) , NOW ( ) ) , ( ?, ... , NOW ( ) , NOW ( ) ) , ( ?, ... , NOW ( ) , NOW ( ) ) , ( ?, ... , NOW ( ) , NOW ( ) )",
+    "baselinePresent": true,
+    "count": 0,
+    "waitSeconds": 0.0,
+    "meanMs": null,
+    "lockSeconds": 0.0,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery",
+    "sql": "SET `character_set_results` = ?",
+    "baselinePresent": true,
+    "count": 1,
+    "waitSeconds": 0.0,
+    "meanMs": 0.0,
+    "lockSeconds": 0.0,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery",
+    "sql": "INSERT INTO `strategy` ( `strategy_id` , `strategy_desc` , `strategy_mode` , `grant_type` , `grant_date` , `ext_info` , `create_time` , `update_time` ) VALUES ( ?, ... , NOW ( ) , NOW ( ) )",
+    "baselinePresent": true,
+    "count": 0,
+    "waitSeconds": 0.0,
+    "meanMs": null,
+    "lockSeconds": 0.0,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery",
+    "sql": "INSERT INTO `activity` ( `activity_id` , `activity_name` , `activity_desc` , `begin_date_time` , `end_date_time` , `stock_count` , `stock_surplus_count` , `strategy_id` , `take_count` , `state` , `creator` , `create_time` , `update_time` ) VALUES ( ?, ... , NOW ( ) , NOW ( ) )",
+    "baselinePresent": true,
+    "count": 0,
+    "waitSeconds": 0.0,
+    "meanMs": null,
+    "lockSeconds": 0.0,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery",
+    "sql": "INSERT INTO `strategy_detail` ( `strategy_id` , `award_id` , `award_name` , `award_count` , `award_surplus_count` , `award_rate` , `create_time` , `update_time` ) VALUES ( ?, ... , NOW ( ) , NOW ( ) ) , ( ?, ... , NOW ( ) , NOW ( ) ) , ( ?, ... , NOW ( ) , NOW ( ) ) , ( ?, ... , NOW ( ) , NOW ( ) ) , ( ?, ... , NOW ( ) , NOW ( ) )",
+    "baselinePresent": true,
+    "count": 0,
+    "waitSeconds": 0.0,
+    "meanMs": null,
+    "lockSeconds": 0.0,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery",
+    "sql": "UPDATE `activity` SET `state` = ? , `update_time` = NOW ( ) WHERE `activity_id` = ? AND `state` = ?",
+    "baselinePresent": true,
+    "count": 0,
+    "waitSeconds": 0.0,
+    "meanMs": null,
+    "lockSeconds": 0.0,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery",
+    "sql": "SELECT `id` , `activity_id` , `strategy_id` , `stock_surplus_count` , `state` , `begin_date_time` , `end_date_time` FROM `activity` WHERE `activity_id` = ? FOR UPDATE",
+    "baselinePresent": true,
+    "count": 0,
+    "waitSeconds": 0.0,
+    "meanMs": null,
+    "lockSeconds": 0.0,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_02",
+    "sql": "SELECT @@SESSION . `transaction_isolation`",
+    "baselinePresent": true,
+    "count": 0,
+    "waitSeconds": 0.0,
+    "meanMs": null,
+    "lockSeconds": 0.0,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery_01",
+    "sql": "SELECT @@SESSION . `transaction_isolation`",
+    "baselinePresent": true,
+    "count": 0,
+    "waitSeconds": 0.0,
+    "meanMs": null,
+    "lockSeconds": 0.0,
+    "rowsExamined": 0
+  },
+  {
+    "schema": "lottery",
+    "sql": "SELECT @@SESSION . `transaction_isolation`",
+    "baselinePresent": true,
+    "count": 0,
+    "waitSeconds": 0.0,
+    "meanMs": null,
+    "lockSeconds": 0.0,
+    "rowsExamined": 0
+  }
+]

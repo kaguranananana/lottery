@@ -1,0 +1,894 @@
+{
+  "dataUnchanged": true,
+  "afterOrderRowsByShard": "lottery_01.user_strategy_export_000\t53888\nlottery_01.user_strategy_export_001\t53879\nlottery_01.user_strategy_export_002\t53783\nlottery_01.user_strategy_export_003\t53709\nlottery_02.user_strategy_export_000\t53851\nlottery_02.user_strategy_export_001\t53860\nlottery_02.user_strategy_export_002\t53953\nlottery_02.user_strategy_export_003\t54030",
+  "afterOrderStates": "lottery_01.user_strategy_export_000\t1\t1\t1\t53888\nlottery_01.user_strategy_export_001\t1\t1\t1\t53879\nlottery_01.user_strategy_export_002\t1\t1\t1\t53783\nlottery_01.user_strategy_export_003\t1\t1\t1\t53709\nlottery_02.user_strategy_export_000\t1\t1\t1\t53851\nlottery_02.user_strategy_export_001\t1\t1\t1\t53860\nlottery_02.user_strategy_export_002\t1\t1\t1\t53953\nlottery_02.user_strategy_export_003\t1\t1\t1\t54030",
+  "runs": [
+    {
+      "repeat": 1,
+      "variants": {
+        "withoutIndex": {
+          "tables": [
+            {
+              "table": "lottery_01.user_strategy_export_000",
+              "file": "1-lottery_01-user_strategy_export_000-withoutIndex.txt",
+              "rootMs": 26.5,
+              "returnedRows": 0,
+              "scanRows": 53888,
+              "plan": "-> Limit: 100 row(s)  (cost=954 rows=100) (actual time=26.5..26.5 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_000.grant_state <> 1) and ((lottery_01.user_strategy_export_000.mq_state = 2) or ((lottery_01.user_strategy_export_000.mq_state = 0) and (lottery_01.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_000.mq_state in (1,3)) and (lottery_01.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=954 rows=4491) (actual time=26.5..26.5 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_000 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=954 rows=26544) (actual time=0.0875..24.9 rows=53888 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_001",
+              "file": "1-lottery_01-user_strategy_export_001-withoutIndex.txt",
+              "rootMs": 26.4,
+              "returnedRows": 0,
+              "scanRows": 53879,
+              "plan": "-> Limit: 100 row(s)  (cost=948 rows=100) (actual time=26.4..26.4 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_001.grant_state <> 1) and ((lottery_01.user_strategy_export_001.mq_state = 2) or ((lottery_01.user_strategy_export_001.mq_state = 0) and (lottery_01.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_001.mq_state in (1,3)) and (lottery_01.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=948 rows=4431) (actual time=26.4..26.4 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_001 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=948 rows=26192) (actual time=0.0885..25 rows=53879 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_002",
+              "file": "1-lottery_01-user_strategy_export_002-withoutIndex.txt",
+              "rootMs": 24.3,
+              "returnedRows": 0,
+              "scanRows": 53783,
+              "plan": "-> Limit: 100 row(s)  (cost=971 rows=100) (actual time=24.3..24.3 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_002.grant_state <> 1) and ((lottery_01.user_strategy_export_002.mq_state = 2) or ((lottery_01.user_strategy_export_002.mq_state = 0) and (lottery_01.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_002.mq_state in (1,3)) and (lottery_01.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=971 rows=4658) (actual time=24.3..24.3 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_002 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=971 rows=27531) (actual time=0.06..22.9 rows=53783 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_003",
+              "file": "1-lottery_01-user_strategy_export_003-withoutIndex.txt",
+              "rootMs": 22.9,
+              "returnedRows": 0,
+              "scanRows": 53709,
+              "plan": "-> Limit: 100 row(s)  (cost=966 rows=100) (actual time=22.9..22.9 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_003.grant_state <> 1) and ((lottery_01.user_strategy_export_003.mq_state = 2) or ((lottery_01.user_strategy_export_003.mq_state = 0) and (lottery_01.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_003.mq_state in (1,3)) and (lottery_01.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=966 rows=4608) (actual time=22.9..22.9 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_003 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=966 rows=27233) (actual time=0.0708..21.6 rows=53709 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_000",
+              "file": "1-lottery_02-user_strategy_export_000-withoutIndex.txt",
+              "rootMs": 25.3,
+              "returnedRows": 0,
+              "scanRows": 53851,
+              "plan": "-> Limit: 100 row(s)  (cost=943 rows=100) (actual time=25.3..25.3 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_000.grant_state <> 1) and ((lottery_02.user_strategy_export_000.mq_state = 2) or ((lottery_02.user_strategy_export_000.mq_state = 0) and (lottery_02.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_000.mq_state in (1,3)) and (lottery_02.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=943 rows=4379) (actual time=25.3..25.3 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_000 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=943 rows=25883) (actual time=0.0564..23.8 rows=53851 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_001",
+              "file": "1-lottery_02-user_strategy_export_001-withoutIndex.txt",
+              "rootMs": 24.8,
+              "returnedRows": 0,
+              "scanRows": 53860,
+              "plan": "-> Limit: 100 row(s)  (cost=961 rows=100) (actual time=24.8..24.8 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_001.grant_state <> 1) and ((lottery_02.user_strategy_export_001.mq_state = 2) or ((lottery_02.user_strategy_export_001.mq_state = 0) and (lottery_02.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_001.mq_state in (1,3)) and (lottery_02.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=961 rows=4564) (actual time=24.8..24.8 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_001 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=961 rows=26978) (actual time=0.0667..23.4 rows=53860 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_002",
+              "file": "1-lottery_02-user_strategy_export_002-withoutIndex.txt",
+              "rootMs": 23.1,
+              "returnedRows": 0,
+              "scanRows": 53953,
+              "plan": "-> Limit: 100 row(s)  (cost=929 rows=100) (actual time=23.1..23.1 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_002.grant_state <> 1) and ((lottery_02.user_strategy_export_002.mq_state = 2) or ((lottery_02.user_strategy_export_002.mq_state = 0) and (lottery_02.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_002.mq_state in (1,3)) and (lottery_02.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=929 rows=4245) (actual time=23.1..23.1 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_002 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=929 rows=25092) (actual time=0.0756..21.7 rows=53953 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_003",
+              "file": "1-lottery_02-user_strategy_export_003-withoutIndex.txt",
+              "rootMs": 23.3,
+              "returnedRows": 0,
+              "scanRows": 54030,
+              "plan": "-> Limit: 100 row(s)  (cost=960 rows=100) (actual time=23.3..23.3 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_003.grant_state <> 1) and ((lottery_02.user_strategy_export_003.mq_state = 2) or ((lottery_02.user_strategy_export_003.mq_state = 0) and (lottery_02.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_003.mq_state in (1,3)) and (lottery_02.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=960 rows=4551) (actual time=23.3..23.3 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_003 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=960 rows=26897) (actual time=0.0539..22 rows=54030 loops=1)\n\n"
+            }
+          ],
+          "totalRootMs": 196.6,
+          "totalScanRows": 430953,
+          "totalReturnedRows": 0
+        },
+        "withIndex": {
+          "tables": [
+            {
+              "table": "lottery_01.user_strategy_export_000",
+              "file": "1-lottery_01-user_strategy_export_000-withIndex.txt",
+              "rootMs": 0.013,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.013..0.013 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_000.stock_mq_state = 1) and ((lottery_01.user_strategy_export_000.mq_state = 2) or ((lottery_01.user_strategy_export_000.mq_state = 0) and (lottery_01.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_000.mq_state in (1,3)) and (lottery_01.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0127..0.0127 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_000 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_000.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0123..0.0123 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_001",
+              "file": "1-lottery_01-user_strategy_export_001-withIndex.txt",
+              "rootMs": 0.0121,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0121..0.0121 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_001.stock_mq_state = 1) and ((lottery_01.user_strategy_export_001.mq_state = 2) or ((lottery_01.user_strategy_export_001.mq_state = 0) and (lottery_01.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_001.mq_state in (1,3)) and (lottery_01.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0119..0.0119 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_001 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_001.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0115..0.0115 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_002",
+              "file": "1-lottery_01-user_strategy_export_002-withIndex.txt",
+              "rootMs": 0.0123,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0123..0.0123 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_002.stock_mq_state = 1) and ((lottery_01.user_strategy_export_002.mq_state = 2) or ((lottery_01.user_strategy_export_002.mq_state = 0) and (lottery_01.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_002.mq_state in (1,3)) and (lottery_01.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.012..0.012 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_002 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_002.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0115..0.0115 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_003",
+              "file": "1-lottery_01-user_strategy_export_003-withIndex.txt",
+              "rootMs": 0.0138,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0138..0.0138 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_003.stock_mq_state = 1) and ((lottery_01.user_strategy_export_003.mq_state = 2) or ((lottery_01.user_strategy_export_003.mq_state = 0) and (lottery_01.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_003.mq_state in (1,3)) and (lottery_01.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0135..0.0135 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_003 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_003.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0131..0.0131 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_000",
+              "file": "1-lottery_02-user_strategy_export_000-withIndex.txt",
+              "rootMs": 0.0128,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0128..0.0128 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_000.stock_mq_state = 1) and ((lottery_02.user_strategy_export_000.mq_state = 2) or ((lottery_02.user_strategy_export_000.mq_state = 0) and (lottery_02.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_000.mq_state in (1,3)) and (lottery_02.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0126..0.0126 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_000 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_000.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0122..0.0122 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_001",
+              "file": "1-lottery_02-user_strategy_export_001-withIndex.txt",
+              "rootMs": 0.012,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.012..0.012 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_001.stock_mq_state = 1) and ((lottery_02.user_strategy_export_001.mq_state = 2) or ((lottery_02.user_strategy_export_001.mq_state = 0) and (lottery_02.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_001.mq_state in (1,3)) and (lottery_02.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0118..0.0118 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_001 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_001.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0113..0.0113 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_002",
+              "file": "1-lottery_02-user_strategy_export_002-withIndex.txt",
+              "rootMs": 0.0115,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0115..0.0115 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_002.stock_mq_state = 1) and ((lottery_02.user_strategy_export_002.mq_state = 2) or ((lottery_02.user_strategy_export_002.mq_state = 0) and (lottery_02.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_002.mq_state in (1,3)) and (lottery_02.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0114..0.0114 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_002 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_002.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0108..0.0108 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_003",
+              "file": "1-lottery_02-user_strategy_export_003-withIndex.txt",
+              "rootMs": 0.0122,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0122..0.0122 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_003.stock_mq_state = 1) and ((lottery_02.user_strategy_export_003.mq_state = 2) or ((lottery_02.user_strategy_export_003.mq_state = 0) and (lottery_02.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_003.mq_state in (1,3)) and (lottery_02.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.012..0.012 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_003 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_003.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0115..0.0115 rows=0 loops=1)\n\n"
+            }
+          ],
+          "totalRootMs": 0.0997,
+          "totalScanRows": 0,
+          "totalReturnedRows": 0
+        }
+      }
+    },
+    {
+      "repeat": 2,
+      "variants": {
+        "withoutIndex": {
+          "tables": [
+            {
+              "table": "lottery_01.user_strategy_export_000",
+              "file": "2-lottery_01-user_strategy_export_000-withoutIndex.txt",
+              "rootMs": 24.0,
+              "returnedRows": 0,
+              "scanRows": 53888,
+              "plan": "-> Limit: 100 row(s)  (cost=954 rows=100) (actual time=24..24 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_000.grant_state <> 1) and ((lottery_01.user_strategy_export_000.mq_state = 2) or ((lottery_01.user_strategy_export_000.mq_state = 0) and (lottery_01.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_000.mq_state in (1,3)) and (lottery_01.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=954 rows=4491) (actual time=24..24 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_000 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=954 rows=26544) (actual time=0.0571..22.5 rows=53888 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_001",
+              "file": "2-lottery_01-user_strategy_export_001-withoutIndex.txt",
+              "rootMs": 24.4,
+              "returnedRows": 0,
+              "scanRows": 53879,
+              "plan": "-> Limit: 100 row(s)  (cost=948 rows=100) (actual time=24.4..24.4 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_001.grant_state <> 1) and ((lottery_01.user_strategy_export_001.mq_state = 2) or ((lottery_01.user_strategy_export_001.mq_state = 0) and (lottery_01.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_001.mq_state in (1,3)) and (lottery_01.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=948 rows=4431) (actual time=24.4..24.4 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_001 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=948 rows=26192) (actual time=0.0712..23 rows=53879 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_002",
+              "file": "2-lottery_01-user_strategy_export_002-withoutIndex.txt",
+              "rootMs": 23.6,
+              "returnedRows": 0,
+              "scanRows": 53783,
+              "plan": "-> Limit: 100 row(s)  (cost=971 rows=100) (actual time=23.6..23.6 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_002.grant_state <> 1) and ((lottery_01.user_strategy_export_002.mq_state = 2) or ((lottery_01.user_strategy_export_002.mq_state = 0) and (lottery_01.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_002.mq_state in (1,3)) and (lottery_01.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=971 rows=4658) (actual time=23.6..23.6 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_002 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=971 rows=27531) (actual time=0.06..22.2 rows=53783 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_003",
+              "file": "2-lottery_01-user_strategy_export_003-withoutIndex.txt",
+              "rootMs": 24.4,
+              "returnedRows": 0,
+              "scanRows": 53709,
+              "plan": "-> Limit: 100 row(s)  (cost=966 rows=100) (actual time=24.4..24.4 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_003.grant_state <> 1) and ((lottery_01.user_strategy_export_003.mq_state = 2) or ((lottery_01.user_strategy_export_003.mq_state = 0) and (lottery_01.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_003.mq_state in (1,3)) and (lottery_01.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=966 rows=4608) (actual time=24.4..24.4 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_003 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=966 rows=27233) (actual time=0.0838..23.1 rows=53709 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_000",
+              "file": "2-lottery_02-user_strategy_export_000-withoutIndex.txt",
+              "rootMs": 24.4,
+              "returnedRows": 0,
+              "scanRows": 53851,
+              "plan": "-> Limit: 100 row(s)  (cost=943 rows=100) (actual time=24.4..24.4 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_000.grant_state <> 1) and ((lottery_02.user_strategy_export_000.mq_state = 2) or ((lottery_02.user_strategy_export_000.mq_state = 0) and (lottery_02.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_000.mq_state in (1,3)) and (lottery_02.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=943 rows=4379) (actual time=24.4..24.4 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_000 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=943 rows=25883) (actual time=0.0793..23.1 rows=53851 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_001",
+              "file": "2-lottery_02-user_strategy_export_001-withoutIndex.txt",
+              "rootMs": 24.5,
+              "returnedRows": 0,
+              "scanRows": 53860,
+              "plan": "-> Limit: 100 row(s)  (cost=961 rows=100) (actual time=24.5..24.5 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_001.grant_state <> 1) and ((lottery_02.user_strategy_export_001.mq_state = 2) or ((lottery_02.user_strategy_export_001.mq_state = 0) and (lottery_02.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_001.mq_state in (1,3)) and (lottery_02.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=961 rows=4564) (actual time=24.5..24.5 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_001 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=961 rows=26978) (actual time=0.0938..23.2 rows=53860 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_002",
+              "file": "2-lottery_02-user_strategy_export_002-withoutIndex.txt",
+              "rootMs": 22.9,
+              "returnedRows": 0,
+              "scanRows": 53953,
+              "plan": "-> Limit: 100 row(s)  (cost=929 rows=100) (actual time=22.9..22.9 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_002.grant_state <> 1) and ((lottery_02.user_strategy_export_002.mq_state = 2) or ((lottery_02.user_strategy_export_002.mq_state = 0) and (lottery_02.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_002.mq_state in (1,3)) and (lottery_02.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=929 rows=4245) (actual time=22.9..22.9 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_002 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=929 rows=25092) (actual time=0.052..21.6 rows=53953 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_003",
+              "file": "2-lottery_02-user_strategy_export_003-withoutIndex.txt",
+              "rootMs": 23.1,
+              "returnedRows": 0,
+              "scanRows": 54030,
+              "plan": "-> Limit: 100 row(s)  (cost=960 rows=100) (actual time=23.1..23.1 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_003.grant_state <> 1) and ((lottery_02.user_strategy_export_003.mq_state = 2) or ((lottery_02.user_strategy_export_003.mq_state = 0) and (lottery_02.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_003.mq_state in (1,3)) and (lottery_02.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=960 rows=4551) (actual time=23.1..23.1 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_003 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=960 rows=26897) (actual time=0.0706..21.8 rows=54030 loops=1)\n\n"
+            }
+          ],
+          "totalRootMs": 191.3,
+          "totalScanRows": 430953,
+          "totalReturnedRows": 0
+        },
+        "withIndex": {
+          "tables": [
+            {
+              "table": "lottery_01.user_strategy_export_000",
+              "file": "2-lottery_01-user_strategy_export_000-withIndex.txt",
+              "rootMs": 0.0117,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0117..0.0117 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_000.stock_mq_state = 1) and ((lottery_01.user_strategy_export_000.mq_state = 2) or ((lottery_01.user_strategy_export_000.mq_state = 0) and (lottery_01.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_000.mq_state in (1,3)) and (lottery_01.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0114..0.0114 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_000 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_000.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.011..0.011 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_001",
+              "file": "2-lottery_01-user_strategy_export_001-withIndex.txt",
+              "rootMs": 0.0119,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0119..0.0119 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_001.stock_mq_state = 1) and ((lottery_01.user_strategy_export_001.mq_state = 2) or ((lottery_01.user_strategy_export_001.mq_state = 0) and (lottery_01.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_001.mq_state in (1,3)) and (lottery_01.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0113..0.0113 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_001 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_001.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0109..0.0109 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_002",
+              "file": "2-lottery_01-user_strategy_export_002-withIndex.txt",
+              "rootMs": 0.0123,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0123..0.0123 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_002.stock_mq_state = 1) and ((lottery_01.user_strategy_export_002.mq_state = 2) or ((lottery_01.user_strategy_export_002.mq_state = 0) and (lottery_01.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_002.mq_state in (1,3)) and (lottery_01.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0117..0.0117 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_002 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_002.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0113..0.0113 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_003",
+              "file": "2-lottery_01-user_strategy_export_003-withIndex.txt",
+              "rootMs": 0.011,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.011..0.011 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_003.stock_mq_state = 1) and ((lottery_01.user_strategy_export_003.mq_state = 2) or ((lottery_01.user_strategy_export_003.mq_state = 0) and (lottery_01.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_003.mq_state in (1,3)) and (lottery_01.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0108..0.0108 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_003 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_003.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0104..0.0104 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_000",
+              "file": "2-lottery_02-user_strategy_export_000-withIndex.txt",
+              "rootMs": 0.0117,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0117..0.0117 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_000.stock_mq_state = 1) and ((lottery_02.user_strategy_export_000.mq_state = 2) or ((lottery_02.user_strategy_export_000.mq_state = 0) and (lottery_02.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_000.mq_state in (1,3)) and (lottery_02.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0114..0.0114 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_000 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_000.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.011..0.011 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_001",
+              "file": "2-lottery_02-user_strategy_export_001-withIndex.txt",
+              "rootMs": 0.0113,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0113..0.0113 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_001.stock_mq_state = 1) and ((lottery_02.user_strategy_export_001.mq_state = 2) or ((lottery_02.user_strategy_export_001.mq_state = 0) and (lottery_02.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_001.mq_state in (1,3)) and (lottery_02.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0111..0.0111 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_001 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_001.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0107..0.0107 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_002",
+              "file": "2-lottery_02-user_strategy_export_002-withIndex.txt",
+              "rootMs": 0.0135,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0135..0.0135 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_002.stock_mq_state = 1) and ((lottery_02.user_strategy_export_002.mq_state = 2) or ((lottery_02.user_strategy_export_002.mq_state = 0) and (lottery_02.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_002.mq_state in (1,3)) and (lottery_02.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0133..0.0133 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_002 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_002.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0128..0.0128 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_003",
+              "file": "2-lottery_02-user_strategy_export_003-withIndex.txt",
+              "rootMs": 0.0118,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0118..0.0118 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_003.stock_mq_state = 1) and ((lottery_02.user_strategy_export_003.mq_state = 2) or ((lottery_02.user_strategy_export_003.mq_state = 0) and (lottery_02.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_003.mq_state in (1,3)) and (lottery_02.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0116..0.0116 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_003 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_003.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0111..0.0111 rows=0 loops=1)\n\n"
+            }
+          ],
+          "totalRootMs": 0.0952,
+          "totalScanRows": 0,
+          "totalReturnedRows": 0
+        }
+      }
+    },
+    {
+      "repeat": 3,
+      "variants": {
+        "withoutIndex": {
+          "tables": [
+            {
+              "table": "lottery_01.user_strategy_export_000",
+              "file": "3-lottery_01-user_strategy_export_000-withoutIndex.txt",
+              "rootMs": 23.2,
+              "returnedRows": 0,
+              "scanRows": 53888,
+              "plan": "-> Limit: 100 row(s)  (cost=954 rows=100) (actual time=23.2..23.2 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_000.grant_state <> 1) and ((lottery_01.user_strategy_export_000.mq_state = 2) or ((lottery_01.user_strategy_export_000.mq_state = 0) and (lottery_01.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_000.mq_state in (1,3)) and (lottery_01.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=954 rows=4491) (actual time=23.2..23.2 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_000 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=954 rows=26544) (actual time=0.0551..21.9 rows=53888 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_001",
+              "file": "3-lottery_01-user_strategy_export_001-withoutIndex.txt",
+              "rootMs": 25.4,
+              "returnedRows": 0,
+              "scanRows": 53879,
+              "plan": "-> Limit: 100 row(s)  (cost=948 rows=100) (actual time=25.4..25.4 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_001.grant_state <> 1) and ((lottery_01.user_strategy_export_001.mq_state = 2) or ((lottery_01.user_strategy_export_001.mq_state = 0) and (lottery_01.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_001.mq_state in (1,3)) and (lottery_01.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=948 rows=4431) (actual time=25.4..25.4 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_001 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=948 rows=26192) (actual time=0.0719..24 rows=53879 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_002",
+              "file": "3-lottery_01-user_strategy_export_002-withoutIndex.txt",
+              "rootMs": 23.8,
+              "returnedRows": 0,
+              "scanRows": 53783,
+              "plan": "-> Limit: 100 row(s)  (cost=971 rows=100) (actual time=23.8..23.8 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_002.grant_state <> 1) and ((lottery_01.user_strategy_export_002.mq_state = 2) or ((lottery_01.user_strategy_export_002.mq_state = 0) and (lottery_01.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_002.mq_state in (1,3)) and (lottery_01.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=971 rows=4658) (actual time=23.8..23.8 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_002 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=971 rows=27531) (actual time=0.0579..22.5 rows=53783 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_003",
+              "file": "3-lottery_01-user_strategy_export_003-withoutIndex.txt",
+              "rootMs": 23.6,
+              "returnedRows": 0,
+              "scanRows": 53709,
+              "plan": "-> Limit: 100 row(s)  (cost=966 rows=100) (actual time=23.6..23.6 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_003.grant_state <> 1) and ((lottery_01.user_strategy_export_003.mq_state = 2) or ((lottery_01.user_strategy_export_003.mq_state = 0) and (lottery_01.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_003.mq_state in (1,3)) and (lottery_01.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=966 rows=4608) (actual time=23.6..23.6 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_003 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=966 rows=27233) (actual time=0.071..22.3 rows=53709 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_000",
+              "file": "3-lottery_02-user_strategy_export_000-withoutIndex.txt",
+              "rootMs": 25.4,
+              "returnedRows": 0,
+              "scanRows": 53851,
+              "plan": "-> Limit: 100 row(s)  (cost=943 rows=100) (actual time=25.4..25.4 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_000.grant_state <> 1) and ((lottery_02.user_strategy_export_000.mq_state = 2) or ((lottery_02.user_strategy_export_000.mq_state = 0) and (lottery_02.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_000.mq_state in (1,3)) and (lottery_02.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=943 rows=4379) (actual time=25.4..25.4 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_000 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=943 rows=25883) (actual time=0.0523..24.1 rows=53851 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_001",
+              "file": "3-lottery_02-user_strategy_export_001-withoutIndex.txt",
+              "rootMs": 25.0,
+              "returnedRows": 0,
+              "scanRows": 53860,
+              "plan": "-> Limit: 100 row(s)  (cost=961 rows=100) (actual time=25..25 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_001.grant_state <> 1) and ((lottery_02.user_strategy_export_001.mq_state = 2) or ((lottery_02.user_strategy_export_001.mq_state = 0) and (lottery_02.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_001.mq_state in (1,3)) and (lottery_02.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=961 rows=4564) (actual time=25..25 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_001 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=961 rows=26978) (actual time=0.065..23.6 rows=53860 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_002",
+              "file": "3-lottery_02-user_strategy_export_002-withoutIndex.txt",
+              "rootMs": 22.9,
+              "returnedRows": 0,
+              "scanRows": 53953,
+              "plan": "-> Limit: 100 row(s)  (cost=929 rows=100) (actual time=22.9..22.9 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_002.grant_state <> 1) and ((lottery_02.user_strategy_export_002.mq_state = 2) or ((lottery_02.user_strategy_export_002.mq_state = 0) and (lottery_02.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_002.mq_state in (1,3)) and (lottery_02.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=929 rows=4245) (actual time=22.9..22.9 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_002 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=929 rows=25092) (actual time=0.05..21.5 rows=53953 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_003",
+              "file": "3-lottery_02-user_strategy_export_003-withoutIndex.txt",
+              "rootMs": 23.4,
+              "returnedRows": 0,
+              "scanRows": 54030,
+              "plan": "-> Limit: 100 row(s)  (cost=960 rows=100) (actual time=23.4..23.4 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_003.grant_state <> 1) and ((lottery_02.user_strategy_export_003.mq_state = 2) or ((lottery_02.user_strategy_export_003.mq_state = 0) and (lottery_02.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_003.mq_state in (1,3)) and (lottery_02.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=960 rows=4551) (actual time=23.4..23.4 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_003 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=960 rows=26897) (actual time=0.053..22 rows=54030 loops=1)\n\n"
+            }
+          ],
+          "totalRootMs": 192.7,
+          "totalScanRows": 430953,
+          "totalReturnedRows": 0
+        },
+        "withIndex": {
+          "tables": [
+            {
+              "table": "lottery_01.user_strategy_export_000",
+              "file": "3-lottery_01-user_strategy_export_000-withIndex.txt",
+              "rootMs": 0.0124,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0124..0.0124 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_000.stock_mq_state = 1) and ((lottery_01.user_strategy_export_000.mq_state = 2) or ((lottery_01.user_strategy_export_000.mq_state = 0) and (lottery_01.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_000.mq_state in (1,3)) and (lottery_01.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0119..0.0119 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_000 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_000.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0113..0.0113 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_001",
+              "file": "3-lottery_01-user_strategy_export_001-withIndex.txt",
+              "rootMs": 0.0116,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0116..0.0116 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_001.stock_mq_state = 1) and ((lottery_01.user_strategy_export_001.mq_state = 2) or ((lottery_01.user_strategy_export_001.mq_state = 0) and (lottery_01.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_001.mq_state in (1,3)) and (lottery_01.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0113..0.0113 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_001 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_001.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0108..0.0108 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_002",
+              "file": "3-lottery_01-user_strategy_export_002-withIndex.txt",
+              "rootMs": 0.0118,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0118..0.0118 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_002.stock_mq_state = 1) and ((lottery_01.user_strategy_export_002.mq_state = 2) or ((lottery_01.user_strategy_export_002.mq_state = 0) and (lottery_01.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_002.mq_state in (1,3)) and (lottery_01.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0116..0.0116 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_002 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_002.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.011..0.011 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_003",
+              "file": "3-lottery_01-user_strategy_export_003-withIndex.txt",
+              "rootMs": 0.0119,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0119..0.0119 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_003.stock_mq_state = 1) and ((lottery_01.user_strategy_export_003.mq_state = 2) or ((lottery_01.user_strategy_export_003.mq_state = 0) and (lottery_01.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_003.mq_state in (1,3)) and (lottery_01.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0113..0.0113 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_003 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_003.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0108..0.0108 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_000",
+              "file": "3-lottery_02-user_strategy_export_000-withIndex.txt",
+              "rootMs": 0.0119,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0119..0.0119 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_000.stock_mq_state = 1) and ((lottery_02.user_strategy_export_000.mq_state = 2) or ((lottery_02.user_strategy_export_000.mq_state = 0) and (lottery_02.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_000.mq_state in (1,3)) and (lottery_02.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0117..0.0117 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_000 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_000.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.011..0.011 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_001",
+              "file": "3-lottery_02-user_strategy_export_001-withIndex.txt",
+              "rootMs": 0.0133,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0133..0.0133 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_001.stock_mq_state = 1) and ((lottery_02.user_strategy_export_001.mq_state = 2) or ((lottery_02.user_strategy_export_001.mq_state = 0) and (lottery_02.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_001.mq_state in (1,3)) and (lottery_02.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.013..0.013 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_001 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_001.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0124..0.0124 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_002",
+              "file": "3-lottery_02-user_strategy_export_002-withIndex.txt",
+              "rootMs": 0.0114,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0114..0.0114 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_002.stock_mq_state = 1) and ((lottery_02.user_strategy_export_002.mq_state = 2) or ((lottery_02.user_strategy_export_002.mq_state = 0) and (lottery_02.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_002.mq_state in (1,3)) and (lottery_02.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0111..0.0111 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_002 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_002.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0105..0.0105 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_003",
+              "file": "3-lottery_02-user_strategy_export_003-withIndex.txt",
+              "rootMs": 0.0119,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0119..0.0119 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_003.stock_mq_state = 1) and ((lottery_02.user_strategy_export_003.mq_state = 2) or ((lottery_02.user_strategy_export_003.mq_state = 0) and (lottery_02.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_003.mq_state in (1,3)) and (lottery_02.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0115..0.0115 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_003 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_003.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0112..0.0112 rows=0 loops=1)\n\n"
+            }
+          ],
+          "totalRootMs": 0.09620000000000001,
+          "totalScanRows": 0,
+          "totalReturnedRows": 0
+        }
+      }
+    },
+    {
+      "repeat": 4,
+      "variants": {
+        "withoutIndex": {
+          "tables": [
+            {
+              "table": "lottery_01.user_strategy_export_000",
+              "file": "4-lottery_01-user_strategy_export_000-withoutIndex.txt",
+              "rootMs": 25.7,
+              "returnedRows": 0,
+              "scanRows": 53888,
+              "plan": "-> Limit: 100 row(s)  (cost=954 rows=100) (actual time=25.7..25.7 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_000.grant_state <> 1) and ((lottery_01.user_strategy_export_000.mq_state = 2) or ((lottery_01.user_strategy_export_000.mq_state = 0) and (lottery_01.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_000.mq_state in (1,3)) and (lottery_01.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=954 rows=4491) (actual time=25.7..25.7 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_000 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=954 rows=26544) (actual time=0.0624..24.2 rows=53888 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_001",
+              "file": "4-lottery_01-user_strategy_export_001-withoutIndex.txt",
+              "rootMs": 27.9,
+              "returnedRows": 0,
+              "scanRows": 53879,
+              "plan": "-> Limit: 100 row(s)  (cost=948 rows=100) (actual time=27.9..27.9 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_001.grant_state <> 1) and ((lottery_01.user_strategy_export_001.mq_state = 2) or ((lottery_01.user_strategy_export_001.mq_state = 0) and (lottery_01.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_001.mq_state in (1,3)) and (lottery_01.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=948 rows=4431) (actual time=27.9..27.9 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_001 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=948 rows=26192) (actual time=0.0978..26.5 rows=53879 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_002",
+              "file": "4-lottery_01-user_strategy_export_002-withoutIndex.txt",
+              "rootMs": 23.2,
+              "returnedRows": 0,
+              "scanRows": 53783,
+              "plan": "-> Limit: 100 row(s)  (cost=971 rows=100) (actual time=23.2..23.2 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_002.grant_state <> 1) and ((lottery_01.user_strategy_export_002.mq_state = 2) or ((lottery_01.user_strategy_export_002.mq_state = 0) and (lottery_01.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_002.mq_state in (1,3)) and (lottery_01.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=971 rows=4658) (actual time=23.2..23.2 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_002 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=971 rows=27531) (actual time=0.0649..21.8 rows=53783 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_003",
+              "file": "4-lottery_01-user_strategy_export_003-withoutIndex.txt",
+              "rootMs": 23.6,
+              "returnedRows": 0,
+              "scanRows": 53709,
+              "plan": "-> Limit: 100 row(s)  (cost=966 rows=100) (actual time=23.6..23.6 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_003.grant_state <> 1) and ((lottery_01.user_strategy_export_003.mq_state = 2) or ((lottery_01.user_strategy_export_003.mq_state = 0) and (lottery_01.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_003.mq_state in (1,3)) and (lottery_01.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=966 rows=4608) (actual time=23.6..23.6 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_003 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=966 rows=27233) (actual time=0.0791..22.2 rows=53709 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_000",
+              "file": "4-lottery_02-user_strategy_export_000-withoutIndex.txt",
+              "rootMs": 25.1,
+              "returnedRows": 0,
+              "scanRows": 53851,
+              "plan": "-> Limit: 100 row(s)  (cost=943 rows=100) (actual time=25.1..25.1 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_000.grant_state <> 1) and ((lottery_02.user_strategy_export_000.mq_state = 2) or ((lottery_02.user_strategy_export_000.mq_state = 0) and (lottery_02.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_000.mq_state in (1,3)) and (lottery_02.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=943 rows=4379) (actual time=25.1..25.1 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_000 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=943 rows=25883) (actual time=0.0543..23.6 rows=53851 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_001",
+              "file": "4-lottery_02-user_strategy_export_001-withoutIndex.txt",
+              "rootMs": 24.9,
+              "returnedRows": 0,
+              "scanRows": 53860,
+              "plan": "-> Limit: 100 row(s)  (cost=961 rows=100) (actual time=24.9..24.9 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_001.grant_state <> 1) and ((lottery_02.user_strategy_export_001.mq_state = 2) or ((lottery_02.user_strategy_export_001.mq_state = 0) and (lottery_02.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_001.mq_state in (1,3)) and (lottery_02.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=961 rows=4564) (actual time=24.9..24.9 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_001 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=961 rows=26978) (actual time=0.068..23.6 rows=53860 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_002",
+              "file": "4-lottery_02-user_strategy_export_002-withoutIndex.txt",
+              "rootMs": 23.8,
+              "returnedRows": 0,
+              "scanRows": 53953,
+              "plan": "-> Limit: 100 row(s)  (cost=929 rows=100) (actual time=23.8..23.8 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_002.grant_state <> 1) and ((lottery_02.user_strategy_export_002.mq_state = 2) or ((lottery_02.user_strategy_export_002.mq_state = 0) and (lottery_02.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_002.mq_state in (1,3)) and (lottery_02.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=929 rows=4245) (actual time=23.8..23.8 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_002 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=929 rows=25092) (actual time=0.0529..22.5 rows=53953 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_003",
+              "file": "4-lottery_02-user_strategy_export_003-withoutIndex.txt",
+              "rootMs": 23.3,
+              "returnedRows": 0,
+              "scanRows": 54030,
+              "plan": "-> Limit: 100 row(s)  (cost=960 rows=100) (actual time=23.3..23.3 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_003.grant_state <> 1) and ((lottery_02.user_strategy_export_003.mq_state = 2) or ((lottery_02.user_strategy_export_003.mq_state = 0) and (lottery_02.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_003.mq_state in (1,3)) and (lottery_02.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=960 rows=4551) (actual time=23.3..23.3 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_003 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=960 rows=26897) (actual time=0.0601..22 rows=54030 loops=1)\n\n"
+            }
+          ],
+          "totalRootMs": 197.5,
+          "totalScanRows": 430953,
+          "totalReturnedRows": 0
+        },
+        "withIndex": {
+          "tables": [
+            {
+              "table": "lottery_01.user_strategy_export_000",
+              "file": "4-lottery_01-user_strategy_export_000-withIndex.txt",
+              "rootMs": 0.0112,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0112..0.0112 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_000.stock_mq_state = 1) and ((lottery_01.user_strategy_export_000.mq_state = 2) or ((lottery_01.user_strategy_export_000.mq_state = 0) and (lottery_01.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_000.mq_state in (1,3)) and (lottery_01.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.011..0.011 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_000 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_000.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0105..0.0105 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_001",
+              "file": "4-lottery_01-user_strategy_export_001-withIndex.txt",
+              "rootMs": 0.0128,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0128..0.0128 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_001.stock_mq_state = 1) and ((lottery_01.user_strategy_export_001.mq_state = 2) or ((lottery_01.user_strategy_export_001.mq_state = 0) and (lottery_01.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_001.mq_state in (1,3)) and (lottery_01.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0123..0.0123 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_001 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_001.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0118..0.0118 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_002",
+              "file": "4-lottery_01-user_strategy_export_002-withIndex.txt",
+              "rootMs": 0.0117,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0117..0.0117 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_002.stock_mq_state = 1) and ((lottery_01.user_strategy_export_002.mq_state = 2) or ((lottery_01.user_strategy_export_002.mq_state = 0) and (lottery_01.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_002.mq_state in (1,3)) and (lottery_01.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0113..0.0113 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_002 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_002.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0109..0.0109 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_003",
+              "file": "4-lottery_01-user_strategy_export_003-withIndex.txt",
+              "rootMs": 0.0126,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0126..0.0126 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_003.stock_mq_state = 1) and ((lottery_01.user_strategy_export_003.mq_state = 2) or ((lottery_01.user_strategy_export_003.mq_state = 0) and (lottery_01.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_003.mq_state in (1,3)) and (lottery_01.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0123..0.0123 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_003 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_003.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0117..0.0117 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_000",
+              "file": "4-lottery_02-user_strategy_export_000-withIndex.txt",
+              "rootMs": 0.012,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.012..0.012 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_000.stock_mq_state = 1) and ((lottery_02.user_strategy_export_000.mq_state = 2) or ((lottery_02.user_strategy_export_000.mq_state = 0) and (lottery_02.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_000.mq_state in (1,3)) and (lottery_02.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0117..0.0117 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_000 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_000.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0114..0.0114 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_001",
+              "file": "4-lottery_02-user_strategy_export_001-withIndex.txt",
+              "rootMs": 0.0109,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0109..0.0109 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_001.stock_mq_state = 1) and ((lottery_02.user_strategy_export_001.mq_state = 2) or ((lottery_02.user_strategy_export_001.mq_state = 0) and (lottery_02.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_001.mq_state in (1,3)) and (lottery_02.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0106..0.0106 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_001 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_001.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0103..0.0103 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_002",
+              "file": "4-lottery_02-user_strategy_export_002-withIndex.txt",
+              "rootMs": 0.0141,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0141..0.0141 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_002.stock_mq_state = 1) and ((lottery_02.user_strategy_export_002.mq_state = 2) or ((lottery_02.user_strategy_export_002.mq_state = 0) and (lottery_02.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_002.mq_state in (1,3)) and (lottery_02.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0139..0.0139 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_002 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_002.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0135..0.0135 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_003",
+              "file": "4-lottery_02-user_strategy_export_003-withIndex.txt",
+              "rootMs": 0.0115,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0115..0.0115 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_003.stock_mq_state = 1) and ((lottery_02.user_strategy_export_003.mq_state = 2) or ((lottery_02.user_strategy_export_003.mq_state = 0) and (lottery_02.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_003.mq_state in (1,3)) and (lottery_02.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0113..0.0113 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_003 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_003.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0108..0.0108 rows=0 loops=1)\n\n"
+            }
+          ],
+          "totalRootMs": 0.0968,
+          "totalScanRows": 0,
+          "totalReturnedRows": 0
+        }
+      }
+    },
+    {
+      "repeat": 5,
+      "variants": {
+        "withoutIndex": {
+          "tables": [
+            {
+              "table": "lottery_01.user_strategy_export_000",
+              "file": "5-lottery_01-user_strategy_export_000-withoutIndex.txt",
+              "rootMs": 23.5,
+              "returnedRows": 0,
+              "scanRows": 53888,
+              "plan": "-> Limit: 100 row(s)  (cost=954 rows=100) (actual time=23.5..23.5 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_000.grant_state <> 1) and ((lottery_01.user_strategy_export_000.mq_state = 2) or ((lottery_01.user_strategy_export_000.mq_state = 0) and (lottery_01.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_000.mq_state in (1,3)) and (lottery_01.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=954 rows=4491) (actual time=23.5..23.5 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_000 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=954 rows=26544) (actual time=0.0554..22.1 rows=53888 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_001",
+              "file": "5-lottery_01-user_strategy_export_001-withoutIndex.txt",
+              "rootMs": 24.3,
+              "returnedRows": 0,
+              "scanRows": 53879,
+              "plan": "-> Limit: 100 row(s)  (cost=948 rows=100) (actual time=24.3..24.3 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_001.grant_state <> 1) and ((lottery_01.user_strategy_export_001.mq_state = 2) or ((lottery_01.user_strategy_export_001.mq_state = 0) and (lottery_01.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_001.mq_state in (1,3)) and (lottery_01.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=948 rows=4431) (actual time=24.3..24.3 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_001 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=948 rows=26192) (actual time=0.0684..22.9 rows=53879 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_002",
+              "file": "5-lottery_01-user_strategy_export_002-withoutIndex.txt",
+              "rootMs": 24.0,
+              "returnedRows": 0,
+              "scanRows": 53783,
+              "plan": "-> Limit: 100 row(s)  (cost=971 rows=100) (actual time=24..24 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_002.grant_state <> 1) and ((lottery_01.user_strategy_export_002.mq_state = 2) or ((lottery_01.user_strategy_export_002.mq_state = 0) and (lottery_01.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_002.mq_state in (1,3)) and (lottery_01.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=971 rows=4658) (actual time=24..24 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_002 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=971 rows=27531) (actual time=0.0642..22.6 rows=53783 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_003",
+              "file": "5-lottery_01-user_strategy_export_003-withoutIndex.txt",
+              "rootMs": 24.1,
+              "returnedRows": 0,
+              "scanRows": 53709,
+              "plan": "-> Limit: 100 row(s)  (cost=966 rows=100) (actual time=24.1..24.1 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_003.grant_state <> 1) and ((lottery_01.user_strategy_export_003.mq_state = 2) or ((lottery_01.user_strategy_export_003.mq_state = 0) and (lottery_01.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_003.mq_state in (1,3)) and (lottery_01.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=966 rows=4608) (actual time=24.1..24.1 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_003 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=966 rows=27233) (actual time=0.071..22.8 rows=53709 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_000",
+              "file": "5-lottery_02-user_strategy_export_000-withoutIndex.txt",
+              "rootMs": 25.5,
+              "returnedRows": 0,
+              "scanRows": 53851,
+              "plan": "-> Limit: 100 row(s)  (cost=943 rows=100) (actual time=25.5..25.5 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_000.grant_state <> 1) and ((lottery_02.user_strategy_export_000.mq_state = 2) or ((lottery_02.user_strategy_export_000.mq_state = 0) and (lottery_02.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_000.mq_state in (1,3)) and (lottery_02.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=943 rows=4379) (actual time=25.5..25.5 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_000 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=943 rows=25883) (actual time=0.0559..24 rows=53851 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_001",
+              "file": "5-lottery_02-user_strategy_export_001-withoutIndex.txt",
+              "rootMs": 26.9,
+              "returnedRows": 0,
+              "scanRows": 53860,
+              "plan": "-> Limit: 100 row(s)  (cost=961 rows=100) (actual time=26.9..26.9 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_001.grant_state <> 1) and ((lottery_02.user_strategy_export_001.mq_state = 2) or ((lottery_02.user_strategy_export_001.mq_state = 0) and (lottery_02.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_001.mq_state in (1,3)) and (lottery_02.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=961 rows=4564) (actual time=26.9..26.9 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_001 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=961 rows=26978) (actual time=0.0695..25.3 rows=53860 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_002",
+              "file": "5-lottery_02-user_strategy_export_002-withoutIndex.txt",
+              "rootMs": 24.1,
+              "returnedRows": 0,
+              "scanRows": 53953,
+              "plan": "-> Limit: 100 row(s)  (cost=929 rows=100) (actual time=24.1..24.1 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_002.grant_state <> 1) and ((lottery_02.user_strategy_export_002.mq_state = 2) or ((lottery_02.user_strategy_export_002.mq_state = 0) and (lottery_02.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_002.mq_state in (1,3)) and (lottery_02.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=929 rows=4245) (actual time=24.1..24.1 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_002 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=929 rows=25092) (actual time=0.0553..22.7 rows=53953 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_003",
+              "file": "5-lottery_02-user_strategy_export_003-withoutIndex.txt",
+              "rootMs": 24.4,
+              "returnedRows": 0,
+              "scanRows": 54030,
+              "plan": "-> Limit: 100 row(s)  (cost=960 rows=100) (actual time=24.4..24.4 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_003.grant_state <> 1) and ((lottery_02.user_strategy_export_003.mq_state = 2) or ((lottery_02.user_strategy_export_003.mq_state = 0) and (lottery_02.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_003.mq_state in (1,3)) and (lottery_02.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=960 rows=4551) (actual time=24.3..24.3 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_003 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=960 rows=26897) (actual time=0.0577..22.9 rows=54030 loops=1)\n\n"
+            }
+          ],
+          "totalRootMs": 196.8,
+          "totalScanRows": 430953,
+          "totalReturnedRows": 0
+        },
+        "withIndex": {
+          "tables": [
+            {
+              "table": "lottery_01.user_strategy_export_000",
+              "file": "5-lottery_01-user_strategy_export_000-withIndex.txt",
+              "rootMs": 0.0115,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0115..0.0115 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_000.stock_mq_state = 1) and ((lottery_01.user_strategy_export_000.mq_state = 2) or ((lottery_01.user_strategy_export_000.mq_state = 0) and (lottery_01.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_000.mq_state in (1,3)) and (lottery_01.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0113..0.0113 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_000 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_000.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0108..0.0108 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_001",
+              "file": "5-lottery_01-user_strategy_export_001-withIndex.txt",
+              "rootMs": 0.0108,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0108..0.0108 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_001.stock_mq_state = 1) and ((lottery_01.user_strategy_export_001.mq_state = 2) or ((lottery_01.user_strategy_export_001.mq_state = 0) and (lottery_01.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_001.mq_state in (1,3)) and (lottery_01.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0105..0.0105 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_001 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_001.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.01..0.01 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_002",
+              "file": "5-lottery_01-user_strategy_export_002-withIndex.txt",
+              "rootMs": 0.0119,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0119..0.0119 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_002.stock_mq_state = 1) and ((lottery_01.user_strategy_export_002.mq_state = 2) or ((lottery_01.user_strategy_export_002.mq_state = 0) and (lottery_01.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_002.mq_state in (1,3)) and (lottery_01.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0116..0.0116 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_002 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_002.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0112..0.0112 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_003",
+              "file": "5-lottery_01-user_strategy_export_003-withIndex.txt",
+              "rootMs": 0.012,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.012..0.012 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_003.stock_mq_state = 1) and ((lottery_01.user_strategy_export_003.mq_state = 2) or ((lottery_01.user_strategy_export_003.mq_state = 0) and (lottery_01.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_003.mq_state in (1,3)) and (lottery_01.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0116..0.0116 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_003 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_003.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0113..0.0113 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_000",
+              "file": "5-lottery_02-user_strategy_export_000-withIndex.txt",
+              "rootMs": 0.0128,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0128..0.0128 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_000.stock_mq_state = 1) and ((lottery_02.user_strategy_export_000.mq_state = 2) or ((lottery_02.user_strategy_export_000.mq_state = 0) and (lottery_02.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_000.mq_state in (1,3)) and (lottery_02.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0125..0.0125 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_000 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_000.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0121..0.0121 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_001",
+              "file": "5-lottery_02-user_strategy_export_001-withIndex.txt",
+              "rootMs": 0.0122,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0122..0.0122 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_001.stock_mq_state = 1) and ((lottery_02.user_strategy_export_001.mq_state = 2) or ((lottery_02.user_strategy_export_001.mq_state = 0) and (lottery_02.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_001.mq_state in (1,3)) and (lottery_02.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0119..0.0119 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_001 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_001.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0115..0.0115 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_002",
+              "file": "5-lottery_02-user_strategy_export_002-withIndex.txt",
+              "rootMs": 0.0122,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0122..0.0122 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_002.stock_mq_state = 1) and ((lottery_02.user_strategy_export_002.mq_state = 2) or ((lottery_02.user_strategy_export_002.mq_state = 0) and (lottery_02.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_002.mq_state in (1,3)) and (lottery_02.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.012..0.012 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_002 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_002.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0115..0.0115 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_003",
+              "file": "5-lottery_02-user_strategy_export_003-withIndex.txt",
+              "rootMs": 0.0124,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0124..0.0124 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_003.stock_mq_state = 1) and ((lottery_02.user_strategy_export_003.mq_state = 2) or ((lottery_02.user_strategy_export_003.mq_state = 0) and (lottery_02.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_003.mq_state in (1,3)) and (lottery_02.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0122..0.0122 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_003 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_003.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0118..0.0118 rows=0 loops=1)\n\n"
+            }
+          ],
+          "totalRootMs": 0.0958,
+          "totalScanRows": 0,
+          "totalReturnedRows": 0
+        }
+      }
+    },
+    {
+      "repeat": 6,
+      "variants": {
+        "withoutIndex": {
+          "tables": [
+            {
+              "table": "lottery_01.user_strategy_export_000",
+              "file": "6-lottery_01-user_strategy_export_000-withoutIndex.txt",
+              "rootMs": 25.8,
+              "returnedRows": 0,
+              "scanRows": 53888,
+              "plan": "-> Limit: 100 row(s)  (cost=954 rows=100) (actual time=25.8..25.8 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_000.grant_state <> 1) and ((lottery_01.user_strategy_export_000.mq_state = 2) or ((lottery_01.user_strategy_export_000.mq_state = 0) and (lottery_01.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_000.mq_state in (1,3)) and (lottery_01.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=954 rows=4491) (actual time=25.8..25.8 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_000 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=954 rows=26544) (actual time=0.065..24.2 rows=53888 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_001",
+              "file": "6-lottery_01-user_strategy_export_001-withoutIndex.txt",
+              "rootMs": 27.2,
+              "returnedRows": 0,
+              "scanRows": 53879,
+              "plan": "-> Limit: 100 row(s)  (cost=948 rows=100) (actual time=27.2..27.2 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_001.grant_state <> 1) and ((lottery_01.user_strategy_export_001.mq_state = 2) or ((lottery_01.user_strategy_export_001.mq_state = 0) and (lottery_01.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_001.mq_state in (1,3)) and (lottery_01.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=948 rows=4431) (actual time=27.2..27.2 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_001 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=948 rows=26192) (actual time=0.0815..25.6 rows=53879 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_002",
+              "file": "6-lottery_01-user_strategy_export_002-withoutIndex.txt",
+              "rootMs": 24.1,
+              "returnedRows": 0,
+              "scanRows": 53783,
+              "plan": "-> Limit: 100 row(s)  (cost=971 rows=100) (actual time=24.1..24.1 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_002.grant_state <> 1) and ((lottery_01.user_strategy_export_002.mq_state = 2) or ((lottery_01.user_strategy_export_002.mq_state = 0) and (lottery_01.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_002.mq_state in (1,3)) and (lottery_01.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=971 rows=4658) (actual time=24.1..24.1 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_002 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=971 rows=27531) (actual time=0.0598..22.7 rows=53783 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_003",
+              "file": "6-lottery_01-user_strategy_export_003-withoutIndex.txt",
+              "rootMs": 24.3,
+              "returnedRows": 0,
+              "scanRows": 53709,
+              "plan": "-> Limit: 100 row(s)  (cost=966 rows=100) (actual time=24.3..24.3 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_003.grant_state <> 1) and ((lottery_01.user_strategy_export_003.mq_state = 2) or ((lottery_01.user_strategy_export_003.mq_state = 0) and (lottery_01.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_003.mq_state in (1,3)) and (lottery_01.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=966 rows=4608) (actual time=24.3..24.3 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_003 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=966 rows=27233) (actual time=0.0759..23 rows=53709 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_000",
+              "file": "6-lottery_02-user_strategy_export_000-withoutIndex.txt",
+              "rootMs": 25.3,
+              "returnedRows": 0,
+              "scanRows": 53851,
+              "plan": "-> Limit: 100 row(s)  (cost=943 rows=100) (actual time=25.3..25.3 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_000.grant_state <> 1) and ((lottery_02.user_strategy_export_000.mq_state = 2) or ((lottery_02.user_strategy_export_000.mq_state = 0) and (lottery_02.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_000.mq_state in (1,3)) and (lottery_02.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=943 rows=4379) (actual time=25.3..25.3 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_000 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=943 rows=25883) (actual time=0.0561..23.9 rows=53851 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_001",
+              "file": "6-lottery_02-user_strategy_export_001-withoutIndex.txt",
+              "rootMs": 25.8,
+              "returnedRows": 0,
+              "scanRows": 53860,
+              "plan": "-> Limit: 100 row(s)  (cost=961 rows=100) (actual time=25.8..25.8 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_001.grant_state <> 1) and ((lottery_02.user_strategy_export_001.mq_state = 2) or ((lottery_02.user_strategy_export_001.mq_state = 0) and (lottery_02.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_001.mq_state in (1,3)) and (lottery_02.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=961 rows=4564) (actual time=25.8..25.8 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_001 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=961 rows=26978) (actual time=0.0832..24.3 rows=53860 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_002",
+              "file": "6-lottery_02-user_strategy_export_002-withoutIndex.txt",
+              "rootMs": 25.3,
+              "returnedRows": 0,
+              "scanRows": 53953,
+              "plan": "-> Limit: 100 row(s)  (cost=929 rows=100) (actual time=25.3..25.3 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_002.grant_state <> 1) and ((lottery_02.user_strategy_export_002.mq_state = 2) or ((lottery_02.user_strategy_export_002.mq_state = 0) and (lottery_02.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_002.mq_state in (1,3)) and (lottery_02.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=929 rows=4245) (actual time=25.3..25.3 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_002 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=929 rows=25092) (actual time=0.0573..23.9 rows=53953 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_003",
+              "file": "6-lottery_02-user_strategy_export_003-withoutIndex.txt",
+              "rootMs": 23.7,
+              "returnedRows": 0,
+              "scanRows": 54030,
+              "plan": "-> Limit: 100 row(s)  (cost=960 rows=100) (actual time=23.7..23.7 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_003.grant_state <> 1) and ((lottery_02.user_strategy_export_003.mq_state = 2) or ((lottery_02.user_strategy_export_003.mq_state = 0) and (lottery_02.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_003.mq_state in (1,3)) and (lottery_02.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=960 rows=4551) (actual time=23.7..23.7 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_003 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=960 rows=26897) (actual time=0.0559..22.3 rows=54030 loops=1)\n\n"
+            }
+          ],
+          "totalRootMs": 201.5,
+          "totalScanRows": 430953,
+          "totalReturnedRows": 0
+        },
+        "withIndex": {
+          "tables": [
+            {
+              "table": "lottery_01.user_strategy_export_000",
+              "file": "6-lottery_01-user_strategy_export_000-withIndex.txt",
+              "rootMs": 0.013,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.013..0.013 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_000.stock_mq_state = 1) and ((lottery_01.user_strategy_export_000.mq_state = 2) or ((lottery_01.user_strategy_export_000.mq_state = 0) and (lottery_01.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_000.mq_state in (1,3)) and (lottery_01.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0128..0.0128 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_000 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_000.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0124..0.0124 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_001",
+              "file": "6-lottery_01-user_strategy_export_001-withIndex.txt",
+              "rootMs": 0.0141,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0141..0.0141 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_001.stock_mq_state = 1) and ((lottery_01.user_strategy_export_001.mq_state = 2) or ((lottery_01.user_strategy_export_001.mq_state = 0) and (lottery_01.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_001.mq_state in (1,3)) and (lottery_01.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0139..0.0139 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_001 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_001.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0134..0.0134 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_002",
+              "file": "6-lottery_01-user_strategy_export_002-withIndex.txt",
+              "rootMs": 0.0115,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0115..0.0115 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_002.stock_mq_state = 1) and ((lottery_01.user_strategy_export_002.mq_state = 2) or ((lottery_01.user_strategy_export_002.mq_state = 0) and (lottery_01.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_002.mq_state in (1,3)) and (lottery_01.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0113..0.0113 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_002 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_002.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0109..0.0109 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_01.user_strategy_export_003",
+              "file": "6-lottery_01-user_strategy_export_003-withIndex.txt",
+              "rootMs": 0.0137,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0137..0.0137 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_003.stock_mq_state = 1) and ((lottery_01.user_strategy_export_003.mq_state = 2) or ((lottery_01.user_strategy_export_003.mq_state = 0) and (lottery_01.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_003.mq_state in (1,3)) and (lottery_01.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0134..0.0134 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_003 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_01.user_strategy_export_003.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0129..0.0129 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_000",
+              "file": "6-lottery_02-user_strategy_export_000-withIndex.txt",
+              "rootMs": 0.013,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.013..0.013 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_000.stock_mq_state = 1) and ((lottery_02.user_strategy_export_000.mq_state = 2) or ((lottery_02.user_strategy_export_000.mq_state = 0) and (lottery_02.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_000.mq_state in (1,3)) and (lottery_02.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0128..0.0128 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_000 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_000.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0122..0.0122 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_001",
+              "file": "6-lottery_02-user_strategy_export_001-withIndex.txt",
+              "rootMs": 0.0128,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0128..0.0128 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_001.stock_mq_state = 1) and ((lottery_02.user_strategy_export_001.mq_state = 2) or ((lottery_02.user_strategy_export_001.mq_state = 0) and (lottery_02.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_001.mq_state in (1,3)) and (lottery_02.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0125..0.0125 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_001 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_001.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.012..0.012 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_002",
+              "file": "6-lottery_02-user_strategy_export_002-withIndex.txt",
+              "rootMs": 0.0118,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0118..0.0118 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_002.stock_mq_state = 1) and ((lottery_02.user_strategy_export_002.mq_state = 2) or ((lottery_02.user_strategy_export_002.mq_state = 0) and (lottery_02.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_002.mq_state in (1,3)) and (lottery_02.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0113..0.0113 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_002 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_002.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0109..0.0109 rows=0 loops=1)\n\n"
+            },
+            {
+              "table": "lottery_02.user_strategy_export_003",
+              "file": "6-lottery_02-user_strategy_export_003-withIndex.txt",
+              "rootMs": 0.0116,
+              "returnedRows": 0,
+              "scanRows": 0,
+              "plan": "-> Limit: 100 row(s)  (cost=1.39 rows=0.188) (actual time=0.0116..0.0116 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_003.stock_mq_state = 1) and ((lottery_02.user_strategy_export_003.mq_state = 2) or ((lottery_02.user_strategy_export_003.mq_state = 0) and (lottery_02.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_003.mq_state in (1,3)) and (lottery_02.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=1.39 rows=0.188) (actual time=0.0114..0.0114 rows=0 loops=1)\n        -> Index range scan on user_strategy_export_003 using idx_invoice_grant_state over (NULL < grant_state < 1) OR (1 < grant_state), with index condition: (lottery_02.user_strategy_export_003.grant_state <> 1)  (cost=1.39 rows=2) (actual time=0.0109..0.0109 rows=0 loops=1)\n\n"
+            }
+          ],
+          "totalRootMs": 0.10149999999999999,
+          "totalScanRows": 0,
+          "totalReturnedRows": 0
+        }
+      }
+    }
+  ],
+  "hostSwapMiB": {
+    "in": 0.0,
+    "out": 0.0
+  },
+  "scope": "同数据生产补偿谓词的索引访问路径，八表顺序执行的根节点耗时合计"
+}

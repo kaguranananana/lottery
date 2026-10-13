@@ -1,0 +1,6 @@
+{
+  "orderRowsByShard": "lottery_01.user_strategy_export_000\t53888\nlottery_01.user_strategy_export_001\t53879\nlottery_01.user_strategy_export_002\t53783\nlottery_01.user_strategy_export_003\t53709\nlottery_02.user_strategy_export_000\t53851\nlottery_02.user_strategy_export_001\t53860\nlottery_02.user_strategy_export_002\t53953\nlottery_02.user_strategy_export_003\t54030",
+  "orderStates": "lottery_01.user_strategy_export_000\t1\t1\t1\t53888\nlottery_01.user_strategy_export_001\t1\t1\t1\t53879\nlottery_01.user_strategy_export_002\t1\t1\t1\t53783\nlottery_01.user_strategy_export_003\t1\t1\t1\t53709\nlottery_02.user_strategy_export_000\t1\t1\t1\t53851\nlottery_02.user_strategy_export_001\t1\t1\t1\t53860\nlottery_02.user_strategy_export_002\t1\t1\t1\t53953\nlottery_02.user_strategy_export_003\t1\t1\t1\t54030",
+  "indexes": "lottery_01\tuser_strategy_export_000\tgrant_state\nlottery_01\tuser_strategy_export_001\tgrant_state\nlottery_01\tuser_strategy_export_002\tgrant_state\nlottery_01\tuser_strategy_export_003\tgrant_state\nlottery_02\tuser_strategy_export_000\tgrant_state\nlottery_02\tuser_strategy_export_001\tgrant_state\nlottery_02\tuser_strategy_export_002\tgrant_state\nlottery_02\tuser_strategy_export_003\tgrant_state",
+  "parameters": "8.0.46\t1\t1\t134217728"
+}

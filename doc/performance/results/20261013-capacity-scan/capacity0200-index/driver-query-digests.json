@@ -1,0 +1,3 @@
+{
+  "query": "lottery_02\tSELECT @@SESSION . `transaction_read_only`\t619447\t26.1007\nlottery_01\tSELECT @@SESSION . `transaction_read_only`\t618663\t26.4543\nlottery\tSELECT @@SESSION . `transaction_read_only`\t275393\t12.4552\nlottery_02\tCOMMIT\t137968\t294.0963\nlottery\tCOMMIT\t137797\t347.0748\nlottery_01\tCOMMIT\t137793\t293.6310\nNULL\tSELECT @@SESSION . `transaction_read_only`\t613\t0.0325\nNULL\tCOMMIT\t306\t0.3845\nlottery_perf_invoice_scan_it\tSELECT @@SESSION . `transaction_read_only`\t27\t0.0013"
+}

@@ -38,7 +38,8 @@ def initialize():
             chunks += [f'ALTER TABLE user_strategy_export_{i:03d} ADD take_id BIGINT NULL;' for i in range(4)]
     sql('\n'.join(chunks))
     # 按当前交付迁移补齐库存 Outbox、唯一账本与请求归属约束。
-    for name in ('doc/sql/20260315_async_award_stock_outbox.sql', 'docs/sql/V2__architecture_simplification.sql', 'docs/sql/V3__draw_request_ownership.sql'):
+    # 新建专用环境也装配已验证的补偿访问路径，保留既有状态与唯一约束迁移顺序。
+    for name in ('doc/sql/20260315_async_award_stock_outbox.sql', 'docs/sql/V2__architecture_simplification.sql', 'docs/sql/V3__draw_request_ownership.sql', 'doc/sql/20261013_invoice_compensation_index.sql'):
         sql((ROOT / name).read_text())
 
 def apply_stock_index():

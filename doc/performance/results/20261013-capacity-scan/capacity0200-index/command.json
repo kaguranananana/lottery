@@ -1,0 +1,21 @@
+[
+  "/Users/anontokyo/.cache/lottery-perf/apache-jmeter-5.6.3/bin/jmeter",
+  "-n",
+  "-t",
+  "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/doc/performance/paced.jmx",
+  "-l",
+  "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/doc/performance/results/20261013-capacity-scan/capacity0200-index/samples.jtl",
+  "-j",
+  "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/doc/performance/results/20261013-capacity-scan/capacity0200-index/jmeter.log",
+  "-Jthreads=30",
+  "-Jduration=200",
+  "-Jramp=5",
+  "-Jactivity=741200",
+  "-Jprefix=capacity0200_",
+  "-Jusers=100000",
+  "-Jrun=capacity0200-index",
+  "-Jfinite=false",
+  "-Jsample_variables=uId,activityId,requestId,businessCode,takeId,orderId",
+  "-Jjmeter.save.saveservice.timestamp_format=ms",
+  "-JtargetRpm=12000.0"
+]

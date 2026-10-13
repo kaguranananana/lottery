@@ -2,6 +2,8 @@
 
 后续定向优化、当前字段修复及压测驱动数据耗尽修复见 [优化报告](optimization-report.md) 和 [本轮证据/复现步骤](results/20261012-optimization/README.md)。本文的首次测量数字和 NULL 字段描述对应原始测试版本，原始结果未覆盖。
 
+2026-10-13 的补偿索引同数据/反向实验及更高持续负载见 [持续容量与扫描证据](results/20261013-capacity-scan/README.md)。新空环境 init 已包含 `20261013_invoice_compensation_index.sql`；已有实例保留数据、核实身份后显式执行迁移，不能重新 init。`invoice_scan_compare.py <新目录> --repeats 6` 在应用停止且义务排空后交替比较索引路径，记录实际执行树、计数/状态及换页端点；不把 SQL 局部收益当整体吞吐倍数。
+
 测试启动器只额外装配本机控制面，`POST /api/v1/draw`、活动创建/启动、路由、库存、事务、Kafka、Outbox 和本地模拟发奖均执行仓库的生产实现。未接入真实第三方奖品渠道；XXL handler 由专用线程按一秒固定延迟调用，未验证 admin 调度、HA 或多实例。
 
 ## 压测前只读资源与 SQL 诊断

@@ -1,0 +1,5 @@
+{
+  "purpose": "同维护成本只恢复旧读取路径；不是完全移除索引的旧实现",
+  "indexes": "lottery_01\tuser_strategy_export_000\tidx_invoice_grant_state\tgrant_state\tNO\nlottery_01\tuser_strategy_export_001\tidx_invoice_grant_state\tgrant_state\tNO\nlottery_01\tuser_strategy_export_002\tidx_invoice_grant_state\tgrant_state\tNO\nlottery_01\tuser_strategy_export_003\tidx_invoice_grant_state\tgrant_state\tNO\nlottery_02\tuser_strategy_export_000\tidx_invoice_grant_state\tgrant_state\tNO\nlottery_02\tuser_strategy_export_001\tidx_invoice_grant_state\tgrant_state\tNO\nlottery_02\tuser_strategy_export_002\tidx_invoice_grant_state\tgrant_state\tNO\nlottery_02\tuser_strategy_export_003\tidx_invoice_grant_state\tgrant_state\tNO",
+  "appStopped": true
+}

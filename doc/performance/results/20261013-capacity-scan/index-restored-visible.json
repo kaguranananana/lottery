@@ -1,0 +1,4 @@
+{
+  "indexes": "lottery_01\tuser_strategy_export_000\tidx_invoice_grant_state\tgrant_state\tYES\nlottery_01\tuser_strategy_export_001\tidx_invoice_grant_state\tgrant_state\tYES\nlottery_01\tuser_strategy_export_002\tidx_invoice_grant_state\tgrant_state\tYES\nlottery_01\tuser_strategy_export_003\tidx_invoice_grant_state\tgrant_state\tYES\nlottery_02\tuser_strategy_export_000\tidx_invoice_grant_state\tgrant_state\tYES\nlottery_02\tuser_strategy_export_001\tidx_invoice_grant_state\tgrant_state\tYES\nlottery_02\tuser_strategy_export_002\tidx_invoice_grant_state\tgrant_state\tYES\nlottery_02\tuser_strategy_export_003\tidx_invoice_grant_state\tgrant_state\tYES",
+  "appStopped": true
+}

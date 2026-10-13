@@ -1,0 +1,380 @@
+{
+  "stages": {
+    "ack/lottery_invoice": {
+      "count": 16005,
+      "totalMs": 17521.00068,
+      "meanMs": 1.094720442361762,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "ack/lottery_strategy_award_stock": {
+      "count": 16005,
+      "totalMs": 17653.760831,
+      "meanMs": 1.103015359637613,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/consumer/lottery_invoice/lottery_01/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.markUserAwardGranted": {
+      "count": 7978,
+      "totalMs": 28668.026626,
+      "meanMs": 3.5933851373777888,
+      "errors": 0,
+      "p95BucketUpperMs": 8.192
+    },
+    "sql/consumer/lottery_invoice/lottery_01/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.queryUserStrategyExportByUuid": {
+      "count": 7978,
+      "totalMs": 5875.315514,
+      "meanMs": 0.7364396482827776,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/consumer/lottery_invoice/lottery_01/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.updateInvoiceMqState": {
+      "count": 7978,
+      "totalMs": 27665.665405,
+      "meanMs": 3.467744472925545,
+      "errors": 0,
+      "p95BucketUpperMs": 8.192
+    },
+    "sql/consumer/lottery_invoice/lottery_02/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.markUserAwardGranted": {
+      "count": 8027,
+      "totalMs": 24023.223306,
+      "meanMs": 2.992802205805407,
+      "errors": 0,
+      "p95BucketUpperMs": 8.192
+    },
+    "sql/consumer/lottery_invoice/lottery_02/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.queryUserStrategyExportByUuid": {
+      "count": 8027,
+      "totalMs": 5047.72408,
+      "meanMs": 0.6288431643204186,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/consumer/lottery_invoice/lottery_02/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.updateInvoiceMqState": {
+      "count": 8027,
+      "totalMs": 23282.655122,
+      "meanMs": 2.9005425591129934,
+      "errors": 0,
+      "p95BucketUpperMs": 8.192
+    },
+    "sql/consumer/lottery_strategy_award_stock/lottery/com.anontokyo.lottery.infrastructure.dao.IAwardStockSettlementDao.insert": {
+      "count": 16005,
+      "totalMs": 16462.146796,
+      "meanMs": 1.0285627488909714,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/consumer/lottery_strategy_award_stock/lottery/com.anontokyo.lottery.infrastructure.dao.IStrategyDetailDao.deductStock": {
+      "count": 16005,
+      "totalMs": 19514.576931,
+      "meanMs": 1.2192800331771323,
+      "errors": 0,
+      "p95BucketUpperMs": 4.096
+    },
+    "sql/consumer/lottery_strategy_award_stock/lottery_01/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.queryUserStrategyExportByUuid": {
+      "count": 15956,
+      "totalMs": 10406.381962,
+      "meanMs": 0.6521924017297569,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/consumer/lottery_strategy_award_stock/lottery_01/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.updateStockMqState": {
+      "count": 7978,
+      "totalMs": 26070.495561,
+      "meanMs": 3.2677983906994235,
+      "errors": 0,
+      "p95BucketUpperMs": 8.192
+    },
+    "sql/consumer/lottery_strategy_award_stock/lottery_02/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.queryUserStrategyExportByUuid": {
+      "count": 16054,
+      "totalMs": 10102.667751,
+      "meanMs": 0.6292928709978821,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/consumer/lottery_strategy_award_stock/lottery_02/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.updateStockMqState": {
+      "count": 8027,
+      "totalMs": 25530.722165,
+      "meanMs": 3.1806057262987415,
+      "errors": 0,
+      "p95BucketUpperMs": 8.192
+    },
+    "sql/http/lottery/com.anontokyo.lottery.infrastructure.dao.IActivityDao.queryActivityById": {
+      "count": 3,
+      "totalMs": 3.830707,
+      "meanMs": 1.2769023333333334,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/http/lottery/com.anontokyo.lottery.infrastructure.dao.IAwardDao.queryAwardInfo": {
+      "count": 5,
+      "totalMs": 3.968292,
+      "meanMs": 0.7936584,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/http/lottery/com.anontokyo.lottery.infrastructure.dao.IStrategyDao.queryStrategy": {
+      "count": 1,
+      "totalMs": 0.936458,
+      "meanMs": 0.936458,
+      "errors": 0,
+      "p95BucketUpperMs": 1.024
+    },
+    "sql/http/lottery/com.anontokyo.lottery.infrastructure.dao.IStrategyDetailDao.queryStrategyDetailList": {
+      "count": 1,
+      "totalMs": 1.283042,
+      "meanMs": 1.283042,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/http/lottery_01/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.insert": {
+      "count": 7978,
+      "totalMs": 6068.486924,
+      "meanMs": 0.7606526603158686,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/http/lottery_01/com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityCountDao.queryUserTakeActivityCount": {
+      "count": 7978,
+      "totalMs": 3399.554881,
+      "meanMs": 0.4261161796189521,
+      "errors": 0,
+      "p95BucketUpperMs": 1.024
+    },
+    "sql/http/lottery_01/com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityCountDao.subtractionLeftCount": {
+      "count": 7978,
+      "totalMs": 5674.171125,
+      "meanMs": 0.7112272656054148,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/http/lottery_01/com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityDao.insert": {
+      "count": 7978,
+      "totalMs": 5890.220339,
+      "meanMs": 0.7383078890699423,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/http/lottery_01/com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityDao.lockTakeActivity": {
+      "count": 7978,
+      "totalMs": 6103.692478,
+      "meanMs": 0.7650654898470794,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/http/lottery_01/com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityDao.queryNoConsumedTakeActivityOrder": {
+      "count": 7978,
+      "totalMs": 3656.06236,
+      "meanMs": 0.4582680320882426,
+      "errors": 0,
+      "p95BucketUpperMs": 1.024
+    },
+    "sql/http/lottery_01/com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityDao.queryTakeActivityByRequestId": {
+      "count": 7978,
+      "totalMs": 4197.399065,
+      "meanMs": 0.526121717849085,
+      "errors": 0,
+      "p95BucketUpperMs": 1.024
+    },
+    "sql/http/lottery_02/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.insert": {
+      "count": 8027,
+      "totalMs": 6134.706849,
+      "meanMs": 0.7642589820605457,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/http/lottery_02/com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityCountDao.queryUserTakeActivityCount": {
+      "count": 8027,
+      "totalMs": 3446.38241,
+      "meanMs": 0.42934874922137783,
+      "errors": 0,
+      "p95BucketUpperMs": 1.024
+    },
+    "sql/http/lottery_02/com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityCountDao.subtractionLeftCount": {
+      "count": 8027,
+      "totalMs": 5631.788611,
+      "meanMs": 0.7016056572816743,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/http/lottery_02/com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityDao.insert": {
+      "count": 8027,
+      "totalMs": 5961.353128,
+      "meanMs": 0.7426626545409244,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/http/lottery_02/com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityDao.lockTakeActivity": {
+      "count": 8027,
+      "totalMs": 6168.621598,
+      "meanMs": 0.7684840660271582,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/http/lottery_02/com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityDao.queryNoConsumedTakeActivityOrder": {
+      "count": 8027,
+      "totalMs": 3793.185807,
+      "meanMs": 0.4725533582907686,
+      "errors": 0,
+      "p95BucketUpperMs": 1.024
+    },
+    "sql/http/lottery_02/com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityDao.queryTakeActivityByRequestId": {
+      "count": 8027,
+      "totalMs": 4266.829084,
+      "meanMs": 0.5315596217765043,
+      "errors": 0,
+      "p95BucketUpperMs": 1.024
+    },
+    "sql/job/awardStockSettlementOutboxJobHandler/lottery_01/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.scanAwardStockMqState": {
+      "count": 796,
+      "totalMs": 558.030102,
+      "meanMs": 0.7010428417085427,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/job/awardStockSettlementOutboxJobHandler/lottery_02/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.scanAwardStockMqState": {
+      "count": 796,
+      "totalMs": 571.966795,
+      "meanMs": 0.71855125,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/job/lotteryOrderMQStateJobHandler/lottery_01/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.scanInvoiceMqState": {
+      "count": 796,
+      "totalMs": 566.406801,
+      "meanMs": 0.7115663329145729,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/job/lotteryOrderMQStateJobHandler/lottery_02/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.scanInvoiceMqState": {
+      "count": 796,
+      "totalMs": 551.182456,
+      "meanMs": 0.6924402713567839,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/producer-callback/lottery_01/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.updateInvoiceMqState": {
+      "count": 7978,
+      "totalMs": 8570.951435,
+      "meanMs": 1.0743233185008774,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "sql/producer-callback/lottery_01/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.updateStockMqState": {
+      "count": 7978,
+      "totalMs": 18528.835685,
+      "meanMs": 2.322491311732264,
+      "errors": 0,
+      "p95BucketUpperMs": 8.192
+    },
+    "sql/producer-callback/lottery_02/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.updateInvoiceMqState": {
+      "count": 8027,
+      "totalMs": 11348.792327,
+      "meanMs": 1.413827373489473,
+      "errors": 0,
+      "p95BucketUpperMs": 4.096
+    },
+    "sql/producer-callback/lottery_02/com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao.updateStockMqState": {
+      "count": 8027,
+      "totalMs": 17526.437085,
+      "meanMs": 2.183435540675221,
+      "errors": 0,
+      "p95BucketUpperMs": 8.192
+    },
+    "stage/KafkaProducer.sendLotteryInvoice(..)": {
+      "count": 16005,
+      "totalMs": 495.112394,
+      "meanMs": 0.03093485748203686,
+      "errors": 0,
+      "p95BucketUpperMs": 0.064
+    },
+    "stage/KafkaProducer.sendStrategyAwardStock(..)": {
+      "count": 16005,
+      "totalMs": 220.752619,
+      "meanMs": 0.013792728459856294,
+      "errors": 0,
+      "p95BucketUpperMs": 0.064
+    },
+    "stage/LotteryInvoiceListener.onMessage(..)": {
+      "count": 16005,
+      "totalMs": 150451.520557,
+      "meanMs": 9.400282446547953,
+      "errors": 0,
+      "p95BucketUpperMs": 16.384
+    },
+    "stage/LotteryStrategyAwardStockListener.onMessage(..)": {
+      "count": 16005,
+      "totalMs": 184326.776964,
+      "meanMs": 11.51682455257732,
+      "errors": 0,
+      "p95BucketUpperMs": 32.768
+    },
+    "stage/LotteryXxlJob.awardStockSettlementOutboxJobHandler()": {
+      "count": 199,
+      "totalMs": 8845.681587,
+      "meanMs": 44.45066124120603,
+      "errors": 0,
+      "p95BucketUpperMs": 65.536
+    },
+    "stage/LotteryXxlJob.lotteryOrderMQStateJobHandler()": {
+      "count": 199,
+      "totalMs": 1224.282072,
+      "meanMs": 6.152171216080402,
+      "errors": 0,
+      "p95BucketUpperMs": 16.384
+    },
+    "stage/OrderRepository.saveDrawOrderWithTakeLock(..)": {
+      "count": 16005,
+      "totalMs": 61199.26708,
+      "meanMs": 3.823759267728835,
+      "errors": 0,
+      "p95BucketUpperMs": 8.192
+    },
+    "stage/OrderRepository.scanAwardStockMqStateByShard(..)": {
+      "count": 1592,
+      "totalMs": 1226.504424,
+      "meanMs": 0.7704173517587939,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "stage/OrderRepository.scanInvoiceMqStateByShard(..)": {
+      "count": 1592,
+      "totalMs": 1150.337574,
+      "meanMs": 0.7225738530150754,
+      "errors": 0,
+      "p95BucketUpperMs": 2.048
+    },
+    "stage/StrategyRepository.settleAwardStock(..)": {
+      "count": 16005,
+      "totalMs": 92472.726467,
+      "meanMs": 5.777739860481099,
+      "errors": 0,
+      "p95BucketUpperMs": 16.384
+    },
+    "stage/UserTakeActivityRepository.takeParticipation(..)": {
+      "count": 16005,
+      "totalMs": 68087.769519,
+      "meanMs": 4.25415617113402,
+      "errors": 0,
+      "p95BucketUpperMs": 8.192
+    }
+  },
+  "lockObservations": [
+    {
+      "lock": [
+        "lottery",
+        "strategy_detail",
+        "idx_strategy_id_award_id",
+        "RECORD",
+        "X",
+        "741002, 'p741002_0', 186"
+      ],
+      "observations": 1
+    }
+  ],
+  "hostSwapPagesDelta": {
+    "Swapins": 476,
+    "Swapouts": 0
+  },
+  "hostPageBytes": 16384,
+  "samplingSeconds": 210.273
+}

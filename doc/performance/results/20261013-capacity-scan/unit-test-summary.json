@@ -1,0 +1,57 @@
+{
+  "tests": 35,
+  "failures": 0,
+  "errors": 0,
+  "suites": [
+    {
+      "name": "com.anontokyo.lottery.test.domain.DrawRequestIdempotencyTest",
+      "tests": "7",
+      "errors": "0",
+      "skipped": "0",
+      "failures": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.domain.PartakeRequestOwnershipTest",
+      "tests": "4",
+      "errors": "0",
+      "skipped": "0",
+      "failures": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.infrastructure.lock.RedisActivityDrawProcessGuardTest",
+      "tests": "5",
+      "errors": "0",
+      "skipped": "0",
+      "failures": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.web.DrawHttpOwnershipTest",
+      "tests": "3",
+      "errors": "0",
+      "skipped": "0",
+      "failures": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.domain.WeightedRandomSelectorTest",
+      "tests": "7",
+      "errors": "0",
+      "skipped": "0",
+      "failures": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.mq.MqCallbackStateTest",
+      "tests": "9",
+      "errors": "0",
+      "skipped": "0",
+      "failures": "0"
+    }
+  ],
+  "command": "mvn -q test",
+  "manualIndexTests": {
+    "tests": 2,
+    "failures": 0,
+    "errors": 0
+  },
+  "firstManualCompileError": "SqlSessionTemplate导入包名错误，已修复；原日志保留",
+  "firstComparisonTimingExcluded": "初次查询对照与单元门禁有短暂重叠，读取量可用；耗时使用门禁结束后重新采集的confirm批次"
+}

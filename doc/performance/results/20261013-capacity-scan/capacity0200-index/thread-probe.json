@@ -1,0 +1,7 @@
+{
+  "pid": 19685,
+  "samples": 3,
+  "command": "jcmd <专用PID> Thread.print -l",
+  "timeMs": 1791870427665,
+  "scope": "200RPS已出现超过阈值积压后采集；线程诊断可能带来短暂停顿，不作为优化对照轮"
+}

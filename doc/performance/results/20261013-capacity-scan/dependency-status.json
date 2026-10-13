@@ -1,0 +1,8 @@
+{
+  "java": "openjdk 17.0.18 2026-01-20 LTS\nOpenJDK Runtime Environment Microsoft-13106359 (build 17.0.18+8-LTS)\nOpenJDK 64-Bit Server VM Microsoft-13106359 (build 17.0.18+8-LTS, mixed mode, sharing)",
+  "maven": "Apache Maven 3.9.14 (996c630dbc656c76214ce58821dcc58be960875b)\nMaven home: /opt/homebrew/Cellar/maven/3.9.14/libexec\nJava version: 25.0.2, vendor: Homebrew, runtime: /opt/homebrew/Cellar/openjdk/25.0.2/libexec/openjdk.jdk/Contents/Home\nDefault locale: zh_CN_#Hans, platform encoding: UTF-8\nOS name: \"mac os x\", version: \"26.6.2\", arch: \"aarch64\", family: \"mac\"",
+  "jmeter": "/Users/anontokyo/.cache/lottery-perf/apache-jmeter-5.6.3/bin/jmeter",
+  "baseline": "4b93c95",
+  "stabilityStandard": "doc/performance/stability.md unchanged",
+  "preflightDecision": "仅1 MiB Swap-in，末尾约40秒零换页，允许恢复专用栈；应用就绪后仍需资源验收"
+}

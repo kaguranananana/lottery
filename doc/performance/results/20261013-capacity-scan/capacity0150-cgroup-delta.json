@@ -1,0 +1,28 @@
+{
+  "seconds": 216.388,
+  "counts": {
+    "mysql": {
+      "usage_usec": 161670605,
+      "user_usec": 106938330,
+      "system_usec": 54732275,
+      "nice_usec": 0,
+      "nr_periods": 2141,
+      "nr_throttled": 15,
+      "throttled_usec": 949266,
+      "nr_bursts": 0,
+      "burst_usec": 0
+    },
+    "kafka": {
+      "usage_usec": 162709912,
+      "user_usec": 124276138,
+      "system_usec": 38433773,
+      "nice_usec": 0,
+      "nr_periods": 2142,
+      "nr_throttled": 49,
+      "throttled_usec": 1102667,
+      "nr_bursts": 0,
+      "burst_usec": 0
+    }
+  },
+  "scope": "包含fixture准备/预热/测量/审计；累计节流耗时不换算为业务墙钟比例"
+}
