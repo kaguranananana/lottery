@@ -1,0 +1,192 @@
+{
+  "seconds": 183.799,
+  "scope": "late180 workload plus drain/audit and subsequent idle; not full measurement window",
+  "containers": {
+    "mysql": {
+      "cpuDelta": {
+        "usage_usec": 122735483,
+        "user_usec": 86004093,
+        "system_usec": 36731390,
+        "nice_usec": 0,
+        "nr_periods": 1677,
+        "nr_throttled": 32,
+        "throttled_usec": 1886655,
+        "nr_bursts": 0,
+        "burst_usec": 0
+      },
+      "memoryEventsDelta": {
+        "low": 0,
+        "high": 0,
+        "max": 1508,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "quota": "200000 100000",
+      "cpuPercentOfOneCore": 66.77701347667833
+    },
+    "kafka": {
+      "cpuDelta": {
+        "usage_usec": 136015924,
+        "user_usec": 107599090,
+        "system_usec": 28416835,
+        "nice_usec": 0,
+        "nr_periods": 1830,
+        "nr_throttled": 26,
+        "throttled_usec": 587567,
+        "nr_bursts": 0,
+        "burst_usec": 0
+      },
+      "memoryEventsDelta": {
+        "low": 0,
+        "high": 0,
+        "max": 234,
+        "oom": 0,
+        "oom_kill": 0,
+        "oom_group_kill": 0
+      },
+      "quota": "200000 100000",
+      "cpuPercentOfOneCore": 74.00253755461128
+    }
+  },
+  "fileIoColumns": [
+    "readCount",
+    "writeCount",
+    "miscCount",
+    "readSeconds",
+    "writeSeconds",
+    "miscSeconds",
+    "readBytes",
+    "writeBytes"
+  ],
+  "fileIoDelta": {
+    "wait/io/file/sql/binlog": {
+      "readCount": 0.0,
+      "writeCount": 47118.0,
+      "miscCount": 45204.0,
+      "readSeconds": 0.0,
+      "writeSeconds": 2.3607000000000014,
+      "miscSeconds": 94.8406,
+      "readBytes": 0.0,
+      "writeBytes": 90787074.0
+    },
+    "wait/io/file/sql/binlog_cache": {
+      "readCount": 0.0,
+      "writeCount": 0.0,
+      "miscCount": 0.0,
+      "readSeconds": 0.0,
+      "writeSeconds": 0.0,
+      "miscSeconds": 0.0,
+      "readBytes": 0.0,
+      "writeBytes": 0.0
+    },
+    "wait/io/file/sql/binlog_index": {
+      "readCount": 0.0,
+      "writeCount": 0.0,
+      "miscCount": 0.0,
+      "readSeconds": 0.0,
+      "writeSeconds": 0.0,
+      "miscSeconds": 0.0,
+      "readBytes": 0.0,
+      "writeBytes": 0.0
+    },
+    "wait/io/file/sql/binlog_index_cache": {
+      "readCount": 0.0,
+      "writeCount": 0.0,
+      "miscCount": 0.0,
+      "readSeconds": 0.0,
+      "writeSeconds": 0.0,
+      "miscSeconds": 0.0,
+      "readBytes": 0.0,
+      "writeBytes": 0.0
+    },
+    "wait/io/file/innodb/innodb_dblwr_file": {
+      "readCount": 0.0,
+      "writeCount": 4752.0,
+      "miscCount": 4752.0,
+      "readSeconds": 0.0,
+      "writeSeconds": 0.46099999999999985,
+      "miscSeconds": 16.790700000000015,
+      "readBytes": 0.0,
+      "writeBytes": 294174720.0
+    },
+    "wait/io/file/innodb/innodb_tablespace_open_file": {
+      "readCount": 0.0,
+      "writeCount": 0.0,
+      "miscCount": 0.0,
+      "readSeconds": 0.0,
+      "writeSeconds": 0.0,
+      "miscSeconds": 0.0,
+      "readBytes": 0.0,
+      "writeBytes": 0.0
+    },
+    "wait/io/file/innodb/innodb_data_file": {
+      "readCount": 200016.0,
+      "writeCount": 17983.0,
+      "miscCount": 10058.0,
+      "readSeconds": 2.929500000000001,
+      "writeSeconds": 0.605900000000001,
+      "miscSeconds": 21.947799999999972,
+      "readBytes": 3277062144.0,
+      "writeBytes": 323534848.0
+    },
+    "wait/io/file/innodb/innodb_log_file": {
+      "readCount": 0.0,
+      "writeCount": 151479.0,
+      "miscCount": 70024.0,
+      "readSeconds": 0.0,
+      "writeSeconds": 8.2481,
+      "miscSeconds": 115.82220000000007,
+      "readBytes": 0.0,
+      "writeBytes": 257838592.0
+    },
+    "wait/io/file/innodb/innodb_temp_file": {
+      "readCount": 0.0,
+      "writeCount": 0.0,
+      "miscCount": 0.0,
+      "readSeconds": 0.0,
+      "writeSeconds": 0.0,
+      "miscSeconds": 0.0,
+      "readBytes": 0.0,
+      "writeBytes": 0.0
+    },
+    "wait/io/file/innodb/innodb_arch_file": {
+      "readCount": 0.0,
+      "writeCount": 0.0,
+      "miscCount": 0.0,
+      "readSeconds": 0.0,
+      "writeSeconds": 0.0,
+      "miscSeconds": 0.0,
+      "readBytes": 0.0,
+      "writeBytes": 0.0
+    },
+    "wait/io/file/innodb/innodb_clone_file": {
+      "readCount": 0.0,
+      "writeCount": 0.0,
+      "miscCount": 0.0,
+      "readSeconds": 0.0,
+      "writeSeconds": 0.0,
+      "miscSeconds": 0.0,
+      "readBytes": 0.0,
+      "writeBytes": 0.0
+    },
+    "wait/io/file/innodb/meb::redo_log_archive_file": {
+      "readCount": 0.0,
+      "writeCount": 0.0,
+      "miscCount": 0.0,
+      "readSeconds": 0.0,
+      "writeSeconds": 0.0,
+      "miscSeconds": 0.0,
+      "readBytes": 0.0,
+      "writeBytes": 0.0
+    }
+  },
+  "logStatusDelta": {
+    "Innodb_data_fsyncs": 84364,
+    "Innodb_log_waits": 0,
+    "Innodb_log_writes": 151199,
+    "Innodb_os_log_written": 164263424,
+    "Innodb_row_lock_time": 25483,
+    "Innodb_row_lock_waits": 3617
+  }
+}

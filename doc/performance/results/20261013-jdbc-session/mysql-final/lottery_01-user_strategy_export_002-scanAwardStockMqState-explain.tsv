@@ -1,0 +1,1 @@
+1	SIMPLE	user_strategy_export_002	NULL	range	idx_stock_mq_state_create_time	idx_stock_mq_state_create_time	1	NULL	3	100.00	Using index condition; Using where; Using filesort

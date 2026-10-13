@@ -1,0 +1,46 @@
+[
+  {
+    "round": "jdbcstate200-before",
+    "connectorVersion": "8.0.29",
+    "useLocalSessionState": false,
+    "pools": [
+      {
+        "name": "HikariPool-1",
+        "url": "jdbc:mysql://127.0.0.1:13329/lottery_01?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useLocalSessionState=false",
+        "maximumPoolSize": 48
+      },
+      {
+        "name": "HikariPool-2",
+        "url": "jdbc:mysql://127.0.0.1:13329/lottery_02?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useLocalSessionState=false",
+        "maximumPoolSize": 48
+      },
+      {
+        "name": "HikariPool-3",
+        "url": "jdbc:mysql://127.0.0.1:13329/lottery?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useLocalSessionState=false",
+        "maximumPoolSize": 48
+      }
+    ]
+  },
+  {
+    "round": "jdbcstate200-after",
+    "connectorVersion": "8.0.29",
+    "useLocalSessionState": true,
+    "pools": [
+      {
+        "name": "HikariPool-1",
+        "url": "jdbc:mysql://127.0.0.1:13329/lottery_01?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true",
+        "maximumPoolSize": 48
+      },
+      {
+        "name": "HikariPool-2",
+        "url": "jdbc:mysql://127.0.0.1:13329/lottery_02?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true",
+        "maximumPoolSize": 48
+      },
+      {
+        "name": "HikariPool-3",
+        "url": "jdbc:mysql://127.0.0.1:13329/lottery?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true",
+        "maximumPoolSize": 48
+      }
+    ]
+  }
+]

@@ -128,17 +128,20 @@ mini-db-router:
           max-lifetime: 1800000
       db00:
         driver-class-name: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://127.0.0.1:13306/lottery?useUnicode=true&serverTimezone=Asia/Shanghai
+        # 全局库会话由 JDBC 管理，缓存只读/自动提交状态，减少每条 SQL 的重复状态查询。
+        url: jdbc:mysql://127.0.0.1:13306/lottery?useUnicode=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true
         username: root
         password: root
       db01:
         driver-class-name: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://127.0.0.1:13306/lottery_01?useUnicode=true&serverTimezone=Asia/Shanghai
+        # 用户分库一同样使用 JDBC 会话缓存，事务提交和消息 CAS 仍真实执行。
+        url: jdbc:mysql://127.0.0.1:13306/lottery_01?useUnicode=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true
         username: root
         password: root
       db02:
         driver-class-name: com.mysql.cj.jdbc.Driver
-        url: jdbc:mysql://127.0.0.1:13306/lottery_02?useUnicode=true&serverTimezone=Asia/Shanghai
+        # 用户分库二保持相同驱动参数，禁止用 SQL 直接 SET 会话状态绕过缓存。
+        url: jdbc:mysql://127.0.0.1:13306/lottery_02?useUnicode=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true
         username: root
         password: root
 

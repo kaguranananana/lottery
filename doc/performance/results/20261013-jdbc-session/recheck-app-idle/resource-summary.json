@@ -1,0 +1,39 @@
+{
+  "samplingSeconds": 30.011,
+  "sampleCount": 7,
+  "intervals": [
+    {
+      "seconds": 5.063,
+      "swapInMiB": 0.0,
+      "swapOutMiB": 0.0
+    },
+    {
+      "seconds": 5.038,
+      "swapInMiB": 0.0,
+      "swapOutMiB": 0.0
+    },
+    {
+      "seconds": 5.064,
+      "swapInMiB": 0.0,
+      "swapOutMiB": 0.0
+    },
+    {
+      "seconds": 5.04,
+      "swapInMiB": 0.0,
+      "swapOutMiB": 0.0
+    },
+    {
+      "seconds": 5.064,
+      "swapInMiB": 0.0,
+      "swapOutMiB": 0.0
+    },
+    {
+      "seconds": 4.742,
+      "swapInMiB": 0.0,
+      "swapOutMiB": 0.0
+    }
+  ],
+  "swapInMiB": 0.0,
+  "swapOutMiB": 0.0,
+  "observationOnly": true
+}

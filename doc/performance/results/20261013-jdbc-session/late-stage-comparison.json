@@ -1,0 +1,146 @@
+{
+  "scope": "completed-stage cumulative deltas inside first/last60 windows; in-flight calls may cross boundaries; stages overlap and are not CPU",
+  "rounds": [
+    {
+      "round": "jdbcstate200-confirm",
+      "phases": [
+        {
+          "phase": "first60",
+          "observedSeconds": 57.021,
+          "stages": {
+            "sql/producer-callback/": {
+              "count": 22794,
+              "totalMs": 41074.79411,
+              "meanMs": 1.8020002680529965
+            },
+            "stage/LotteryStrategyAwardStockListener.onMessage": {
+              "count": 11377,
+              "totalMs": 142143.170949,
+              "meanMs": 12.493906209809264
+            },
+            "stage/LotteryInvoiceListener.onMessage": {
+              "count": 11397,
+              "totalMs": 116459.080792,
+              "meanMs": 10.21839789348074
+            }
+          }
+        },
+        {
+          "phase": "last60",
+          "observedSeconds": 57.363,
+          "stages": {
+            "sql/producer-callback/": {
+              "count": 20997,
+              "totalMs": 49660.245667,
+              "meanMs": 2.3651114762585133
+            },
+            "stage/LotteryStrategyAwardStockListener.onMessage": {
+              "count": 10826,
+              "totalMs": 183474.730784,
+              "meanMs": 16.94760121780898
+            },
+            "stage/LotteryInvoiceListener.onMessage": {
+              "count": 10317,
+              "totalMs": 152530.197887,
+              "meanMs": 14.784355712610253
+            }
+          }
+        }
+      ]
+    },
+    {
+      "round": "jdbcstate180-confirm",
+      "phases": [
+        {
+          "phase": "first60",
+          "observedSeconds": 57.034,
+          "stages": {
+            "sql/producer-callback/": {
+              "count": 20507,
+              "totalMs": 30898.992396,
+              "meanMs": 1.506753420588092
+            },
+            "stage/LotteryStrategyAwardStockListener.onMessage": {
+              "count": 10251,
+              "totalMs": 106660.714232,
+              "meanMs": 10.404908226709589
+            },
+            "stage/LotteryInvoiceListener.onMessage": {
+              "count": 10250,
+              "totalMs": 89412.490307,
+              "meanMs": 8.72316978604878
+            }
+          }
+        },
+        {
+          "phase": "last60",
+          "observedSeconds": 57.028,
+          "stages": {
+            "sql/producer-callback/": {
+              "count": 18126,
+              "totalMs": 50628.678113,
+              "meanMs": 2.7931522736952443
+            },
+            "stage/LotteryStrategyAwardStockListener.onMessage": {
+              "count": 9094,
+              "totalMs": 223503.686162,
+              "meanMs": 24.577049281064436
+            },
+            "stage/LotteryInvoiceListener.onMessage": {
+              "count": 9095,
+              "totalMs": 195998.693161,
+              "meanMs": 21.550158676305664
+            }
+          }
+        }
+      ]
+    },
+    {
+      "round": "jdbcstate150-confirm",
+      "phases": [
+        {
+          "phase": "first60",
+          "observedSeconds": 57.027,
+          "stages": {
+            "sql/producer-callback/": {
+              "count": 17104,
+              "totalMs": 23906.127602,
+              "meanMs": 1.3976922124649205
+            },
+            "stage/LotteryStrategyAwardStockListener.onMessage": {
+              "count": 8552,
+              "totalMs": 85813.569432,
+              "meanMs": 10.034327576239477
+            },
+            "stage/LotteryInvoiceListener.onMessage": {
+              "count": 8552,
+              "totalMs": 69794.955667,
+              "meanMs": 8.161243646749298
+            }
+          }
+        },
+        {
+          "phase": "last60",
+          "observedSeconds": 57.127,
+          "stages": {
+            "sql/producer-callback/": {
+              "count": 16812,
+              "totalMs": 51779.770523,
+              "meanMs": 3.079929248334523
+            },
+            "stage/LotteryStrategyAwardStockListener.onMessage": {
+              "count": 8443,
+              "totalMs": 185269.089031,
+              "meanMs": 21.943514038967194
+            },
+            "stage/LotteryInvoiceListener.onMessage": {
+              "count": 8416,
+              "totalMs": 154811.667891,
+              "meanMs": 18.39492251556559
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

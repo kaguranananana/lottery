@@ -1,0 +1,26 @@
+{
+  "seconds": 5.86107325553894,
+  "samples": [
+    {
+      "time": 1791874740017,
+      "orders": 44958,
+      "stockPending": 663,
+      "grantPending": 1345,
+      "blocked": 0
+    },
+    {
+      "time": 1791874742513,
+      "orders": 44958,
+      "stockPending": 9,
+      "grantPending": 784,
+      "blocked": 0
+    },
+    {
+      "time": 1791874744832,
+      "orders": 44958,
+      "stockPending": 0,
+      "grantPending": 0,
+      "blocked": 0
+    }
+  ]
+}

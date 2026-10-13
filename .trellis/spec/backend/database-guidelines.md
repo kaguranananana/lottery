@@ -46,7 +46,7 @@ StrategyDetailVO、StrategyDetail PO 与 StrategyDetailBriefVO 的 awardCount �
 
 1. **范围**：改动 Connector/J 版本、会话缓存或事务连接状态时阅读。实际 8.0.28 的 `useLocalSessionState=true` 在新 Hikari 连接上漏发关闭自动提交，Spring 回滚后行仍存在；只读计数通过不能替代事务门禁。
 2. **签名**：根 Maven 使用 mysql:mysql-connector-java:8.0.29，这是官方 #106435 的首个修复版本。`JdbcLocalSessionStateManualIT` 通过 `-Dlottery.perf.mysql=jdbc:mysql://127.0.0.1:13329/` 运行，只建立自有 schema。
-3. **契约**：会话状态经 JDBC `setAutoCommit/setReadOnly/setTransactionIsolation` 管理，Hikari 归还时重置；禁止直接 SQL SET 绕过本地状态。启用缓存须至少使用已回归的驱动版本，保留 readOnlyPropagatesToServer、useLocalTransactionState 默认值及数据库持久化1/1。业务事务仍真实 commit/rollback。
+3. **契约**：业务 `application.yml` 和性能覆盖 `application-perf.yml` 的三条连接均使用 `useLocalSessionState=true`，须同时核对实际池 URL，避免覆盖文件使实验失效。会话状态经 JDBC `setAutoCommit/setReadOnly/setTransactionIsolation` 管理，Hikari 归还时重置；禁止直接 SQL SET 绕过本地状态。启用缓存须至少使用已回归的驱动版本，保留 readOnlyPropagatesToServer、useLocalTransactionState 默认值及数据库持久化1/1。业务事务仍真实 commit/rollback。
 4. **异常**：真实事务回归不通过时不得启用性能参数；SQL/驱动错误显式传播。诊断仅在专用实例且应用停止时短暂启用 General Log，保存原值并恢复，不将其开销混入压测。
 5. **场景**：新池第一次直接进入 Spring 事务也必须发送 SET autocommit=0；归还未提交连接须回滚并恢复默认状态；缓存只读检查不增加服务器 SELECT，但 JDBC 只读设置仍反映到数据库。
 6. **断言**：false/true 两模式同测试验证十次 isReadOnly 的服务器查询计数、同一物理连接的只读/自动提交/隔离级别重置，以及 Spring 真提交/真回滚。8.0.28 的失败与服务器线缆日志保留，8.0.29 原断言通过；版本和开关的性能对照分别测试。

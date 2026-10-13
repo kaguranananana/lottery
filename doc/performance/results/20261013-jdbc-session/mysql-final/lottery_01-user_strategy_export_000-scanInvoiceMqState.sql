@@ -1,0 +1,1 @@
+SELECT u_id, order_id, take_id, award_id, award_type, award_name, award_content, grant_type, grant_date FROM lottery_01.user_strategy_export_000 WHERE stock_mq_state = 1 AND grant_state != 1 AND (mq_state = 2 OR (mq_state = 0 AND create_time < DATE_SUB(NOW(), INTERVAL 30 MINUTE)) OR (mq_state IN (1, 3) AND update_time < DATE_SUB(NOW(), INTERVAL 10 MINUTE))) LIMIT 100;

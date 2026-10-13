@@ -1,0 +1,21 @@
+[
+  "/Users/anontokyo/.cache/lottery-perf/apache-jmeter-5.6.3/bin/jmeter",
+  "-n",
+  "-t",
+  "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/doc/performance/paced.jmx",
+  "-l",
+  "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/doc/performance/results/20261013-jdbc-session/jdbcstate225-probe/samples.jtl",
+  "-j",
+  "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/doc/performance/results/20261013-jdbc-session/jdbcstate225-probe/jmeter.log",
+  "-Jthreads=30",
+  "-Jduration=200",
+  "-Jramp=5",
+  "-Jactivity=742225",
+  "-Jprefix=jdbcstate225_",
+  "-Jusers=100000",
+  "-Jrun=jdbcstate225-probe",
+  "-Jfinite=false",
+  "-Jsample_variables=uId,activityId,requestId,businessCode,takeId,orderId",
+  "-Jjmeter.save.saveservice.timestamp_format=ms",
+  "-JtargetRpm=13500.0"
+]

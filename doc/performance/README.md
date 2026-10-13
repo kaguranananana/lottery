@@ -4,6 +4,8 @@
 
 2026-10-13 的补偿索引同数据/反向实验及更高持续负载见 [持续容量与扫描证据](results/20261013-capacity-scan/README.md)。新空环境 init 已包含 `20261013_invoice_compensation_index.sql`；已有实例保留数据、核实身份后显式执行迁移，不能重新 init。`invoice_scan_compare.py <新目录> --repeats 6` 在应用停止且义务排空后交替比较索引路径，记录实际执行树、计数/状态及换页端点；不把 SQL 局部收益当整体吞吐倍数。
 
+后续会话缓存对照、驱动事务回归修复及持续容量边界见 [JDBC 与容量复核](results/20261013-jdbc-session/README.md)。三个业务库 URL 使用 `useLocalSessionState=true`；Connector/J 已修复至8.0.29，会话状态须经 JDBC API 管理。不要仅复制参数到旧8.0.28驱动；真实回滚失败及最小修复见 [驱动修复记录](results/20261013-jdbc-session/driver-fix.md)。
+
 测试启动器只额外装配本机控制面，`POST /api/v1/draw`、活动创建/启动、路由、库存、事务、Kafka、Outbox 和本地模拟发奖均执行仓库的生产实现。未接入真实第三方奖品渠道；XXL handler 由专用线程按一秒固定延迟调用，未验证 admin 调度、HA 或多实例。
 
 ## 压测前只读资源与 SQL 诊断

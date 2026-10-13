@@ -47,7 +47,8 @@ public class PerformanceSqlManualIT {
             s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".strategy_detail LIKE lottery.strategy_detail");
             s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".award_stock_settlement LIKE lottery.award_stock_settlement");
         }
-        datasource = new DriverManagerDataSource(url + SCHEMA + "?useSSL=false&allowPublicKeyRetrieval=true", "root", "perf-only");
+        // 事务仓储回归使用当前生产连接参数，验证会话缓存下的次数、账本及库存原子性。
+        datasource = new DriverManagerDataSource(url + SCHEMA + "?useSSL=false&allowPublicKeyRetrieval=true&useLocalSessionState=true", "root", "perf-only");
         SqlSessionFactoryBean factory = new SqlSessionFactoryBean();
         factory.setDataSource(datasource);
         factory.setTypeAliasesPackage("com.anontokyo.lottery.infrastructure.po");

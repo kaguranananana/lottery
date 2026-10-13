@@ -1,0 +1,26 @@
+{
+  "archives": [
+    {
+      "session": "20261013-capacity-scan",
+      "archive": "raw-results-20261013-capacity-scan.zip",
+      "fileCount": 928,
+      "originalBytes": 192416563,
+      "archiveBytes": 23080520,
+      "fileNamesAndSizesMatched": true,
+      "uncompressedSourceRetained": true,
+      "createdMs": 1791902100501
+    },
+    {
+      "session": "20261013-jdbc-session",
+      "archive": "raw-results-20261013-jdbc-session.zip",
+      "fileCount": 458,
+      "originalBytes": 572636043,
+      "archiveBytes": 64157740,
+      "fileNamesAndSizesMatched": true,
+      "uncompressedSourceRetained": true,
+      "createdMs": 1791902103437
+    }
+  ],
+  "historicalArchivesOverwritten": false,
+  "rawArchivesCommitted": false
+}

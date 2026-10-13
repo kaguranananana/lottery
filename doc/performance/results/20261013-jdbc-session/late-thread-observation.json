@@ -1,0 +1,22 @@
+{
+  "round": "jdbcstate180-confirm",
+  "probeScope": "after backlog failure, HTTP end and drain; postload snapshot only",
+  "commandWallSeconds": 0.169205125,
+  "producerThread": [
+    "\"kafka-producer-network-thread | producer-1\" #81 daemon prio=5 os_prio=31 cpu=70912.01ms elapsed=2859.57s tid=0x00000007f65ad800 nid=0x10103 runnable  [0x000000017665e000]",
+    "   java.lang.Thread.State: RUNNABLE",
+    "\tat sun.nio.ch.KQueue.poll(java.base@17.0.18/Native Method)",
+    "\tat sun.nio.ch.KQueueSelectorImpl.doSelect(java.base@17.0.18/KQueueSelectorImpl.java:122)",
+    "\tat sun.nio.ch.SelectorImpl.lockAndDoSelect(java.base@17.0.18/SelectorImpl.java:129)",
+    "\t- locked <0x00000003175fb530> (a sun.nio.ch.Util$2)",
+    "\t- locked <0x00000003175fa1b8> (a sun.nio.ch.KQueueSelectorImpl)",
+    "\tat sun.nio.ch.SelectorImpl.select(java.base@17.0.18/SelectorImpl.java:141)",
+    "\tat org.apache.kafka.common.network.Selector.select(Selector.java:873)",
+    "\tat org.apache.kafka.common.network.Selector.poll(Selector.java:469)",
+    "\tat org.apache.kafka.clients.NetworkClient.poll(NetworkClient.java:550)",
+    "\tat org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:324)",
+    "\tat org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:239)",
+    "\tat java.lang.Thread.run(java.base@17.0.18/Thread.java:840)"
+  ],
+  "interpretation": "此快照在排空后处于Kafka网络poll，不能证明高负载期间没有MySQL回调等待；旧驱动三份等待现场和新驱动累计回调计时分别报告。"
+}

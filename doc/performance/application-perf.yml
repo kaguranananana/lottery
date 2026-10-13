@@ -23,13 +23,16 @@ mini-db-router:
   jdbc:
     datasource:
       db00:
-        url: jdbc:mysql://127.0.0.1:13329/lottery?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+        # 覆盖专用端口时保留同一会话缓存参数，才能测试当前业务连接配置。
+        url: jdbc:mysql://127.0.0.1:13329/lottery?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true
         password: perf-only
       db01:
-        url: jdbc:mysql://127.0.0.1:13329/lottery_01?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+        # 分库一仅新增会话缓存，池大小与数据库持久化参数不变。
+        url: jdbc:mysql://127.0.0.1:13329/lottery_01?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true
         password: perf-only
       db02:
-        url: jdbc:mysql://127.0.0.1:13329/lottery_02?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+        # 分库二保持同一变量，反向实验显式改回 false 后须恢复 true。
+        url: jdbc:mysql://127.0.0.1:13329/lottery_02?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true
         password: perf-only
 xxl:
   job:

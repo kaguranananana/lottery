@@ -1,0 +1,31 @@
+{
+  "audit": "PASS",
+  "stockMessages": 2,
+  "invoiceMessages": 2,
+  "orderId": 2109916947553595392,
+  "activityId": 742900,
+  "beforeLag": {
+    "lottery-perf-stock": [
+      963261,
+      0,
+      8
+    ],
+    "lottery-perf-invoice": [
+      961762,
+      0,
+      8
+    ]
+  },
+  "afterLag": {
+    "lottery-perf-stock": [
+      963263,
+      0,
+      8
+    ],
+    "lottery-perf-invoice": [
+      961764,
+      0,
+      8
+    ]
+  }
+}

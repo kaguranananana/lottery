@@ -1,0 +1,114 @@
+{
+  "driver": "8.0.29",
+  "timingScope": "whole round including warmup and drain; not CPU time",
+  "rounds": [
+    {
+      "name": "jdbcstate200-before",
+      "ordersTotal": 39967,
+      "readOnlySelects": 437907,
+      "explicitCommits": 119742,
+      "producerCallbackSqlTotalMs": 169151.41692400002,
+      "outboxMeanMs": 128.80723231182796,
+      "mysqlCpuMean": 124.62966666666667,
+      "swapInMiB": 0.125,
+      "swapOutMiB": 0.0,
+      "stable": true
+    },
+    {
+      "name": "jdbcstate200-after",
+      "ordersTotal": 39971,
+      "readOnlySelects": 0,
+      "explicitCommits": 119699,
+      "producerCallbackSqlTotalMs": 148230.48108,
+      "outboxMeanMs": 134.9668293027027,
+      "mysqlCpuMean": 101.62583333333333,
+      "swapInMiB": 1.296875,
+      "swapOutMiB": 0.0,
+      "stable": true
+    },
+    {
+      "name": "jdbcstate250-probe",
+      "ordersTotal": 49950,
+      "readOnlySelects": 0,
+      "explicitCommits": 149201,
+      "producerCallbackSqlTotalMs": 225864.64404699998,
+      "outboxMeanMs": 503.6975646179775,
+      "mysqlCpuMean": 124.7225,
+      "swapInMiB": 8.3125,
+      "swapOutMiB": 0.0,
+      "stable": false
+    },
+    {
+      "name": "jdbcstate225-probe",
+      "ordersTotal": 44958,
+      "readOnlySelects": 0,
+      "explicitCommits": 134557,
+      "producerCallbackSqlTotalMs": 172164.417112,
+      "outboxMeanMs": 225.59197503428572,
+      "mysqlCpuMean": 152.65933333333334,
+      "swapInMiB": 3.1875,
+      "swapOutMiB": 0.0,
+      "stable": false
+    },
+    {
+      "name": "jdbcstate200-confirm",
+      "ordersTotal": 63921,
+      "readOnlySelects": 0,
+      "explicitCommits": 191356,
+      "producerCallbackSqlTotalMs": 258546.614581,
+      "outboxMeanMs": 162.40226642560555,
+      "mysqlCpuMean": 119.383,
+      "swapInMiB": 0.625,
+      "swapOutMiB": 0.0,
+      "stable": false
+    },
+    {
+      "name": "jdbcstate180-confirm",
+      "ordersTotal": 57575,
+      "readOnlySelects": 0,
+      "explicitCommits": 172261,
+      "producerCallbackSqlTotalMs": 248775.757705,
+      "outboxMeanMs": 310.5541576654275,
+      "mysqlCpuMean": 94.0216,
+      "swapInMiB": 0.125,
+      "swapOutMiB": 0.0,
+      "stable": false
+    },
+    {
+      "name": "jdbcstate150-confirm",
+      "ordersTotal": 47983,
+      "readOnlySelects": 0,
+      "explicitCommits": 143629,
+      "producerCallbackSqlTotalMs": 215772.549423,
+      "outboxMeanMs": 103.62311699003322,
+      "mysqlCpuMean": 70.0091,
+      "swapInMiB": 0.5,
+      "swapOutMiB": 0.0,
+      "stable": false
+    },
+    {
+      "name": "jdbcstate150-repeat",
+      "ordersTotal": 47983,
+      "readOnlySelects": 0,
+      "explicitCommits": 143859,
+      "producerCallbackSqlTotalMs": 128462.18390999999,
+      "outboxMeanMs": 79.1330410131579,
+      "mysqlCpuMean": 48.3994,
+      "swapInMiB": 0.1875,
+      "swapOutMiB": 0.0,
+      "stable": true
+    },
+    {
+      "name": "jdbcstate150-repeat2",
+      "ordersTotal": 47986,
+      "readOnlySelects": 0,
+      "explicitCommits": 143791,
+      "producerCallbackSqlTotalMs": 176347.90406899998,
+      "outboxMeanMs": 77.05838299673202,
+      "mysqlCpuMean": 50.6217,
+      "swapInMiB": 0.375,
+      "swapOutMiB": 0.0,
+      "stable": true
+    }
+  ]
+}

@@ -1,0 +1,18 @@
+{
+  "timeMs": 1791875917870,
+  "scope": "late180 workload plus drain/audit and subsequent idle; not full measurement window",
+  "containers": {
+    "mysql": {
+      "cpu.stat": "usage_usec 2668553720\nuser_usec 1906250185\nsystem_usec 762303534\nnice_usec 0\nnr_periods 64957\nnr_throttled 1021\nthrottled_usec 29039367\nnr_bursts 0\nburst_usec 0\n",
+      "cpu.max": "200000 100000\n",
+      "memory.events": "low 0\nhigh 0\nmax 11173\noom 0\noom_kill 0\noom_group_kill 0\n"
+    },
+    "kafka": {
+      "cpu.stat": "usage_usec 4992385306\nuser_usec 4181128241\nsystem_usec 811257065\nnice_usec 0\nnr_periods 76429\nnr_throttled 1209\nthrottled_usec 40734553\nnr_bursts 0\nburst_usec 0\n",
+      "cpu.max": "200000 100000\n",
+      "memory.events": "low 0\nhigh 0\nmax 1288\noom 0\noom_kill 0\noom_group_kill 0\n"
+    }
+  },
+  "fileIo": "wait/io/file/sql/binlog\t25299\t1621535\t1599646\t0.3564\t28.9422\t1449.6499\t207235332\t2130584091\nwait/io/file/sql/binlog_cache\t0\t0\t0\t0.0000\t0.0000\t0.0000\t0\t0\nwait/io/file/sql/binlog_index\t8\t0\t33\t0.0002\t0.0000\t0.0009\t656\t0\nwait/io/file/sql/binlog_index_cache\t0\t0\t0\t0.0000\t0.0000\t0.0000\t0\t0\nwait/io/file/innodb/innodb_dblwr_file\t2\t97974\t97978\t0.0078\t3.8207\t130.3607\t8781824\t6168133632\nwait/io/file/innodb/innodb_tablespace_open_file\t0\t0\t0\t0.0000\t0.0000\t0.0000\t0\t0\nwait/io/file/innodb/innodb_data_file\t1483922\t377691\t207689\t21.5999\t8.4844\t182.2650\t24312774656\t6805684224\nwait/io/file/innodb/innodb_log_file\t6\t5483794\t2470043\t0.0006\t57.7320\t1720.0594\t68096\t6967789568\nwait/io/file/innodb/innodb_temp_file\t3649\t5291\t218\t0.0300\t0.0651\t0.0606\t71700480\t98504704\nwait/io/file/innodb/innodb_arch_file\t0\t0\t0\t0.0000\t0.0000\t0.0000\t0\t0\nwait/io/file/innodb/innodb_clone_file\t0\t0\t0\t0.0000\t0.0000\t0.0000\t0\t0\nwait/io/file/innodb/meb::redo_log_archive_file\t0\t0\t0\t0.0000\t0.0000\t0.0000\t0\t0\n",
+  "logStatus": "Innodb_data_fsyncs\t2765420\nInnodb_log_waits\t0\nInnodb_log_writes\t5479598\nInnodb_os_log_written\t4691751424\nInnodb_row_lock_time\t185970\nInnodb_row_lock_waits\t79904\n"
+}

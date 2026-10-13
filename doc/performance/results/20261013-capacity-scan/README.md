@@ -1,6 +1,6 @@
 # 2026-10-13 持续容量探索与补偿索引证据
 
-源码基线4b93c95，保留原lottery-perf四容器及历史数据，原五背景容器始终停止。原稳定标准、持久化1/1、128MiB buffer pool、堆/池/消费并发/调度均未调整。本目录完整原始采样本地保留；本轮尚有后续驱动诊断，不能把180秒候选称为已完成300秒最高容量确认。
+源码基线4b93c95，保留原lottery-perf四容器及历史数据，原五背景容器始终停止。原稳定标准、持久化1/1、128MiB buffer pool、堆/池/消费并发/调度均未调整。本目录保留索引阶段180秒结果，不能将其改写为300秒确认；后续驱动修复、参数对照、150RPS两次300秒通过及全部长测失败见[JDBC阶段最终记录](../20261013-jdbc-session/README.md)。原始采样本地保留。
 
 ## 实际负载结果
 
@@ -55,3 +55,5 @@ python3 doc/performance/invoice_scan_compare.py doc/performance/results/new-repe
 ```
 
 反向实验只在已排空且应用停止时将八表新增索引ALTER INDEX INVISIBLE，之后必须恢复VISIBLE并核实八表。idx、唯一约束和业务行不删除。原始SQL/执行树、JTL/日志/逐ID导出/资源/线程快照保留本地；Git仅保存参数、汇总、计划、审计与必要摘录。
+
+最终完整原始包为上级results目录的`raw-results-20261013-capacity-scan.zip`，未压缩目录仍保留；JDBC阶段另有独立原始包。未覆盖历史数据，文件数量与大小见[归档记录](../raw-20261013-archive-summary.json)。

@@ -1,0 +1,180 @@
+{
+  "seconds": 60.581310987472534,
+  "samples": [
+    {
+      "time": 1791873892675,
+      "orders": 49950,
+      "stockPending": 11161,
+      "grantPending": 13011,
+      "blocked": 0
+    },
+    {
+      "time": 1791873895130,
+      "orders": 49950,
+      "stockPending": 10649,
+      "grantPending": 12413,
+      "blocked": 0
+    },
+    {
+      "time": 1791873897513,
+      "orders": 49950,
+      "stockPending": 10110,
+      "grantPending": 11753,
+      "blocked": 0
+    },
+    {
+      "time": 1791873899887,
+      "orders": 49950,
+      "stockPending": 9310,
+      "grantPending": 10794,
+      "blocked": 0
+    },
+    {
+      "time": 1791873902329,
+      "orders": 49950,
+      "stockPending": 8552,
+      "grantPending": 10484,
+      "blocked": 0
+    },
+    {
+      "time": 1791873904803,
+      "orders": 49950,
+      "stockPending": 7954,
+      "grantPending": 9778,
+      "blocked": 0
+    },
+    {
+      "time": 1791873908051,
+      "orders": 49950,
+      "stockPending": 7467,
+      "grantPending": 9195,
+      "blocked": 0
+    },
+    {
+      "time": 1791873910434,
+      "orders": 49950,
+      "stockPending": 6791,
+      "grantPending": 8395,
+      "blocked": 0
+    },
+    {
+      "time": 1791873912863,
+      "orders": 49950,
+      "stockPending": 6029,
+      "grantPending": 7518,
+      "blocked": 0
+    },
+    {
+      "time": 1791873915136,
+      "orders": 49950,
+      "stockPending": 5599,
+      "grantPending": 7055,
+      "blocked": 0
+    },
+    {
+      "time": 1791873917405,
+      "orders": 49950,
+      "stockPending": 5120,
+      "grantPending": 6824,
+      "blocked": 0
+    },
+    {
+      "time": 1791873919754,
+      "orders": 49950,
+      "stockPending": 4659,
+      "grantPending": 6501,
+      "blocked": 0
+    },
+    {
+      "time": 1791873922270,
+      "orders": 49950,
+      "stockPending": 4244,
+      "grantPending": 6015,
+      "blocked": 0
+    },
+    {
+      "time": 1791873924516,
+      "orders": 49950,
+      "stockPending": 3942,
+      "grantPending": 5671,
+      "blocked": 0
+    },
+    {
+      "time": 1791873926796,
+      "orders": 49950,
+      "stockPending": 3353,
+      "grantPending": 4939,
+      "blocked": 0
+    },
+    {
+      "time": 1791873929139,
+      "orders": 49950,
+      "stockPending": 2889,
+      "grantPending": 4402,
+      "blocked": 0
+    },
+    {
+      "time": 1791873931582,
+      "orders": 49950,
+      "stockPending": 2617,
+      "grantPending": 4086,
+      "blocked": 0
+    },
+    {
+      "time": 1791873934749,
+      "orders": 49950,
+      "stockPending": 2105,
+      "grantPending": 3527,
+      "blocked": 0
+    },
+    {
+      "time": 1791873937165,
+      "orders": 49950,
+      "stockPending": 1553,
+      "grantPending": 3103,
+      "blocked": 0
+    },
+    {
+      "time": 1791873939454,
+      "orders": 49950,
+      "stockPending": 956,
+      "grantPending": 2821,
+      "blocked": 0
+    },
+    {
+      "time": 1791873941736,
+      "orders": 49950,
+      "stockPending": 693,
+      "grantPending": 2516,
+      "blocked": 0
+    },
+    {
+      "time": 1791873944159,
+      "orders": 49950,
+      "stockPending": 67,
+      "grantPending": 1774,
+      "blocked": 0
+    },
+    {
+      "time": 1791873946531,
+      "orders": 49950,
+      "stockPending": 0,
+      "grantPending": 1170,
+      "blocked": 0
+    },
+    {
+      "time": 1791873948936,
+      "orders": 49950,
+      "stockPending": 0,
+      "grantPending": 147,
+      "blocked": 0
+    },
+    {
+      "time": 1791873951211,
+      "orders": 49950,
+      "stockPending": 0,
+      "grantPending": 0,
+      "blocked": 0
+    }
+  ]
+}

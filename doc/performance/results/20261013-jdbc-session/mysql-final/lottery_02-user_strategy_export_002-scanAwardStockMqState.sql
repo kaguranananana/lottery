@@ -1,0 +1,1 @@
+SELECT u_id, order_id, strategy_id, award_id FROM lottery_02.user_strategy_export_002 WHERE stock_mq_state IN (0, 2) OR (stock_mq_state = 3 AND update_time < DATE_SUB(NOW(), INTERVAL 10 MINUTE)) ORDER BY create_time ASC LIMIT 200;

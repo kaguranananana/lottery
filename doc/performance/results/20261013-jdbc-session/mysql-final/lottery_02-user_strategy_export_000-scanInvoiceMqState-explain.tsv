@@ -1,0 +1,1 @@
+1	SIMPLE	user_strategy_export_000	NULL	range	idx_stock_mq_state_create_time,idx_invoice_grant_state	idx_invoice_grant_state	2	NULL	2	9.40	Using index condition; Using where

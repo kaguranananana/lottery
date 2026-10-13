@@ -1,0 +1,75 @@
+{
+  "seconds": 24.424012184143066,
+  "samples": [
+    {
+      "time": 1791875842780,
+      "orders": 57575,
+      "stockPending": 3614,
+      "grantPending": 5221,
+      "blocked": 0
+    },
+    {
+      "time": 1791875845259,
+      "orders": 57575,
+      "stockPending": 2840,
+      "grantPending": 4355,
+      "blocked": 0
+    },
+    {
+      "time": 1791875847668,
+      "orders": 57575,
+      "stockPending": 2259,
+      "grantPending": 3774,
+      "blocked": 0
+    },
+    {
+      "time": 1791875850243,
+      "orders": 57575,
+      "stockPending": 1822,
+      "grantPending": 3695,
+      "blocked": 0
+    },
+    {
+      "time": 1791875852785,
+      "orders": 57575,
+      "stockPending": 1537,
+      "grantPending": 3384,
+      "blocked": 0
+    },
+    {
+      "time": 1791875855437,
+      "orders": 57575,
+      "stockPending": 922,
+      "grantPending": 2648,
+      "blocked": 0
+    },
+    {
+      "time": 1791875857813,
+      "orders": 57575,
+      "stockPending": 324,
+      "grantPending": 1953,
+      "blocked": 0
+    },
+    {
+      "time": 1791875861058,
+      "orders": 57575,
+      "stockPending": 0,
+      "grantPending": 1324,
+      "blocked": 0
+    },
+    {
+      "time": 1791875863539,
+      "orders": 57575,
+      "stockPending": 0,
+      "grantPending": 210,
+      "blocked": 0
+    },
+    {
+      "time": 1791875865842,
+      "orders": 57575,
+      "stockPending": 0,
+      "grantPending": 0,
+      "blocked": 0
+    }
+  ]
+}

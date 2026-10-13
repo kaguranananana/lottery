@@ -1,0 +1,77 @@
+{
+  "driver": "8.0.29",
+  "cachedWarehouseRegression": true,
+  "manual": [
+    {
+      "name": "com.anontokyo.lottery.test.manual.JdbcLocalSessionStateManualIT",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.manual.InvoiceCompensationIndexManualIT",
+      "tests": "2",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.manual.PerformanceSqlManualIT",
+      "tests": "6",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    }
+  ],
+  "unit": [
+    {
+      "name": "com.anontokyo.lottery.test.domain.DrawRequestIdempotencyTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.domain.PartakeRequestOwnershipTest",
+      "tests": "4",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.infrastructure.lock.RedisActivityDrawProcessGuardTest",
+      "tests": "5",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.web.DrawHttpOwnershipTest",
+      "tests": "3",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.domain.WeightedRandomSelectorTest",
+      "tests": "7",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    },
+    {
+      "name": "com.anontokyo.lottery.test.mq.MqCallbackStateTest",
+      "tests": "9",
+      "failures": "0",
+      "errors": "0",
+      "skipped": "0"
+    }
+  ],
+  "unitSource": "driver-fix-validation.json, driver-8.0.29-unit-tests.log; unchanged unit source after this execution",
+  "total": 46,
+  "failures": 0,
+  "errors": 0,
+  "manualSource": "final-cached-sql-tests.log",
+  "actualScopes": "own schemas at verified lottery-perf 13329; no app/JMeter running"
+}

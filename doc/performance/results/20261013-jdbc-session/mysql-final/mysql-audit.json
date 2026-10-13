@@ -1,0 +1,11 @@
+{
+  "scope": "全部现存 lottery/lottery_01/lottery_02 MySQL 数据；不含 Redis/Kafka 审计",
+  "orders": "961360\t961360\t961360\t0\t0\t0",
+  "takes": "1005414\t0\t0",
+  "ledger": "961360\t961360",
+  "ledgerMismatch": "0",
+  "takeMismatch": "0",
+  "negativeStock": "0",
+  "quota": "1\t502620\t0\n2\t502794\t0",
+  "ordersUnchangedDuringDiagnosis": true
+}

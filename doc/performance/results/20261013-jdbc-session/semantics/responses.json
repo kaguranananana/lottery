@@ -1,0 +1,1862 @@
+{
+  "different": [
+    {
+      "user": "hot-different",
+      "request": "hot-0",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375285,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-0",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-1",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375282,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-1",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-2",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375285,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-2",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-3",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375286,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-3",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-4",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375284,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-4",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-5",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375280,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-5",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-6",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375282,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-6",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-7",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375284,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-7",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-8",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375283,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-8",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-9",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375286,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-9",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-10",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375285,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-10",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-11",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375285,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-11",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-12",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375282,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-12",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-13",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375284,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-13",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-14",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375284,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-14",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-15",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375283,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-15",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-16",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375285,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-16",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-17",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375286,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-17",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-18",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375283,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-18",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-19",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375286,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-19",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-20",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375283,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-20",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-21",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375284,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-21",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-22",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375286,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-22",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-23",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375284,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-23",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-24",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375284,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-24",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-25",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375283,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-25",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-26",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375286,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-26",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-27",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375283,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-27",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-28",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375286,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-28",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-29",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375285,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-29",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-30",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375283,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-30",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-31",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375286,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-31",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-32",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375280,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-32",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-33",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375284,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-33",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-34",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375284,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-34",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-35",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375285,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-35",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-36",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375285,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-36",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-37",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375284,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-37",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-38",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375282,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-38",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-39",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375286,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-39",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-40",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375284,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-40",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-41",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375284,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-41",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-42",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375282,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-42",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-43",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375282,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-43",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-44",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375285,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-44",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-45",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375284,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-45",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-46",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375283,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-46",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-47",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375286,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-47",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-48",
+      "startedMs": 1791878375278,
+      "endedMs": 1791878375300,
+      "http": 200,
+      "result": {
+        "code": "0000",
+        "info": "成功",
+        "requestId": "hot-48",
+        "takeId": 2109916947436154880,
+        "pendingRequestId": null,
+        "orderId": 2109916947473903616,
+        "win": true,
+        "award": {
+          "awardId": "p742900_4",
+          "awardType": 3,
+          "awardName": "模拟券4",
+          "awardContent": "项目现有本地模拟发奖",
+          "grantType": 1,
+          "grantDate": null
+        }
+      }
+    },
+    {
+      "user": "hot-different",
+      "request": "hot-49",
+      "startedMs": 1791878375277,
+      "endedMs": 1791878375282,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "hot-49",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    }
+  ],
+  "same": [
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375301,
+      "endedMs": 1791878375308,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375301,
+      "endedMs": 1791878375308,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375306,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375309,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375306,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375308,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375309,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375308,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375310,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375303,
+      "endedMs": 1791878375310,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375307,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375309,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375307,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375307,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375303,
+      "endedMs": 1791878375309,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375303,
+      "endedMs": 1791878375309,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375309,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375303,
+      "endedMs": 1791878375308,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375309,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375311,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375307,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375307,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375305,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375306,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375309,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375303,
+      "endedMs": 1791878375308,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375311,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375303,
+      "endedMs": 1791878375308,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375307,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375307,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375309,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375308,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375307,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375308,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375308,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375310,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375310,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375309,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375309,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375309,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375307,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375319,
+      "http": 200,
+      "result": {
+        "code": "0000",
+        "info": "成功",
+        "requestId": "same-request",
+        "takeId": 2109916947524235264,
+        "pendingRequestId": null,
+        "orderId": 2109916947553595392,
+        "win": true,
+        "award": {
+          "awardId": "p742900_0",
+          "awardType": 3,
+          "awardName": "模拟券0",
+          "awardContent": "项目现有本地模拟发奖",
+          "grantType": 1,
+          "grantDate": null
+        }
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375308,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375308,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375308,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375303,
+      "endedMs": 1791878375309,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375309,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375303,
+      "endedMs": 1791878375308,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375302,
+      "endedMs": 1791878375307,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "hot-same",
+      "request": "same-request",
+      "startedMs": 1791878375301,
+      "endedMs": 1791878375309,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "same-request",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    }
+  ],
+  "replay": {
+    "user": "hot-same",
+    "request": "same-request",
+    "startedMs": 1791878375320,
+    "endedMs": 1791878375323,
+    "http": 200,
+    "result": {
+      "code": "0000",
+      "info": "成功",
+      "requestId": "same-request",
+      "takeId": 2109916947524235264,
+      "pendingRequestId": null,
+      "orderId": 2109916947553595392,
+      "win": true,
+      "award": {
+        "awardId": "p742900_0",
+        "awardType": 3,
+        "awardName": "模拟券0",
+        "awardContent": "项目现有本地模拟发奖",
+        "grantType": 1,
+        "grantDate": null
+      }
+    }
+  },
+  "timeoutObserved": true,
+  "timeoutAttempts": [
+    {
+      "user": "timeout-user",
+      "request": "timeout-original",
+      "startedMs": 1791878375324,
+      "endedMs": 1791878375325,
+      "http": 200,
+      "result": {
+        "code": "D006",
+        "info": "抽奖处理中，请使用原请求号重试",
+        "requestId": "timeout-original",
+        "takeId": null,
+        "pendingRequestId": null,
+        "orderId": null,
+        "win": false,
+        "award": null
+      }
+    },
+    {
+      "user": "timeout-user",
+      "request": "timeout-original",
+      "startedMs": 1791878375384,
+      "endedMs": 1791878375387,
+      "http": 200,
+      "result": {
+        "code": "0000",
+        "info": "成功",
+        "requestId": "timeout-original",
+        "takeId": 2109916947599732736,
+        "pendingRequestId": null,
+        "orderId": 2109916947612315648,
+        "win": true,
+        "award": {
+          "awardId": "p742900_3",
+          "awardType": 3,
+          "awardName": "模拟券3",
+          "awardContent": "项目现有本地模拟发奖",
+          "grantType": 1,
+          "grantDate": null
+        }
+      }
+    }
+  ],
+  "timeoutReplay": {
+    "user": "timeout-user",
+    "request": "timeout-original",
+    "startedMs": 1791878375387,
+    "endedMs": 1791878375389,
+    "http": 200,
+    "result": {
+      "code": "0000",
+      "info": "成功",
+      "requestId": "timeout-original",
+      "takeId": 2109916947599732736,
+      "pendingRequestId": null,
+      "orderId": 2109916947612315648,
+      "win": true,
+      "award": {
+        "awardId": "p742900_3",
+        "awardType": 3,
+        "awardName": "模拟券3",
+        "awardContent": "项目现有本地模拟发奖",
+        "grantType": 1,
+        "grantDate": null
+      }
+    }
+  },
+  "pending": {
+    "code": "0000",
+    "info": "成功",
+    "strategyId": 742900,
+    "takeId": 2109916947872362496,
+    "pendingRequestId": null,
+    "stockCount": 10000,
+    "stockSurplusCount": 9996
+  },
+  "rejection": {
+    "user": "pending-user",
+    "request": "pending-new",
+    "startedMs": 1791878375396,
+    "endedMs": 1791878375398,
+    "http": 200,
+    "result": {
+      "code": "D007",
+      "info": "存在未完成抽奖，请恢复原请求",
+      "requestId": "pending-new",
+      "takeId": null,
+      "pendingRequestId": "pending-original",
+      "orderId": null,
+      "win": false,
+      "award": null
+    }
+  },
+  "resumed": {
+    "user": "pending-user",
+    "request": "pending-original",
+    "startedMs": 1791878375398,
+    "endedMs": 1791878375402,
+    "http": 200,
+    "result": {
+      "code": "0000",
+      "info": "成功",
+      "requestId": "pending-original",
+      "takeId": 2109916947872362496,
+      "pendingRequestId": null,
+      "orderId": 2109916947910111232,
+      "win": true,
+      "award": {
+        "awardId": "p742900_2",
+        "awardType": 3,
+        "awardName": "模拟券2",
+        "awardContent": "项目现有本地模拟发奖",
+        "grantType": 1,
+        "grantDate": null
+      }
+    }
+  }
+}

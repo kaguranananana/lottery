@@ -1,0 +1,19 @@
+{
+  "differentCodes": {
+    "D006": 49,
+    "0000": 1
+  },
+  "sameCodes": {
+    "D006": 49,
+    "0000": 1
+  },
+  "newDraws": {
+    "hot-different": 1,
+    "hot-same": 1,
+    "timeout-user": 1,
+    "pending-user": 1
+  },
+  "timeoutObserved": true,
+  "pendingCode": "D007",
+  "audit": "PASS"
+}

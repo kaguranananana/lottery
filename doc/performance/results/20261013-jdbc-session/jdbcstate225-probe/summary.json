@@ -1,0 +1,245 @@
+{
+  "name": "jdbcstate225-probe",
+  "threads": 30,
+  "windowSeconds": 180.0,
+  "totalSamples": 44958,
+  "measuredSamples": 40456,
+  "rps": 224.75555555555556,
+  "newDrawRps": 224.75555555555556,
+  "newDrawsWindow": 40456,
+  "newDrawsTotal": 44958,
+  "ordersTotal": 44958,
+  "meanMs": 21.299139806209215,
+  "p50Ms": 20,
+  "p95Ms": 31,
+  "p99Ms": 41,
+  "maxMs": 183,
+  "httpErrorRate": 0.0,
+  "systemErrorRate": 0.0,
+  "businessCodes": {
+    "0000": 40456
+  },
+  "cpuMeanPercentOfOneCore": 90.51671613599662,
+  "heapMaxObservedMiB": 367.88965606689453,
+  "gcMs": 243,
+  "gcPauseRatio": 0.0013696313831586067,
+  "pools": {
+    "HikariPool-1": {
+      "url": "lottery_01",
+      "maxActive": 14,
+      "maxWaiting": 0,
+      "acquireMeanMs": 0.003199084765153281,
+      "timeouts": 0
+    },
+    "HikariPool-2": {
+      "url": "lottery_02",
+      "maxActive": 9,
+      "maxWaiting": 0,
+      "acquireMeanMs": 0.002398897527944604,
+      "timeouts": 0
+    },
+    "HikariPool-3": {
+      "url": "lottery",
+      "maxActive": 4,
+      "maxWaiting": 0,
+      "acquireMeanMs": 0.0015131308986458761,
+      "timeouts": 0
+    }
+  },
+  "tomcatMaxBusy": 26,
+  "backlog": [
+    [
+      1791874558653,
+      {
+        "orders": 5029,
+        "stockPending": 238,
+        "grantPending": 324,
+        "blocked": 0
+      }
+    ],
+    [
+      1791874567657,
+      {
+        "orders": 7280,
+        "stockPending": 239,
+        "grantPending": 249,
+        "blocked": 0
+      }
+    ],
+    [
+      1791874576659,
+      {
+        "orders": 9314,
+        "stockPending": 196,
+        "grantPending": 383,
+        "blocked": 0
+      }
+    ],
+    [
+      1791874585662,
+      {
+        "orders": 11340,
+        "stockPending": 205,
+        "grantPending": 323,
+        "blocked": 0
+      }
+    ],
+    [
+      1791874594662,
+      {
+        "orders": 13359,
+        "stockPending": 342,
+        "grantPending": 424,
+        "blocked": 0
+      }
+    ],
+    [
+      1791874603663,
+      {
+        "orders": 15168,
+        "stockPending": 280,
+        "grantPending": 394,
+        "blocked": 0
+      }
+    ],
+    [
+      1791874612668,
+      {
+        "orders": 17189,
+        "stockPending": 311,
+        "grantPending": 464,
+        "blocked": 0
+      }
+    ],
+    [
+      1791874621671,
+      {
+        "orders": 19416,
+        "stockPending": 290,
+        "grantPending": 378,
+        "blocked": 0
+      }
+    ],
+    [
+      1791874630672,
+      {
+        "orders": 21461,
+        "stockPending": 294,
+        "grantPending": 488,
+        "blocked": 0
+      }
+    ],
+    [
+      1791874639680,
+      {
+        "orders": 23263,
+        "stockPending": 257,
+        "grantPending": 323,
+        "blocked": 0
+      }
+    ],
+    [
+      1791874648692,
+      {
+        "orders": 25294,
+        "stockPending": 271,
+        "grantPending": 508,
+        "blocked": 0
+      }
+    ],
+    [
+      1791874657694,
+      {
+        "orders": 27333,
+        "stockPending": 317,
+        "grantPending": 515,
+        "blocked": 0
+      }
+    ],
+    [
+      1791874666694,
+      {
+        "orders": 29587,
+        "stockPending": 337,
+        "grantPending": 504,
+        "blocked": 0
+      }
+    ],
+    [
+      1791874675700,
+      {
+        "orders": 31616,
+        "stockPending": 382,
+        "grantPending": 483,
+        "blocked": 0
+      }
+    ],
+    [
+      1791874684713,
+      {
+        "orders": 33651,
+        "stockPending": 358,
+        "grantPending": 623,
+        "blocked": 0
+      }
+    ],
+    [
+      1791874693793,
+      {
+        "orders": 35476,
+        "stockPending": 502,
+        "grantPending": 786,
+        "blocked": 0
+      }
+    ],
+    [
+      1791874702794,
+      {
+        "orders": 37510,
+        "stockPending": 652,
+        "grantPending": 1010,
+        "blocked": 0
+      }
+    ],
+    [
+      1791874711794,
+      {
+        "orders": 39708,
+        "stockPending": 754,
+        "grantPending": 1349,
+        "blocked": 0
+      }
+    ],
+    [
+      1791874720796,
+      {
+        "orders": 41778,
+        "stockPending": 935,
+        "grantPending": 1591,
+        "blocked": 0
+      }
+    ],
+    [
+      1791874729983,
+      {
+        "orders": 43837,
+        "stockPending": 1031,
+        "grantPending": 1769,
+        "blocked": 0
+      }
+    ]
+  ],
+  "rpsBuckets": [
+    225.03333333333333,
+    225.06666666666666,
+    224.83333333333334,
+    225.16666666666666,
+    224.96666666666667,
+    223.46666666666667
+  ],
+  "drainSeconds": 5.86107325553894,
+  "asyncP95LowerMs": 7566,
+  "asyncP95UpperMs": 8566,
+  "audit": "PASS",
+  "observedThreads": 30
+}

@@ -1,0 +1,444 @@
+{
+  "containers": [
+    {
+      "name": "lottery-perf-kafka-1",
+      "image": "wurstmeister/kafka:2.13-2.8.1",
+      "state": {
+        "Status": "exited",
+        "ExitCode": 143,
+        "OOMKilled": false
+      },
+      "project": "lottery-perf",
+      "service": "kafka",
+      "resources": {
+        "NanoCpus": 2000000000,
+        "CpuQuota": 0,
+        "CpuPeriod": 0,
+        "CpusetCpus": "",
+        "Memory": 1073741824,
+        "MemorySwap": 2147483648,
+        "MemoryReservation": 0
+      },
+      "ports": {
+        "9092/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "29092"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "type": "volume",
+          "destination": "/kafka",
+          "volumeName": "39d6032a1f55e22b843b87288ed0249917388da9509f250f45e7bee8e97d406f"
+        }
+      ]
+    },
+    {
+      "name": "lottery-perf-zookeeper-1",
+      "image": "zookeeper:3.8",
+      "state": {
+        "Status": "exited",
+        "ExitCode": 143,
+        "OOMKilled": false
+      },
+      "project": "lottery-perf",
+      "service": "zookeeper",
+      "resources": {
+        "NanoCpus": 500000000,
+        "CpuQuota": 0,
+        "CpuPeriod": 0,
+        "CpusetCpus": "",
+        "Memory": 402653184,
+        "MemorySwap": 805306368,
+        "MemoryReservation": 0
+      },
+      "ports": {},
+      "mounts": [
+        {
+          "type": "volume",
+          "destination": "/data",
+          "volumeName": "673366b12a08473f4212bca3f448fbd650c283d90369794a1cb3dcebad2024c2"
+        },
+        {
+          "type": "volume",
+          "destination": "/datalog",
+          "volumeName": "4348580a355454fe9d74efb1e9532732d165b77b404dbaf29fa05e81b4290931"
+        },
+        {
+          "type": "volume",
+          "destination": "/logs",
+          "volumeName": "8bd5cab4da3289b24ef995c6362a82173a8b8da70442f87833af621c46d0ac87"
+        }
+      ]
+    },
+    {
+      "name": "lottery-perf-redis-1",
+      "image": "redis:7.2",
+      "state": {
+        "Status": "exited",
+        "ExitCode": 0,
+        "OOMKilled": false
+      },
+      "project": "lottery-perf",
+      "service": "redis",
+      "resources": {
+        "NanoCpus": 1000000000,
+        "CpuQuota": 0,
+        "CpuPeriod": 0,
+        "CpusetCpus": "",
+        "Memory": 268435456,
+        "MemorySwap": 536870912,
+        "MemoryReservation": 0
+      },
+      "ports": {
+        "6379/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "17379"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "type": "volume",
+          "destination": "/data",
+          "volumeName": "7ba75992311ce536ba8d200a900886b3c9749325fe7ce268a2d428e80960d935"
+        }
+      ]
+    },
+    {
+      "name": "lottery-perf-mysql-1",
+      "image": "mysql:8.0",
+      "state": {
+        "Status": "exited",
+        "ExitCode": 0,
+        "OOMKilled": false
+      },
+      "project": "lottery-perf",
+      "service": "mysql",
+      "resources": {
+        "NanoCpus": 2000000000,
+        "CpuQuota": 0,
+        "CpuPeriod": 0,
+        "CpusetCpus": "",
+        "Memory": 2147483648,
+        "MemorySwap": 4294967296,
+        "MemoryReservation": 0
+      },
+      "ports": {
+        "3306/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "13329"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "type": "volume",
+          "destination": "/var/lib/mysql",
+          "volumeName": "3e4b56e4827ac97cfcdb0745c0f07d2446731aa446b948a487c9b2b63d76684c"
+        }
+      ]
+    },
+    {
+      "name": "lottery-final-sql-it",
+      "image": "mysql:8.0",
+      "state": {
+        "Status": "exited",
+        "ExitCode": 255,
+        "OOMKilled": false
+      },
+      "project": null,
+      "service": null,
+      "resources": {
+        "NanoCpus": 0,
+        "CpuQuota": 0,
+        "CpuPeriod": 0,
+        "CpusetCpus": "",
+        "Memory": 0,
+        "MemorySwap": 0,
+        "MemoryReservation": 0
+      },
+      "ports": {
+        "3306/tcp": [
+          {
+            "HostIp": "127.0.0.1",
+            "HostPort": "13319"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "type": "volume",
+          "destination": "/var/lib/mysql",
+          "volumeName": "ca0e8031f3f02bd88f527215a60ab43a972b4dc83e4258507b27f128e7811d01"
+        }
+      ]
+    },
+    {
+      "name": "lottery-mq-e2e-kafka-1",
+      "image": "wurstmeister/kafka:2.13-2.8.1",
+      "state": {
+        "Status": "exited",
+        "ExitCode": 255,
+        "OOMKilled": false
+      },
+      "project": "lottery-mq-e2e",
+      "service": "kafka",
+      "resources": {
+        "NanoCpus": 0,
+        "CpuQuota": 0,
+        "CpuPeriod": 0,
+        "CpusetCpus": "",
+        "Memory": 0,
+        "MemorySwap": 0,
+        "MemoryReservation": 0
+      },
+      "ports": {
+        "9092/tcp": [
+          {
+            "HostIp": "",
+            "HostPort": "19092"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "type": "volume",
+          "destination": "/kafka",
+          "volumeName": "dd3ff54a6cf5b1865daa6b2b6583803b292a46408099d15bdf71939d1b171712"
+        }
+      ]
+    },
+    {
+      "name": "lottery-mq-e2e-mysql-1",
+      "image": "mysql:8.0",
+      "state": {
+        "Status": "exited",
+        "ExitCode": 255,
+        "OOMKilled": false
+      },
+      "project": "lottery-mq-e2e",
+      "service": "mysql",
+      "resources": {
+        "NanoCpus": 0,
+        "CpuQuota": 0,
+        "CpuPeriod": 0,
+        "CpusetCpus": "",
+        "Memory": 0,
+        "MemorySwap": 0,
+        "MemoryReservation": 0
+      },
+      "ports": {
+        "3306/tcp": [
+          {
+            "HostIp": "",
+            "HostPort": "13309"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "type": "volume",
+          "destination": "/var/lib/mysql",
+          "volumeName": "bba3df81e16ec870bc69e8492b8e09ea2ef8a6272fe61ca0b8715eff57b880fc"
+        }
+      ]
+    },
+    {
+      "name": "lottery-mq-e2e-zookeeper-1",
+      "image": "zookeeper:3.8",
+      "state": {
+        "Status": "exited",
+        "ExitCode": 255,
+        "OOMKilled": false
+      },
+      "project": "lottery-mq-e2e",
+      "service": "zookeeper",
+      "resources": {
+        "NanoCpus": 0,
+        "CpuQuota": 0,
+        "CpuPeriod": 0,
+        "CpusetCpus": "",
+        "Memory": 0,
+        "MemorySwap": 0,
+        "MemoryReservation": 0
+      },
+      "ports": {},
+      "mounts": [
+        {
+          "type": "volume",
+          "destination": "/data",
+          "volumeName": "a2c4f71c41ee437232ef402011a06928cd03626ecb52dd6b44bbab4c4db5e02b"
+        },
+        {
+          "type": "volume",
+          "destination": "/datalog",
+          "volumeName": "1eb5a6275e6aa3916710000557496a2f4be92bf249ac54d51e7ef5953f375f61"
+        },
+        {
+          "type": "volume",
+          "destination": "/logs",
+          "volumeName": "0d9ab845c52ff1552874491bb076532dda5002cc26f6d538ed896ecdfe46fd19"
+        }
+      ]
+    },
+    {
+      "name": "lottery-mq-e2e-redis-1",
+      "image": "redis:7.2",
+      "state": {
+        "Status": "exited",
+        "ExitCode": 255,
+        "OOMKilled": false
+      },
+      "project": "lottery-mq-e2e",
+      "service": "redis",
+      "resources": {
+        "NanoCpus": 0,
+        "CpuQuota": 0,
+        "CpuPeriod": 0,
+        "CpusetCpus": "",
+        "Memory": 0,
+        "MemorySwap": 0,
+        "MemoryReservation": 0
+      },
+      "ports": {
+        "6379/tcp": [
+          {
+            "HostIp": "",
+            "HostPort": "16379"
+          }
+        ]
+      },
+      "mounts": [
+        {
+          "type": "volume",
+          "destination": "/data",
+          "volumeName": "8efb4690798b8b6627d3d20ac59c771c7f726d15e7b05c92c405b32af74ee9c2"
+        }
+      ]
+    }
+  ],
+  "allIdentityResourcesPreserved": true,
+  "otherFiveStatesUnchanged": true,
+  "dedicatedFourExitedNoOom": true,
+  "expectedExitCodesByVerifiedRuntime": {
+    "lottery-perf-mysql-1": 0,
+    "lottery-perf-redis-1": 0,
+    "lottery-perf-kafka-1": 143,
+    "lottery-perf-zookeeper-1": 143
+  },
+  "javaProcessesAfterStop": [],
+  "host": {
+    "timeMs": 1791879306126,
+    "pageBytes": 16384,
+    "pages": {
+      "Pages free": 9098,
+      "Pages active": 351812,
+      "Pages inactive": 349895,
+      "Pages speculative": 1805,
+      "Pages throttled": 0,
+      "Pages wired down": 116488,
+      "Pages purgeable": 3724,
+      "\"Translation faults\"": 222807097,
+      "Pages copy-on-write": 7601295,
+      "Pages zero filled": 69035828,
+      "Pages reactivated": 19850175,
+      "Pages purged": 1526788,
+      "File-backed pages": 251560,
+      "Anonymous pages": 451952,
+      "Pages stored in compressor": 637814,
+      "Pages occupied by compressor": 179789,
+      "Decompressions": 12919901,
+      "Compressions": 15733435,
+      "Pageins": 3354164,
+      "Pageouts": 72767,
+      "Swapins": 74348,
+      "Swapouts": 286253
+    },
+    "vmStat": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                     9098.\nPages active:                                 351812.\nPages inactive:                               349895.\nPages speculative:                              1805.\nPages throttled:                                   0.\nPages wired down:                             116488.\nPages purgeable:                                3724.\n\"Translation faults\":                      222807097.\nPages copy-on-write:                         7601295.\nPages zero filled:                          69035828.\nPages reactivated:                          19850175.\nPages purged:                                1526788.\nFile-backed pages:                            251560.\nAnonymous pages:                              451952.\nPages stored in compressor:                   637814.\nPages occupied by compressor:                 179789.\nDecompressions:                             12919901.\nCompressions:                               15733435.\nPageins:                                     3354164.\nPageouts:                                      72767.\nSwapins:                                       74348.\nSwapouts:                                     286253.\n",
+    "swapUsage": "vm.swapusage: total = 3072.00M  used = 1391.38M  free = 1680.62M  (encrypted)",
+    "topRssProcesses": [
+      {
+        "pid": 13139,
+        "cpuPercent": 18.5,
+        "rssKiB": 5639264,
+        "name": "com.apple.Virtualization.VirtualMachine"
+      },
+      {
+        "pid": 1338,
+        "cpuPercent": 12.4,
+        "rssKiB": 941520,
+        "name": "Codex (Renderer)"
+      },
+      {
+        "pid": 1267,
+        "cpuPercent": 0.4,
+        "rssKiB": 395648,
+        "name": "ChatGPT"
+      },
+      {
+        "pid": 1340,
+        "cpuPercent": 0.8,
+        "rssKiB": 322496,
+        "name": "codex"
+      },
+      {
+        "pid": 1628,
+        "cpuPercent": 0.0,
+        "rssKiB": 266608,
+        "name": "Codex (Renderer)"
+      },
+      {
+        "pid": 2450,
+        "cpuPercent": 5.4,
+        "rssKiB": 198160,
+        "name": "com.docker.backend"
+      },
+      {
+        "pid": 1553,
+        "cpuPercent": 0.0,
+        "rssKiB": 193968,
+        "name": "Codex (Renderer)"
+      },
+      {
+        "pid": 17178,
+        "cpuPercent": 0.0,
+        "rssKiB": 146304,
+        "name": "Codex (Renderer)"
+      },
+      {
+        "pid": 1337,
+        "cpuPercent": 0.0,
+        "rssKiB": 143600,
+        "name": "Codex (Renderer)"
+      },
+      {
+        "pid": 33813,
+        "cpuPercent": 0.0,
+        "rssKiB": 127392,
+        "name": "Codex (Renderer)"
+      },
+      {
+        "pid": 2512,
+        "cpuPercent": 0.0,
+        "rssKiB": 110672,
+        "name": "Docker Desktop Helper (Renderer)"
+      },
+      {
+        "pid": 2481,
+        "cpuPercent": 0.0,
+        "rssKiB": 109360,
+        "name": "Docker Desktop"
+      }
+    ]
+  },
+  "mysqlStopGraceSeconds": 60,
+  "volumesDeleted": false,
+  "initialAllExit0AssumptionWasWrong": true,
+  "sigtermExitBasis": "https://raw.githubusercontent.com/openjdk/jdk11u/master/src/java.base/unix/classes/java/lang/Terminator.java",
+  "stackWasNotRestartedForExitCodeReview": true
+}

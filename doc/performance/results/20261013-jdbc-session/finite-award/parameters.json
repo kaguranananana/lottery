@@ -1,0 +1,14 @@
+{
+  "session": "20261013-jdbc-session",
+  "name": "finite-award",
+  "id": 742902,
+  "threads": 30,
+  "duration": 20,
+  "warmup": 0,
+  "stock": 100000,
+  "award_stock": 10,
+  "users": 10000,
+  "jmeter": "/Users/anontokyo/.cache/lottery-perf/apache-jmeter-5.6.3/bin/jmeter",
+  "target_rps": 200.0,
+  "drain_timeout": 180
+}

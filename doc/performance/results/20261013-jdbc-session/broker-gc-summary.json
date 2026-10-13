@@ -1,0 +1,100 @@
+{
+  "logBytes": 453272,
+  "rounds": [
+    {
+      "round": "jdbcstate200-before",
+      "scope": "whole round including warmup/drain/audit",
+      "startMs": 1791872592771,
+      "endMs": 1791872803744,
+      "pauseCount": 27,
+      "pauseTotalMs": 680.645,
+      "pauseMaxMs": 143.469,
+      "fullGcCount": 0
+    },
+    {
+      "round": "jdbcstate200-after",
+      "scope": "whole round including warmup/drain/audit",
+      "startMs": 1791873052729,
+      "endMs": 1791873263919,
+      "pauseCount": 27,
+      "pauseTotalMs": 653.603,
+      "pauseMaxMs": 175.459,
+      "fullGcCount": 0
+    },
+    {
+      "round": "jdbcstate250-probe",
+      "scope": "whole round including warmup/drain/audit",
+      "startMs": 1791873683352,
+      "endMs": 1791873954132,
+      "pauseCount": 26,
+      "pauseTotalMs": 417.241,
+      "pauseMaxMs": 86.498,
+      "fullGcCount": 0
+    },
+    {
+      "round": "jdbcstate225-probe",
+      "scope": "whole round including warmup/drain/audit",
+      "startMs": 1791874531625,
+      "endMs": 1791874747724,
+      "pauseCount": 34,
+      "pauseTotalMs": 630.492,
+      "pauseMaxMs": 105.084,
+      "fullGcCount": 0
+    },
+    {
+      "round": "jdbcstate200-confirm",
+      "scope": "whole round including warmup/drain/audit",
+      "startMs": 1791875099025,
+      "endMs": 1791875437492,
+      "pauseCount": 66,
+      "pauseTotalMs": 1271.626,
+      "pauseMaxMs": 112.981,
+      "fullGcCount": 0
+    },
+    {
+      "round": "jdbcstate180-confirm",
+      "scope": "whole round including warmup/drain/audit",
+      "startMs": 1791875514193,
+      "endMs": 1791875869677,
+      "pauseCount": 34,
+      "pauseTotalMs": 545.889,
+      "pauseMaxMs": 118.437,
+      "fullGcCount": 0
+    },
+    {
+      "round": "jdbcstate150-confirm",
+      "scope": "whole round including warmup/drain/audit",
+      "startMs": 1791876275562,
+      "endMs": 1791876610517,
+      "pauseCount": 33,
+      "pauseTotalMs": 612.431,
+      "pauseMaxMs": 197.966,
+      "fullGcCount": 0
+    },
+    {
+      "round": "jdbcstate150-repeat",
+      "scope": "whole round including warmup/drain/audit",
+      "startMs": 1791877342776,
+      "endMs": 1791877674099,
+      "pauseCount": 23,
+      "pauseTotalMs": 158.945,
+      "pauseMaxMs": 47.684,
+      "fullGcCount": 0,
+      "source": "broker-gc-final.log"
+    },
+    {
+      "round": "jdbcstate150-repeat2",
+      "scope": "whole round including warmup/drain/audit",
+      "startMs": 1791877768400,
+      "endMs": 1791878100084,
+      "pauseCount": 24,
+      "pauseTotalMs": 182.383,
+      "pauseMaxMs": 29.205,
+      "fullGcCount": 0,
+      "source": "broker-gc-final.log"
+    }
+  ],
+  "dockerAtAppStopped": "lottery-perf-kafka-1 1.58% 787MiB / 1GiB\nlottery-perf-zookeeper-1 0.14% 97.93MiB / 384MiB\nlottery-perf-redis-1 0.23% 10.03MiB / 256MiB\nlottery-perf-mysql-1 1.75% 1.422GiB / 2GiB\n",
+  "interpretation": "未观察到Full GC或秒级暂停；日志累计暂停不是broker全部CPU成本，容器接近内存上限仍另有cgroup证据。",
+  "finalSourceBytes": 512212
+}
