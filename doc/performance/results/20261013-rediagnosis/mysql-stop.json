@@ -1,0 +1,52 @@
+{
+  "graceSeconds": 60,
+  "state": {
+    "Status": "exited",
+    "Running": false,
+    "Paused": false,
+    "Restarting": false,
+    "OOMKilled": false,
+    "Dead": false,
+    "Pid": 0,
+    "ExitCode": 0,
+    "Error": "",
+    "StartedAt": "2026-10-13T01:30:35.009647722Z",
+    "FinishedAt": "2026-10-13T01:34:23.597997092Z",
+    "Health": {
+      "Status": "unhealthy",
+      "FailingStreak": 0,
+      "Log": [
+        {
+          "Start": "2026-10-13T01:34:01.971861054Z",
+          "End": "2026-10-13T01:34:02.007866179Z",
+          "ExitCode": 0,
+          "Output": "mysqladmin: [Warning] Using a password on the command line interface can be insecure.\nmysqld is alive\n"
+        },
+        {
+          "Start": "2026-10-13T01:34:07.00989425Z",
+          "End": "2026-10-13T01:34:07.061767459Z",
+          "ExitCode": 0,
+          "Output": "mysqladmin: [Warning] Using a password on the command line interface can be insecure.\nmysqld is alive\n"
+        },
+        {
+          "Start": "2026-10-13T01:34:12.063123419Z",
+          "End": "2026-10-13T01:34:12.089582503Z",
+          "ExitCode": 0,
+          "Output": "mysqladmin: [Warning] Using a password on the command line interface can be insecure.\nmysqld is alive\n"
+        },
+        {
+          "Start": "2026-10-13T01:34:17.090459505Z",
+          "End": "2026-10-13T01:34:17.134297714Z",
+          "ExitCode": 0,
+          "Output": "mysqladmin: [Warning] Using a password on the command line interface can be insecure.\nmysqld is alive\n"
+        },
+        {
+          "Start": "2026-10-13T01:34:22.136366341Z",
+          "End": "2026-10-13T01:34:22.196598341Z",
+          "ExitCode": 0,
+          "Output": "mysqladmin: [Warning] Using a password on the command line interface can be insecure.\nmysqld is alive\n"
+        }
+      ]
+    }
+  }
+}

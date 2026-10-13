@@ -1,0 +1,4 @@
+{
+  "mysql": "Connections\t206\nInnodb_buffer_pool_reads\t36530\nInnodb_row_lock_time\t0\nInnodb_row_lock_waits\t0\nQuestions\t518\nSlow_queries\t25\nThreads_connected\t1\nThreads_running\t2\n",
+  "lockWaits": ""
+}

@@ -1,0 +1,24 @@
+{
+  "pythonSyntax": {
+    "status": "PASS",
+    "command": "python3 -m py_compile doc/performance/preflight.py doc/performance/mysql_diagnosis.py"
+  },
+  "liveToolRuns": {
+    "preflight": 3,
+    "mysqlDiagnosis": 2,
+    "explainAnalyzeQueries": 96,
+    "status": "PASS"
+  },
+  "evidenceConsistency": {
+    "status": "PASS",
+    "checks": [
+      "资源增量与原始首末计数一致",
+      "两次订单/参与/次数/账本计数相同",
+      "96 次真实计划与原文一致，补偿每轮读取 341311 行返回 0",
+      "生产 SQL 状态与超时条件保留",
+      "MySQL 关联及次数消耗核对",
+      "背景实例配置/状态不变，专用 MySQL 正常退出"
+    ]
+  },
+  "businessUnitIntegrationAndE2e": "NOT_RUN：本轮没有业务优化，环境停止前未启动完整链路；不使用旧结果代替本轮执行"
+}

@@ -1,0 +1,238 @@
+{
+  "baseline": {
+    "branch": "main",
+    "commit": "34cd882"
+  },
+  "status": "STOPPED_ENVIRONMENT",
+  "completedBusinessOptimizations": 0,
+  "reason": "两段专用栈停止时的观察仍主动换页；MySQL 只读窗口亦有明显 Swap-in/out。共享背景资源无法在本轮授权范围内消除，停止容量和 A/B 实验。",
+  "resourceWindows": {
+    "preflight-1": {
+      "samplingSeconds": 60.047,
+      "sampleCount": 13,
+      "intervals": [
+        {
+          "seconds": 5.076,
+          "swapInMiB": 0.5625,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.053,
+          "swapInMiB": 0.1875,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.057,
+          "swapInMiB": 2.359375,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.109,
+          "swapInMiB": 1.0,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.12,
+          "swapInMiB": 2.4375,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.037,
+          "swapInMiB": 0.796875,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.079,
+          "swapInMiB": 7.671875,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.051,
+          "swapInMiB": 3.171875,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.056,
+          "swapInMiB": 9.828125,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.042,
+          "swapInMiB": 1.8125,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.052,
+          "swapInMiB": 3.0625,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 4.315,
+          "swapInMiB": 0.6875,
+          "swapOutMiB": 0.0
+        }
+      ],
+      "swapInMiB": 33.578125,
+      "swapOutMiB": 0.0,
+      "observationOnly": true
+    },
+    "preflight-2": {
+      "samplingSeconds": 59.988,
+      "sampleCount": 13,
+      "intervals": [
+        {
+          "seconds": 5.05,
+          "swapInMiB": 0.984375,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.067,
+          "swapInMiB": 5.5,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.045,
+          "swapInMiB": 1.0,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.053,
+          "swapInMiB": 8.15625,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.057,
+          "swapInMiB": 0.625,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.043,
+          "swapInMiB": 1.8125,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.056,
+          "swapInMiB": 1.1875,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.073,
+          "swapInMiB": 1.0625,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.048,
+          "swapInMiB": 0.625,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.035,
+          "swapInMiB": 3.609375,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.044,
+          "swapInMiB": 3.25,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 4.417,
+          "swapInMiB": 53.9375,
+          "swapOutMiB": 0.0
+        }
+      ],
+      "swapInMiB": 81.75,
+      "swapOutMiB": 0.0,
+      "observationOnly": true
+    },
+    "mysql-observation": {
+      "samplingSeconds": 60.023,
+      "sampleCount": 13,
+      "intervals": [
+        {
+          "seconds": 5.036,
+          "swapInMiB": 342.125,
+          "swapOutMiB": 178.453125
+        },
+        {
+          "seconds": 5.034,
+          "swapInMiB": 166.109375,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.039,
+          "swapInMiB": 82.015625,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.052,
+          "swapInMiB": 0.9375,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.03,
+          "swapInMiB": 0.375,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.042,
+          "swapInMiB": 3.6875,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.034,
+          "swapInMiB": 0.0625,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.054,
+          "swapInMiB": 1.375,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.035,
+          "swapInMiB": 0.25,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.049,
+          "swapInMiB": 0.0625,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 5.037,
+          "swapInMiB": 0.0,
+          "swapOutMiB": 0.0
+        },
+        {
+          "seconds": 4.581,
+          "swapInMiB": 0.0,
+          "swapOutMiB": 0.0
+        }
+      ],
+      "swapInMiB": 597.0,
+      "swapOutMiB": 178.453125,
+      "observationOnly": true
+    }
+  },
+  "notExecuted": [
+    "原版固定 80 RPS 复测",
+    "更高固定速率压力测试",
+    "业务优化 A/B",
+    "新业务单元/集成测试",
+    "真实 HTTP/Redis/Kafka 链路验证",
+    "请求幂等/重投与完整业务审计"
+  ],
+  "newStableRps": null,
+  "historicalCandidate": {
+    "rps": 80,
+    "scope": "上一轮本地最终版本；本轮没有重新认证",
+    "source": "20261012-optimization/outbox-rate80-confirm/stability.json"
+  },
+  "stabilityThresholdChanged": false,
+  "businessJavaMapperIndexesChanged": false,
+  "ownershipAudit": {
+    "backgroundContainersUnchanged": true,
+    "perfServicesFinallyStopped": true
+  }
+}

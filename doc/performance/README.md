@@ -4,6 +4,19 @@
 
 测试启动器只额外装配本机控制面，`POST /api/v1/draw`、活动创建/启动、路由、库存、事务、Kafka、Outbox 和本地模拟发奖均执行仓库的生产实现。未接入真实第三方奖品渠道；XXL handler 由专用线程按一秒固定延迟调用，未验证 admin 调度、HA 或多实例。
 
+## 压测前只读资源与 SQL 诊断
+
+新一轮停止记录及实际扫描计划见 [20261013-rediagnosis](results/20261013-rediagnosis/README.md)。先观察主动换页增量，结合背景负载判断是否能可靠归因；已有 Swap 占用不是单独的停止依据。以下工具不启动、停止、清理或修改任何实例，输出目录须尚不存在。
+
+```bash
+python3 doc/performance/preflight.py doc/performance/results/my-run/preflight-1
+python3 doc/performance/preflight.py doc/performance/results/my-run/preflight-2
+# 专用 MySQL 已核实身份且正常启动后执行；不执行 init/clean。
+python3 doc/performance/mysql_diagnosis.py doc/performance/results/my-run/mysql
+```
+
+预检默认约 60 秒、5 秒间隔，保存实际页大小、vm_stat 原文、Swap 增量、CPU/内存与容器归属/限制。SQL 工具提取生产 Mapper，保存八表 EXPLAIN/三次 ANALYZE、精确初始数量、持久化参数及 MySQL 核对；它不替代 Redis/Kafka/HTTP 审计。环境持续受不可控制的换页或共享负载干扰时，保留结果并停止容量与收益认证，不修改稳定性阈值。
+
 ## 环境与首次准备
 
 需要 Docker Compose、JDK 17（运行现有 Java 8 目标字节码）、Maven、Python 3 和 JMeter 5.6.3。绘图额外需要 matplotlib。机器资源与软件版本以每次测试会话的 `environment.json` 为准。应用/JMeter 在宿主机，中间件在独立 Docker；MySQL 13329、Redis 17379、Kafka 29092，应用 18090，执行器 29999。端口均与现存 E2E 栈分开。

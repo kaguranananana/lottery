@@ -1,0 +1,390 @@
+{
+  "scanInvoiceMqState": [
+    {
+      "repeat": 1,
+      "totalRootMs": 231.8,
+      "totalScanRows": 341311,
+      "totalReturnedRows": 0,
+      "tables": [
+        {
+          "file": "lottery_01-user_strategy_export_000-scanInvoiceMqState-analyze-1.txt",
+          "rootMs": 31.4,
+          "returnedRows": 0,
+          "scanRows": 42686,
+          "plan": "-> Limit: 100 row(s)  (cost=1973 rows=100) (actual time=31.4..31.4 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_000.grant_state <> 1) and ((lottery_01.user_strategy_export_000.mq_state = 2) or ((lottery_01.user_strategy_export_000.mq_state = 0) and (lottery_01.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_000.mq_state in (1,3)) and (lottery_01.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=1973 rows=3377) (actual time=31.4..31.4 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_000 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=1973 rows=19960) (actual time=0.509..30.2 rows=42686 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_01-user_strategy_export_001-scanInvoiceMqState-analyze-1.txt",
+          "rootMs": 29.0,
+          "returnedRows": 0,
+          "scanRows": 42690,
+          "plan": "-> Limit: 100 row(s)  (cost=1784 rows=100) (actual time=29..29 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_001.grant_state <> 1) and ((lottery_01.user_strategy_export_001.mq_state = 2) or ((lottery_01.user_strategy_export_001.mq_state = 0) and (lottery_01.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_001.mq_state in (1,3)) and (lottery_01.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=1784 rows=3415) (actual time=29..29 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_001 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=1784 rows=20183) (actual time=0.333..27.9 rows=42690 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_01-user_strategy_export_002-scanInvoiceMqState-analyze-1.txt",
+          "rootMs": 25.7,
+          "returnedRows": 0,
+          "scanRows": 42616,
+          "plan": "-> Limit: 100 row(s)  (cost=1774 rows=100) (actual time=25.7..25.7 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_002.grant_state <> 1) and ((lottery_01.user_strategy_export_002.mq_state = 2) or ((lottery_01.user_strategy_export_002.mq_state = 0) and (lottery_01.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_002.mq_state in (1,3)) and (lottery_01.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=1774 rows=3312) (actual time=25.7..25.7 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_002 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=1774 rows=19575) (actual time=0.105..24.6 rows=42616 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_01-user_strategy_export_003-scanInvoiceMqState-analyze-1.txt",
+          "rootMs": 26.6,
+          "returnedRows": 0,
+          "scanRows": 42576,
+          "plan": "-> Limit: 100 row(s)  (cost=1782 rows=100) (actual time=26.6..26.6 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_003.grant_state <> 1) and ((lottery_01.user_strategy_export_003.mq_state = 2) or ((lottery_01.user_strategy_export_003.mq_state = 0) and (lottery_01.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_003.mq_state in (1,3)) and (lottery_01.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=1782 rows=3387) (actual time=26.6..26.6 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_003 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=1782 rows=20016) (actual time=0.117..25.5 rows=42576 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_000-scanInvoiceMqState-analyze-1.txt",
+          "rootMs": 28.0,
+          "returnedRows": 0,
+          "scanRows": 42647,
+          "plan": "-> Limit: 100 row(s)  (cost=1995 rows=100) (actual time=28..28 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_000.grant_state <> 1) and ((lottery_02.user_strategy_export_000.mq_state = 2) or ((lottery_02.user_strategy_export_000.mq_state = 0) and (lottery_02.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_000.mq_state in (1,3)) and (lottery_02.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=1995 rows=3600) (actual time=28..28 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_000 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=1995 rows=21276) (actual time=0.341..26.9 rows=42647 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_001-scanInvoiceMqState-analyze-1.txt",
+          "rootMs": 28.8,
+          "returnedRows": 0,
+          "scanRows": 42633,
+          "plan": "-> Limit: 100 row(s)  (cost=1795 rows=100) (actual time=28.8..28.8 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_001.grant_state <> 1) and ((lottery_02.user_strategy_export_001.mq_state = 2) or ((lottery_02.user_strategy_export_001.mq_state = 0) and (lottery_02.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_001.mq_state in (1,3)) and (lottery_02.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=1795 rows=3524) (actual time=28.8..28.8 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_001 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=1795 rows=20829) (actual time=0.221..27.7 rows=42633 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_002-scanInvoiceMqState-analyze-1.txt",
+          "rootMs": 31.9,
+          "returnedRows": 0,
+          "scanRows": 42706,
+          "plan": "-> Limit: 100 row(s)  (cost=1800 rows=100) (actual time=31.9..31.9 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_002.grant_state <> 1) and ((lottery_02.user_strategy_export_002.mq_state = 2) or ((lottery_02.user_strategy_export_002.mq_state = 0) and (lottery_02.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_002.mq_state in (1,3)) and (lottery_02.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=1800 rows=3570) (actual time=31.9..31.9 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_002 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=1800 rows=21098) (actual time=0.39..30.7 rows=42706 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_003-scanInvoiceMqState-analyze-1.txt",
+          "rootMs": 30.4,
+          "returnedRows": 0,
+          "scanRows": 42757,
+          "plan": "-> Limit: 100 row(s)  (cost=1800 rows=100) (actual time=30.4..30.4 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_003.grant_state <> 1) and ((lottery_02.user_strategy_export_003.mq_state = 2) or ((lottery_02.user_strategy_export_003.mq_state = 0) and (lottery_02.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_003.mq_state in (1,3)) and (lottery_02.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=1800 rows=3571) (actual time=30.4..30.4 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_003 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=1800 rows=21104) (actual time=0.128..29.3 rows=42757 loops=1)\n\n"
+        }
+      ]
+    },
+    {
+      "repeat": 2,
+      "totalRootMs": 171.3,
+      "totalScanRows": 341311,
+      "totalReturnedRows": 0,
+      "tables": [
+        {
+          "file": "lottery_01-user_strategy_export_000-scanInvoiceMqState-analyze-2.txt",
+          "rootMs": 24.4,
+          "returnedRows": 0,
+          "scanRows": 42686,
+          "plan": "-> Limit: 100 row(s)  (cost=746 rows=100) (actual time=24.4..24.4 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_000.grant_state <> 1) and ((lottery_01.user_strategy_export_000.mq_state = 2) or ((lottery_01.user_strategy_export_000.mq_state = 0) and (lottery_01.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_000.mq_state in (1,3)) and (lottery_01.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=746 rows=3377) (actual time=24.4..24.4 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_000 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=746 rows=19960) (actual time=0.0748..23.2 rows=42686 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_01-user_strategy_export_001-scanInvoiceMqState-analyze-2.txt",
+          "rootMs": 19.5,
+          "returnedRows": 0,
+          "scanRows": 42690,
+          "plan": "-> Limit: 100 row(s)  (cost=702 rows=100) (actual time=19.5..19.5 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_001.grant_state <> 1) and ((lottery_01.user_strategy_export_001.mq_state = 2) or ((lottery_01.user_strategy_export_001.mq_state = 0) and (lottery_01.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_001.mq_state in (1,3)) and (lottery_01.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=702 rows=3415) (actual time=19.5..19.5 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_001 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=702 rows=20183) (actual time=0.0783..18.4 rows=42690 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_01-user_strategy_export_002-scanInvoiceMqState-analyze-2.txt",
+          "rootMs": 19.5,
+          "returnedRows": 0,
+          "scanRows": 42616,
+          "plan": "-> Limit: 100 row(s)  (cost=692 rows=100) (actual time=19.5..19.5 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_002.grant_state <> 1) and ((lottery_01.user_strategy_export_002.mq_state = 2) or ((lottery_01.user_strategy_export_002.mq_state = 0) and (lottery_01.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_002.mq_state in (1,3)) and (lottery_01.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=692 rows=3312) (actual time=19.5..19.5 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_002 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=692 rows=19575) (actual time=0.0672..18.5 rows=42616 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_01-user_strategy_export_003-scanInvoiceMqState-analyze-2.txt",
+          "rootMs": 20.7,
+          "returnedRows": 0,
+          "scanRows": 42576,
+          "plan": "-> Limit: 100 row(s)  (cost=699 rows=100) (actual time=20.7..20.7 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_003.grant_state <> 1) and ((lottery_01.user_strategy_export_003.mq_state = 2) or ((lottery_01.user_strategy_export_003.mq_state = 0) and (lottery_01.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_003.mq_state in (1,3)) and (lottery_01.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=699 rows=3387) (actual time=20.7..20.7 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_003 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=699 rows=20016) (actual time=0.0641..19.6 rows=42576 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_000-scanInvoiceMqState-analyze-2.txt",
+          "rootMs": 22.4,
+          "returnedRows": 0,
+          "scanRows": 42647,
+          "plan": "-> Limit: 100 row(s)  (cost=769 rows=100) (actual time=22.4..22.4 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_000.grant_state <> 1) and ((lottery_02.user_strategy_export_000.mq_state = 2) or ((lottery_02.user_strategy_export_000.mq_state = 0) and (lottery_02.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_000.mq_state in (1,3)) and (lottery_02.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=769 rows=3600) (actual time=22.4..22.4 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_000 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=769 rows=21276) (actual time=0.114..21.3 rows=42647 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_001-scanInvoiceMqState-analyze-2.txt",
+          "rootMs": 22.2,
+          "returnedRows": 0,
+          "scanRows": 42633,
+          "plan": "-> Limit: 100 row(s)  (cost=713 rows=100) (actual time=22.2..22.2 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_001.grant_state <> 1) and ((lottery_02.user_strategy_export_001.mq_state = 2) or ((lottery_02.user_strategy_export_001.mq_state = 0) and (lottery_02.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_001.mq_state in (1,3)) and (lottery_02.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=713 rows=3524) (actual time=22.2..22.2 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_001 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=713 rows=20829) (actual time=0.0894..21.1 rows=42633 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_002-scanInvoiceMqState-analyze-2.txt",
+          "rootMs": 20.3,
+          "returnedRows": 0,
+          "scanRows": 42706,
+          "plan": "-> Limit: 100 row(s)  (cost=718 rows=100) (actual time=20.3..20.3 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_002.grant_state <> 1) and ((lottery_02.user_strategy_export_002.mq_state = 2) or ((lottery_02.user_strategy_export_002.mq_state = 0) and (lottery_02.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_002.mq_state in (1,3)) and (lottery_02.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=718 rows=3570) (actual time=20.3..20.3 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_002 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=718 rows=21098) (actual time=0.0777..19.2 rows=42706 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_003-scanInvoiceMqState-analyze-2.txt",
+          "rootMs": 22.3,
+          "returnedRows": 0,
+          "scanRows": 42757,
+          "plan": "-> Limit: 100 row(s)  (cost=718 rows=100) (actual time=22.3..22.3 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_003.grant_state <> 1) and ((lottery_02.user_strategy_export_003.mq_state = 2) or ((lottery_02.user_strategy_export_003.mq_state = 0) and (lottery_02.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_003.mq_state in (1,3)) and (lottery_02.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=718 rows=3571) (actual time=22.3..22.3 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_003 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=718 rows=21104) (actual time=0.0707..21.1 rows=42757 loops=1)\n\n"
+        }
+      ]
+    },
+    {
+      "repeat": 3,
+      "totalRootMs": 174.1,
+      "totalScanRows": 341311,
+      "totalReturnedRows": 0,
+      "tables": [
+        {
+          "file": "lottery_01-user_strategy_export_000-scanInvoiceMqState-analyze-3.txt",
+          "rootMs": 20.0,
+          "returnedRows": 0,
+          "scanRows": 42686,
+          "plan": "-> Limit: 100 row(s)  (cost=746 rows=100) (actual time=20..20 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_000.grant_state <> 1) and ((lottery_01.user_strategy_export_000.mq_state = 2) or ((lottery_01.user_strategy_export_000.mq_state = 0) and (lottery_01.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_000.mq_state in (1,3)) and (lottery_01.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=746 rows=3377) (actual time=20..20 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_000 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=746 rows=19960) (actual time=0.108..19 rows=42686 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_01-user_strategy_export_001-scanInvoiceMqState-analyze-3.txt",
+          "rootMs": 19.9,
+          "returnedRows": 0,
+          "scanRows": 42690,
+          "plan": "-> Limit: 100 row(s)  (cost=702 rows=100) (actual time=19.9..19.9 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_001.grant_state <> 1) and ((lottery_01.user_strategy_export_001.mq_state = 2) or ((lottery_01.user_strategy_export_001.mq_state = 0) and (lottery_01.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_001.mq_state in (1,3)) and (lottery_01.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=702 rows=3415) (actual time=19.9..19.9 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_001 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=702 rows=20183) (actual time=0.07..18.8 rows=42690 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_01-user_strategy_export_002-scanInvoiceMqState-analyze-3.txt",
+          "rootMs": 19.6,
+          "returnedRows": 0,
+          "scanRows": 42616,
+          "plan": "-> Limit: 100 row(s)  (cost=692 rows=100) (actual time=19.6..19.6 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_002.grant_state <> 1) and ((lottery_01.user_strategy_export_002.mq_state = 2) or ((lottery_01.user_strategy_export_002.mq_state = 0) and (lottery_01.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_002.mq_state in (1,3)) and (lottery_01.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=692 rows=3312) (actual time=19.6..19.6 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_002 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=692 rows=19575) (actual time=0.0693..18.5 rows=42616 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_01-user_strategy_export_003-scanInvoiceMqState-analyze-3.txt",
+          "rootMs": 20.6,
+          "returnedRows": 0,
+          "scanRows": 42576,
+          "plan": "-> Limit: 100 row(s)  (cost=699 rows=100) (actual time=20.6..20.6 rows=0 loops=1)\n    -> Filter: ((lottery_01.user_strategy_export_003.grant_state <> 1) and ((lottery_01.user_strategy_export_003.mq_state = 2) or ((lottery_01.user_strategy_export_003.mq_state = 0) and (lottery_01.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_01.user_strategy_export_003.mq_state in (1,3)) and (lottery_01.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=699 rows=3387) (actual time=20.6..20.6 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_003 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=699 rows=20016) (actual time=0.0954..19.5 rows=42576 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_000-scanInvoiceMqState-analyze-3.txt",
+          "rootMs": 22.3,
+          "returnedRows": 0,
+          "scanRows": 42647,
+          "plan": "-> Limit: 100 row(s)  (cost=769 rows=100) (actual time=22.3..22.3 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_000.grant_state <> 1) and ((lottery_02.user_strategy_export_000.mq_state = 2) or ((lottery_02.user_strategy_export_000.mq_state = 0) and (lottery_02.user_strategy_export_000.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_000.mq_state in (1,3)) and (lottery_02.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute))))))  (cost=769 rows=3600) (actual time=22.3..22.3 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_000 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=769 rows=21276) (actual time=0.0869..21.2 rows=42647 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_001-scanInvoiceMqState-analyze-3.txt",
+          "rootMs": 24.7,
+          "returnedRows": 0,
+          "scanRows": 42633,
+          "plan": "-> Limit: 100 row(s)  (cost=713 rows=100) (actual time=24.7..24.7 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_001.grant_state <> 1) and ((lottery_02.user_strategy_export_001.mq_state = 2) or ((lottery_02.user_strategy_export_001.mq_state = 0) and (lottery_02.user_strategy_export_001.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_001.mq_state in (1,3)) and (lottery_02.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute))))))  (cost=713 rows=3524) (actual time=24.7..24.7 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_001 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=713 rows=20829) (actual time=0.0833..23.6 rows=42633 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_002-scanInvoiceMqState-analyze-3.txt",
+          "rootMs": 20.1,
+          "returnedRows": 0,
+          "scanRows": 42706,
+          "plan": "-> Limit: 100 row(s)  (cost=718 rows=100) (actual time=20.1..20.1 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_002.grant_state <> 1) and ((lottery_02.user_strategy_export_002.mq_state = 2) or ((lottery_02.user_strategy_export_002.mq_state = 0) and (lottery_02.user_strategy_export_002.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_002.mq_state in (1,3)) and (lottery_02.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute))))))  (cost=718 rows=3570) (actual time=20.1..20.1 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_002 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=718 rows=21098) (actual time=0.0613..19.1 rows=42706 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_003-scanInvoiceMqState-analyze-3.txt",
+          "rootMs": 26.9,
+          "returnedRows": 0,
+          "scanRows": 42757,
+          "plan": "-> Limit: 100 row(s)  (cost=718 rows=100) (actual time=26.9..26.9 rows=0 loops=1)\n    -> Filter: ((lottery_02.user_strategy_export_003.grant_state <> 1) and ((lottery_02.user_strategy_export_003.mq_state = 2) or ((lottery_02.user_strategy_export_003.mq_state = 0) and (lottery_02.user_strategy_export_003.create_time < <cache>((now() - interval 30 minute)))) or ((lottery_02.user_strategy_export_003.mq_state in (1,3)) and (lottery_02.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute))))))  (cost=718 rows=3571) (actual time=26.9..26.9 rows=0 loops=1)\n        -> Index lookup on user_strategy_export_003 using idx_stock_mq_state_create_time (stock_mq_state=1)  (cost=718 rows=21104) (actual time=0.136..25.7 rows=42757 loops=1)\n\n"
+        }
+      ]
+    }
+  ],
+  "scanAwardStockMqState": [
+    {
+      "repeat": 1,
+      "totalRootMs": 0.213,
+      "totalScanRows": 0,
+      "totalReturnedRows": 0,
+      "tables": [
+        {
+          "file": "lottery_01-user_strategy_export_000-scanAwardStockMqState-analyze-1.txt",
+          "rootMs": 0.0214,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.0214..0.0214 rows=0 loops=1)\n    -> Sort: lottery_01.user_strategy_export_000.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.0212..0.0212 rows=0 loops=1)\n        -> Filter: ((lottery_01.user_strategy_export_000.stock_mq_state in (0,2)) or ((lottery_01.user_strategy_export_000.stock_mq_state = 3) and (lottery_01.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0185..0.0185 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_000 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_01.user_strategy_export_000.stock_mq_state in (0,2)) or (lottery_01.user_strategy_export_000.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0177..0.0177 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_01-user_strategy_export_001-scanAwardStockMqState-analyze-1.txt",
+          "rootMs": 0.0143,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.0143..0.0143 rows=0 loops=1)\n    -> Sort: lottery_01.user_strategy_export_001.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.014..0.014 rows=0 loops=1)\n        -> Filter: ((lottery_01.user_strategy_export_001.stock_mq_state in (0,2)) or ((lottery_01.user_strategy_export_001.stock_mq_state = 3) and (lottery_01.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0111..0.0111 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_001 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_01.user_strategy_export_001.stock_mq_state in (0,2)) or (lottery_01.user_strategy_export_001.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0106..0.0106 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_01-user_strategy_export_002-scanAwardStockMqState-analyze-1.txt",
+          "rootMs": 0.0165,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.0165..0.0165 rows=0 loops=1)\n    -> Sort: lottery_01.user_strategy_export_002.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.0163..0.0163 rows=0 loops=1)\n        -> Filter: ((lottery_01.user_strategy_export_002.stock_mq_state in (0,2)) or ((lottery_01.user_strategy_export_002.stock_mq_state = 3) and (lottery_01.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0129..0.0129 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_002 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_01.user_strategy_export_002.stock_mq_state in (0,2)) or (lottery_01.user_strategy_export_002.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0124..0.0124 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_01-user_strategy_export_003-scanAwardStockMqState-analyze-1.txt",
+          "rootMs": 0.027,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.027..0.027 rows=0 loops=1)\n    -> Sort: lottery_01.user_strategy_export_003.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.0268..0.0268 rows=0 loops=1)\n        -> Filter: ((lottery_01.user_strategy_export_003.stock_mq_state in (0,2)) or ((lottery_01.user_strategy_export_003.stock_mq_state = 3) and (lottery_01.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.023..0.023 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_003 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_01.user_strategy_export_003.stock_mq_state in (0,2)) or (lottery_01.user_strategy_export_003.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0223..0.0223 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_000-scanAwardStockMqState-analyze-1.txt",
+          "rootMs": 0.0375,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.0375..0.0375 rows=0 loops=1)\n    -> Sort: lottery_02.user_strategy_export_000.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.0372..0.0372 rows=0 loops=1)\n        -> Filter: ((lottery_02.user_strategy_export_000.stock_mq_state in (0,2)) or ((lottery_02.user_strategy_export_000.stock_mq_state = 3) and (lottery_02.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.034..0.034 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_000 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_02.user_strategy_export_000.stock_mq_state in (0,2)) or (lottery_02.user_strategy_export_000.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0334..0.0334 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_001-scanAwardStockMqState-analyze-1.txt",
+          "rootMs": 0.0375,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.0375..0.0375 rows=0 loops=1)\n    -> Sort: lottery_02.user_strategy_export_001.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.0371..0.0371 rows=0 loops=1)\n        -> Filter: ((lottery_02.user_strategy_export_001.stock_mq_state in (0,2)) or ((lottery_02.user_strategy_export_001.stock_mq_state = 3) and (lottery_02.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0342..0.0342 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_001 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_02.user_strategy_export_001.stock_mq_state in (0,2)) or (lottery_02.user_strategy_export_001.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0337..0.0337 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_002-scanAwardStockMqState-analyze-1.txt",
+          "rootMs": 0.02,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.02..0.02 rows=0 loops=1)\n    -> Sort: lottery_02.user_strategy_export_002.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.0199..0.0199 rows=0 loops=1)\n        -> Filter: ((lottery_02.user_strategy_export_002.stock_mq_state in (0,2)) or ((lottery_02.user_strategy_export_002.stock_mq_state = 3) and (lottery_02.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.017..0.017 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_002 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_02.user_strategy_export_002.stock_mq_state in (0,2)) or (lottery_02.user_strategy_export_002.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0165..0.0165 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_003-scanAwardStockMqState-analyze-1.txt",
+          "rootMs": 0.0388,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.0388..0.0388 rows=0 loops=1)\n    -> Sort: lottery_02.user_strategy_export_003.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.0382..0.0382 rows=0 loops=1)\n        -> Filter: ((lottery_02.user_strategy_export_003.stock_mq_state in (0,2)) or ((lottery_02.user_strategy_export_003.stock_mq_state = 3) and (lottery_02.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0308..0.0308 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_003 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_02.user_strategy_export_003.stock_mq_state in (0,2)) or (lottery_02.user_strategy_export_003.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0299..0.0299 rows=0 loops=1)\n\n"
+        }
+      ]
+    },
+    {
+      "repeat": 2,
+      "totalRootMs": 0.1956,
+      "totalScanRows": 0,
+      "totalReturnedRows": 0,
+      "tables": [
+        {
+          "file": "lottery_01-user_strategy_export_000-scanAwardStockMqState-analyze-2.txt",
+          "rootMs": 0.016,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.016..0.016 rows=0 loops=1)\n    -> Sort: lottery_01.user_strategy_export_000.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.0158..0.0158 rows=0 loops=1)\n        -> Filter: ((lottery_01.user_strategy_export_000.stock_mq_state in (0,2)) or ((lottery_01.user_strategy_export_000.stock_mq_state = 3) and (lottery_01.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0122..0.0122 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_000 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_01.user_strategy_export_000.stock_mq_state in (0,2)) or (lottery_01.user_strategy_export_000.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0115..0.0115 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_01-user_strategy_export_001-scanAwardStockMqState-analyze-2.txt",
+          "rootMs": 0.015,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.015..0.015 rows=0 loops=1)\n    -> Sort: lottery_01.user_strategy_export_001.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.0148..0.0148 rows=0 loops=1)\n        -> Filter: ((lottery_01.user_strategy_export_001.stock_mq_state in (0,2)) or ((lottery_01.user_strategy_export_001.stock_mq_state = 3) and (lottery_01.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0119..0.0119 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_001 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_01.user_strategy_export_001.stock_mq_state in (0,2)) or (lottery_01.user_strategy_export_001.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0114..0.0114 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_01-user_strategy_export_002-scanAwardStockMqState-analyze-2.txt",
+          "rootMs": 0.0307,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.0307..0.0307 rows=0 loops=1)\n    -> Sort: lottery_01.user_strategy_export_002.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.0303..0.0303 rows=0 loops=1)\n        -> Filter: ((lottery_01.user_strategy_export_002.stock_mq_state in (0,2)) or ((lottery_01.user_strategy_export_002.stock_mq_state = 3) and (lottery_01.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0236..0.0236 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_002 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_01.user_strategy_export_002.stock_mq_state in (0,2)) or (lottery_01.user_strategy_export_002.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.023..0.023 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_01-user_strategy_export_003-scanAwardStockMqState-analyze-2.txt",
+          "rootMs": 0.0215,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.0215..0.0215 rows=0 loops=1)\n    -> Sort: lottery_01.user_strategy_export_003.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.021..0.021 rows=0 loops=1)\n        -> Filter: ((lottery_01.user_strategy_export_003.stock_mq_state in (0,2)) or ((lottery_01.user_strategy_export_003.stock_mq_state = 3) and (lottery_01.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0155..0.0155 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_003 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_01.user_strategy_export_003.stock_mq_state in (0,2)) or (lottery_01.user_strategy_export_003.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0149..0.0149 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_000-scanAwardStockMqState-analyze-2.txt",
+          "rootMs": 0.0271,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.0271..0.0271 rows=0 loops=1)\n    -> Sort: lottery_02.user_strategy_export_000.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.0267..0.0267 rows=0 loops=1)\n        -> Filter: ((lottery_02.user_strategy_export_000.stock_mq_state in (0,2)) or ((lottery_02.user_strategy_export_000.stock_mq_state = 3) and (lottery_02.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0234..0.0234 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_000 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_02.user_strategy_export_000.stock_mq_state in (0,2)) or (lottery_02.user_strategy_export_000.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0229..0.0229 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_001-scanAwardStockMqState-analyze-2.txt",
+          "rootMs": 0.0342,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.0342..0.0342 rows=0 loops=1)\n    -> Sort: lottery_02.user_strategy_export_001.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.034..0.034 rows=0 loops=1)\n        -> Filter: ((lottery_02.user_strategy_export_001.stock_mq_state in (0,2)) or ((lottery_02.user_strategy_export_001.stock_mq_state = 3) and (lottery_02.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0307..0.0307 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_001 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_02.user_strategy_export_001.stock_mq_state in (0,2)) or (lottery_02.user_strategy_export_001.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.03..0.03 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_002-scanAwardStockMqState-analyze-2.txt",
+          "rootMs": 0.0268,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.0268..0.0268 rows=0 loops=1)\n    -> Sort: lottery_02.user_strategy_export_002.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.0265..0.0265 rows=0 loops=1)\n        -> Filter: ((lottery_02.user_strategy_export_002.stock_mq_state in (0,2)) or ((lottery_02.user_strategy_export_002.stock_mq_state = 3) and (lottery_02.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.023..0.023 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_002 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_02.user_strategy_export_002.stock_mq_state in (0,2)) or (lottery_02.user_strategy_export_002.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0226..0.0226 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_003-scanAwardStockMqState-analyze-2.txt",
+          "rootMs": 0.0243,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.0243..0.0243 rows=0 loops=1)\n    -> Sort: lottery_02.user_strategy_export_003.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.024..0.024 rows=0 loops=1)\n        -> Filter: ((lottery_02.user_strategy_export_003.stock_mq_state in (0,2)) or ((lottery_02.user_strategy_export_003.stock_mq_state = 3) and (lottery_02.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0208..0.0208 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_003 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_02.user_strategy_export_003.stock_mq_state in (0,2)) or (lottery_02.user_strategy_export_003.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0203..0.0203 rows=0 loops=1)\n\n"
+        }
+      ]
+    },
+    {
+      "repeat": 3,
+      "totalRootMs": 0.1515,
+      "totalScanRows": 0,
+      "totalReturnedRows": 0,
+      "tables": [
+        {
+          "file": "lottery_01-user_strategy_export_000-scanAwardStockMqState-analyze-3.txt",
+          "rootMs": 0.0245,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.0245..0.0245 rows=0 loops=1)\n    -> Sort: lottery_01.user_strategy_export_000.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.0243..0.0243 rows=0 loops=1)\n        -> Filter: ((lottery_01.user_strategy_export_000.stock_mq_state in (0,2)) or ((lottery_01.user_strategy_export_000.stock_mq_state = 3) and (lottery_01.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0213..0.0213 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_000 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_01.user_strategy_export_000.stock_mq_state in (0,2)) or (lottery_01.user_strategy_export_000.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0208..0.0208 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_01-user_strategy_export_001-scanAwardStockMqState-analyze-3.txt",
+          "rootMs": 0.0155,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.0155..0.0155 rows=0 loops=1)\n    -> Sort: lottery_01.user_strategy_export_001.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.0153..0.0153 rows=0 loops=1)\n        -> Filter: ((lottery_01.user_strategy_export_001.stock_mq_state in (0,2)) or ((lottery_01.user_strategy_export_001.stock_mq_state = 3) and (lottery_01.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0123..0.0123 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_001 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_01.user_strategy_export_001.stock_mq_state in (0,2)) or (lottery_01.user_strategy_export_001.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0117..0.0117 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_01-user_strategy_export_002-scanAwardStockMqState-analyze-3.txt",
+          "rootMs": 0.0203,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.0203..0.0203 rows=0 loops=1)\n    -> Sort: lottery_01.user_strategy_export_002.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.0199..0.0199 rows=0 loops=1)\n        -> Filter: ((lottery_01.user_strategy_export_002.stock_mq_state in (0,2)) or ((lottery_01.user_strategy_export_002.stock_mq_state = 3) and (lottery_01.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0167..0.0167 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_002 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_01.user_strategy_export_002.stock_mq_state in (0,2)) or (lottery_01.user_strategy_export_002.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0162..0.0162 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_01-user_strategy_export_003-scanAwardStockMqState-analyze-3.txt",
+          "rootMs": 0.0142,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.0142..0.0142 rows=0 loops=1)\n    -> Sort: lottery_01.user_strategy_export_003.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.014..0.014 rows=0 loops=1)\n        -> Filter: ((lottery_01.user_strategy_export_003.stock_mq_state in (0,2)) or ((lottery_01.user_strategy_export_003.stock_mq_state = 3) and (lottery_01.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0109..0.0109 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_003 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_01.user_strategy_export_003.stock_mq_state in (0,2)) or (lottery_01.user_strategy_export_003.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0104..0.0104 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_000-scanAwardStockMqState-analyze-3.txt",
+          "rootMs": 0.0147,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.0147..0.0147 rows=0 loops=1)\n    -> Sort: lottery_02.user_strategy_export_000.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.0146..0.0146 rows=0 loops=1)\n        -> Filter: ((lottery_02.user_strategy_export_000.stock_mq_state in (0,2)) or ((lottery_02.user_strategy_export_000.stock_mq_state = 3) and (lottery_02.user_strategy_export_000.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0119..0.0119 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_000 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_02.user_strategy_export_000.stock_mq_state in (0,2)) or (lottery_02.user_strategy_export_000.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0115..0.0115 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_001-scanAwardStockMqState-analyze-3.txt",
+          "rootMs": 0.0224,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.0224..0.0224 rows=0 loops=1)\n    -> Sort: lottery_02.user_strategy_export_001.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.0222..0.0222 rows=0 loops=1)\n        -> Filter: ((lottery_02.user_strategy_export_001.stock_mq_state in (0,2)) or ((lottery_02.user_strategy_export_001.stock_mq_state = 3) and (lottery_02.user_strategy_export_001.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0186..0.0186 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_001 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_02.user_strategy_export_001.stock_mq_state in (0,2)) or (lottery_02.user_strategy_export_001.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0178..0.0178 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_002-scanAwardStockMqState-analyze-3.txt",
+          "rootMs": 0.014,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.014..0.014 rows=0 loops=1)\n    -> Sort: lottery_02.user_strategy_export_002.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.0138..0.0138 rows=0 loops=1)\n        -> Filter: ((lottery_02.user_strategy_export_002.stock_mq_state in (0,2)) or ((lottery_02.user_strategy_export_002.stock_mq_state = 3) and (lottery_02.user_strategy_export_002.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0112..0.0112 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_002 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_02.user_strategy_export_002.stock_mq_state in (0,2)) or (lottery_02.user_strategy_export_002.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0107..0.0107 rows=0 loops=1)\n\n"
+        },
+        {
+          "file": "lottery_02-user_strategy_export_003-scanAwardStockMqState-analyze-3.txt",
+          "rootMs": 0.0259,
+          "returnedRows": 0,
+          "scanRows": 0,
+          "plan": "-> Limit: 200 row(s)  (cost=2.11 rows=3) (actual time=0.0259..0.0259 rows=0 loops=1)\n    -> Sort: lottery_02.user_strategy_export_003.create_time, limit input to 200 row(s) per chunk  (cost=2.11 rows=3) (actual time=0.0255..0.0255 rows=0 loops=1)\n        -> Filter: ((lottery_02.user_strategy_export_003.stock_mq_state in (0,2)) or ((lottery_02.user_strategy_export_003.stock_mq_state = 3) and (lottery_02.user_strategy_export_003.update_time < <cache>((now() - interval 10 minute)))))  (cost=2.11 rows=3) (actual time=0.0202..0.0202 rows=0 loops=1)\n            -> Index range scan on user_strategy_export_003 using idx_stock_mq_state_create_time over (stock_mq_state = 0) OR (stock_mq_state = 2) OR (stock_mq_state = 3), with index condition: ((lottery_02.user_strategy_export_003.stock_mq_state in (0,2)) or (lottery_02.user_strategy_export_003.stock_mq_state = 3))  (cost=2.11 rows=3) (actual time=0.0194..0.0194 rows=0 loops=1)\n\n"
+        }
+      ]
+    }
+  ]
+}
