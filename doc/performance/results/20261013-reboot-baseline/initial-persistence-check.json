@@ -1,0 +1,12 @@
+{
+  "mysqlFactsMatchB198ed6": true,
+  "orders": 341311,
+  "takes": 381439,
+  "ledger": 341311,
+  "newActivityIdsAvailable": [
+    740201,
+    740202,
+    740210
+  ],
+  "durability": "1\t1\tREPEATABLE-READ"
+}

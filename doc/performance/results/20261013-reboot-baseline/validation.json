@@ -1,0 +1,25 @@
+{
+  "baseline": "b198ed6",
+  "businessJavaMapperIndexesAndThresholdsChanged": false,
+  "measurementSeconds": [
+    180,
+    300
+  ],
+  "targetRps": [
+    80,
+    80
+  ],
+  "newDrawRps": [
+    80.0,
+    80.01333333333334
+  ],
+  "realChainAudit": "PASS",
+  "semanticsAndRealReplay": "PASS",
+  "allOriginalStabilityChecks": "PASS",
+  "resourceRawSwapCounters": "ALL_ZERO",
+  "globalPersistenceAudit": "PASS",
+  "resourceOwnershipAndShutdown": "PASS",
+  "stopToolRealReproductionAndFix": "PASS",
+  "stopToolSyntax": "PASS",
+  "businessUnitTestsAndManualIT": "NOT_RUN，本轮无业务修改；不冒充已执行"
+}

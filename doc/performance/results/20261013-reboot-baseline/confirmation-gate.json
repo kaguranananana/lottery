@@ -1,0 +1,122 @@
+{
+  "rate": 80,
+  "firstStable": true,
+  "host": {
+    "timeMs": 1791858292951,
+    "pageBytes": 16384,
+    "pages": {
+      "Pages free": 6926,
+      "Pages active": 349142,
+      "Pages inactive": 339426,
+      "Pages speculative": 8589,
+      "Pages throttled": 0,
+      "Pages wired down": 111967,
+      "Pages purgeable": 1217,
+      "\"Translation faults\"": 15870170,
+      "Pages copy-on-write": 803956,
+      "Pages zero filled": 6051637,
+      "Pages reactivated": 988873,
+      "Pages purged": 49917,
+      "File-backed pages": 258544,
+      "Anonymous pages": 438613,
+      "Pages stored in compressor": 476893,
+      "Pages occupied by compressor": 193233,
+      "Decompressions": 143311,
+      "Compressions": 690795,
+      "Pageins": 1217670,
+      "Pageouts": 5946,
+      "Swapins": 0,
+      "Swapouts": 0
+    },
+    "vmStat": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                     6926.\nPages active:                                 349142.\nPages inactive:                               339426.\nPages speculative:                              8589.\nPages throttled:                                   0.\nPages wired down:                             111967.\nPages purgeable:                                1217.\n\"Translation faults\":                       15870170.\nPages copy-on-write:                          803956.\nPages zero filled:                           6051637.\nPages reactivated:                            988873.\nPages purged:                                  49917.\nFile-backed pages:                            258544.\nAnonymous pages:                              438613.\nPages stored in compressor:                   476893.\nPages occupied by compressor:                 193233.\nDecompressions:                               143311.\nCompressions:                                 690795.\nPageins:                                     1217670.\nPageouts:                                       5946.\nSwapins:                                           0.\nSwapouts:                                          0.\n",
+    "swapUsage": "vm.swapusage: total = 0.00M  used = 0.00M  free = 0.00M  (encrypted)",
+    "topRssProcesses": [
+      {
+        "pid": 2487,
+        "cpuPercent": 30.2,
+        "rssKiB": 5705664,
+        "name": "com.apple.Virtualization.VirtualMachine"
+      },
+      {
+        "pid": 1338,
+        "cpuPercent": 0.1,
+        "rssKiB": 739424,
+        "name": "Codex (Renderer)"
+      },
+      {
+        "pid": 3567,
+        "cpuPercent": 0.4,
+        "rssKiB": 689216,
+        "name": "java"
+      },
+      {
+        "pid": 1267,
+        "cpuPercent": 0.7,
+        "rssKiB": 393872,
+        "name": "ChatGPT"
+      },
+      {
+        "pid": 1553,
+        "cpuPercent": 0.4,
+        "rssKiB": 239920,
+        "name": "Codex (Renderer)"
+      },
+      {
+        "pid": 2450,
+        "cpuPercent": 0.7,
+        "rssKiB": 210432,
+        "name": "com.docker.backend"
+      },
+      {
+        "pid": 1340,
+        "cpuPercent": 2.9,
+        "rssKiB": 198976,
+        "name": "codex"
+      },
+      {
+        "pid": 1628,
+        "cpuPercent": 0.0,
+        "rssKiB": 187792,
+        "name": "Codex (Renderer)"
+      },
+      {
+        "pid": 774,
+        "cpuPercent": 0.0,
+        "rssKiB": 181328,
+        "name": "Spotlight"
+      },
+      {
+        "pid": 1068,
+        "cpuPercent": 0.0,
+        "rssKiB": 154832,
+        "name": "Google Chrome"
+      },
+      {
+        "pid": 2481,
+        "cpuPercent": 0.1,
+        "rssKiB": 148704,
+        "name": "Docker Desktop"
+      },
+      {
+        "pid": 556,
+        "cpuPercent": 0.0,
+        "rssKiB": 143872,
+        "name": "mds_stores"
+      }
+    ]
+  },
+  "memoryPressure": "The system has 17179869184 (1048576 pages with a page size of 16384).\n\nStats: \nPages free: 7054 \nPages purgeable: 1217 \nPages purged: 49917 \n\nSwap I/O:\nSwapins: 0 \nSwapouts: 0 \n\nPage Q counts:\nPages active: 349427 \nPages inactive: 339970 \nPages speculative: 8598 \nPages throttled: 0 \nPages wired down: 110938 \n\nCompressor Stats:\nPages used by compressor: 193226 \nPages decompressed: 143311 \nPages compressed: 690795 \n\nFile I/O:\nPageins: 1217694 \nPageouts: 5946 \n\nSystem-wide memory free percentage: 69%\n",
+  "kafka": {
+    "lottery-perf-stock": [
+      359075,
+      0,
+      8
+    ],
+    "lottery-perf-invoice": [
+      357868,
+      0,
+      8
+    ]
+  },
+  "jobFailure": null
+}

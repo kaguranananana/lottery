@@ -1,0 +1,9 @@
+{
+  "uptime": "10:03  up 7 mins, 1 user, load averages: 2.41 5.98 4.13\n",
+  "memoryPressure": "The system has 17179869184 (1048576 pages with a page size of 16384).\n\nStats: \nPages free: 7487 \nPages purgeable: 3381 \nPages purged: 31909 \n\nSwap I/O:\nSwapins: 0 \nSwapouts: 0 \n\nPage Q counts:\nPages active: 408952 \nPages inactive: 401155 \nPages speculative: 7170 \nPages throttled: 0 \nPages wired down: 139244 \n\nCompressor Stats:\nPages used by compressor: 45059 \nPages decompressed: 41178 \nPages compressed: 240763 \n\nFile I/O:\nPageins: 796847 \nPageouts: 2666 \n\nSystem-wide memory free percentage: 81%\n",
+  "dockerProbe": {
+    "exitCode": 1,
+    "stdout": "0 CPUs 0 bytes\n",
+    "stderr": "Cannot connect to the Docker daemon at unix:///Users/anontokyo/.docker/run/docker.sock. Is the docker daemon running?\n"
+  }
+}

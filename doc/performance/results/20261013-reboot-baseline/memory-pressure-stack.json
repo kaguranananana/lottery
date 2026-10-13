@@ -1,0 +1,5 @@
+{
+  "pressure": "The system has 17179869184 (1048576 pages with a page size of 16384).\n\nStats: \nPages free: 5251 \nPages purgeable: 13861 \nPages purged: 43416 \n\nSwap I/O:\nSwapins: 0 \nSwapouts: 0 \n\nPage Q counts:\nPages active: 392955 \nPages inactive: 381742 \nPages speculative: 10419 \nPages throttled: 0 \nPages wired down: 115749 \n\nCompressor Stats:\nPages used by compressor: 103124 \nPages decompressed: 79673 \nPages compressed: 438653 \n\nFile I/O:\nPageins: 1125844 \nPageouts: 3951 \n\nSystem-wide memory free percentage: 78%\n",
+  "level": "kern.memorystatus_vm_pressure_level: 1\n",
+  "swap": "vm.swapusage: total = 0.00M  used = 0.00M  free = 0.00M  (encrypted)\n"
+}

@@ -1,0 +1,11 @@
+{
+  "otherFiveInstancesUnchanged": true,
+  "allVolumesAndResourceLimitsUnchanged": true,
+  "perfFourFinallyStopped": true,
+  "mysqlExitCode": 0,
+  "mysqlOOMKilled": false,
+  "shutdownGraceSeconds": 60,
+  "applicationStopToolExitCode": 0,
+  "javaTermination": "正常SIGTERM，退出143",
+  "originalStopFailurePreserved": true
+}

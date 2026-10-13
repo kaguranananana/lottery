@@ -1,0 +1,6 @@
+{
+  "containers": 9,
+  "resourceAndVolumeIdentity": "PASS",
+  "initialAllStopped": true,
+  "startedOtherInstances": false
+}

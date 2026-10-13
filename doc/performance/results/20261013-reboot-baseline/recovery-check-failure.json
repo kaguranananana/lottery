@@ -1,0 +1,38 @@
+{
+  "error": "AssertionError: lottery-perf-zookeeper-1 mounts",
+  "cause": "Docker 重启后 Mounts 数组顺序变化；按挂载目标核对，名称/类型/目标相同，没有数据卷替换",
+  "originalBefore": [
+    {
+      "type": "volume",
+      "destination": "/data",
+      "volumeName": "673366b12a08473f4212bca3f448fbd650c283d90369794a1cb3dcebad2024c2"
+    },
+    {
+      "type": "volume",
+      "destination": "/datalog",
+      "volumeName": "4348580a355454fe9d74efb1e9532732d165b77b404dbaf29fa05e81b4290931"
+    },
+    {
+      "type": "volume",
+      "destination": "/logs",
+      "volumeName": "8bd5cab4da3289b24ef995c6362a82173a8b8da70442f87833af621c46d0ac87"
+    }
+  ],
+  "originalAfter": [
+    {
+      "type": "volume",
+      "destination": "/logs",
+      "volumeName": "8bd5cab4da3289b24ef995c6362a82173a8b8da70442f87833af621c46d0ac87"
+    },
+    {
+      "type": "volume",
+      "destination": "/data",
+      "volumeName": "673366b12a08473f4212bca3f448fbd650c283d90369794a1cb3dcebad2024c2"
+    },
+    {
+      "type": "volume",
+      "destination": "/datalog",
+      "volumeName": "4348580a355454fe9d74efb1e9532732d165b77b404dbaf29fa05e81b4290931"
+    }
+  ]
+}

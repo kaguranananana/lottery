@@ -1,0 +1,7 @@
+{
+  "sampleCount": 13,
+  "samplingSeconds": 60.032,
+  "swapInMiB": 0.0,
+  "swapOutMiB": 0.0,
+  "memoryPressureAfter": "The system has 17179869184 (1048576 pages with a page size of 16384).\n\nStats: \nPages free: 18669 \nPages purgeable: 4265 \nPages purged: 31981 \n\nSwap I/O:\nSwapins: 0 \nSwapouts: 0 \n\nPage Q counts:\nPages active: 400242 \nPages inactive: 404652 \nPages speculative: 519 \nPages throttled: 0 \nPages wired down: 140367 \n\nCompressor Stats:\nPages used by compressor: 44992 \nPages decompressed: 41442 \nPages compressed: 240898 \n\nFile I/O:\nPageins: 801438 \nPageouts: 2761 \n\nSystem-wide memory free percentage: 81%\n"
+}

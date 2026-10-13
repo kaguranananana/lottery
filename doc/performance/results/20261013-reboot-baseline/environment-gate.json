@@ -1,0 +1,14 @@
+{
+  "decision": "PROCEED_RATE80_ONLY",
+  "baseline": "b198ed6",
+  "reason": "四阶段均未观察到主动换页；其它实例保持停止，专用栈/应用正常就绪，保留原资源限制及稳定阈值",
+  "sourceWindows": [
+    "host-before-docker",
+    "docker-idle",
+    "stack-idle",
+    "application-idle"
+  ],
+  "memoryPressure": "The system has 17179869184 (1048576 pages with a page size of 16384).\n\nStats: \nPages free: 4121 \nPages purgeable: 1546 \nPages purged: 47838 \n\nSwap I/O:\nSwapins: 0 \nSwapouts: 0 \n\nPage Q counts:\nPages active: 370261 \nPages inactive: 366460 \nPages speculative: 3080 \nPages throttled: 0 \nPages wired down: 121300 \n\nCompressor Stats:\nPages used by compressor: 143911 \nPages decompressed: 101237 \nPages compressed: 537620 \n\nFile I/O:\nPageins: 1197015 \nPageouts: 4221 \n\nSystem-wide memory free percentage: 73%\n",
+  "pressureLevel": "kern.memorystatus_vm_pressure_level: 1\n",
+  "swap": "vm.swapusage: total = 0.00M  used = 0.00M  free = 0.00M  (encrypted)\n"
+}

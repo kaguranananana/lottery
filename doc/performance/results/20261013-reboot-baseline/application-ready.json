@@ -1,0 +1,89 @@
+{
+  "metrics": {
+    "time": 1791857700430,
+    "processCpuTimeNs": 4575956000,
+    "heapUsed": 81899856,
+    "heapMax": 1073741824,
+    "threads": 58,
+    "gc": [
+      [
+        "G1 Young Generation",
+        6,
+        17
+      ],
+      [
+        "G1 Old Generation",
+        0,
+        0
+      ]
+    ],
+    "pools": {
+      "HikariPool-1": {
+        "url": "jdbc:mysql://127.0.0.1:13329/lottery_01?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai",
+        "max": 48,
+        "active": 0,
+        "idle": 12,
+        "waiting": 0,
+        "acquires": 0,
+        "acquireNanos": 0,
+        "timeouts": 0
+      },
+      "HikariPool-2": {
+        "url": "jdbc:mysql://127.0.0.1:13329/lottery_02?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai",
+        "max": 48,
+        "active": 0,
+        "idle": 12,
+        "waiting": 0,
+        "acquires": 0,
+        "acquireNanos": 0,
+        "timeouts": 0
+      },
+      "HikariPool-3": {
+        "url": "jdbc:mysql://127.0.0.1:13329/lottery?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai",
+        "max": 48,
+        "active": 0,
+        "idle": 12,
+        "waiting": 0,
+        "acquires": 0,
+        "acquireNanos": 0,
+        "timeouts": 0
+      }
+    },
+    "jobCalls": 0,
+    "jobNanos": 0,
+    "jobFailure": null,
+    "timing": {},
+    "listeners": {
+      "org.springframework.kafka.KafkaListenerEndpointContainer#0": [
+        "MANUAL_IMMEDIATE",
+        true
+      ],
+      "org.springframework.kafka.KafkaListenerEndpointContainer#1": [
+        "MANUAL_IMMEDIATE",
+        true
+      ]
+    },
+    "tomcat": {
+      "Tomcat:type=ThreadPool,name=\"http-nio-127.0.0.1-18090\"": [
+        1,
+        10,
+        200
+      ]
+    }
+  },
+  "kafkaLag": {
+    "lottery-perf-stock": [
+      343068,
+      0,
+      8
+    ],
+    "lottery-perf-invoice": [
+      341861,
+      0,
+      8
+    ]
+  },
+  "memoryPressure": "The system has 17179869184 (1048576 pages with a page size of 16384).\n\nStats: \nPages free: 4215 \nPages purgeable: 364 \nPages purged: 46884 \n\nSwap I/O:\nSwapins: 0 \nSwapouts: 0 \n\nPage Q counts:\nPages active: 377407 \nPages inactive: 374674 \nPages speculative: 1509 \nPages throttled: 0 \nPages wired down: 124621 \n\nCompressor Stats:\nPages used by compressor: 126687 \nPages decompressed: 88240 \nPages compressed: 504042 \n\nFile I/O:\nPageins: 1170839 \nPageouts: 4055 \n\nSystem-wide memory free percentage: 74%\n",
+  "pressureLevel": "kern.memorystatus_vm_pressure_level: 1\n",
+  "swap": "vm.swapusage: total = 0.00M  used = 0.00M  free = 0.00M  (encrypted)\n"
+}

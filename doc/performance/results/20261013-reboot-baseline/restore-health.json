@@ -1,0 +1,47 @@
+[
+  {
+    "seconds": 0.03,
+    "state": {
+      "lottery-perf-mysql-1": "starting",
+      "lottery-perf-redis-1": "starting",
+      "lottery-perf-zookeeper-1": "running",
+      "lottery-perf-kafka-1": "starting"
+    }
+  },
+  {
+    "seconds": 3.06,
+    "state": {
+      "lottery-perf-mysql-1": "starting",
+      "lottery-perf-redis-1": "starting",
+      "lottery-perf-zookeeper-1": "running",
+      "lottery-perf-kafka-1": "starting"
+    }
+  },
+  {
+    "seconds": 6.1,
+    "state": {
+      "lottery-perf-mysql-1": "healthy",
+      "lottery-perf-redis-1": "healthy",
+      "lottery-perf-zookeeper-1": "running",
+      "lottery-perf-kafka-1": "starting"
+    }
+  },
+  {
+    "seconds": 9.15,
+    "state": {
+      "lottery-perf-mysql-1": "healthy",
+      "lottery-perf-redis-1": "healthy",
+      "lottery-perf-zookeeper-1": "running",
+      "lottery-perf-kafka-1": "starting"
+    }
+  },
+  {
+    "seconds": 12.21,
+    "state": {
+      "lottery-perf-mysql-1": "healthy",
+      "lottery-perf-redis-1": "healthy",
+      "lottery-perf-zookeeper-1": "running",
+      "lottery-perf-kafka-1": "healthy"
+    }
+  }
+]

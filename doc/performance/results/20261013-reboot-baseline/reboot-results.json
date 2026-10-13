@@ -1,0 +1,157 @@
+{
+  "sourceCommit": "b198ed6",
+  "currentNewResults": {
+    "reboot-rate80": {
+      "windowSeconds": 180.0,
+      "newDrawRps": 80.0,
+      "newDrawsWindow": 14400,
+      "ordersTotal": 16007,
+      "meanMs": 10.964375,
+      "p95Ms": 19,
+      "p99Ms": 23,
+      "httpErrorRate": 0.0,
+      "systemErrorRate": 0.0,
+      "asyncP95UpperMs": 2105,
+      "drainSeconds": 0.3309450149536133,
+      "audit": "PASS",
+      "stability": {
+        "stable": true,
+        "checks": {
+          "至少180秒测量": true,
+          "达到目标到达速率95%": true,
+          "HTTP与系统错误率低于0.1%": true,
+          "HTTP P99低于1秒": true,
+          "积压峰值不超过10秒请求量": true,
+          "首尾平均积压增长不超过1秒请求量": true,
+          "异步P95保守上界低于10秒": true,
+          "入口结束后15秒内收敛": true,
+          "业务审计通过": true
+        },
+        "measuredRps": 80.0,
+        "targetRps": 80.0,
+        "backlogPeak": 100,
+        "backlogMeanGrowth": 3.714285714285708,
+        "firstMeanBacklog": 67.42857142857143,
+        "lastMeanBacklog": 71.14285714285714
+      },
+      "resources": {
+        "mysql": {
+          "cpuMean": 42.9935,
+          "cpuMax": 62.62,
+          "memoryPeak": "672.9MiB / 2GiB"
+        },
+        "redis": {
+          "cpuMean": 2.0493333333333332,
+          "cpuMax": 3.38,
+          "memoryPeak": "21.7MiB / 256MiB"
+        },
+        "kafka": {
+          "cpuMean": 66.5295,
+          "cpuMax": 190.07,
+          "memoryPeak": "743.3MiB / 1GiB"
+        },
+        "mysqlStatuses": {
+          "maxConnections": 48,
+          "maxRunning": 8,
+          "rowLockWaitsDelta": 2894,
+          "rowLockTimeMsDelta": 3463
+        },
+        "kafkaLag": {
+          "maxStockLag": 58,
+          "maxInvoiceLag": 33
+        },
+        "kafkaCommittedPerSecond": {
+          "lottery-perf-stock": 79.71323568077311,
+          "lottery-perf-invoice": 79.71323568077311
+        },
+        "gcCountDelta": {
+          "G1 Young Generation": 68,
+          "G1 Old Generation": 0
+        },
+        "collectionMaxMs": 2534
+      }
+    },
+    "reboot-rate80-confirm": {
+      "windowSeconds": 300.0,
+      "newDrawRps": 80.01333333333334,
+      "newDrawsWindow": 24004,
+      "ordersTotal": 25613,
+      "meanMs": 10.67667888685219,
+      "p95Ms": 18,
+      "p99Ms": 22,
+      "httpErrorRate": 0.0,
+      "systemErrorRate": 0.0,
+      "asyncP95UpperMs": 2116,
+      "drainSeconds": 0.3263709545135498,
+      "audit": "PASS",
+      "stability": {
+        "stable": true,
+        "checks": {
+          "至少180秒测量": true,
+          "达到目标到达速率95%": true,
+          "HTTP与系统错误率低于0.1%": true,
+          "HTTP P99低于1秒": true,
+          "积压峰值不超过10秒请求量": true,
+          "首尾平均积压增长不超过1秒请求量": true,
+          "异步P95保守上界低于10秒": true,
+          "入口结束后15秒内收敛": true,
+          "业务审计通过": true
+        },
+        "measuredRps": 80.01333333333334,
+        "targetRps": 80.0,
+        "backlogPeak": 105,
+        "backlogMeanGrowth": 5.857142857142847,
+        "firstMeanBacklog": 70.28571428571429,
+        "lastMeanBacklog": 76.14285714285714
+      },
+      "resources": {
+        "mysql": {
+          "cpuMean": 43.3491,
+          "cpuMax": 71.54,
+          "memoryPeak": "755.3MiB / 2GiB"
+        },
+        "redis": {
+          "cpuMean": 2.0258,
+          "cpuMax": 3.19,
+          "memoryPeak": "21.71MiB / 256MiB"
+        },
+        "kafka": {
+          "cpuMean": 59.7365,
+          "cpuMax": 146.23,
+          "memoryPeak": "762.4MiB / 1GiB"
+        },
+        "mysqlStatuses": {
+          "maxConnections": 47,
+          "maxRunning": 6,
+          "rowLockWaitsDelta": 4699,
+          "rowLockTimeMsDelta": 5482
+        },
+        "kafkaLag": {
+          "maxStockLag": 76,
+          "maxInvoiceLag": 44
+        },
+        "kafkaCommittedPerSecond": {
+          "lottery-perf-stock": 79.7549935214633,
+          "lottery-perf-invoice": 79.65066383966884
+        },
+        "gcCountDelta": {
+          "G1 Young Generation": 113,
+          "G1 Old Generation": 0
+        },
+        "collectionMaxMs": 2495
+      }
+    }
+  },
+  "businessOrIndexOptimization": false,
+  "maximumStableRpsMeasured": false,
+  "higherRatesTested": false,
+  "allBootSwapCountersZero": true,
+  "acceptedNewOrdersAndTakes": 41624,
+  "initialQuotaRows": 2424009,
+  "finalQuotaRows": 2624013,
+  "toolFailuresPreserved": [
+    "官方JMeter下载超时28",
+    "Docker挂载列表顺序误比较",
+    "stop.py真实Java进程误拒绝"
+  ]
+}

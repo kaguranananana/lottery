@@ -1,0 +1,20 @@
+{
+  "sourceCommit": "b198ed6",
+  "businessChanges": false,
+  "targetRps": 80,
+  "threads": 30,
+  "warmupSeconds": 20,
+  "firstMeasurementSeconds": 180,
+  "sameRateConfirmationSeconds": 300,
+  "usersPerRound": 100000,
+  "stockPerActivityAndAward": 1000000,
+  "activityIds": [
+    740201,
+    740202
+  ],
+  "jdk": "17.0.18",
+  "jmeter": "5.6.3",
+  "stabilitySource": "stability.md",
+  "jmeterBinary": "cache/lottery-perf/apache-jmeter-5.6.3/bin/jmeter",
+  "noHigherRate": true
+}

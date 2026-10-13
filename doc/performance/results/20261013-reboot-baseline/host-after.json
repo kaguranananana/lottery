@@ -1,0 +1,108 @@
+{
+  "sample": {
+    "timeMs": 1791859119007,
+    "pageBytes": 16384,
+    "pages": {
+      "Pages free": 8121,
+      "Pages active": 340693,
+      "Pages inactive": 334525,
+      "Pages speculative": 5908,
+      "Pages throttled": 0,
+      "Pages wired down": 110746,
+      "Pages purgeable": 1879,
+      "\"Translation faults\"": 26279156,
+      "Pages copy-on-write": 1147870,
+      "Pages zero filled": 7156414,
+      "Pages reactivated": 1347907,
+      "Pages purged": 53416,
+      "File-backed pages": 261701,
+      "Anonymous pages": 419425,
+      "Pages stored in compressor": 496199,
+      "Pages occupied by compressor": 209426,
+      "Decompressions": 250577,
+      "Compressions": 828628,
+      "Pageins": 1273942,
+      "Pageouts": 8648,
+      "Swapins": 0,
+      "Swapouts": 0
+    },
+    "vmStat": "Mach Virtual Memory Statistics: (page size of 16384 bytes)\nPages free:                                     8121.\nPages active:                                 340693.\nPages inactive:                               334525.\nPages speculative:                              5908.\nPages throttled:                                   0.\nPages wired down:                             110746.\nPages purgeable:                                1879.\n\"Translation faults\":                       26279156.\nPages copy-on-write:                         1147870.\nPages zero filled:                           7156414.\nPages reactivated:                           1347907.\nPages purged:                                  53416.\nFile-backed pages:                            261701.\nAnonymous pages:                              419425.\nPages stored in compressor:                   496199.\nPages occupied by compressor:                 209426.\nDecompressions:                               250577.\nCompressions:                                 828628.\nPageins:                                     1273942.\nPageouts:                                       8648.\nSwapins:                                           0.\nSwapouts:                                          0.\n",
+    "swapUsage": "vm.swapusage: total = 0.00M  used = 0.00M  free = 0.00M  (encrypted)",
+    "topRssProcesses": [
+      {
+        "pid": 2487,
+        "cpuPercent": 3.5,
+        "rssKiB": 5896656,
+        "name": "com.apple.Virtualization.VirtualMachine"
+      },
+      {
+        "pid": 1338,
+        "cpuPercent": 71.9,
+        "rssKiB": 686176,
+        "name": "Codex (Renderer)"
+      },
+      {
+        "pid": 1267,
+        "cpuPercent": 0.1,
+        "rssKiB": 392560,
+        "name": "ChatGPT"
+      },
+      {
+        "pid": 1553,
+        "cpuPercent": 0.0,
+        "rssKiB": 321760,
+        "name": "Codex (Renderer)"
+      },
+      {
+        "pid": 2450,
+        "cpuPercent": 1.0,
+        "rssKiB": 218512,
+        "name": "com.docker.backend"
+      },
+      {
+        "pid": 1340,
+        "cpuPercent": 0.6,
+        "rssKiB": 209120,
+        "name": "codex"
+      },
+      {
+        "pid": 1628,
+        "cpuPercent": 0.0,
+        "rssKiB": 198256,
+        "name": "Codex (Renderer)"
+      },
+      {
+        "pid": 774,
+        "cpuPercent": 0.0,
+        "rssKiB": 175280,
+        "name": "Spotlight"
+      },
+      {
+        "pid": 1068,
+        "cpuPercent": 0.0,
+        "rssKiB": 170608,
+        "name": "Google Chrome"
+      },
+      {
+        "pid": 2481,
+        "cpuPercent": 0.0,
+        "rssKiB": 154288,
+        "name": "Docker Desktop"
+      },
+      {
+        "pid": 2512,
+        "cpuPercent": 0.0,
+        "rssKiB": 136544,
+        "name": "Docker Desktop Helper (Renderer)"
+      },
+      {
+        "pid": 1337,
+        "cpuPercent": 0.0,
+        "rssKiB": 130416,
+        "name": "Codex (Renderer)"
+      }
+    ]
+  },
+  "memoryPressure": "The system has 17179869184 (1048576 pages with a page size of 16384).\n\nStats: \nPages free: 7831 \nPages purgeable: 1879 \nPages purged: 53416 \n\nSwap I/O:\nSwapins: 0 \nSwapouts: 0 \n\nPage Q counts:\nPages active: 340790 \nPages inactive: 334521 \nPages speculative: 5927 \nPages throttled: 0 \nPages wired down: 110756 \n\nCompressor Stats:\nPages used by compressor: 209426 \nPages decompressed: 250577 \nPages compressed: 828628 \n\nFile I/O:\nPageins: 1273959 \nPageouts: 8648 \n\nSystem-wide memory free percentage: 68%\n",
+  "pressureLevel": "kern.memorystatus_vm_pressure_level: 1\n"
+}

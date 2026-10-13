@@ -1,0 +1,18 @@
+{
+  "baseline": "b198ed6",
+  "jdk": "Microsoft OpenJDK 17.0.18",
+  "buildExitCode": 0,
+  "officialJmeterDownload": {
+    "url": "https://archive.apache.org/dist/jmeter/binaries/apache-jmeter-5.6.3.tgz",
+    "exitCode": 28,
+    "log": "jmeter-download.log"
+  },
+  "restorationMirror": "https://repo.huaweicloud.com/apache/jmeter/binaries/apache-jmeter-5.6.3.tgz",
+  "jmeter": {
+    "version": "5.6.3",
+    "downloadExitCode": 0,
+    "source": "https://repo.huaweicloud.com/apache/jmeter/binaries/apache-jmeter-5.6.3.tgz",
+    "binary": "cache/lottery-perf/apache-jmeter-5.6.3/bin/jmeter",
+    "persistAcrossReboot": true
+  }
+}

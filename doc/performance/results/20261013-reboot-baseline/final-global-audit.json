@@ -1,0 +1,20 @@
+{
+  "orders": "382935\t382935\t382935\t0\t0\t0",
+  "takes": "423063\t0\t0",
+  "ledger": "382935\t382935",
+  "ledgerMismatch": "0",
+  "takeMismatch": "0",
+  "negativeStock": "0",
+  "quota": "1\t211417\t0\t1311939\n2\t211646\t0\t1312074",
+  "durability": "1\t1\tREPEATABLE-READ",
+  "initialOrders": 341311,
+  "initialTakes": 381439,
+  "newOrdersAndTakes": 41624,
+  "newActivityIds": [
+    740201,
+    740202,
+    740210
+  ],
+  "audit": "PASS",
+  "scope": "全部MySQL持久事实；本轮活动的Redis/Kafka/逐ID审计分别由原脚本通过"
+}
