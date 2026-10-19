@@ -222,3 +222,67 @@
 ### Status
 
 [OK] **Completed**
+
+
+## Session 11: Lottery真实链路容量复核与JDBC会话缓存
+
+**Date**: 2026-10-13
+**Task**: Lottery真实链路容量复核与JDBC会话缓存
+**Branch**: `codex/perf-rediagnosis-20261013`
+
+### Summary
+
+补偿空扫描同数据与反向验证；真实回滚门禁捕获8.0.28驱动回归并升级最小官方修复8.0.29；同驱动200RPS额外只读查询437907到0。150RPS两次连续300秒通过，150首轮及更高长测失败均保留，精确容量与资源贡献未认证。46项回归、真实幂等/超时/D007/Kafka重投/有限库存通过；全库961360订单与账本、1005414参与正确，新增578425订单。专用应用和四容器停止，原数据/22与61MiB原始包保留，原五容器不变。
+
+### Main Changes
+
+- 单列grant索引、会话参数与驱动修复分三工作提交，未改变池/并发/持久化/CAS/唯一账本。
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `9310207` | (see git log) |
+| `94b790e` | (see git log) |
+| `076af9f` | (see git log) |
+
+### Testing
+
+- [OK] 默认35及最终真实SQL11共46通过；九个容量轮与真实HTTP/Kafka/有限库存审计。
+
+### Status
+
+[OK] **Completed**
+
+### Next Steps
+
+- 先控制I/O及容器资源状态再验证回调/重复读取候选，不将局部收益换算成整体吞吐倍数。
+
+
+## Session 12: Lottery交互式源码图解
+
+**Date**: 2026-10-14
+**Task**: Lottery交互式源码图解
+**Branch**: `main`
+
+### Summary
+
+交付docs/visual-guide：14幅Archify图、同步中奖14步/未中奖12步/异步15步、38文件源码摘录和字段事务速查；14图全部9/9及浏览器门禁通过，入口交互/版本资源/同页深链已复核；未修改业务代码。
+
+### Main Changes
+
+- 新增完整交互式架构、业务追踪、库存账本、模拟发奖与失败恢复图解
+
+### Git Commits
+
+| Hash | Message |
+|------|---------|
+| `f14b2ce` | docs: add interactive Lottery source guide |
+
+### Testing
+
+- [OK] 14图完整finalize通过；本地资源与41路径步骤定位通过；guide.js语法及CUA入口交互通过
+
+### Status
+
+[OK] **Completed**

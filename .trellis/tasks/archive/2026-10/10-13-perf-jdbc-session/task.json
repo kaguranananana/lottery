@@ -1,0 +1,32 @@
+{
+  "id": "perf-jdbc-session",
+  "name": "perf-jdbc-session",
+  "title": "验证JDBC本地会话缓存与生产者回调瓶颈",
+  "description": "基于200 RPS真实积压与8.0.28驱动只读查询证据，仅验证useLocalSessionState及事务/池语义，按同负载和最高候选持续测试验收",
+  "status": "completed",
+  "dev_type": null,
+  "scope": null,
+  "package": null,
+  "priority": "P2",
+  "creator": "anontokyo",
+  "assignee": "anontokyo",
+  "createdAt": "2026-10-13",
+  "completedAt": "2026-10-13",
+  "branch": "codex/perf-rediagnosis-20261013",
+  "base_branch": "main",
+  "worktree_path": null,
+  "commit": "076af9f",
+  "pr_url": null,
+  "subtasks": [],
+  "children": [],
+  "parent": "10-13-perf-capacity-scan",
+  "relatedFiles": [],
+  "notes": "最高通过150RPS两次连续300秒；首轮150及180/200长测失败均保留，非精确生产上限。46项回归与真实语义/重投/有限库存通过；全库961360单/账本，1005414参与，四专用实例正常停止，数据卷/原始包保留。Trellis记账不自动提交。",
+  "meta": {
+    "work_commits": [
+      "9310207",
+      "94b790e",
+      "076af9f"
+    ]
+  }
+}
