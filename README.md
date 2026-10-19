@@ -1,162 +1,219 @@
-# Lottery — 高并发抽奖系统
+# Lottery · 高并发抽奖与异步发奖系统
 
-这是一个用于学习与求职展示的 Java 后端高并发抽奖系统。项目重点不是堆砌技术栈，而是把复杂度集中在真正困难的问题上：**高并发库存竞争、重复请求、Redis/MySQL 最终一致性、Kafka 重复消费、发奖幂等与失败恢复**。
+> 基于 Java / Spring Boot 的电商营销抽奖系统，围绕高并发库存控制、请求幂等、异步结算及故障恢复展开工程实践。
 
-> 架构与失败语义的完整说明见 `docs/refactor-audit.md`（重构审计）、`docs/architecture.md`（架构决策与组件约束）、`docs/interview-architecture.md`（面试叙事）。
+![Java](https://img.shields.io/badge/Java-8-ED8B00?logo=openjdk&logoColor=white)
+![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.3.5-6DB33F?logo=springboot&logoColor=white)
+![Redis](https://img.shields.io/badge/Redis-Cache%20%26%20Inventory-DC382D?logo=redis&logoColor=white)
+![Kafka](https://img.shields.io/badge/Apache%20Kafka-Async%20Messaging-231F20?logo=apachekafka&logoColor=white)
+![MySQL](https://img.shields.io/badge/MySQL-Sharding%20%26%20Ledger-4479A1?logo=mysql&logoColor=white)
 
----
+**Lottery 是一个以学习和技术实践为目的的 Java 后端项目，并非实际生产部署的商业系统。** 项目模拟营销抽奖业务，涵盖活动配置、参与资格校验、概率抽奖、中奖订单和异步发奖，重点研究系统在重复请求、库存竞争、消息重投及部分组件故障下如何维持业务正确性。
 
-## 1. Project Overview
+技术栈：**Spring Boot · MyBatis · MySQL · Redis · Caffeine · Kafka · XXL-Job · Maven · JMeter**
 
-业务问题域：
+## 核心特性
 
-| 问题 | 手段 |
+| 主题 | 设计与实现 |
 | --- | --- |
-| 高并发库存竞争 | Redis 原子预扣 + 启动预热，MySQL 条件更新最终兜底 |
-| 重复抽奖请求 | `requestId` 业务幂等号 + DB 唯一约束兜底 + 属主可见的并发锁 |
-| Kafka 重复消费 / 消费者 crash | `award_stock_settlement` 结算账本，`UNIQUE(order_id)` |
-| 数据库库存结算慢操作 | Kafka 异步结算（Outbox 模式投递） |
-| 发奖重试 | orderId 作为发奖幂等键 + `grant_state` CAS 标记 |
-| 失败消息补偿 | Outbox 扫描任务 + invoice 补偿任务（XXL-Job 分片） |
-| 用户数据量大 | 参与记录 / 中奖订单按 `uId` 分库分表（自研 dbRouterForGem） |
-| 热点策略配置读取 | StrategySnapshot 两级缓存（Caffeine L1 + Redis L2） |
+| 并发库存 | Redis 原子预扣控制活动与奖品库存，MySQL 条件更新作为持久化结算约束 |
+| 请求幂等 | `requestId` 标识一次逻辑抽奖，配合数据库唯一约束、未完成参与恢复和结果回放 |
+| 可靠异步结算 | 中奖订单和待投递状态在同一事务写入，通过 Transactional Outbox + Kafka 异步结算 |
+| 消费幂等与补偿 | `UNIQUE(order_id)` 结算账本、状态 CAS 和 XXL-Job 扫描处理重复消费与失败恢复 |
+| 缓存与数据组织 | Caffeine + Redis 两级策略缓存；参与记录和订单按用户维度路由至分库分表 |
+| 验证与性能 | 单元测试、真实中间件 E2E、JMeter 压测及 SQL 执行计划对照实验 |
 
-## 2. Draw Flow
+## 系统架构
+
+项目以 **单体部署、Maven 多模块分层** 为基础，分离 HTTP 接口、用例编排、业务规则和基础设施实现。
 
 ```mermaid
-sequenceDiagram
-    participant C as Client
-    participant W as LotteryController (HTTP)
-    participant A as ActivityProcessImpl (application)
-    participant P as ActivityPartakeService (domain)
-    participant S as DrawExecutor (domain)
-    participant O as AwardOrderImpl (domain)
-    participant R as Redis
-    participant M as MySQL(分库分表)
-
-    C->>W: POST /api/v1/draw {requestId, userId, activityId}
-    W->>A: doDrawProcess(req)
-    A->>R: SET draw_inflight_{act}_{uId} token NX PX 3s
-    Note over A,R: 并发防重入；重复点击返回 D006
-    A->>M: SELECT take WHERE request_id = requestId
-    alt 已存在且已消费
-        A-->>C: 回放原结果（同一 award/orderId/LOSING）
-    else 已存在未消费
-        Note over A: 复用该 takeId 继续抽奖
-    end
-    A->>P: doPartake
-    P->>R: DECR activity stock (miss ⇒ fail closed)
-    P->>M: 事务: 剩余次数-1 & INSERT user_take_activity(request_id UNIQUE)
-    A->>S: doDrawExec(strategyId)
-    S->>S: 读 StrategySnapshot(两级缓存) → 加权随机 → NO_PRIZE/SoldOut → 未中奖
-    S->>R: DECR prize stock (sold out ⇒ 本次未中奖)
-    A->>O: placeOrder
-    O->>M: 事务: lockTake(state 0→1) + INSERT user_strategy_export(stock_mq_state=0)
-    A-->>C: {code, takeId, orderId, award}
-    Note over M: 异步链路：Outbox 扫描(XXL-Job) → Kafka<br/>→ 结算消费者(账本幂等) → 发奖消费者(grant_state CAS)
+flowchart TD
+    U[客户端] --> API[HTTP API]
+    API --> APP[Application：抽奖流程与请求幂等]
+    APP --> DOMAIN[Domain：资格校验与概率抽样]
+    APP --> REDIS[Redis：库存预扣与并发控制]
+    DOMAIN --> CACHE[Caffeine + Redis：策略快照]
+    APP --> DB[(MySQL：参与记录 / 中奖订单 / Outbox)]
+    DB --> JOB[XXL-Job：Outbox 扫描与重投]
+    JOB --> MQ[Kafka：库存结算事件]
+    MQ --> SETTLE[结算消费者：唯一账本 + 条件扣库存]
+    SETTLE --> DB
+    SETTLE --> AWARD[发奖消息与模拟发奖处理]
+    JOB -. 发奖失败补偿 .-> AWARD
 ```
 
-异步链路：
+一次抽奖的主要过程如下：
 
-```text
-AwardOrder(本地事务写入 stock_mq_state=0)          ← Outbox 写入点
-  → XXL-Job awardStockSettlementOutboxJobHandler 按 dbIdx 分片扫描 INIT/FAIL/超时 SENT
-      → Kafka lottery_strategy_award_stock (key=orderId)
-      → 发送回调条件更新：INIT/FAIL → SENT(3)，INIT → FAIL(2)；保护 COMPLETE/BLOCKED
-  → StockSettlementListener
-      → 本地事务: INSERT award_stock_settlement(UNIQUE order_id)
-                  + UPDATE strategy_detail ... award_surplus_count > 0
-      → duplicate key ⇒ 该订单早已结算，直接返回成功（绝不二次扣减）
-      → 条件扣减失败 ⇒ BLOCKED(4)，持久化待对账事实后 ack；修复后显式释放原 Outbox
-      → stock_mq_state=COMPLETE → 投递发奖消息
-  → InvoiceListener → FulfillmentHandler.fulfill(orderId,...)（adapter stub）
-      → grant_state CAS 标记完成，再将 mq_state 收口 COMPLETE 后 ack
-```
+1. HTTP 接口接收 `userId`、`activityId` 和 `requestId`，进入应用层编排。
+2. 通过短时并发锁、请求号及参与记录，判断是新请求、结果回放还是未完成请求恢复。
+3. 校验活动和剩余参与次数，在 Redis 预扣活动库存，并在 MySQL 事务中记录参与事实。
+4. 读取策略快照进行加权随机抽样；中奖时预扣奖品 Redis 库存。
+5. 创建中奖订单，并将待结算状态作为 Outbox 义务持久化。
+6. XXL-Job 扫描 Outbox，将结算事件发送到 Kafka；消费者用唯一账本与条件更新完成 MySQL 库存结算，随后推进模拟发奖。
 
-后台任务统一由 XXL-Job 管理（多实例部署时按参数 `"1"` / `"1,2"` 分片指定各自负责的分库）：
+## 关键技术设计
 
-```text
-lotteryActivityStateJobHandler        活动时间校验 + 行锁内库存预热 → RUNNING(CAS) / 过期→CLOSED
-awardStockSettlementOutboxJobHandler  库存结算 Outbox 扫描投递（分片参数）
-lotteryOrderMQStateJobHandler         发奖消息补偿重发
-```
+### 1. 库存一致性：Redis 预扣与 MySQL 结算
 
-## 3. Inventory Consistency
+- **Redis** 承担高并发下的活动库存与奖品库存原子预扣，避免大量请求直接竞争数据库库存行。
+- **MySQL** 保留持久化记录，奖品库存采用 `surplus > 0` 条件更新，阻止并发结算导致负库存。
+- 活动开始前由调度任务预热库存，活动状态通过数据库行锁和条件更新推进。
+- 对运行中丢失的 Redis 库存 Key 采用 **fail closed**：拒绝本次活动抽奖或将对应奖品视为不可售，不使用可能滞后的 MySQL 库存直接回填，避免“库存复活”。
 
-* **Redis**：实时库存控制（活动库存 + 各奖品库存）。`DECR` 后小于 0 会立即回补并判定售罄。
-  * PASS 活动在开始时间到达后，由仓储在活动行锁内 `SETNX` 预热，再提交 DOING；Redis 失败保持 PASS，下轮可补齐（活动剩余库存 + 全部奖品剩余库存），预热值来自此刻可信的 MySQL。
-  * **运行期间 key 丢失绝不回填 MySQL**——结算滞后使 MySQL 大于真实剩余量，回填会造成“库存复活”。处理方式是 fail closed：
-    * 活动库存 miss → 直接拒绝本次抽奖（`D005 系统繁忙`），error 日志提示人工/对账恢复；
-    * 奖品库存 miss → 该奖品视为不可售（error 日志），不影响其他奖品。
-  * 不自动增加任何库存。
-* **MySQL**：持久化库存与最终账本。活动配置为初始事实源；`strategy_detail.award_surplus_count > 0` 条件更新保证不超卖。
-* **Settlement Ledger（`award_stock_settlement`）**：Kafka 消费幂等。`INSERT 账本 + 条件扣减`在同一本地事务（同库 db00）；`UNIQUE(order_id)` 使“同一 orderId 只可能扣一次数据库库存”。
-* **Outbox**：创建订单与置待发送状态同事务；后续由调度扫描可靠投递。状态由 SQL 条件推进：发送成功 `INIT/FAIL → SENT`，账本成功后消费完成 `INIT/FAIL/SENT/BLOCKED → COMPLETE`，迟到发送回调不能覆盖 COMPLETE/BLOCKED；库存 SENT 超时 10 分钟可重投，详见[消息状态修复说明](docs/kafka-mq-state-cas.md)。
+Redis 预扣与数据库异步结算并非跨存储原子事务，因此系统还需要结算账本、状态管理和故障补偿来处理不一致窗口。
 
-## 4. Failure Cases
+### 2. 请求幂等：同一次抽奖只消耗一次机会
 
-| 场景 | 行为 |
-| --- | --- |
-| Redis 库存 key missing（运行中） | fail closed：活动库存报 `D005`，奖品视为不可售；日志 error 提示人工对账恢复，禁止运行期自动预热 |
-| 并发重复点击 | inflight 锁 NX PX，值=随机 token；仅属主可释放（Lua compare-and-delete） |
-| 同 requestId 重试（超时/网关重试） | 按 `request_id` 命中已有 take：已消费 → 回放原中奖/未中奖结果；未消费 → 复用继续抽奖。DB `UNIQUE(request_id)` 兜底，不重复消耗次数 |
-| Kafka 重复投递（库存消息） | settlement 账本 duplicate-key → 幂等短路 |
-| 结算消费者 crash（扣减后、状态更新前） | 未 ack 触发 redelivery；账本保证重放只扣一次 |
-| Kafka send 失败 | 状态落 FAIL(2)，下一轮 XXL-Job 扫描重投 |
-| 库存条件扣减分歧 | 账本回滚，订单 BLOCKED(4) 等待对账；持久化失败不 ack，修复后 CAS 4→0 恢复 |
-| 启动预热失败 | 行锁内先预热后 CAS；Redis 异常传播，活动保持 PASS，SETNX 补齐不覆盖旧值 |
-| 发奖消费者 crash / 重复消费 | `grant_state <> 1` 的 CAS 更新幂等；已完成则直接 ack |
-| 下单 DuplicateKeyException | 回滚 + Redis 奖品库存回补（INCR），客户端按需重试 |
+短时 Redis 锁负责抑制并发重复进入，**持久化幂等** 则依靠请求号与数据库约束，而非依赖锁的有效期。
 
-## 5. Known Limitations（不隐藏）
+- 客户端为每次新的逻辑抽奖生成独立 `requestId`。
+- 网络超时后复用原请求号，已完成请求回放原中奖或未中奖结果。
+- 参与已登记但尚未消费时，恢复原参与记录，不额外扣减参与次数。
+- 数据库唯一约束兜底并发竞争；锁采用随机 token 和 compare-and-delete 防止误删他人的锁。
 
-* **dbRouterForGem 不支持通用复杂 SQL**：MyBatis 插件用正则替换第一处表名后缀，JOIN/子查询里出现的其它分表不会被替换；路由算法 `(size-1)&hash` 隐含 `dbCount*tbCount` 必须是 2 的幂（当前 2×4=8）。详见 `docs/architecture.md` 第 6 节。
-* **开发环境 Kafka 可能为单副本**（replicas=1），不具备生产级可靠性；acks=1。
-* **未宣称生产 QPS**：仓库内仅提供 jmeter 脚本骨架（`doc/jmeter/`），没有任何未经复现的性能数字。
-* **发奖渠道为 adapter stub**：Coupon/RedeemCode/Physical 等 handler 目前只是模拟调用并落库，未对接真实第三方系统；接入时以 `orderId` 为 idempotencyKey。
-* **Redis 库存恢复策略仍有生产化空间**：PASS 启动失败可重试；运行期 Key 丢失须人工对账，禁止以滞后 MySQL 直接回填；跨实例缓存一致性依靠短 TTL 最终一致，不做广播失效。
-* 多实例部署时 Snowflake workerId 由 IP 派生，极端场景需要改为配置分配。
+相关设计见 [抽奖请求幂等说明](docs/draw-request-idempotency.md)。
 
-## 6. Project Layout
+### 3. Transactional Outbox + Kafka：异步结算与可恢复投递
 
-```text
-lottery-interfaces       HTTP adapter（LotteryController）+ SpringBoot 启动 + MyBatis mapper XML + 测试
-lottery-application      use case 编排：draw 流程、Kafka producer/consumer、XXL-Job 任务
-lottery-domain           业务规则：参与资格、策略快照与加权随机、中奖订单、活动生命周期、发奖抽象
-lottery-infrastructure   MyBatis DAO/PO、Repository 实现、Redis 工具与锁 Guard、缓存实现、分库分表路由细节
-lottery-common           Result / Constants（枚举 + RedisKey）
-```
+抽奖下单与“待发送库存结算消息”状态写入同一数据库事务，避免订单已提交但消息义务丢失。XXL-Job 按分片扫描待处理或超时消息并重新投递。
 
-中间件存在的理由一句话总结：
+Kafka 按 `orderId` 发送结算事件，消费端将两项操作放在同一个 MySQL 本地事务中：
 
-```text
-Redis     —— 库存原子性与并发控制，不是事实来源
-Kafka     —— 把结算/发奖从同步链路剥离并提供重试语义
-Outbox    —— 解决 "DB 成功但消息永远没发出去"
-Ledger    —— 解决 "消息可能被消费多次" 
-XXL-Job   —— 集中可靠的调度与补偿，替代每实例 @Scheduled
-Caffeine  —— StrategySnapshot 高频读低变更
-分库分表  —— 用户维度参与/订单数据线性增长的路由问题
-```
+1. 插入 `award_stock_settlement` 结算账本，`order_id` 唯一。
+2. 对奖品库存执行带剩余量条件的扣减。
 
-## 7. Build & Test
+即使 Kafka 重复投递，已存在的订单账本也能阻止同一订单重复扣库存。消息状态通过 SQL 条件更新（CAS）推进，避免迟到的发送回调覆盖已完成状态。
+
+发送失败可以重试；数据库库存分歧则进入 **BLOCKED** 待对账状态，防止对不可自动修复的业务异常无限重投。
+
+### 4. 概率抽奖与热点缓存
+
+- 使用 `BigDecimal` 将奖品概率转换为整数权重，通过随机整数、前缀和与二分查找完成抽样。
+- 配置概率总和不足 100% 时，剩余概率归入 `NO_PRIZE`；命中已售罄奖品不会重新分配其他奖品的概率。
+- 对高频读取、低频变更的策略快照使用 **Caffeine L1 + Redis L2** 两级缓存，接受短 TTL 内的配置最终一致性。
+
+### 5. 用户维度分库分表
+
+用户参与记录、参与次数与中奖订单按 `uId` 路由到两个用户库；订单在每个用户库进一步拆分为四张表，共 **2 库 × 4 张订单表**。请求幂等与参与次数约束在用户所属分片内完成。
+
+路由组件用于实践 Hash 路由和 MyBatis 表名改写，不支持通用跨分片 JOIN 或聚合查询，具体限制见 [架构说明](docs/architecture.md)。
+
+## 性能测试与优化
+
+项目使用 JMeter 和独立 Docker 中间件环境测试 **HTTP → Redis → MySQL 分片事务 → Outbox → Kafka → 库存账本 → 本地模拟发奖** 的真实链路，并针对 SQL 扫描和 JDBC 往返做定向分析。
+
+### 补偿任务查询优化
+
+对约 **43.1 万条历史订单** 的发奖补偿空扫描进行索引实验，使用相同数据、执行计划及索引可见性正反向对照核验结果。
+
+| 指标 | 优化前 | 优化后 |
+| --- | ---: | ---: |
+| 补偿空扫描检查行数 | 430,953 | 0 |
+| Handler 平均耗时 | 248.87 ms | 6.15 ms |
+
+该数据表示**特定补偿扫描路径**的优化效果，不等于系统整体吞吐提升相同比例。
+
+### 完整链路持续负载
+
+在本地单应用、单 Kafka Broker、模拟发奖条件下：
+
+- **150 RPS** 完成两次连续 **300 秒** 的完整异步链路验收，满足预设 HTTP、积压增长、异步完成和最终业务审计条件。
+- 更高的 **180 / 200 RPS** 长时间测试未全部满足稳定性条件；150 RPS 的早期一次测试也未通过，因此不能据此认定最大稳定容量。
+- 曾测得 **328.9 RPS** 的短时 HTTP 入口吞吐，但该轮产生明显异步积压，**不作为稳定全链路吞吐**。
+
+相关证据与复现方法：
+
+- [性能压测与优化报告](doc/performance/optimization-report.md)
+- [性能测试环境与运行步骤](doc/performance/README.md)
+- [JDBC 与持续负载验证记录](doc/performance/results/20261013-jdbc-session/README.md)
+- [稳定性验收标准](doc/performance/stability.md)
+
+## 构建与运行
+
+### 环境依赖
+
+- Java 8、Maven 3.x（项目使用 Spring Boot 2.3.5.RELEASE）
+- MySQL、Redis、Kafka / ZooKeeper
+- XXL-Job（活动状态调度、Outbox 投递及发奖补偿）
+- `cn.bugstack.middleware:db-router-spring-boot-starter:1.0.4` 路由依赖，需确保本地 Maven 仓库能够解析
+
+### 本地构建
 
 ```bash
-# 编译 + 单元测试门禁（无需外部环境）
+git clone https://github.com/kaguranananana/lottery.git
+cd lottery
+
+# 默认单元测试（不需要启动外部中间件）
 mvn clean test
 
-# 需要本机 MySQL/Redis/Kafka 的集成测试（ManualIT 命名规范，默认被 surefire 排除）
-mvn test -Dtest='*ManualIT'
+# 构建 Spring Boot WAR
+mvn clean package
 ```
 
-测试运行说明与手工环境要求见 `docs/architecture.md`。SQL 初始化使用 `doc/sql/`（基线）+ `docs/sql/V2__architecture_simplification.sql`（本次重构迁移，幂等列/账本/索引）。
+构建产物为 `lottery-interfaces/target/Lottery.war`。若 Maven 提示无法解析数据库路由依赖，需要先准备相应组件的本地 Maven 制品。
 
-抽奖请求号、未完成参与恢复与发布前迁移见 [抽奖幂等接口说明](docs/draw-request-idempotency.md)。
+### 数据初始化与应用启动
 
-最新的四项正确性修复、真实 HTTP 业务 E2E、执行命令和简历证据边界见[最终验证报告](docs/final-correctness-e2e.md)。
+1. 准备独立的 MySQL 测试实例，创建 `lottery`、`lottery_01` 和 `lottery_02` 三个数据库。
+2. 参考 `doc/sql/` 中的基线结构、库存 Outbox 和补偿索引脚本，以及 `docs/sql/V2__architecture_simplification.sql`、`docs/sql/V3__draw_request_ownership.sql` 完成建表及迁移。**部分基线脚本包含 `DROP TABLE` 和历史测试数据，只能在独立测试库操作；V2 包含需要按物理表处理的说明性 SQL，不能将其当作一键完整迁移。**
+3. 根据本地环境配置 `lottery-interfaces/src/main/resources/application.yml`，包括 MySQL、Redis、Kafka 和 XXL-Job 地址及凭据；默认配置的 MySQL 端口为 `13306`、Redis 为 `6379`、Kafka 为 `9092`。
+4. 启动所需中间件与应用；活动应按正常状态流转完成库存预热，不能仅将数据库状态改为运行中来跳过预热。
 
-## 8. 真实性能压测
+```bash
+java -jar lottery-interfaces/target/Lottery.war
+```
 
-本地真实HTTP、Redis、MySQL分片事务、Outbox/Kafka与模拟发奖的测试结果见[性能压测报告](doc/performance/report.md)，独立环境及执行步骤见[复现说明](doc/performance/README.md)，每轮参数、曲线与审计汇总见[证据索引](doc/performance/results/20261012-final/README.md)。
+可通过 HTTP 接口访问当前运行中的活动与提交抽奖请求：
 
-50并发、60秒窗口测得328.9次新抽奖/秒，P95/P99为362/574ms；这属于本地短时同步入口吞吐。持续测试未全部满足预设稳定条件，宿主机存在活跃换页，最大稳定容量未确认，不能表述为生产容量。
+```bash
+curl http://localhost:8080/api/v1/activities
+
+curl -X POST http://localhost:8080/api/v1/draw \
+  -H 'Content-Type: application/json' \
+  -d '{"userId":"u1","activityId":100001,"requestId":"example-draw-001"}'
+```
+
+示例 `activityId` 和 `userId` 须替换为当前测试库中已配置并满足参与条件的数据；同一次抽奖重试应保留原 `requestId`。仓库的性能测试环境、数据准备及完整复现步骤另见 [性能测试指南](doc/performance/README.md)。
+
+## 测试与验证
+
+仓库提供概率抽样、请求幂等、并发锁、状态推进和消息回调等单元测试，以及使用真实 MySQL、Redis、Kafka 的集成与 E2E 测试。
+
+- 默认单元测试通过 Maven `mvn clean test` 执行。
+- `*ManualIT` 集成测试需要专用中间件、数据库初始化和测试配置；部分场景会修改专用测试库或停启 Broker，**不要直接对现有业务环境批量运行**。
+- 完整 E2E 覆盖真实 HTTP 请求、两库八张订单分表、库存结算、消息重复投递、故障恢复和本地模拟发奖。
+
+测试环境、覆盖范围与验证边界见 [正确性与 E2E 验证](docs/final-correctness-e2e.md)。
+
+## 项目结构
+
+```text
+lottery-interfaces        Spring Boot 启动入口、HTTP API、测试
+lottery-application       抽奖流程编排、Kafka 生产/消费、XXL-Job 任务
+lottery-domain            资格校验、策略抽样、活动与订单业务规则
+lottery-infrastructure    MyBatis / Redis / Repository / 缓存与路由实现
+lottery-common            统一结果、枚举与公共常量
+
+doc/sql                   数据库基线及索引脚本
+doc/performance           压测工具、报告与验证证据
+docs                      架构、幂等、一致性与 E2E 设计文档
+```
+
+## 实现边界
+
+本项目主要用于学习后端系统在并发、异步和故障场景下的工程设计，当前仍有以下边界：
+
+- 发奖处理为 **本地模拟适配器**，未接入真实优惠券、物流或第三方发奖平台。
+- Kafka 测试环境采用单 Broker / 单副本，不代表生产级高可用或跨机房容灾。
+- Redis 运行期库存 Key 丢失需要独立对账恢复，尚无自动化跨存储对账流程。
+- 用户分片路由面向当前单表访问模式，不提供通用分布式 SQL 能力。
+- 压测数字仅对应所记录的本地环境、数据量及测试方法，不代表生产 SLA 或确定的最大吞吐上限。
+
+## 延伸阅读
+
+- [架构设计与组件取舍](docs/architecture.md)
+- [抽奖请求幂等](docs/draw-request-idempotency.md)
+- [Kafka 消息状态与 CAS](docs/kafka-mq-state-cas.md)
+- [正确性与 E2E 验证](docs/final-correctness-e2e.md)
+- [性能测试与优化报告](doc/performance/optimization-report.md)
