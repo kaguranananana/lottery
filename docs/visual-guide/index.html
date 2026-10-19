@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Lottery · 沿一次请求理解整个系统</title>
+  <link rel="stylesheet" href="guide.css">
+  <!-- 明确本次交付的资源版本，使已有预览会话加载最终脚本。 -->
+  <script defer src="guide-data.js?v=20261014-final"></script>
+  <script defer src="guide.js?v=20261014-final-2"></script>
+</head>
+<body>
+  <aside class="sidebar" aria-label="学习章节">
+    <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">L</span><span>LOTTERY<span class="brand-sub">SOURCE ATLAS / 源码图解</span></span></a>
+    <p class="sidebar-intro">从一条请求出发<br>理解每一次状态变化。</p>
+    <nav id="chapter-nav">
+      <button data-chapter="overview"><span class="nav-number">01</span><span>系统全貌<small>模块与运行组件</small></span></button>
+      <button data-chapter="draw"><span class="nav-number">02</span><span>一次抽奖<small>请求 → 参与 → 结果</small></span></button>
+      <button data-chapter="async"><span class="nav-number">03</span><span>请求之后<small>Outbox → 结算 → 发奖</small></span></button>
+      <button data-chapter="recovery"><span class="nav-number">04</span><span>失败与恢复<small>重复、缺失、宕机、对账</small></span></button>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="reference.html">字段 / 库存 / 事务速查 ↗</a>
+      <a href="sources.html" target="_blank" rel="noopener">离线源码摘录 ↗</a>
+      <a href="README.md">使用与验证说明 ↗</a>
+      <button id="theme-toggle" aria-label="切换深浅主题">◐ 切换深浅主题</button>
+      <p>基于 2026-10-14 当前源码<br>Archify · 本地 HTML · 无 CDN</p>
+    </div>
+  </aside>
+  <main class="workspace">
+    <header class="hero">
+      <div class="eyebrow"><span class="live-dot"></span> READ THE CODE, FOLLOW THE DATA</div>
+      <h1 id="chapter-title">先建立一张系统地图</h1>
+      <p id="chapter-intro"></p>
+      <div class="hero-tags"><span>当前源码为准</span><span>14 幅交互图</span><span>三个关键 ID</span><span>四个学习章节</span></div>
+    </header>
+    <div class="sticky-controls">
+      <div class="view-tabs" id="view-tabs" role="group" aria-label="选择图解"></div>
+      <section id="trace-toolbar" class="trace-toolbar" hidden aria-label="逐步追踪">
+        <div class="trace-controls">
+          <div class="scenario-control" id="scenario-control">
+            <label for="scenario">同步路径</label>
+            <select id="scenario"><option value="win">正常中奖</option><option value="lose">正常未中奖</option></select>
+          </div>
+          <div class="step-navigation"><button id="prev-step" aria-label="上一步">← 上一步</button><span id="step-counter"></span><button id="next-step" class="primary" aria-label="下一步">下一步 →</button></div>
+          <button id="restart" class="text-button">从头追踪</button>
+        </div>
+        <div id="step-rail" class="step-rail" role="group" aria-label="按编号选择执行步骤"></div>
+      </section>
+    </div>
+    <p id="view-summary" class="view-summary"></p>
+    <section id="step-detail" class="step-detail" hidden aria-label="当前执行步骤"></section>
+    <section id="data-panel" class="data-panel" hidden aria-label="当前步骤之后的数据"></section>
+    <section id="facts-panel" class="facts-panel" aria-label="组件职责与设计理由"></section>
+    <section class="diagram-shell" aria-label="Archify 交互图">
+      <div class="diagram-topline"><div><span class="diagram-dot"></span><strong id="diagram-title"></strong><span class="diagram-tip">点击节点看上下游 · 搜索 / 聚焦 / 导出</span></div><a id="open-diagram" target="_blank" rel="noopener">单独打开完整图 ↗</a></div>
+      <iframe id="diagram-frame" title="Lottery 架构与流程交互图"></iframe>
+    </section>
+    <section class="learning-note">
+      <span class="note-label">阅读提示</span>
+      <p>沿编号选择步骤，先看输入、操作与输出，再看高亮箭头。步骤与数据面板是按源码编写的教学演示；图中 T1/O1 和库存数字不是运行环境读取结果。图内的关系聚焦仅突出已画出的调用，字段和完整源码解释见上方步骤。</p>
+      <p>源码位置按钮打开本地摘录并定位实际行号。图解默认静态，逐步追踪由你控制；内置 Archify 支持节点聚焦、路径探索、主题切换与图像导出。</p>
+    </section>
+    <footer class="page-footer"><span>LOTTERY / 源码驱动的学习图谱</span><a href="reference.html#boundaries">实现范围与历史文档区别 ↗</a></footer>
+    <noscript><p>请允许浏览器执行本地 JavaScript；也可以直接打开 diagrams 下的独立 Archify HTML。</p></noscript>
+  </main>
+</body>
+</html>

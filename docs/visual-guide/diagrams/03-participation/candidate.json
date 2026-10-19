@@ -1,0 +1,318 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "03 · 同步上半程：从 HTTP 到一条参与记录",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/visual-guide/diagrams/03-participation/03-participation.html",
+    "repository": {
+      "url": "git@github.com:kaguranananana/lottery.git",
+      "revision": "076af9fc607749c018c1cbec630daef61a99af55",
+      "link_mode": "local-only"
+    },
+    "legend": {
+      "entries": {
+        "default": {
+          "label": "方法调用"
+        },
+        "security": {
+          "label": "数据写入 / 并发锁"
+        },
+        "emphasis": {
+          "label": "数据读取"
+        },
+        "dashed": {
+          "label": "消息发送 / 投递"
+        },
+        "return": {
+          "label": "结果返回 / ACK"
+        }
+      }
+    }
+  },
+  "participants": [
+    {
+      "id": "client",
+      "type": "external",
+      "label": "客户端",
+      "sublabel": "外部请求",
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/dto/DrawRequest.java",
+          "line": 11,
+          "end_line": 23,
+          "label": "DrawRequest.java"
+        }
+      ]
+    },
+    {
+      "id": "http",
+      "type": "backend",
+      "label": "HTTP 入口",
+      "sublabel": "interfaces",
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/LotteryController.java",
+          "line": 37,
+          "end_line": 53,
+          "label": "LotteryController.java"
+        }
+      ]
+    },
+    {
+      "id": "app",
+      "type": "backend",
+      "label": "用例编排",
+      "sublabel": "application",
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
+          "line": 62,
+          "end_line": 127,
+          "label": "ActivityProcessImpl.java"
+        }
+      ]
+    },
+    {
+      "id": "partake",
+      "type": "backend",
+      "label": "参与规则",
+      "sublabel": "domain",
+      "sources": [
+        {
+          "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java",
+          "line": 23,
+          "end_line": 72,
+          "label": "BaseActivityPartake.java"
+        }
+      ]
+    },
+    {
+      "id": "repo",
+      "type": "backend",
+      "label": "参与仓储",
+      "sublabel": "infrastructure",
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/UserTakeActivityRepository.java",
+          "line": 38,
+          "end_line": 118,
+          "label": "UserTakeActivityRepository.java"
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityRepository.java",
+          "line": 150,
+          "end_line": 225,
+          "label": "ActivityRepository.java"
+        }
+      ]
+    },
+    {
+      "id": "redis",
+      "type": "database",
+      "label": "Redis",
+      "sublabel": "库存 / 配置",
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityRepository.java",
+          "line": 150,
+          "end_line": 225,
+          "label": "ActivityRepository.java"
+        }
+      ]
+    },
+    {
+      "id": "userdb",
+      "type": "database",
+      "label": "用户库",
+      "sublabel": "db01 或 db02",
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserTakeActivity_Mapper.xml",
+          "line": 19,
+          "end_line": 47,
+          "label": "UserTakeActivity_Mapper.xml"
+        },
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserTakeActivityCount_Mapper.xml",
+          "line": 13,
+          "end_line": 32,
+          "label": "UserTakeActivityCount_Mapper.xml"
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "id": "s01",
+      "from": "client",
+      "to": "http",
+      "y": 170,
+      "label": "01 POST /draw 三个字段",
+      "variant": "default"
+    },
+    {
+      "id": "s02",
+      "from": "http",
+      "to": "app",
+      "y": 216,
+      "label": "02 userId → uId；requestId 保留",
+      "variant": "default"
+    },
+    {
+      "id": "s03",
+      "from": "app",
+      "to": "redis",
+      "y": 262,
+      "label": "03 经 Guard：SET NX token，3s",
+      "variant": "security"
+    },
+    {
+      "id": "s04",
+      "from": "app",
+      "to": "repo",
+      "y": 308,
+      "label": "04 查 uId + activityId + requestId",
+      "variant": "emphasis"
+    },
+    {
+      "id": "s04sql",
+      "from": "repo",
+      "to": "userdb",
+      "y": 354,
+      "label": "SELECT request_id 对应 take",
+      "variant": "emphasis"
+    },
+    {
+      "id": "s04return",
+      "from": "userdb",
+      "to": "repo",
+      "y": 400,
+      "label": "首次请求：无记录",
+      "variant": "return"
+    },
+    {
+      "id": "s05",
+      "from": "app",
+      "to": "partake",
+      "y": 446,
+      "label": "05 doPartake(PartakeReq)",
+      "variant": "default"
+    },
+    {
+      "id": "s05pending",
+      "from": "partake",
+      "to": "repo",
+      "y": 492,
+      "label": "查该用户活动的未消费 take",
+      "variant": "emphasis"
+    },
+    {
+      "id": "s05sql",
+      "from": "repo",
+      "to": "userdb",
+      "y": 538,
+      "label": "SELECT state=0；正常无记录",
+      "variant": "emphasis"
+    },
+    {
+      "id": "s06",
+      "from": "partake",
+      "to": "repo",
+      "y": 584,
+      "label": "06 活动单据 / 资格校验",
+      "variant": "default"
+    },
+    {
+      "id": "s06cache",
+      "from": "repo",
+      "to": "redis",
+      "y": 630,
+      "label": "GET 活动配置缓存",
+      "variant": "emphasis"
+    },
+    {
+      "id": "s06back",
+      "from": "redis",
+      "to": "repo",
+      "y": 676,
+      "label": "活动配置缓存命中",
+      "variant": "return"
+    },
+    {
+      "id": "s06domain",
+      "from": "repo",
+      "to": "partake",
+      "y": 722,
+      "label": "返回状态、时间、策略、次数",
+      "variant": "return"
+    },
+    {
+      "id": "s07",
+      "from": "partake",
+      "to": "repo",
+      "y": 768,
+      "label": "07 预扣活动库存",
+      "variant": "default"
+    },
+    {
+      "id": "s07redis",
+      "from": "repo",
+      "to": "redis",
+      "y": 814,
+      "label": "GET 存在且 >0 → DECR 1",
+      "variant": "security"
+    },
+    {
+      "id": "s08",
+      "from": "partake",
+      "to": "repo",
+      "y": 860,
+      "label": "08 Snowflake takeId + requestId",
+      "variant": "default"
+    },
+    {
+      "id": "s08tx",
+      "from": "repo",
+      "to": "userdb",
+      "y": 906,
+      "label": "TX1：次数-1 + INSERT take(state=0)",
+      "variant": "security"
+    },
+    {
+      "id": "s08commit",
+      "from": "userdb",
+      "to": "repo",
+      "y": 952,
+      "label": "TX1 提交；失败整体回滚",
+      "variant": "return"
+    },
+    {
+      "id": "s08back",
+      "from": "partake",
+      "to": "app",
+      "y": 998,
+      "label": "strategyId / takeId / 活动剩余量",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "title": "教学前提",
+      "dot": "cyan",
+      "items": [
+        "这是一条首次请求且最终中奖的正常路径：活动 DOING、时间有效、库存已预热、配置缓存命中。",
+        "缓存未命中可从 MySQL 加载配置；运行期库存 Key 丢失则拒绝，二者不是同一种 miss。"
+      ]
+    },
+    {
+      "title": "TX1 的作用",
+      "dot": "amber",
+      "items": [
+        "次数扣减和 take 创建在同一用户分库事务内。Redis DECR 在事务外。",
+        "创建失败回补已预扣的活动库存；回补错误仅记日志，不能宣称 Redis/MySQL 全链路原子。"
+      ]
+    }
+  ]
+}

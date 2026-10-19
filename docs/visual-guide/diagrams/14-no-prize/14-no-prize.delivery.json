@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "732afa63-b50f-4b05-af4d-4fe9c2d579d0",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/14-no-prize/candidate.json",
+  "output": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/14-no-prize/14-no-prize.html",
+  "specification": {
+    "sha256": "73ebbf7f1cfd567bdfa6744b737046e2acb4ebf53083058642d2def486b6c11f",
+    "bytes": 5397
+  },
+  "artifact": {
+    "sha256": "f311598d58d27f61859c26e7a004c0a4e1ef6578de684d4de92a32003c0cfcdf",
+    "bytes": 755463
+  }
+}

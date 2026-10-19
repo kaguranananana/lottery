@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "85178d7f-84fe-4fa3-a7ca-28773f0627cd",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/11-stock-key-missing/candidate.json",
+  "output": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/11-stock-key-missing/11-stock-key-missing.html",
+  "specification": {
+    "sha256": "c46d5e2c09f9d7b67afdf862cdd543444ff470854d72fc562aec3fb797aeed11",
+    "bytes": 6091
+  },
+  "artifact": {
+    "sha256": "5498d5b4616f8ca3b744648dc3ae40cdb83f83d2236cfa058f3d7c5ddeeb90da",
+    "bytes": 753692
+  }
+}

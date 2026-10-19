@@ -1,0 +1,252 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "12 · 库存消费者宕机：账本跨越已扣减但未收口的窗口",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/visual-guide/diagrams/12-consumer-crash/12-consumer-crash.html",
+    "repository": {
+      "url": "git@github.com:kaguranananana/lottery.git",
+      "revision": "076af9fc607749c018c1cbec630daef61a99af55",
+      "link_mode": "local-only"
+    },
+    "legend": {
+      "entries": {
+        "backend": {
+          "label": "业务处理"
+        },
+        "database": {
+          "label": "数据存储"
+        },
+        "messagebus": {
+          "label": "消息处理"
+        },
+        "external": {
+          "label": "进程中断 / 人工"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "consumer",
+      "label": "application · 同一 orderId 的多次消息"
+    },
+    {
+      "id": "database",
+      "label": "infrastructure / db00 · 唯一账本"
+    },
+    {
+      "id": "failure",
+      "label": "故障与继续执行"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "first",
+      "lane": "consumer",
+      "col": 0,
+      "type": "backend",
+      "label": "首次库存消费",
+      "sublabel": "orderId=同一订单",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryStrategyAwardStockListener.java",
+          "line": 61,
+          "end_line": 81,
+          "label": "LotteryStrategyAwardStockListener.java"
+        }
+      ]
+    },
+    {
+      "id": "commit",
+      "lane": "database",
+      "col": 1,
+      "type": "database",
+      "label": "TX3 已提交",
+      "sublabel": "账本 + MySQL库存-1",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java",
+          "line": 87,
+          "end_line": 110,
+          "label": "StrategyRepository.java"
+        }
+      ]
+    },
+    {
+      "id": "crash",
+      "lane": "failure",
+      "col": 1,
+      "type": "external",
+      "label": "此时进程宕机",
+      "sublabel": "订单stock状态仍未完成",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryStrategyAwardStockListener.java",
+          "line": 81,
+          "end_line": 99,
+          "label": "LotteryStrategyAwardStockListener.java"
+        }
+      ]
+    },
+    {
+      "id": "redelivery",
+      "lane": "consumer",
+      "col": 2,
+      "type": "messagebus",
+      "label": "相同订单重投",
+      "sublabel": "未ack / SENT超时恢复",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryStrategyAwardStockListener.java",
+          "line": 98,
+          "end_line": 101,
+          "label": "LotteryStrategyAwardStockListener.java"
+        },
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml",
+          "line": 112,
+          "end_line": 120,
+          "label": "UserStrategyExport_Mapper.xml"
+        }
+      ]
+    },
+    {
+      "id": "duplicate",
+      "lane": "database",
+      "col": 3,
+      "type": "database",
+      "label": "账本唯一键冲突",
+      "sublabel": "直接成功；库存不再-1",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java",
+          "line": 95,
+          "end_line": 110,
+          "label": "StrategyRepository.java"
+        }
+      ]
+    },
+    {
+      "id": "continue",
+      "lane": "consumer",
+      "col": 4,
+      "type": "backend",
+      "label": "完成库存并发 invoice",
+      "sublabel": "stock_mq_state →1",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryStrategyAwardStockListener.java",
+          "line": 94,
+          "end_line": 97,
+          "label": "LotteryStrategyAwardStockListener.java"
+        }
+      ]
+    },
+    {
+      "id": "ack",
+      "lane": "consumer",
+      "col": 5,
+      "type": "messagebus",
+      "label": "ack 库存位点",
+      "sublabel": "后续由发奖消费者继续",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryStrategyAwardStockListener.java",
+          "line": 94,
+          "end_line": 101,
+          "label": "LotteryStrategyAwardStockListener.java"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "first-to-commit",
+      "from": "first",
+      "to": "commit",
+      "label": "settleAwardStock",
+      "variant": "default"
+    },
+    {
+      "id": "commit-to-crash",
+      "from": "commit",
+      "to": "crash",
+      "label": "提交后中断",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "crash-to-redelivery",
+      "from": "crash",
+      "to": "redelivery",
+      "label": "重启后处理",
+      "variant": "dashed",
+      "role": "async"
+    },
+    {
+      "id": "redelivery-to-duplicate",
+      "from": "redelivery",
+      "to": "duplicate",
+      "label": "重放同orderId",
+      "variant": "default"
+    },
+    {
+      "id": "duplicate-to-continue",
+      "from": "duplicate",
+      "to": "continue",
+      "label": "幂等成功",
+      "variant": "default"
+    },
+    {
+      "id": "continue-to-ack",
+      "from": "continue",
+      "to": "ack",
+      "label": "消息责任已交接",
+      "variant": "default"
+    }
+  ],
+  "mainPath": [
+    "first",
+    "commit",
+    "crash",
+    "redelivery",
+    "duplicate",
+    "continue",
+    "ack"
+  ],
+  "cards": [
+    {
+      "title": "宕机时点决定恢复",
+      "dot": "cyan",
+      "items": [
+        "TX3未提交：事务回滚，重投首次结算。TX3已提交但库存状态未完成：账本阻止二次扣减。",
+        "库存状态已完成但invoice未发：库存重放先短路，发奖补偿Job负责缺失invoice。"
+      ]
+    },
+    {
+      "title": "恢复能力的边界",
+      "dot": "amber",
+      "items": [
+        "当前配置关闭自动位点提交并使用manual_immediate；代码异常不ack。",
+        "未ack重放与XXL-Job超时扫描共同提供恢复机会。没有配置专用死信队列或无限重试保证。"
+      ]
+    }
+  ]
+}

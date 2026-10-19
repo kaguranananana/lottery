@@ -1,0 +1,187 @@
+{
+  "schema_version": 2,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "09 · mq_state：发送成功还需要消费确认",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/visual-guide/diagrams/09-invoice-states/09-invoice-states.html",
+    "repository": {
+      "url": "git@github.com:kaguranananana/lottery.git",
+      "revision": "076af9fc607749c018c1cbec630daef61a99af55",
+      "link_mode": "local-only"
+    }
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "发奖消息状态 · mq_state"
+    },
+    {
+      "id": "recovery",
+      "label": "发送失败及超时恢复"
+    }
+  ],
+  "states": [
+    {
+      "id": "init",
+      "type": "start",
+      "label": "INIT · 0",
+      "sublabel": "库存完成后待发送",
+      "lane": "main",
+      "col": 0,
+      "width": 156,
+      "height": 70,
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml",
+          "line": 42,
+          "end_line": 50,
+          "label": "UserStrategyExport_Mapper.xml"
+        },
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryInvoiceListener.java",
+          "line": 71,
+          "end_line": 107,
+          "label": "LotteryInvoiceListener.java"
+        }
+      ]
+    },
+    {
+      "id": "sent",
+      "type": "waiting",
+      "label": "SENT · 3",
+      "sublabel": "消息已发送",
+      "lane": "main",
+      "col": 2,
+      "width": 156,
+      "height": 70,
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml",
+          "line": 42,
+          "end_line": 50,
+          "label": "UserStrategyExport_Mapper.xml"
+        },
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryInvoiceListener.java",
+          "line": 71,
+          "end_line": 107,
+          "label": "LotteryInvoiceListener.java"
+        }
+      ]
+    },
+    {
+      "id": "done",
+      "type": "success",
+      "label": "COMPLETE · 1",
+      "sublabel": "要求 grant_state=1",
+      "lane": "main",
+      "col": 4,
+      "width": 156,
+      "height": 70,
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml",
+          "line": 42,
+          "end_line": 50,
+          "label": "UserStrategyExport_Mapper.xml"
+        },
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryInvoiceListener.java",
+          "line": 71,
+          "end_line": 107,
+          "label": "LotteryInvoiceListener.java"
+        }
+      ]
+    },
+    {
+      "id": "fail",
+      "type": "failure",
+      "label": "FAIL · 2",
+      "sublabel": "发送失败待补偿",
+      "lane": "recovery",
+      "col": 0,
+      "width": 156,
+      "height": 70,
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml",
+          "line": 42,
+          "end_line": 50,
+          "label": "UserStrategyExport_Mapper.xml"
+        },
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryInvoiceListener.java",
+          "line": 71,
+          "end_line": 107,
+          "label": "LotteryInvoiceListener.java"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "init-to-sent",
+      "from": "init",
+      "to": "sent",
+      "label": "发送成功",
+      "variant": "default"
+    },
+    {
+      "id": "sent-to-done",
+      "from": "sent",
+      "to": "done",
+      "label": "发奖完成确认",
+      "variant": "default"
+    },
+    {
+      "id": "init-to-fail",
+      "from": "init",
+      "to": "fail",
+      "label": "发送失败",
+      "variant": "security"
+    },
+    {
+      "id": "fail-to-sent",
+      "from": "fail",
+      "to": "sent",
+      "label": "补偿成功",
+      "variant": "default"
+    },
+    {
+      "id": "init-to-done",
+      "from": "init",
+      "to": "done",
+      "label": "消费先完成",
+      "variant": "dashed",
+      "route": "top-channel"
+    },
+    {
+      "id": "fail-to-done",
+      "from": "fail",
+      "to": "done",
+      "label": "发奖已完成",
+      "variant": "dashed",
+      "route": "bottom-channel"
+    }
+  ],
+  "cards": [
+    {
+      "title": "补偿筛选",
+      "dot": "cyan",
+      "items": [
+        "必须stock_mq_state=1且grant_state!=1。FAIL直接扫；INIT创建超过30分钟才扫。",
+        "SENT更新超过10分钟可补偿；历史mq=1但grant!=1也按10分钟恢复。每张表LIMIT100。"
+      ]
+    },
+    {
+      "title": "本地发奖状态",
+      "dot": "amber",
+      "items": [
+        "grant_state 由handler CAS 0→1；失败时消费者抛异常，没有主链路写grant=2。",
+        "消息状态COMPLETE只能在grant=1时写入。示意消费顺序并不要求发送回调先抵达。"
+      ]
+    }
+  ]
+}

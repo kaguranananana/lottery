@@ -1,0 +1,358 @@
+{
+  "checked_date": "2026-10-14",
+  "diagram_count": 14,
+  "all_automated_gates_passed": true,
+  "quality_profile": "showcase",
+  "rows": [
+    {
+      "diagram": "01-layers",
+      "type": "architecture",
+      "html": "diagrams/01-layers/01-layers.html",
+      "receipt": "diagrams/01-layers/01-layers.finalize.json",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "not_requested"
+    },
+    {
+      "diagram": "02-runtime",
+      "type": "architecture",
+      "html": "diagrams/02-runtime/02-runtime.html",
+      "receipt": "diagrams/02-runtime/review-3/02-runtime.finalize.json",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "not_requested"
+    },
+    {
+      "diagram": "03-participation",
+      "type": "sequence",
+      "html": "diagrams/03-participation/03-participation.html",
+      "receipt": "diagrams/03-participation/flow-styles/03-participation.finalize.json",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "not_requested"
+    },
+    {
+      "diagram": "04-draw-order",
+      "type": "sequence",
+      "html": "diagrams/04-draw-order/04-draw-order.html",
+      "receipt": "diagrams/04-draw-order/flow-styles/04-draw-order.finalize.json",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "not_requested"
+    },
+    {
+      "diagram": "05-outbox-dispatch",
+      "type": "sequence",
+      "html": "diagrams/05-outbox-dispatch/05-outbox-dispatch.html",
+      "receipt": "diagrams/05-outbox-dispatch/flow-styles/05-outbox-dispatch.finalize.json",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "not_requested"
+    },
+    {
+      "diagram": "06-stock-settlement",
+      "type": "sequence",
+      "html": "diagrams/06-stock-settlement/06-stock-settlement.html",
+      "receipt": "diagrams/06-stock-settlement/flow-styles/06-stock-settlement.finalize.json",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "not_requested"
+    },
+    {
+      "diagram": "07-fulfillment",
+      "type": "sequence",
+      "html": "diagrams/07-fulfillment/07-fulfillment.html",
+      "receipt": "diagrams/07-fulfillment/flow-styles/07-fulfillment.finalize.json",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "not_requested"
+    },
+    {
+      "diagram": "08-stock-states",
+      "type": "lifecycle",
+      "html": "diagrams/08-stock-states/08-stock-states.html",
+      "receipt": "diagrams/08-stock-states/08-stock-states.finalize.json",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "not_requested"
+    },
+    {
+      "diagram": "09-invoice-states",
+      "type": "lifecycle",
+      "html": "diagrams/09-invoice-states/09-invoice-states.html",
+      "receipt": "diagrams/09-invoice-states/09-invoice-states.finalize.json",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "not_requested"
+    },
+    {
+      "diagram": "10-request-retry",
+      "type": "workflow",
+      "html": "diagrams/10-request-retry/10-request-retry.html",
+      "receipt": "diagrams/10-request-retry/business-legend/10-request-retry.finalize.json",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "not_requested"
+    },
+    {
+      "diagram": "11-stock-key-missing",
+      "type": "workflow",
+      "html": "diagrams/11-stock-key-missing/11-stock-key-missing.html",
+      "receipt": "diagrams/11-stock-key-missing/business-legend/11-stock-key-missing.finalize.json",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "not_requested"
+    },
+    {
+      "diagram": "12-consumer-crash",
+      "type": "workflow",
+      "html": "diagrams/12-consumer-crash/12-consumer-crash.html",
+      "receipt": "diagrams/12-consumer-crash/business-legend/12-consumer-crash.finalize.json",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "not_requested"
+    },
+    {
+      "diagram": "13-blocked-reconcile",
+      "type": "workflow",
+      "html": "diagrams/13-blocked-reconcile/13-blocked-reconcile.html",
+      "receipt": "diagrams/13-blocked-reconcile/business-legend/13-blocked-reconcile.finalize.json",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "not_requested"
+    },
+    {
+      "diagram": "14-no-prize",
+      "type": "sequence",
+      "html": "diagrams/14-no-prize/14-no-prize.html",
+      "receipt": "diagrams/14-no-prize/flow-styles/14-no-prize.finalize.json",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "not_requested"
+    }
+  ],
+  "resource_checks": {
+    "path_steps": 41,
+    "source_files": 38,
+    "result": "passed"
+  },
+  "entry_browser_observations": {
+    "method": "CUA over http://127.0.0.1",
+    "viewports": [
+      {
+        "width": 1440,
+        "height": 900
+      },
+      {
+        "width": 1600,
+        "height": 1000
+      },
+      {
+        "width": 1920,
+        "height": 1080
+      },
+      {
+        "width": 2048,
+        "height": 1320
+      }
+    ],
+    "horizontal_overflow": false,
+    "verified_interactions": [
+      "chapter and diagram navigation",
+      "winner and no-prize traces",
+      "step data snapshots",
+      "relationship focus",
+      "keyboard arrows",
+      "saved deep link restore",
+      "source line anchors and file filter",
+      "light and dark themes",
+      "same-document deep link navigation after loading final resource version"
+    ],
+    "local_file_protocol_check": "blocked_by_in_app_browser_url_policy",
+    "perceptual_review_scope": "entry and selected diagrams; not every diagram",
+    "host_console_observation": "anonymous MutationObserver exceptions include Electron host frames; a separate Immersive Translate extension fetch error was also observed; no guide.js frames identified; recorded separately from artifact gate results"
+  },
+  "business_runtime_tests": "not_run_documentation_only"
+}

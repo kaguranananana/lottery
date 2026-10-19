@@ -1,0 +1,211 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "14 · 未中奖：消费参与机会，返回后结束",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/visual-guide/diagrams/14-no-prize/14-no-prize.html",
+    "repository": {
+      "url": "git@github.com:kaguranananana/lottery.git",
+      "revision": "076af9fc607749c018c1cbec630daef61a99af55",
+      "link_mode": "local-only"
+    },
+    "legend": {
+      "entries": {
+        "default": {
+          "label": "方法调用"
+        },
+        "security": {
+          "label": "数据写入 / 并发锁"
+        },
+        "emphasis": {
+          "label": "数据读取"
+        },
+        "dashed": {
+          "label": "消息发送 / 投递"
+        },
+        "return": {
+          "label": "结果返回 / ACK"
+        }
+      }
+    },
+    "column_fit": "spread"
+  },
+  "participants": [
+    {
+      "id": "draw",
+      "type": "backend",
+      "label": "抽奖规则",
+      "sublabel": "domain",
+      "sources": [
+        {
+          "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/strategy/service/draw/impl/DrawExecutor.java",
+          "line": 32,
+          "end_line": 46,
+          "label": "DrawExecutor.java"
+        }
+      ]
+    },
+    {
+      "id": "app",
+      "type": "backend",
+      "label": "用例编排",
+      "sublabel": "application",
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
+          "line": 132,
+          "end_line": 150,
+          "label": "ActivityProcessImpl.java"
+        }
+      ]
+    },
+    {
+      "id": "partake",
+      "type": "backend",
+      "label": "参与规则",
+      "sublabel": "domain",
+      "sources": [
+        {
+          "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/impl/ActivityPartakeImpl.java",
+          "line": 58,
+          "end_line": 65,
+          "label": "ActivityPartakeImpl.java"
+        }
+      ]
+    },
+    {
+      "id": "repo",
+      "type": "backend",
+      "label": "参与仓储",
+      "sublabel": "infrastructure",
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/UserTakeActivityRepository.java",
+          "line": 120,
+          "end_line": 128,
+          "label": "UserTakeActivityRepository.java"
+        }
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "用户库",
+      "sublabel": "参与state",
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserTakeActivity_Mapper.xml",
+          "line": 28,
+          "end_line": 30,
+          "label": "UserTakeActivity_Mapper.xml"
+        }
+      ]
+    },
+    {
+      "id": "redis",
+      "type": "database",
+      "label": "Redis",
+      "sublabel": "原请求token锁",
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/lock/RedisActivityDrawProcessGuard.java",
+          "line": 39,
+          "end_line": 49,
+          "label": "RedisActivityDrawProcessGuard.java"
+        }
+      ]
+    },
+    {
+      "id": "http",
+      "type": "backend",
+      "label": "HTTP 入口",
+      "sublabel": "interfaces",
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/LotteryController.java",
+          "line": 72,
+          "end_line": 95,
+          "label": "LotteryController.java"
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "id": "l09",
+      "from": "draw",
+      "to": "app",
+      "y": 170,
+      "label": "09 DrawState.FAIL",
+      "variant": "return"
+    },
+    {
+      "id": "l10",
+      "from": "app",
+      "to": "partake",
+      "y": 216,
+      "label": "10 consumeTakeActivity(uId,act,takeId)",
+      "variant": "default"
+    },
+    {
+      "id": "l10repo",
+      "from": "partake",
+      "to": "repo",
+      "y": 262,
+      "label": "consumeTake：按uId路由",
+      "variant": "default"
+    },
+    {
+      "id": "l10sql",
+      "from": "repo",
+      "to": "db",
+      "y": 308,
+      "label": "单条CAS take 0→1",
+      "variant": "security"
+    },
+    {
+      "id": "l10back",
+      "from": "partake",
+      "to": "app",
+      "y": 354,
+      "label": "消费成功；零行须回读",
+      "variant": "return"
+    },
+    {
+      "id": "l11",
+      "from": "app",
+      "to": "redis",
+      "y": 400,
+      "label": "11 finally 校验token后释放",
+      "variant": "security"
+    },
+    {
+      "id": "l12",
+      "from": "app",
+      "to": "http",
+      "y": 446,
+      "label": "12 D001 / takeId / win=false",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "title": "本次流程结束",
+      "dot": "cyan",
+      "items": [
+        "NO_PRIZE或命中的奖品不可售：不重摇，消费take并返回D001。",
+        "活动库存与次数已消耗。无中奖订单，所以没有本次Outbox、账本、invoice。"
+      ]
+    },
+    {
+      "title": "锁释放的实际位置",
+      "dot": "amber",
+      "items": [
+        "finally由应用调用Redis Guard，只有原token仍匹配时删除短锁。",
+        "同requestId重试：已消费take无订单，回放D001，不再采样。"
+      ]
+    }
+  ]
+}

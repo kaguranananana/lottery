@@ -1,0 +1,299 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "04 · 同步下半程：选奖品、预扣、建订单、返回",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/visual-guide/diagrams/04-draw-order/04-draw-order.html",
+    "repository": {
+      "url": "git@github.com:kaguranananana/lottery.git",
+      "revision": "076af9fc607749c018c1cbec630daef61a99af55",
+      "link_mode": "local-only"
+    },
+    "legend": {
+      "entries": {
+        "default": {
+          "label": "方法调用"
+        },
+        "security": {
+          "label": "数据写入 / 并发锁"
+        },
+        "emphasis": {
+          "label": "数据读取"
+        },
+        "dashed": {
+          "label": "消息发送 / 投递"
+        },
+        "return": {
+          "label": "结果返回 / ACK"
+        }
+      }
+    }
+  },
+  "participants": [
+    {
+      "id": "http",
+      "type": "backend",
+      "label": "HTTP 入口",
+      "sublabel": "interfaces",
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/LotteryController.java",
+          "line": 72,
+          "end_line": 96,
+          "label": "LotteryController.java"
+        }
+      ]
+    },
+    {
+      "id": "app",
+      "type": "backend",
+      "label": "用例编排",
+      "sublabel": "application",
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
+          "line": 129,
+          "end_line": 179,
+          "label": "ActivityProcessImpl.java"
+        }
+      ]
+    },
+    {
+      "id": "draw",
+      "type": "backend",
+      "label": "抽奖规则",
+      "sublabel": "domain",
+      "sources": [
+        {
+          "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/strategy/service/draw/impl/DrawExecutor.java",
+          "line": 31,
+          "end_line": 65,
+          "label": "DrawExecutor.java"
+        }
+      ]
+    },
+    {
+      "id": "strategy",
+      "type": "backend",
+      "label": "策略仓储",
+      "sublabel": "infrastructure",
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java",
+          "line": 67,
+          "end_line": 84,
+          "label": "StrategyRepository.java"
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java",
+          "line": 117,
+          "end_line": 145,
+          "label": "StrategyRepository.java"
+        }
+      ]
+    },
+    {
+      "id": "redis",
+      "type": "database",
+      "label": "Redis",
+      "sublabel": "奖品实时库存",
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java",
+          "line": 117,
+          "end_line": 145,
+          "label": "StrategyRepository.java"
+        }
+      ]
+    },
+    {
+      "id": "order",
+      "type": "backend",
+      "label": "订单规则",
+      "sublabel": "domain",
+      "sources": [
+        {
+          "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/award/service/order/impl/AwardOrderImpl.java",
+          "line": 38,
+          "end_line": 58,
+          "label": "AwardOrderImpl.java"
+        },
+        {
+          "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/award/service/order/impl/AwardOrderImpl.java",
+          "line": 107,
+          "end_line": 124,
+          "label": "AwardOrderImpl.java"
+        }
+      ]
+    },
+    {
+      "id": "repo",
+      "type": "backend",
+      "label": "订单仓储",
+      "sublabel": "infrastructure",
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
+          "line": 38,
+          "end_line": 65,
+          "label": "OrderRepository.java"
+        }
+      ]
+    },
+    {
+      "id": "userdb",
+      "type": "database",
+      "label": "用户库",
+      "sublabel": "订单分表 / take",
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml",
+          "line": 27,
+          "end_line": 35,
+          "label": "UserStrategyExport_Mapper.xml"
+        },
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserTakeActivity_Mapper.xml",
+          "line": 28,
+          "end_line": 30,
+          "label": "UserTakeActivity_Mapper.xml"
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "id": "s09",
+      "from": "app",
+      "to": "draw",
+      "y": 170,
+      "label": "09 DrawReq{uId,strategyId,uuid=takeId}",
+      "variant": "default"
+    },
+    {
+      "id": "s09snapshot",
+      "from": "draw",
+      "to": "strategy",
+      "y": 216,
+      "label": "queryStrategySnapshot(strategyId)",
+      "variant": "emphasis"
+    },
+    {
+      "id": "s09back",
+      "from": "strategy",
+      "to": "draw",
+      "y": 262,
+      "label": "快照：权重前缀和 + 奖品详情",
+      "variant": "return"
+    },
+    {
+      "id": "s10",
+      "from": "draw",
+      "to": "strategy",
+      "y": 308,
+      "label": "10 采样命中 awardId → 预扣",
+      "variant": "default"
+    },
+    {
+      "id": "s10redis",
+      "from": "strategy",
+      "to": "redis",
+      "y": 354,
+      "label": "GET 检查 → DECR 奖品库存 1",
+      "variant": "security"
+    },
+    {
+      "id": "s10back",
+      "from": "draw",
+      "to": "app",
+      "y": 400,
+      "label": "DrawAwardInfo{awardId,type,name,content}",
+      "variant": "return"
+    },
+    {
+      "id": "s11",
+      "from": "app",
+      "to": "order",
+      "y": 446,
+      "label": "11 AwardOrderReq 带 takeId + award",
+      "variant": "default"
+    },
+    {
+      "id": "s11repo",
+      "from": "order",
+      "to": "repo",
+      "y": 492,
+      "label": "Snowflake orderId；三个状态置 0",
+      "variant": "default"
+    },
+    {
+      "id": "s12",
+      "from": "repo",
+      "to": "userdb",
+      "y": 538,
+      "label": "12 TX2：CAS take 0→1 + INSERT 订单",
+      "variant": "security"
+    },
+    {
+      "id": "s12back",
+      "from": "userdb",
+      "to": "repo",
+      "y": 584,
+      "label": "TX2 COMMIT；Outbox 随订单持久化",
+      "variant": "return"
+    },
+    {
+      "id": "s12result",
+      "from": "order",
+      "to": "app",
+      "y": 630,
+      "label": "InvoiceVO 含 orderId / takeId / award",
+      "variant": "return"
+    },
+    {
+      "id": "s13",
+      "from": "app",
+      "to": "redis",
+      "y": 676,
+      "label": "13 finally：经 Guard 校验 token 后释放",
+      "variant": "security"
+    },
+    {
+      "id": "s14",
+      "from": "app",
+      "to": "http",
+      "y": 722,
+      "label": "14 takeId / orderId / award",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "title": "响应边界",
+      "dot": "cyan",
+      "items": [
+        "Controller 把 DrawProcessResult 转为 DrawResponse，再返回 HTTP 客户端。",
+        "同步成功 code=0000、win=true；grant_state / mq_state / stock_mq_state 都仍为 INIT(0)。",
+        "此时 MySQL strategy_detail 尚未扣减，真实发奖也没有发生。"
+      ]
+    },
+    {
+      "title": "未中奖支路",
+      "dot": "amber",
+      "items": [
+        "NO_PRIZE 或命中的奖品不可售：consumeTake CAS 0→1，返回 D001、win=false。",
+        "活动库存和参与次数已消耗；不建中奖订单、不产生库存结算消息、不重摇其他奖品。"
+      ]
+    },
+    {
+      "title": "快照来源",
+      "dot": "emerald",
+      "items": [
+        "正常图取 L1 命中。未命中时 Caffeine → Redis L2 → MySQL strategy/detail/award → 编译快照。",
+        "取样先使用固定概率。库存不会重新归一化概率。"
+      ]
+    }
+  ]
+}

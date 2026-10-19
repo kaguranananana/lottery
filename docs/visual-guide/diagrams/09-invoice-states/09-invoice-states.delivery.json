@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "62300ac4-e406-46b8-90a1-c94ce9e5d84b",
+  "status": "current",
+  "command": "deliver",
+  "type": "lifecycle",
+  "input": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/09-invoice-states/candidate.json",
+  "output": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/09-invoice-states/09-invoice-states.html",
+  "specification": {
+    "sha256": "95a451f6966381e56df8695c0c801db327daacb15f42791120cf7db6ea3f5310",
+    "bytes": 5061
+  },
+  "artifact": {
+    "sha256": "f11a241bbd8250c1d06dd9bea5f770434136bf4e219fd30e55d124efec65bc92",
+    "bytes": 753762
+  }
+}

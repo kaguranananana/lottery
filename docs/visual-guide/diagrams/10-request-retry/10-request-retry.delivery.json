@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "29ccfaaa-d4c5-4d6c-bfba-68bd851a8c9f",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/10-request-retry/candidate.json",
+  "output": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/10-request-retry/10-request-retry.html",
+  "specification": {
+    "sha256": "fa35ffb7693090f4dbae7fcad0d4c20993fbd9621a8988b3968061f709f51eb2",
+    "bytes": 8192
+  },
+  "artifact": {
+    "sha256": "8420d77209761b4b37342ca5fdaee52fe19c1b927a90b40fe61d52887e2f6c33",
+    "bytes": 757863
+  }
+}

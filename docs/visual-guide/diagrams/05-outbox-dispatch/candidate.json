@@ -1,0 +1,207 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "05 · 异步起点：XXL-Job 把订单 Outbox 发到 Kafka",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/visual-guide/diagrams/05-outbox-dispatch/05-outbox-dispatch.html",
+    "repository": {
+      "url": "git@github.com:kaguranananana/lottery.git",
+      "revision": "076af9fc607749c018c1cbec630daef61a99af55",
+      "link_mode": "local-only"
+    },
+    "legend": {
+      "entries": {
+        "default": {
+          "label": "方法调用"
+        },
+        "security": {
+          "label": "数据写入 / 并发锁"
+        },
+        "emphasis": {
+          "label": "数据读取"
+        },
+        "dashed": {
+          "label": "消息发送 / 投递"
+        },
+        "return": {
+          "label": "结果返回 / ACK"
+        }
+      }
+    },
+    "column_fit": "spread"
+  },
+  "participants": [
+    {
+      "id": "job",
+      "type": "backend",
+      "label": "库存 Job",
+      "sublabel": "application",
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryXxlJob.java",
+          "line": 193,
+          "end_line": 271,
+          "label": "LotteryXxlJob.java"
+        }
+      ]
+    },
+    {
+      "id": "repo",
+      "type": "backend",
+      "label": "订单仓储",
+      "sublabel": "infrastructure",
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
+          "line": 155,
+          "end_line": 189,
+          "label": "OrderRepository.java"
+        }
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "用户库",
+      "sublabel": "持久 Outbox",
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml",
+          "line": 112,
+          "end_line": 120,
+          "label": "UserStrategyExport_Mapper.xml"
+        }
+      ]
+    },
+    {
+      "id": "redis",
+      "type": "database",
+      "label": "Redis",
+      "sublabel": "短期投递标记",
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/lock/RedisStrategyAwardStockMqGuard.java",
+          "line": 55,
+          "end_line": 83,
+          "label": "RedisStrategyAwardStockMqGuard.java"
+        }
+      ]
+    },
+    {
+      "id": "kafka",
+      "type": "messagebus",
+      "label": "Kafka",
+      "sublabel": "stock topic",
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/producer/KafkaProducer.java",
+          "line": 34,
+          "end_line": 41,
+          "label": "KafkaProducer.java"
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "id": "a01",
+      "from": "job",
+      "to": "repo",
+      "y": 170,
+      "label": "A01 按 dbIdx × tbIdx 扫描",
+      "variant": "emphasis"
+    },
+    {
+      "id": "a01sql",
+      "from": "repo",
+      "to": "db",
+      "y": 216,
+      "label": "INIT / FAIL / SENT 超时10分钟；LIMIT 200",
+      "variant": "emphasis"
+    },
+    {
+      "id": "a01back",
+      "from": "db",
+      "to": "job",
+      "y": 262,
+      "label": "经仓储返回{uId,orderId,strategyId,awardId}",
+      "variant": "return"
+    },
+    {
+      "id": "a02",
+      "from": "job",
+      "to": "redis",
+      "y": 308,
+      "label": "A02 SETNX DISPATCHING(orderId)，60s",
+      "variant": "security"
+    },
+    {
+      "id": "a03",
+      "from": "job",
+      "to": "kafka",
+      "y": 354,
+      "label": "A03 经 KafkaProducer 发 JSON，key=orderId",
+      "variant": "dashed"
+    },
+    {
+      "id": "a03callback",
+      "from": "kafka",
+      "to": "job",
+      "y": 400,
+      "label": "Future 发送成功回调（非消费确认）",
+      "variant": "return"
+    },
+    {
+      "id": "a04",
+      "from": "job",
+      "to": "repo",
+      "y": 446,
+      "label": "A04 发送成功推进 SENT(3)",
+      "variant": "default"
+    },
+    {
+      "id": "a04sql",
+      "from": "repo",
+      "to": "db",
+      "y": 492,
+      "label": "CAS：stock_mq_state 0/2 → 3",
+      "variant": "security"
+    },
+    {
+      "id": "a04clear",
+      "from": "job",
+      "to": "redis",
+      "y": 538,
+      "label": "DEL DISPATCHING；失败也清理",
+      "variant": "security"
+    }
+  ],
+  "cards": [
+    {
+      "title": "Outbox 在哪里",
+      "dot": "cyan",
+      "items": [
+        "没有单独 outbox 表：user_strategy_export 的 stock_mq_state 与订单字段共同承担 Outbox。",
+        "同一 TX2 写订单和待发送事实，避免订单已提交但发送责任丢失。"
+      ]
+    },
+    {
+      "title": "调度条件",
+      "dot": "amber",
+      "items": [
+        "Handler 在代码中注册；实际频率、分片参数需在 XXL-Job admin 配置。源码没有内置每5秒扫描。",
+        "参数 1 或 1,2 指定用户库，每库遍历4张订单表。配置批量200。"
+      ]
+    },
+    {
+      "title": "发送与消费可以交错",
+      "dot": "emerald",
+      "items": [
+        "消费者可能比发送回调更快。迟到成功或失败回调不能覆盖 COMPLETE / BLOCKED。",
+        "发送失败只有 INIT→FAIL；SENT 保留时钟，到期仍可重投。"
+      ]
+    }
+  ]
+}

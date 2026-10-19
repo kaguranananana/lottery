@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "dc1faaaa-6a5b-49d8-a7ec-00b8b222ecb7",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/03-participation/candidate.json",
+  "output": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/03-participation/03-participation.html",
+  "specification": {
+    "sha256": "7167ee95922c220f338311a648390146be00bec52d95080a29c2cdc2b2d65f1c",
+    "bytes": 8014
+  },
+  "artifact": {
+    "sha256": "8f29c9c48c310219aa173ced3e65e6167e223e99e80c693709d058d45a08d89c",
+    "bytes": 763749
+  }
+}

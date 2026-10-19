@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "2c294644-7d4b-4c9a-93b9-bf652d1743b6",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/12-consumer-crash/candidate.json",
+  "output": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/12-consumer-crash/12-consumer-crash.html",
+  "specification": {
+    "sha256": "d8502510683ea6636097af83fe52d1ead227018056af33e7d8deb2a46752aa39",
+    "bytes": 6762
+  },
+  "artifact": {
+    "sha256": "54884ee5fde1a8a5f298d29607d594a299ec4183e18af5f5e375c724dd7f7edd",
+    "bytes": 757418
+  }
+}

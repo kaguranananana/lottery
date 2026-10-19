@@ -1,0 +1,259 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "13 · 库存分歧：BLOCKED 留下待处理订单",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/visual-guide/diagrams/13-blocked-reconcile/13-blocked-reconcile.html",
+    "repository": {
+      "url": "git@github.com:kaguranananana/lottery.git",
+      "revision": "076af9fc607749c018c1cbec630daef61a99af55",
+      "link_mode": "local-only"
+    },
+    "legend": {
+      "entries": {
+        "backend": {
+          "label": "业务处理"
+        },
+        "database": {
+          "label": "数据存储"
+        },
+        "messagebus": {
+          "label": "消息处理"
+        },
+        "external": {
+          "label": "进程中断 / 人工"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "database",
+      "label": "db00 · 结算事务"
+    },
+    {
+      "id": "consumer",
+      "label": "application / 用户库 · 消费处理"
+    },
+    {
+      "id": "manual",
+      "label": "人工处置 · 非自动修复程序"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "gap",
+      "lane": "database",
+      "col": 0,
+      "type": "database",
+      "label": "条件扣减失败",
+      "sublabel": "award_surplus_count<=0",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/StrategyDetail_Mapper.xml",
+          "line": 43,
+          "end_line": 48,
+          "label": "StrategyDetail_Mapper.xml"
+        }
+      ]
+    },
+    {
+      "id": "rollback",
+      "lane": "database",
+      "col": 1,
+      "type": "database",
+      "label": "TX3 回滚账本",
+      "sublabel": "本次没有结算成功事实",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java",
+          "line": 103,
+          "end_line": 110,
+          "label": "StrategyRepository.java"
+        }
+      ]
+    },
+    {
+      "id": "block",
+      "lane": "consumer",
+      "col": 2,
+      "type": "backend",
+      "label": "持久化 BLOCKED=4",
+      "sublabel": "消费失败独立CAS",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
+          "line": 126,
+          "end_line": 142,
+          "label": "OrderRepository.java"
+        },
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml",
+          "line": 62,
+          "end_line": 67,
+          "label": "UserStrategyExport_Mapper.xml"
+        }
+      ]
+    },
+    {
+      "id": "ack",
+      "lane": "consumer",
+      "col": 3,
+      "type": "backend",
+      "label": "记录对账日志 + ack",
+      "sublabel": "Outbox 扫描排除4",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryStrategyAwardStockListener.java",
+          "line": 81,
+          "end_line": 91,
+          "label": "LotteryStrategyAwardStockListener.java"
+        }
+      ]
+    },
+    {
+      "id": "repair",
+      "lane": "manual",
+      "col": 3,
+      "type": "external",
+      "label": "人工核实并修复",
+      "sublabel": "保持原orderId / 不盲目加库存",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "docs/architecture.md",
+          "line": 44,
+          "end_line": 48,
+          "label": "architecture.md"
+        }
+      ]
+    },
+    {
+      "id": "release",
+      "lane": "manual",
+      "col": 4,
+      "type": "external",
+      "label": "按订单 CAS 4→0",
+      "sublabel": "正确用户库与订单分表",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "docs/architecture.md",
+          "line": 44,
+          "end_line": 48,
+          "label": "architecture.md"
+        }
+      ]
+    },
+    {
+      "id": "dispatch",
+      "lane": "consumer",
+      "col": 5,
+      "type": "backend",
+      "label": "Job 重投原订单",
+      "sublabel": "结算成功后继续发奖",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml",
+          "line": 112,
+          "end_line": 120,
+          "label": "UserStrategyExport_Mapper.xml"
+        },
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryXxlJob.java",
+          "line": 217,
+          "end_line": 225,
+          "label": "LotteryXxlJob.java"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "gap-to-rollback",
+      "from": "gap",
+      "to": "rollback",
+      "label": "扣减0行",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "rollback-to-block",
+      "from": "rollback",
+      "to": "block",
+      "label": "返回false",
+      "variant": "default"
+    },
+    {
+      "id": "block-to-ack",
+      "from": "block",
+      "to": "ack",
+      "label": "持久化成功才ack",
+      "variant": "default"
+    },
+    {
+      "id": "ack-to-repair",
+      "from": "ack",
+      "to": "repair",
+      "label": "等待人工处理",
+      "variant": "dashed",
+      "role": "branch"
+    },
+    {
+      "id": "repair-to-release",
+      "from": "repair",
+      "to": "release",
+      "label": "核实修复后",
+      "variant": "default"
+    },
+    {
+      "id": "release-to-dispatch",
+      "from": "release",
+      "to": "dispatch",
+      "label": "原Outbox重新可扫",
+      "variant": "dashed",
+      "role": "async"
+    }
+  ],
+  "mainPath": [
+    "gap",
+    "rollback",
+    "block",
+    "ack",
+    "repair",
+    "release",
+    "dispatch"
+  ],
+  "cards": [
+    {
+      "title": "对账与重试的区别",
+      "dot": "cyan",
+      "items": [
+        "FAIL=2是发送失败，下轮Job可重试。BLOCKED=4是Redis/MySQL业务分歧，需要处理真实库存事实。",
+        "若BLOCKED写入异常或零行且无法确认已BLOCKED/COMPLETE，仓储抛异常，消费者不ack。"
+      ]
+    },
+    {
+      "title": "人工步骤的实现范围",
+      "dot": "amber",
+      "items": [
+        "4→0是现有运维契约，不存在自动对账Job、管理Controller或通用库存修复脚本。",
+        "图中人工节点是操作边界，不表示自动功能已落地。"
+      ]
+    }
+  ]
+}

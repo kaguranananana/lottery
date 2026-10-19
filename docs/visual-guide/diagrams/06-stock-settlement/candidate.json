@@ -1,0 +1,241 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "06 · 库存消费：账本与奖品 MySQL 库存同事务",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/visual-guide/diagrams/06-stock-settlement/06-stock-settlement.html",
+    "repository": {
+      "url": "git@github.com:kaguranananana/lottery.git",
+      "revision": "076af9fc607749c018c1cbec630daef61a99af55",
+      "link_mode": "local-only"
+    },
+    "legend": {
+      "entries": {
+        "default": {
+          "label": "方法调用"
+        },
+        "security": {
+          "label": "数据写入 / 并发锁"
+        },
+        "emphasis": {
+          "label": "数据读取"
+        },
+        "dashed": {
+          "label": "消息发送 / 投递"
+        },
+        "return": {
+          "label": "结果返回 / ACK"
+        }
+      }
+    },
+    "column_fit": "spread"
+  },
+  "participants": [
+    {
+      "id": "kafka",
+      "type": "messagebus",
+      "label": "Kafka",
+      "sublabel": "库存 / 发奖",
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryStrategyAwardStockListener.java",
+          "line": 50,
+          "end_line": 61,
+          "label": "LotteryStrategyAwardStockListener.java"
+        }
+      ]
+    },
+    {
+      "id": "listener",
+      "type": "backend",
+      "label": "库存消费",
+      "sublabel": "application",
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryStrategyAwardStockListener.java",
+          "line": 62,
+          "end_line": 101,
+          "label": "LotteryStrategyAwardStockListener.java"
+        }
+      ]
+    },
+    {
+      "id": "strategy",
+      "type": "backend",
+      "label": "结算仓储",
+      "sublabel": "infrastructure",
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java",
+          "line": 87,
+          "end_line": 110,
+          "label": "StrategyRepository.java"
+        }
+      ]
+    },
+    {
+      "id": "global",
+      "type": "database",
+      "label": "全局库",
+      "sublabel": "db00 / lottery",
+      "sources": [
+        {
+          "path": "docs/sql/V2__architecture_simplification.sql",
+          "line": 14,
+          "end_line": 29,
+          "label": "V2__architecture_simplification.sql"
+        },
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/StrategyDetail_Mapper.xml",
+          "line": 43,
+          "end_line": 48,
+          "label": "StrategyDetail_Mapper.xml"
+        }
+      ]
+    },
+    {
+      "id": "order",
+      "type": "backend",
+      "label": "订单仓储",
+      "sublabel": "infrastructure",
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
+          "line": 118,
+          "end_line": 143,
+          "label": "OrderRepository.java"
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
+          "line": 218,
+          "end_line": 228,
+          "label": "OrderRepository.java"
+        }
+      ]
+    },
+    {
+      "id": "userdb",
+      "type": "database",
+      "label": "用户库",
+      "sublabel": "stock_mq_state",
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml",
+          "line": 52,
+          "end_line": 67,
+          "label": "UserStrategyExport_Mapper.xml"
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "id": "a05",
+      "from": "kafka",
+      "to": "listener",
+      "y": 170,
+      "label": "A05 AwardStockSettlementVO",
+      "variant": "dashed"
+    },
+    {
+      "id": "a05read",
+      "from": "listener",
+      "to": "order",
+      "y": 216,
+      "label": "DB 检查 COMPLETE / 订单存在",
+      "variant": "emphasis"
+    },
+    {
+      "id": "a05sql",
+      "from": "order",
+      "to": "userdb",
+      "y": 262,
+      "label": "按 uId 路由查 orderId",
+      "variant": "emphasis"
+    },
+    {
+      "id": "a06",
+      "from": "listener",
+      "to": "strategy",
+      "y": 308,
+      "label": "A06 settleAwardStock(orderId,...)",
+      "variant": "default"
+    },
+    {
+      "id": "a06tx",
+      "from": "strategy",
+      "to": "global",
+      "y": 354,
+      "label": "TX3：INSERT 唯一账本 + 奖品库存-1",
+      "variant": "security"
+    },
+    {
+      "id": "a06back",
+      "from": "global",
+      "to": "strategy",
+      "y": 400,
+      "label": "COMMIT；重复 orderId 不再扣减",
+      "variant": "return"
+    },
+    {
+      "id": "a07",
+      "from": "listener",
+      "to": "order",
+      "y": 446,
+      "label": "A07 写 stock_mq_state=COMPLETE(1)",
+      "variant": "default"
+    },
+    {
+      "id": "a07sql",
+      "from": "order",
+      "to": "userdb",
+      "y": 492,
+      "label": "独立 CAS：0/2/3/4 → 1",
+      "variant": "security"
+    },
+    {
+      "id": "a08",
+      "from": "listener",
+      "to": "kafka",
+      "y": 538,
+      "label": "A08 发 invoice；key=orderId",
+      "variant": "dashed"
+    },
+    {
+      "id": "a09",
+      "from": "listener",
+      "to": "kafka",
+      "y": 584,
+      "label": "A09 ack 库存消息位点",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "title": "TX3 能保证什么",
+      "dot": "cyan",
+      "items": [
+        "award_stock_settlement 与 strategy_detail 同在 db00。本地事务将 INSERT 和条件扣减绑定。",
+        "UNIQUE(order_id) 冲突说明本次已结算，返回成功并继续收口；奖品只扣一次。"
+      ]
+    },
+    {
+      "title": "跨库没有一个大事务",
+      "dot": "amber",
+      "items": [
+        "stock_mq_state 在用户库，不能与 db00 账本组成同一本地事务。",
+        "中间崩溃由消息重放和账本补齐。当前库存消费者不使用 Redis PROCESSING / DONE 锁。"
+      ]
+    },
+    {
+      "title": "扣减失败",
+      "dot": "rose",
+      "items": [
+        "UPDATE 要求 award_surplus_count>0。失败回滚账本，订单写 BLOCKED(4)，持久化成功后 ack。",
+        "BLOCKED 排除自动扫描；需要人工对账修复并显式释放原订单。"
+      ]
+    }
+  ]
+}

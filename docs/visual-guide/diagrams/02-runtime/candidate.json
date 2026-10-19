@@ -1,0 +1,267 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "02 · 运行组件：一个应用与外部服务",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/visual-guide/diagrams/02-runtime/02-runtime.html",
+    "repository": {
+      "url": "git@github.com:kaguranananana/lottery.git",
+      "revision": "076af9fc607749c018c1cbec630daef61a99af55",
+      "link_mode": "local-only"
+    }
+  },
+  "components": [
+    {
+      "id": "client",
+      "type": "external",
+      "label": "客户端",
+      "sublabel": "调用 HTTP 抽奖接口",
+      "pos": [
+        60,
+        300
+      ],
+      "size": [
+        190,
+        78
+      ],
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/LotteryController.java",
+          "line": 27,
+          "end_line": 44,
+          "label": "LotteryController.java"
+        }
+      ]
+    },
+    {
+      "id": "lottery",
+      "type": "backend",
+      "label": "Lottery 应用",
+      "sublabel": "HTTP / Job / Producer / Listener",
+      "pos": [
+        480,
+        300
+      ],
+      "size": [
+        280,
+        78
+      ],
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/LotteryController.java",
+          "line": 27,
+          "end_line": 44,
+          "label": "LotteryController.java"
+        },
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryXxlJob.java",
+          "line": 193,
+          "end_line": 229,
+          "label": "LotteryXxlJob.java"
+        },
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryInvoiceListener.java",
+          "line": 57,
+          "end_line": 107,
+          "label": "LotteryInvoiceListener.java"
+        }
+      ]
+    },
+    {
+      "id": "redis",
+      "type": "database",
+      "label": "Redis",
+      "sublabel": "实时库存、配置缓存、短期锁",
+      "pos": [
+        480,
+        90
+      ],
+      "size": [
+        280,
+        78
+      ],
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityRepository.java",
+          "line": 190,
+          "end_line": 225,
+          "label": "ActivityRepository.java"
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/lock/RedisActivityDrawProcessGuard.java",
+          "line": 24,
+          "end_line": 45,
+          "label": "RedisActivityDrawProcessGuard.java"
+        }
+      ]
+    },
+    {
+      "id": "mysql",
+      "type": "database",
+      "label": "MySQL",
+      "sublabel": "db00 配置/账本；db01/02 用户数据",
+      "pos": [
+        980,
+        300
+      ],
+      "size": [
+        280,
+        78
+      ],
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
+          "line": 38,
+          "end_line": 65,
+          "label": "OrderRepository.java"
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java",
+          "line": 87,
+          "end_line": 110,
+          "label": "StrategyRepository.java"
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/dao/IUserStrategyExportDao.java",
+          "line": 16,
+          "end_line": 24,
+          "label": "IUserStrategyExportDao.java"
+        }
+      ]
+    },
+    {
+      "id": "kafka",
+      "type": "messagebus",
+      "label": "Kafka",
+      "sublabel": "库存结算与发奖两个 topic",
+      "pos": [
+        480,
+        600
+      ],
+      "size": [
+        280,
+        78
+      ],
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/producer/KafkaProducer.java",
+          "line": 18,
+          "end_line": 41,
+          "label": "KafkaProducer.java"
+        },
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryStrategyAwardStockListener.java",
+          "line": 50,
+          "end_line": 53,
+          "label": "LotteryStrategyAwardStockListener.java"
+        }
+      ]
+    },
+    {
+      "id": "xxl",
+      "type": "external",
+      "label": "XXL-Job 调度中心",
+      "sublabel": "触发应用内三类 Job Handler",
+      "pos": [
+        980,
+        600
+      ],
+      "size": [
+        280,
+        78
+      ],
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryXxlJob.java",
+          "line": 61,
+          "end_line": 62,
+          "label": "LotteryXxlJob.java"
+        },
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryXxlJob.java",
+          "line": 115,
+          "end_line": 116,
+          "label": "LotteryXxlJob.java"
+        },
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryXxlJob.java",
+          "line": 193,
+          "end_line": 194,
+          "label": "LotteryXxlJob.java"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "client-to-lottery",
+      "from": "client",
+      "to": "lottery",
+      "label": "HTTP 请求",
+      "variant": "emphasis"
+    },
+    {
+      "id": "lottery-to-redis",
+      "from": "lottery",
+      "to": "redis",
+      "label": "GET / DECR / SETNX",
+      "variant": "default"
+    },
+    {
+      "id": "lottery-to-mysql",
+      "from": "lottery",
+      "to": "mysql",
+      "label": "经仓储执行 SQL",
+      "variant": "default"
+    },
+    {
+      "id": "xxl-to-lottery",
+      "from": "xxl",
+      "to": "lottery",
+      "label": "触发 Job",
+      "variant": "default"
+    },
+    {
+      "id": "lottery-to-kafka",
+      "from": "lottery",
+      "to": "kafka",
+      "label": "生产消息",
+      "variant": "dashed"
+    },
+    {
+      "id": "kafka-to-lottery",
+      "from": "kafka",
+      "to": "lottery",
+      "label": "订阅消费",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "title": "进程内的组件",
+      "dot": "cyan",
+      "items": [
+        "Caffeine 仅保存 StrategySnapshot 的本机 L1；不是独立缓存服务。",
+        "dbRouterForGem 是 JDBC/MyBatis 路由依赖，不是网络网关或数据库。路由细节在仓储层。"
+      ]
+    },
+    {
+      "title": "存储的两类事实",
+      "dot": "emerald",
+      "items": [
+        "Redis 的库存数控制运行期可售数量。MySQL 用户库保存参与、次数与中奖订单。",
+        "MySQL 全局库保存配置、strategy_detail 剩余奖品库存和 award_stock_settlement。"
+      ]
+    },
+    {
+      "title": "已确认的边界",
+      "dot": "amber",
+      "items": [
+        "当前应用没有同步发 Kafka；创建订单后的 Outbox 由 Job 驱动。",
+        "真实网关与部署栈在相邻仓库，本图从当前 Controller 开始。发奖渠道仍为模拟。"
+      ]
+    }
+  ]
+}

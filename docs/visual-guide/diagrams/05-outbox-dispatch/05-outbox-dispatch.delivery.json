@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "2cdc58fd-dbd3-4ff2-a626-b8ba4eaf94e6",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/05-outbox-dispatch/candidate.json",
+  "output": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/05-outbox-dispatch/05-outbox-dispatch.html",
+  "specification": {
+    "sha256": "177912ae71931cd1f84ee934888e52f918c82570ff56542b146ebb3730b90dcb",
+    "bytes": 5392
+  },
+  "artifact": {
+    "sha256": "06bc63dfd987c70f012f902e2cbdb2bc55bffdef7a394f7ef8635109b93dc0ef",
+    "bytes": 755122
+  }
+}

@@ -1,0 +1,297 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "10 · 重复请求：恢复原请求，回放持久结果",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/visual-guide/diagrams/10-request-retry/10-request-retry.html",
+    "repository": {
+      "url": "git@github.com:kaguranananana/lottery.git",
+      "revision": "076af9fc607749c018c1cbec630daef61a99af55",
+      "link_mode": "local-only"
+    },
+    "legend": {
+      "entries": {
+        "backend": {
+          "label": "业务处理"
+        },
+        "database": {
+          "label": "数据存储"
+        },
+        "messagebus": {
+          "label": "消息处理"
+        },
+        "external": {
+          "label": "进程中断 / 人工"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "request",
+      "label": "请求与应用层"
+    },
+    {
+      "id": "fact",
+      "label": "MySQL 参与 / 订单事实"
+    },
+    {
+      "id": "outcome",
+      "label": "处理结果与客户端恢复"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "retry",
+      "lane": "request",
+      "col": 0,
+      "type": "backend",
+      "label": "重复抽奖请求",
+      "sublabel": "原 requestId",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
+          "line": 82,
+          "end_line": 127,
+          "label": "ActivityProcessImpl.java"
+        },
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
+          "line": 208,
+          "end_line": 229,
+          "label": "ActivityProcessImpl.java"
+        }
+      ]
+    },
+    {
+      "id": "lookup",
+      "lane": "fact",
+      "col": 1,
+      "type": "database",
+      "label": "精确查询 take",
+      "sublabel": "uId + activityId + 请求号",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
+          "line": 82,
+          "end_line": 127,
+          "label": "ActivityProcessImpl.java"
+        },
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
+          "line": 208,
+          "end_line": 229,
+          "label": "ActivityProcessImpl.java"
+        }
+      ]
+    },
+    {
+      "id": "used",
+      "lane": "fact",
+      "col": 2,
+      "type": "database",
+      "label": "take 已消费",
+      "sublabel": "state=1",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
+          "line": 82,
+          "end_line": 127,
+          "label": "ActivityProcessImpl.java"
+        },
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
+          "line": 208,
+          "end_line": 229,
+          "label": "ActivityProcessImpl.java"
+        }
+      ]
+    },
+    {
+      "id": "replay",
+      "lane": "outcome",
+      "col": 3,
+      "type": "backend",
+      "label": "回放原结果",
+      "sublabel": "有订单中奖 / 无订单D001",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
+          "line": 82,
+          "end_line": 127,
+          "label": "ActivityProcessImpl.java"
+        },
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
+          "line": 208,
+          "end_line": 229,
+          "label": "ActivityProcessImpl.java"
+        }
+      ]
+    },
+    {
+      "id": "pending",
+      "lane": "fact",
+      "col": 3,
+      "type": "database",
+      "label": "take 未消费",
+      "sublabel": "state=0 / 归属当前请求",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
+          "line": 82,
+          "end_line": 127,
+          "label": "ActivityProcessImpl.java"
+        },
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
+          "line": 208,
+          "end_line": 229,
+          "label": "ActivityProcessImpl.java"
+        }
+      ]
+    },
+    {
+      "id": "resume",
+      "lane": "outcome",
+      "col": 4,
+      "type": "backend",
+      "label": "继续原 take",
+      "sublabel": "不再扣活动库存或次数",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
+          "line": 82,
+          "end_line": 127,
+          "label": "ActivityProcessImpl.java"
+        },
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
+          "line": 208,
+          "end_line": 229,
+          "label": "ActivityProcessImpl.java"
+        }
+      ]
+    },
+    {
+      "id": "foreign",
+      "lane": "request",
+      "col": 4,
+      "type": "backend",
+      "label": "新请求遇到旧 take",
+      "sublabel": "B 不能消费 A 的机会",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java",
+          "line": 74,
+          "end_line": 90,
+          "label": "BaseActivityPartake.java"
+        }
+      ]
+    },
+    {
+      "id": "reject",
+      "lane": "outcome",
+      "col": 5,
+      "type": "backend",
+      "label": "D007 恢复原请求",
+      "sublabel": "pendingRequestId=A",
+      "width": 150,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java",
+          "line": 81,
+          "end_line": 90,
+          "label": "BaseActivityPartake.java"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "retry-to-lookup",
+      "from": "retry",
+      "to": "lookup",
+      "label": "获得短锁后查询",
+      "variant": "default"
+    },
+    {
+      "id": "lookup-to-used",
+      "from": "lookup",
+      "to": "used",
+      "label": "state=1",
+      "variant": "default"
+    },
+    {
+      "id": "used-to-replay",
+      "from": "used",
+      "to": "replay",
+      "label": "按takeId查订单",
+      "variant": "default"
+    },
+    {
+      "id": "lookup-to-pending",
+      "from": "lookup",
+      "to": "pending",
+      "label": "state=0",
+      "variant": "dashed",
+      "role": "branch"
+    },
+    {
+      "id": "pending-to-resume",
+      "from": "pending",
+      "to": "resume",
+      "label": "同请求恢复",
+      "variant": "default"
+    },
+    {
+      "id": "foreign-to-reject",
+      "from": "foreign",
+      "to": "reject",
+      "label": "归属不同",
+      "variant": "security",
+      "role": "error"
+    }
+  ],
+  "mainPath": [
+    "retry",
+    "lookup",
+    "used",
+    "replay"
+  ],
+  "cards": [
+    {
+      "title": "并发与持久幂等",
+      "dot": "cyan",
+      "items": [
+        "同用户活动已有短锁返回D006；3秒token锁只减少并发。",
+        "最终保护是参与请求唯一键、未完成参与唯一键和消费CAS，锁过期也不能把A的take交给B。"
+      ]
+    },
+    {
+      "title": "当前约束",
+      "dot": "amber",
+      "items": [
+        "V3 为UNIQUE(u_id,activity_id,request_id)，不是旧V2的全表request_id唯一。",
+        "state=0的生成列配合唯一键限制每用户活动仅一条未完成记录。查询异常直接中断，不当作未找到。"
+      ]
+    }
+  ]
+}

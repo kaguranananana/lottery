@@ -1,0 +1,225 @@
+{
+  "schema_version": 2,
+  "diagram_type": "lifecycle",
+  "meta": {
+    "title": "08 · stock_mq_state：发送失败与库存分歧分开处理",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/visual-guide/diagrams/08-stock-states/08-stock-states.html",
+    "repository": {
+      "url": "git@github.com:kaguranananana/lottery.git",
+      "revision": "076af9fc607749c018c1cbec630daef61a99af55",
+      "link_mode": "local-only"
+    }
+  },
+  "lanes": [
+    {
+      "id": "main",
+      "label": "库存消息状态 · 存在于用户中奖订单"
+    },
+    {
+      "id": "recovery",
+      "label": "故障状态 · FAIL 可重投，BLOCKED 等人工对账"
+    }
+  ],
+  "states": [
+    {
+      "id": "init",
+      "type": "start",
+      "label": "INIT · 0",
+      "sublabel": "订单事务创建",
+      "lane": "main",
+      "col": 0,
+      "width": 156,
+      "height": 70,
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml",
+          "line": 52,
+          "end_line": 67,
+          "label": "UserStrategyExport_Mapper.xml"
+        },
+        {
+          "path": "lottery-common/src/main/java/com/anontokyo/lottery/common/Constants.java",
+          "line": 297,
+          "end_line": 307,
+          "label": "Constants.java"
+        }
+      ]
+    },
+    {
+      "id": "sent",
+      "type": "waiting",
+      "label": "SENT · 3",
+      "sublabel": "发送成功等消费",
+      "lane": "main",
+      "col": 2,
+      "width": 156,
+      "height": 70,
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml",
+          "line": 52,
+          "end_line": 67,
+          "label": "UserStrategyExport_Mapper.xml"
+        },
+        {
+          "path": "lottery-common/src/main/java/com/anontokyo/lottery/common/Constants.java",
+          "line": 297,
+          "end_line": 307,
+          "label": "Constants.java"
+        }
+      ]
+    },
+    {
+      "id": "done",
+      "type": "success",
+      "label": "COMPLETE · 1",
+      "sublabel": "库存消费完成",
+      "lane": "main",
+      "col": 4,
+      "width": 156,
+      "height": 70,
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml",
+          "line": 52,
+          "end_line": 67,
+          "label": "UserStrategyExport_Mapper.xml"
+        },
+        {
+          "path": "lottery-common/src/main/java/com/anontokyo/lottery/common/Constants.java",
+          "line": 297,
+          "end_line": 307,
+          "label": "Constants.java"
+        }
+      ]
+    },
+    {
+      "id": "fail",
+      "type": "failure",
+      "label": "FAIL · 2",
+      "sublabel": "投递失败可重试",
+      "lane": "recovery",
+      "col": 0,
+      "width": 156,
+      "height": 70,
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml",
+          "line": 52,
+          "end_line": 67,
+          "label": "UserStrategyExport_Mapper.xml"
+        },
+        {
+          "path": "lottery-common/src/main/java/com/anontokyo/lottery/common/Constants.java",
+          "line": 297,
+          "end_line": 307,
+          "label": "Constants.java"
+        }
+      ]
+    },
+    {
+      "id": "blocked",
+      "type": "waiting",
+      "label": "BLOCKED · 4",
+      "sublabel": "库存分歧待对账",
+      "lane": "recovery",
+      "col": 2,
+      "width": 156,
+      "height": 70,
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryStrategyAwardStockListener.java",
+          "line": 81,
+          "end_line": 95,
+          "label": "LotteryStrategyAwardStockListener.java"
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
+          "line": 126,
+          "end_line": 142,
+          "label": "OrderRepository.java"
+        }
+      ]
+    }
+  ],
+  "transitions": [
+    {
+      "id": "init-to-sent",
+      "from": "init",
+      "to": "sent",
+      "label": "发送成功",
+      "variant": "default"
+    },
+    {
+      "id": "sent-to-done",
+      "from": "sent",
+      "to": "done",
+      "label": "结算成功",
+      "variant": "default"
+    },
+    {
+      "id": "init-to-fail",
+      "from": "init",
+      "to": "fail",
+      "label": "发送失败",
+      "variant": "security"
+    },
+    {
+      "id": "fail-to-sent",
+      "from": "fail",
+      "to": "sent",
+      "label": "重发成功",
+      "variant": "default"
+    },
+    {
+      "id": "sent-to-blocked",
+      "from": "sent",
+      "to": "blocked",
+      "label": "库存分歧",
+      "variant": "security"
+    },
+    {
+      "id": "init-to-done",
+      "from": "init",
+      "to": "done",
+      "label": "消费先完成",
+      "variant": "dashed",
+      "route": "top-channel"
+    },
+    {
+      "id": "fail-to-done",
+      "from": "fail",
+      "to": "done",
+      "label": "消费结算完成",
+      "variant": "dashed",
+      "route": "bottom-channel"
+    },
+    {
+      "id": "blocked-to-done",
+      "from": "blocked",
+      "to": "done",
+      "label": "原消息结算成功",
+      "variant": "dashed"
+    }
+  ],
+  "cards": [
+    {
+      "title": "状态规则",
+      "dot": "cyan",
+      "items": [
+        "消费成功允许0/2/3/4→1；库存分歧从0/2/3→4，图中以SENT分支表示典型路径。",
+        "发送成功只允许0/2→3；发送失败只允许0→2。终态1以及待对账4不被发送回调覆盖。"
+      ]
+    },
+    {
+      "title": "重投与人工恢复",
+      "dot": "amber",
+      "items": [
+        "Job 扫0/2以及update_time超过10分钟的3；对已有3重复发送成功不刷新时钟。",
+        "BLOCKED 没有自动恢复边。人工核实并修复后，按正确用户分片CAS 4→0，再由Job投递原订单。"
+      ]
+    }
+  ]
+}

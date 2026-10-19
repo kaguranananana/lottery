@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "af7531ba-30d8-4767-90f4-86de1751117f",
+  "status": "current",
+  "command": "deliver",
+  "type": "sequence",
+  "input": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/04-draw-order/candidate.json",
+  "output": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/04-draw-order/04-draw-order.html",
+  "specification": {
+    "sha256": "ca76a3aea830059498421ff75a5dae679df517bba3ac6d58aded2eb989cd1ddc",
+    "bytes": 8009
+  },
+  "artifact": {
+    "sha256": "3cf749db2db4cd216e0eeeb5975cf9a185544e722d0ce01d9c2951ec56b593c6",
+    "bytes": 761790
+  }
+}

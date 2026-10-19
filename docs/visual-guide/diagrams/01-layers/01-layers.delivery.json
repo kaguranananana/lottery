@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "9a02902d-6437-4af8-9ccb-a26120f6d1f9",
+  "status": "current",
+  "command": "deliver",
+  "type": "architecture",
+  "input": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/01-layers/candidate.json",
+  "output": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/01-layers/01-layers.html",
+  "specification": {
+    "sha256": "cb4181d6f18a6931fe5176331f0b2234333b77bc8bdc06482207c8c23055ee65",
+    "bytes": 6233
+  },
+  "artifact": {
+    "sha256": "e74c373c0de7237b5a908842152b8dcc8067dfc4f4589129067da4e23de2b71c",
+    "bytes": 754493
+  }
+}

@@ -1,0 +1,243 @@
+{
+  "schema_version": 1,
+  "diagram_type": "sequence",
+  "meta": {
+    "title": "07 · 发奖消费：模拟渠道与本地发奖状态",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/visual-guide/diagrams/07-fulfillment/07-fulfillment.html",
+    "repository": {
+      "url": "git@github.com:kaguranananana/lottery.git",
+      "revision": "076af9fc607749c018c1cbec630daef61a99af55",
+      "link_mode": "local-only"
+    },
+    "legend": {
+      "entries": {
+        "default": {
+          "label": "方法调用"
+        },
+        "security": {
+          "label": "数据写入 / 并发锁"
+        },
+        "emphasis": {
+          "label": "数据读取"
+        },
+        "dashed": {
+          "label": "消息发送 / 投递"
+        },
+        "return": {
+          "label": "结果返回 / ACK"
+        }
+      }
+    },
+    "column_fit": "spread"
+  },
+  "participants": [
+    {
+      "id": "kafka",
+      "type": "messagebus",
+      "label": "Kafka",
+      "sublabel": "invoice topic",
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryInvoiceListener.java",
+          "line": 57,
+          "end_line": 69,
+          "label": "LotteryInvoiceListener.java"
+        }
+      ]
+    },
+    {
+      "id": "listener",
+      "type": "backend",
+      "label": "发奖消费",
+      "sublabel": "application",
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryInvoiceListener.java",
+          "line": 71,
+          "end_line": 107,
+          "label": "LotteryInvoiceListener.java"
+        }
+      ]
+    },
+    {
+      "id": "guard",
+      "type": "database",
+      "label": "Redis 锁",
+      "sublabel": "PROCESSING",
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/lock/RedisInvoiceMqProcessGuard.java",
+          "line": 24,
+          "end_line": 50,
+          "label": "RedisInvoiceMqProcessGuard.java"
+        }
+      ]
+    },
+    {
+      "id": "handler",
+      "type": "backend",
+      "label": "发奖处理器",
+      "sublabel": "domain / 模拟",
+      "sources": [
+        {
+          "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/award/service/fulfillment/impl/AbstractAwardFulfillmentHandler.java",
+          "line": 24,
+          "end_line": 39,
+          "label": "AbstractAwardFulfillmentHandler.java"
+        }
+      ]
+    },
+    {
+      "id": "repo",
+      "type": "backend",
+      "label": "订单仓储",
+      "sublabel": "infrastructure",
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
+          "line": 78,
+          "end_line": 84,
+          "label": "OrderRepository.java"
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
+          "line": 108,
+          "end_line": 115,
+          "label": "OrderRepository.java"
+        }
+      ]
+    },
+    {
+      "id": "db",
+      "type": "database",
+      "label": "用户库",
+      "sublabel": "grant / mq 状态",
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml",
+          "line": 37,
+          "end_line": 50,
+          "label": "UserStrategyExport_Mapper.xml"
+        }
+      ]
+    }
+  ],
+  "messages": [
+    {
+      "id": "a10",
+      "from": "kafka",
+      "to": "listener",
+      "y": 170,
+      "label": "A10 InvoiceVO 发奖数据",
+      "variant": "dashed"
+    },
+    {
+      "id": "a10read",
+      "from": "listener",
+      "to": "repo",
+      "y": 216,
+      "label": "读 grant_state；已完成进入收口",
+      "variant": "emphasis"
+    },
+    {
+      "id": "a11",
+      "from": "listener",
+      "to": "guard",
+      "y": 262,
+      "label": "A11 SETNX PROCESSING(orderId)，300s",
+      "variant": "security"
+    },
+    {
+      "id": "a12",
+      "from": "listener",
+      "to": "handler",
+      "y": 308,
+      "label": "A12 按 awardType 选择 handler.fulfill",
+      "variant": "default"
+    },
+    {
+      "id": "a12repo",
+      "from": "handler",
+      "to": "repo",
+      "y": 354,
+      "label": "模拟渠道日志 → markUserAwardGranted",
+      "variant": "default"
+    },
+    {
+      "id": "a12sql",
+      "from": "repo",
+      "to": "db",
+      "y": 400,
+      "label": "CAS grant_state !=1 →1；grant_date=now",
+      "variant": "security"
+    },
+    {
+      "id": "a12back",
+      "from": "handler",
+      "to": "listener",
+      "y": 446,
+      "label": "AwardFulfillmentResult SUCCESS",
+      "variant": "return"
+    },
+    {
+      "id": "a13",
+      "from": "listener",
+      "to": "guard",
+      "y": 492,
+      "label": "A13 成功后释放 PROCESSING",
+      "variant": "security"
+    },
+    {
+      "id": "a14",
+      "from": "listener",
+      "to": "repo",
+      "y": 538,
+      "label": "A14 收口 mq_state=COMPLETE",
+      "variant": "default"
+    },
+    {
+      "id": "a14sql",
+      "from": "repo",
+      "to": "db",
+      "y": 584,
+      "label": "grant=1 且 mq=0/2/3 才更新为1",
+      "variant": "security"
+    },
+    {
+      "id": "a15",
+      "from": "listener",
+      "to": "kafka",
+      "y": 630,
+      "label": "A15 先持久化再 ack",
+      "variant": "return"
+    }
+  ],
+  "cards": [
+    {
+      "title": "渠道的实现状态",
+      "dot": "amber",
+      "items": [
+        "四类处理器：文字、兑换码、优惠券、实物。当前均复用日志 + 本地 CAS 的模拟实现。",
+        "没有调用物流、券平台或第三方支付接口。未来接入需将 orderId 作为外部幂等键。"
+      ]
+    },
+    {
+      "title": "两个状态不能混淆",
+      "dot": "cyan",
+      "items": [
+        "grant_state=1 表示当前本地模拟发奖完成；mq_state=3 只表示发奖消息发送成功。",
+        "消费收口 mq_state=1 要求 grant_state=1。grant_state 的 FAIL 枚举当前没有这条主链路的写入点。"
+      ]
+    },
+    {
+      "title": "完成判定",
+      "dot": "emerald",
+      "items": [
+        "库存账本存在、stock_mq_state=1、grant_state=1、mq_state=1 且消费者已 ack：本地异步链闭环。",
+        "HTTP 的 win=true 早于这些事件，不证明用户已实际收到外部奖品。"
+      ]
+    }
+  ]
+}

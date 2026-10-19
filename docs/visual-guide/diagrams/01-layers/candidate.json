@@ -1,0 +1,233 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "01 · 代码分层：谁编排，谁决定，谁落地",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/visual-guide/diagrams/01-layers/01-layers.html",
+    "repository": {
+      "url": "git@github.com:kaguranananana/lottery.git",
+      "revision": "076af9fc607749c018c1cbec630daef61a99af55",
+      "link_mode": "local-only"
+    }
+  },
+  "components": [
+    {
+      "id": "interfaces",
+      "type": "backend",
+      "label": "lottery-interfaces",
+      "sublabel": "HTTP 校验、DTO 转换、启动装配",
+      "pos": [
+        80,
+        100
+      ],
+      "size": [
+        250,
+        78
+      ],
+      "sources": [
+        {
+          "path": "lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/LotteryController.java",
+          "line": 24,
+          "end_line": 53,
+          "label": "LotteryController.java"
+        },
+        {
+          "path": "lottery-interfaces/pom.xml",
+          "line": 19,
+          "end_line": 70,
+          "label": "pom.xml"
+        }
+      ]
+    },
+    {
+      "id": "application",
+      "type": "backend",
+      "label": "lottery-application",
+      "sublabel": "抽奖用例、Kafka 收发、XXL-Job",
+      "pos": [
+        550,
+        100
+      ],
+      "size": [
+        250,
+        78
+      ],
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
+          "line": 62,
+          "end_line": 180,
+          "label": "ActivityProcessImpl.java"
+        },
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryXxlJob.java",
+          "line": 193,
+          "end_line": 229,
+          "label": "LotteryXxlJob.java"
+        }
+      ]
+    },
+    {
+      "id": "infrastructure",
+      "type": "backend",
+      "label": "lottery-infrastructure",
+      "sublabel": "Repository 实现、事务、路由、缓存",
+      "pos": [
+        80,
+        370
+      ],
+      "size": [
+        250,
+        78
+      ],
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
+          "line": 38,
+          "end_line": 65,
+          "label": "OrderRepository.java"
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java",
+          "line": 67,
+          "end_line": 145,
+          "label": "StrategyRepository.java"
+        }
+      ]
+    },
+    {
+      "id": "domain",
+      "type": "backend",
+      "label": "lottery-domain",
+      "sublabel": "资格、抽样、订单规则、仓储接口",
+      "pos": [
+        550,
+        370
+      ],
+      "size": [
+        250,
+        78
+      ],
+      "sources": [
+        {
+          "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java",
+          "line": 23,
+          "end_line": 72,
+          "label": "BaseActivityPartake.java"
+        },
+        {
+          "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/strategy/service/draw/impl/DrawExecutor.java",
+          "line": 31,
+          "end_line": 61,
+          "label": "DrawExecutor.java"
+        },
+        {
+          "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/award/service/order/impl/AwardOrderImpl.java",
+          "line": 38,
+          "end_line": 58,
+          "label": "AwardOrderImpl.java"
+        }
+      ]
+    },
+    {
+      "id": "common",
+      "type": "backend",
+      "label": "lottery-common",
+      "sublabel": "业务码、状态枚举、RedisKey",
+      "pos": [
+        550,
+        620
+      ],
+      "size": [
+        250,
+        78
+      ],
+      "sources": [
+        {
+          "path": "lottery-common/src/main/java/com/anontokyo/lottery/common/Constants.java",
+          "line": 10,
+          "end_line": 23,
+          "label": "Constants.java"
+        },
+        {
+          "path": "lottery-common/src/main/java/com/anontokyo/lottery/common/Constants.java",
+          "line": 297,
+          "end_line": 307,
+          "label": "Constants.java"
+        }
+      ]
+    }
+  ],
+  "connections": [
+    {
+      "id": "interfaces-to-application",
+      "from": "interfaces",
+      "to": "application",
+      "label": "调用用例",
+      "variant": "emphasis"
+    },
+    {
+      "id": "application-to-domain",
+      "from": "application",
+      "to": "domain",
+      "label": "编排领域服务",
+      "variant": "default"
+    },
+    {
+      "id": "interfaces-to-infrastructure",
+      "from": "interfaces",
+      "to": "infrastructure",
+      "label": "装配实现",
+      "variant": "dashed"
+    },
+    {
+      "id": "infrastructure-to-domain",
+      "from": "infrastructure",
+      "to": "domain",
+      "label": "实现领域端口",
+      "variant": "default"
+    },
+    {
+      "id": "domain-to-common",
+      "from": "domain",
+      "to": "common",
+      "label": "复用值类型",
+      "variant": "default"
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "代码模块 · 同一 Lottery 应用内的职责划分",
+      "wraps": [
+        "interfaces",
+        "application",
+        "domain",
+        "infrastructure",
+        "common"
+      ],
+      "pad": 28
+    }
+  ],
+  "cards": [
+    {
+      "title": "依赖与执行方向",
+      "dot": "cyan",
+      "items": [
+        "箭头表达主要代码关系。领域层定义 Repository 接口，基础设施实现接口。",
+        "运行时领域调用注入的仓储对象，执行会进入 infrastructure。interfaces 的 pom 也直接依赖 domain。"
+      ]
+    },
+    {
+      "title": "当前源码的边界",
+      "dot": "amber",
+      "items": [
+        "五个 Maven 模块不是五个微服务。启动模块将它们装入同一应用。",
+        "Mapper XML 物理存放在 interfaces 资源目录，仍承担持久化 SQL 职责。",
+        "domain 仍有 Spring 注解、Redis 配置及路由 Maven 依赖，不能说完全脱离框架。"
+      ]
+    }
+  ]
+}

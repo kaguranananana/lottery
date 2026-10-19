@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "d34ea073-0473-4699-9dce-cee96e63cae3",
+  "status": "current",
+  "command": "deliver",
+  "type": "lifecycle",
+  "input": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/08-stock-states/candidate.json",
+  "output": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/08-stock-states/08-stock-states.html",
+  "specification": {
+    "sha256": "b78750fc5b7ed77cff2ea663784d10718e70c795022f932257c02890f902d03b",
+    "bytes": 6018
+  },
+  "artifact": {
+    "sha256": "efdd90c7cc2acf02c342e88254ee87cc365c4cc2d373a0ef1ee21ab1523caedc",
+    "bytes": 757850
+  }
+}
