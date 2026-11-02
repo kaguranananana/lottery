@@ -111,7 +111,6 @@ public class PerfHarness {
         activity.setActivityDesc("独立环境专用，真实业务组件");
         activity.setBeginDateTime(new java.util.Date(System.currentTimeMillis() - 60000));
         activity.setEndDateTime(new java.util.Date(System.currentTimeMillis() + 86400000));
-        activity.setStockCount(stock);
         activity.setTakeCount(quota);
         activity.setState(4);
         activity.setCreator("performance");
@@ -121,6 +120,7 @@ public class PerfHarness {
         strategy.setGrantType(1);
         List<StrategyDetailVO> details = new ArrayList<>();
         List<AwardVO> awards = new ArrayList<>();
+        // stock 仅作为每种奖品的默认总量；活动只有个人次数限制，没有总库存。
         // 五种等概率奖品，使用已有模拟券 handler，所有请求均走中奖订单完整主链路。
         for (int i = 0; i < 5; i++) {
             StrategyDetailVO detail = new StrategyDetailVO();

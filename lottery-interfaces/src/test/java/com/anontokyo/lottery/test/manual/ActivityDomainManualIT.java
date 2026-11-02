@@ -58,7 +58,6 @@ public class ActivityDomainManualIT {
         activity.setActivityDesc("测试活动描述");
         activity.setBeginDateTime(new Date());
         activity.setEndDateTime(new Date());
-        activity.setStockCount(100);
         activity.setTakeCount(10);
         activity.setState(Constants.ActivityState.EDIT.getCode());
         activity.setCreator("xiaofuge");

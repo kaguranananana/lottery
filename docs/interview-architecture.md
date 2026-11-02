@@ -6,7 +6,7 @@
 
 ## 1. 一句话定位
 
-这是一个单体部署的高并发抽奖系统。重构前的版本的问题是“架构复杂度放错了位置”——大量复杂度花在 Factory/State/RPC DTO 这些没有业务因果的样板代码上，而真正决定系统正确性的库存幂等和消费幂等反而存在真实缺陷。
+这是一个单体部署的高并发抽奖系统。当前只保留用户个人参与次数和策略奖品库存两种约束，活动没有总抽奖名额。重构前的版本的问题是“架构复杂度放错了位置”——大量复杂度花在 Factory/State/RPC DTO 这些没有业务因果的样板代码上，而真正决定系统正确性的库存幂等和消费幂等反而存在真实缺陷。
 
 ## 2. 原设计哪里有问题（我先做了审计）
 
@@ -16,8 +16,8 @@
 消费者先 `UPDATE strategy_detail SET surplus-1 WHERE surplus>0` 再更新状态、再写 Redis DONE 标记。
 任何一步之间 crash，Kafka redelivery 后 `surplus-1` 会再执行一次——它是累加式更新，没有任何账本约束“这个 orderId 已经扣过”。三层 Redis Guard（DONE/PROCESSING/DISPATCHING）看起来很可靠，其实每一层都是缓存语义：TTL 过期、值丢失后全部失效。
 
-**② 活动库存异步同步链路会漂移**
-参与成功后把 Redis 剩余库存的**绝对值**作为消息发给 Kafka 覆盖 MySQL。消息按 takeId 分区，多个 take 的 99/98/97 并行到达，即使 SQL 里加了 `WHERE surplus > #{v}` 的单调保护，丢一条消息就会造成 Redis 和 MySQL 永久偏差；而这条链路对正确性没有任何贡献——Redis 本来就不超卖，MySQL 只是滞后影子。整个链路是负资产。
+**② 历史活动库存同步链路会漂移（已移除）**
+参与成功后把 Redis 剩余库存的**绝对值**作为消息发给 Kafka 覆盖 MySQL。消息按 takeId 分区，多个 take 的 99/98/97 并行到达，即使 SQL 里加了 `WHERE surplus > #{v}` 的单调保护，丢一条消息就会造成 Redis 和 MySQL 永久偏差；而这条链路对正确性没有任何贡献——Redis 本来就不超卖，MySQL 只是滞后影子。先前重构已删除该 MQ；2026-11-02 进一步取消全场参与名额限制，删除活动两列和 Redis 预扣/回补。个人次数和奖品库存各自保留完整事实与结算职责。
 
 **③ 库存 key miss 时从 MySQL 回填造成“复活”**
 结算异步滞后的窗口里 MySQL 值偏大，如果此刻 Redis key 丢失被回填，等于凭空多出库存。
@@ -35,7 +35,7 @@
 | 7 个 State 类 + Map 注册 | 生产只用 4→5、5→7 两个转换，DB 层本来就是 CAS。收敛成一个带转换矩阵的 ActivityLifecycleService |
 | 两套概率算法 + DrawConfig map | 统一为快照整数权重 + 二分采样；高精度、显式 NO_PRIZE、售罄不改概率 |
 | ShortCode / RandomNumeric / IdContext | 只有测试 demo 用。保留 Snowflake 直注 |
-| Partake 库存 MQ 整链 | 见上文②，纯负资产 |
+| 活动总库存及历史 Partake 库存 MQ | 无全场名额需求，MySQL 活动余量缺完整结算；移除两列、Key 和参与预扣/回补 |
 | DONE Redis guard、no-stock Set、award/ruleTree 实体级 Caffeine | 事实来源移到 DB 后 guard 失去意义；实体全量 L1 是为了展示“二级缓存”，现在只有 StrategySnapshot 值得 |
 
 留下的全部有明确职责：Redis（原子扣减+锁）、Kafka（慢操作剥离+重试）、Outbox（消息丢失）、Ledger（重复消费）、XXL-Job（集中调度分片补偿）、Caffeine（快照热点读）、分库分表（user-centric 数据路由）。
@@ -43,10 +43,13 @@
 ## 4. 每类一致性问题怎么解决
 
 ### 4.1 高并发库存
-Redis `DECR` 为准实时控制，扣到 -1 立即 INCR 归还并判售罄，天然无超卖；
-活动启动时由 XXL-Job 用 SETNX 预热所有库存 key（幂等）；运行期 miss **fail closed**：
-宁可返回“系统繁忙”也不能用滞后的 MySQL 值把库存变出来。最终一致靠消费者事务里的
-条件更新 `surplus>0` 兜底，出现分歧则落 FAIL 状态等人工对账——错误暴露而不是掩盖。
+Redis 在一个 Lua 脚本内检查库存存在且余量大于零后 DECR，售罄不写负数；
+活动启动时只用 SETNX 预热策略奖品 key，保留共享策略已经消耗的余额；运行期 Key 缺失显式报错：
+保留原 take 和请求号，不能用滞后的 MySQL 值回填。第二个共享活动启动会检查现存奖池，缺失时保持 PASS，不能借新活动启动复活库存。最终一致靠消费者事务里的
+条件更新 `surplus>0` 兜底，出现分歧则落 BLOCKED 状态等人工对账；发送 FAIL 仍参与补偿。
+缺失奖品库存明确抛出并保留未消费 take；回补不创建缺失 Key，SQL 异常只在确认回滚或事务未开始时归还预扣。
+
+TX1 是“条件扣个人次数 + 创建 take”，TX2 是“消费 take + 中奖订单 + Outbox INIT”，TX3 是“唯一账本 + MySQL 奖品扣减”。三个本地事务没有合并。NO_PRIZE 和奖品售罄都消耗已取得的个人机会；次数用完才拒绝新参与。预扣后 JVM 退出、事务结果未知和回补失败仍需对账，不能声称 Redis/MySQL 原子一致。
 
 ### 4.2 请求幂等（重复点击 ≠ 幂等）
 重构前只有防重。现在 API 必带 `requestId`：

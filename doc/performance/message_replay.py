@@ -28,7 +28,7 @@ def run(session, semantics_name):
         assert time.monotonic()<deadline,'Kafka 重放未完成'
         time.sleep(.2)
     after=audit(activity,directory)
-    for key in ['quota','takes','duplicateOrders','stock','ledger','activity','pending','redisActivity','redisAwards']:
+    for key in ['quota','takes','duplicateOrders','stock','ledger','activity','pending','redisAwards']:
         assert after[key]==before[key],f'重投改变了业务事实：{key}'
     write(directory/'summary.json',{'audit':'PASS','stockMessages':2,'invoiceMessages':2,'orderId':order['orderId'],'activityId':activity,'beforeLag':before['kafka'],'afterLag':after['kafka']})
     print('真实 Kafka 重投完成，库存、订单、参与、账本和状态保持一致')

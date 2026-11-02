@@ -4,7 +4,6 @@ import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.common.Result;
 import com.anontokyo.lottery.domain.activity.model.req.PartakeReq;
 import com.anontokyo.lottery.domain.activity.model.res.PartakeResult;
-import com.anontokyo.lottery.domain.activity.model.res.StockResult;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
 import com.anontokyo.lottery.domain.activity.model.vo.UserTakeActivityVO;
 import com.anontokyo.lottery.domain.support.ids.IdGenerator;
@@ -12,7 +11,7 @@ import com.anontokyo.lottery.domain.support.ids.IdGenerator;
 import javax.annotation.Resource;
 
 /**
- * Activity partake template. It only orchestrates the domain flow.
+ * 活动参与模板：校验活动后，在用户分片事务中取得个人参与资格。
  */
 public abstract class BaseActivityPartake extends ActivityPartakeSupport implements IActivityPartake {
 
@@ -39,23 +38,11 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
             return new PartakeResult(checkResult.getCode(), checkResult.getInfo());
         }
 
-        // 活动库存仍使用现有 Redis 预扣逻辑，运行期缺失库存不会回填。
-        StockResult subtractionActivityResult = this.substractionActivityStockByRedis(req.getuId(), req.getActivityId());
-        if (!Constants.ResponseCode.SUCCESS.getCode().equals(subtractionActivityResult.getCode())) {
-            return new PartakeResult(subtractionActivityResult.getCode(), subtractionActivityResult.getInfo());
-        }
-        activityBillVO.setStockSurplusCount(subtractionActivityResult.getStockSurplusCount());
-
+        // 先生成参与号；活动没有总名额限制，资格只由用户剩余次数决定。
         Long takeId = idGenerator.nextId();
-        Result grabResult;
-        try {
-            grabResult = this.grabActivity(req, activityBillVO, takeId);
-        } catch (Exception e) {
-            this.recoverActivityStockByRedis(req.getActivityId());
-            throw e;
-        }
+        // TX1 同时扣减次数并创建参与记录；失败由同一数据库事务回滚。
+        Result grabResult = this.grabActivity(req, activityBillVO, takeId);
         if (!Constants.ResponseCode.SUCCESS.getCode().equals(grabResult.getCode())) {
-            this.recoverActivityStockByRedis(req.getActivityId());
             if (isGrabConflict(grabResult.getCode())) {
                 UserTakeActivityVO noConsumedTakeActivityOrder = this.queryNoConsumedTakeActivityOrder(
                         req.getActivityId(), req.getuId());
@@ -67,8 +54,7 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
             return new PartakeResult(grabResult.getCode(), grabResult.getInfo());
         }
 
-        return buildPartakeResult(activityBillVO.getStrategyId(), takeId, activityBillVO.getStockCount(),
-                subtractionActivityResult.getStockSurplusCount(), Constants.ResponseCode.SUCCESS);
+        return buildPartakeResult(activityBillVO.getStrategyId(), takeId, Constants.ResponseCode.SUCCESS);
     }
 
     private PartakeResult resolveUnfinishedTake(PartakeReq req, UserTakeActivityVO take) {
@@ -90,21 +76,7 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
         return result;
     }
 
-    protected abstract void recoverActivityStockByRedis(Long activityId);
-
-    protected abstract StockResult substractionActivityStockByRedis(String uId, Long activityId);
-
     protected abstract UserTakeActivityVO queryNoConsumedTakeActivityOrder(Long activityId, String uId);
-
-    private PartakeResult buildPartakeResult(Long strategyId, Long takeId, Integer stockCount,
-            Integer stockSurplusCount, Constants.ResponseCode code) {
-        PartakeResult partakeResult = new PartakeResult(code.getCode(), code.getInfo());
-        partakeResult.setStrategyId(strategyId);
-        partakeResult.setTakeId(takeId);
-        partakeResult.setStockCount(stockCount);
-        partakeResult.setStockSurplusCount(stockSurplusCount);
-        return partakeResult;
-    }
 
     private PartakeResult buildPartakeResult(Long strategyId, Long takeId, Constants.ResponseCode code) {
         PartakeResult partakeResult = new PartakeResult(code.getCode(), code.getInfo());

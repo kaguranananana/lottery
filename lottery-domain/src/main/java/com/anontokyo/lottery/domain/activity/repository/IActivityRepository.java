@@ -4,7 +4,6 @@ import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.activity.model.aggregates.ActivityInfoLimitPageRich;
 import com.anontokyo.lottery.domain.activity.model.req.ActivityInfoLimitPageReq;
 import com.anontokyo.lottery.domain.activity.model.req.PartakeReq;
-import com.anontokyo.lottery.domain.activity.model.res.StockResult;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
 import com.anontokyo.lottery.domain.activity.model.vo.AwardVO;
@@ -29,15 +28,12 @@ public interface IActivityRepository {
 
     List<ActivityVO> scanToDoActivityList(Long id);
 
-    StockResult substractionActivityStockByRedis(String uId, Long activityId);
-
-    void recoverActivityStockByRedis(Long activityId);
-
     /**
-     * 仅 PASS 活动可预热 Redis 库存；行锁串行化启动，SETNX 保留已有值，异常阻止启动。
-     * @return 实际初始化的 key 数量
+     * 仅 PASS 活动可预热策略奖品库存；共享策略串行检查，SETNX 保留已有值。
+     * 已投入使用的共享奖池缺失 Key 时显式报错，禁止按滞后 MySQL 库存回填。
+     * @return 实际初始化的奖品 Key 数量
      */
-    int warmupStockForActivity(Long activityId);
+    int warmupAwardStockForActivity(Long activityId);
 
     ActivityInfoLimitPageRich queryActivityInfoLimitPage(ActivityInfoLimitPageReq req);
 

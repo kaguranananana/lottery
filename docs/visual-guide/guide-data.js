@@ -1,3 +1,4 @@
+// 历史教学数据：保留活动总库存重构前的实现；当前业务见activity-stock-removal.md。
 // 当前源码教学内容；T1/O1与库存数值均为教学示例。
 window.LOTTERY_GUIDE = {
   "views": [

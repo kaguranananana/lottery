@@ -24,6 +24,8 @@ domain 定义 Repository，infrastructure 实现 VO/PO 转换与 DAO 调用；My
 
 requestId 用于参与记录查询与唯一约束，takeId 关联抽奖结果，orderId 用于库存结算和发奖关联。Redis marker 不能替代数据库约束。DuplicateKeyException 只在已有契约的唯一冲突分支处理，不能把全部 SQL 异常解释成重复成功。
 
+订单仓储经 StockReservationTransactions 观察实际事务结束状态，处理 SQL 异常时的 Redis 预扣回补；不能凭异常类型猜测提交是否成功。正常非成功业务码仍由原调用方回补，避免重复归还。触发条件、错误矩阵与集成断言见[错误处理](./error-handling.md)。
+
 ## SQL 迁移现状
 
 基线在 doc/sql；[20260315_async_award_stock_outbox.sql](../../../doc/sql/20260315_async_award_stock_outbox.sql) 为订单表增加库存消息状态与索引。[V2__architecture_simplification.sql](../../../docs/sql/V2__architecture_simplification.sql) 实际执行的是全局库账本建表，request_id、take_id 的 ALTER 只是注释示例，不能认为执行文件即部署了全部新字段。
@@ -38,7 +40,7 @@ requestId 用于参与记录查询与唯一约束，takeId 关联抽奖结果，
 
 ## 活动创建与启动持久化契约
 
-创建聚合由 StrategyVO.strategyId 绑定 ActivityVO.strategyId 及明细所属策略；新活动 stock_surplus_count 从 stock_count 初始化，新策略明细剩余库存从 award_count 初始化。Activity_Mapper INSERT 显式携带 strategy_id 与 stock_surplus_count。scanToDoActivityList 使用自增 id 的十条游标分页，SELECT 必须返回 id。启动使用全局 TransactionTemplate + queryActivityForUpdate 的 FOR UPDATE，锁内预热后 CAS DOING；不要只在 worker 改调用顺序而允许其它入口绕过。回归见 FinalBusinessE2eManualIT。
+创建聚合由 StrategyVO.strategyId 绑定 ActivityVO.strategyId 及明细所属策略；activity 无 stock_count / stock_surplus_count，新策略明细剩余库存仍从 award_count 初始化。Activity_Mapper INSERT 保留 strategy_id、take_count 和生命周期配置。scanToDoActivityList 使用自增 id 的十条游标分页，SELECT 必须返回 id。启动使用全局 TransactionTemplate + queryActivityForUpdate 的 FOR UPDATE，锁定关联策略后只预热奖品，再 CAS DOING；不要只在 worker 改调用顺序而允许其它入口绕过。回归见 FinalBusinessE2eManualIT。
 
 StrategyDetailVO、StrategyDetail PO 与 StrategyDetailBriefVO 的 awardCount 均为 Integer，与 MySQL INT 一致；不要再依赖 BeanUtils 进行 Integer→String 隐式转换。旧压测活动的 NULL 总库存保留为历史事实，不能用剩余库存反推回填。真实创建 Mapper 回归见 PerformanceSqlManualIT。
 
@@ -53,3 +55,7 @@ StrategyDetailVO、StrategyDetail PO 与 StrategyDetailBriefVO 的 awardCount �
 7. **错误与正确**：错误是用 SELECT 预热或额外强制 SET 掩盖首次事务缓存错误。正确是定位驱动状态分支、升级最小官方修复版本、保持断言，并验证真实持久化行为后再做容量实验。
 
 官方依据：[缺陷 #106435](https://bugs.mysql.com/bug.php?id=106435)、[8.0.29 修复说明](https://dev.mysql.com/doc/relnotes/connector-j/en/news-8-0-29.html)。实际复现与驱动测试见性能目录本轮记录。
+
+## 取消活动总库存
+
+V4__remove_activity_stock.sql 只用于旧全局库 activity 删除两列；新版基线已移除，不再执行 V4。停旧版应用与任务、完成此前所需迁移、执行 V4、发布新版；不改用户分片、订单和奖品账本，不自动执行 DDL。详情见 [业务简化记录](../../../docs/activity-stock-removal.md)。

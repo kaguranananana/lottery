@@ -92,7 +92,7 @@ def verify_saved(directory,id):
     successes=sum(r['result']['code']=='0000' for r in diff)
     assert by_user=={'hot-different':successes,'hot-same':1,'timeout-user':1,'pending-user':1}
     assert len(orders)==len(takes)==sum(int(line.split('\t')[2]) for line in result['quota'].splitlines())
-    assert 10000-int(result['redisActivity'])==len(takes)
+    assert sum(10000-int(left) for left in result['redisAwards'].values())==len(orders)
     assert len({r['order'] for r in orders})==len(orders)
     assert len({r['take'] for r in orders})==len(orders)
     assert sum(int(line.split('\t')[1]) for line in result['ledger'].splitlines())==len(orders)

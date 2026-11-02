@@ -1,6 +1,6 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lottery · 字段、库存与事务速查</title><link rel="stylesheet" href="guide.css"></head>
 <body class="reference-page">
-<header><a href="index.html">← 回到交互图解</a><h1>把三个标识、三段事务与三列状态分清楚</h1><p>这是图解旁边的速查页。示例数字只用于理解源码，不是运行数据库的读数。</p></header>
+<header><p class="view-summary"><strong>活动总库存重构前的历史快照</strong>：本组图与源码摘录包含旧活动库存链路。2026-11-02已移除活动总库存，当前仅限制个人次数和策略奖品库存；当前流程、迁移与验证见 <a href="../activity-stock-removal.md">业务简化记录</a>。</p><a href="index.html">← 回到交互图解</a><h1>把三个标识、三段事务与三列状态分清楚</h1><p>这是图解旁边的速查页。示例数字只用于理解源码，不是运行数据库的读数。</p></header>
 <section id="ids"><h2>三个 ID 串起一次业务</h2>
 <table><thead><tr><th>字段</th><th>谁提供 / 产生</th><th>在哪里保存和传递</th><th>解决什么问题</th></tr></thead><tbody>
 <tr><td><code>requestId</code></td><td>客户端提供非空String，最长64字符。内部全程保留。</td><td>DrawRequest → DrawProcessReq → PartakeReq → user_take_activity.request_id；响应回带。V3实际唯一键是(u_id,activity_id,request_id)，请求号按字节比较。</td><td>同一次逻辑抽奖的重试回到同一take；不是全系统所有用户共享一个request_id唯一键。</td></tr>

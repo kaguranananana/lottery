@@ -22,10 +22,6 @@ public class PartakeResult extends Result {
 
     public String getPendingRequestId() { return pendingRequestId; }
     public void setPendingRequestId(String pendingRequestId) { this.pendingRequestId = pendingRequestId; }
-    /** 库存 */
-    private Integer stockCount;
-    /** activity 库存剩余 */
-    private Integer stockSurplusCount;
 
     public Long getTakeId() {
         return takeId;
@@ -47,19 +43,5 @@ public class PartakeResult extends Result {
         super(code, info);
     }
 
-    public Integer getStockCount() {
-        return stockCount;
-    }
 
-    public void setStockCount(Integer stockCount) {
-        this.stockCount = stockCount;
-    }
-
-    public Integer getStockSurplusCount() {
-        return stockSurplusCount;
-    }
-
-    public void setStockSurplusCount(Integer stockSurplusCount) {
-        this.stockSurplusCount = stockSurplusCount;
-    }
 }

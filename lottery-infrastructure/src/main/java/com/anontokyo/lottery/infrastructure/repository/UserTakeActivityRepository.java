@@ -94,6 +94,7 @@ public class UserTakeActivityRepository implements IUserTakeActivityRepository {
             String requestId) {
         try {
             dbRouter.doRouter(bill.getuId());
+            // TX1 仅包含用户次数和参与记录，不涉及 Redis 库存或其它 Repository。
             return transactionTemplate.execute(status -> {
                 try {
                     int updateCount = subtractionLeftCount(bill);

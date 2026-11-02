@@ -58,14 +58,14 @@ def analyze(directory):
     assert len(ledger_rows)==len(orders),'出现重复账本'
     quota=sum(int(line.split('\t')[2]) for line in audit['quota'].splitlines())
     assert quota==len(takes),'次数扣减与参与记录不符'
-    assert params['stock']-int(audit['redisActivity'])==len(takes),'活动库存与参与数不符'
     ledger=dict((a,int(n)) for a,n in (line.split('\t') for line in audit['ledger'].splitlines()))
     order_counts=collections.Counter(o['award'] for o in orders)
     for line in audit['stock'].splitlines():
         award,initial,left=line.split('\t')
         assert int(left)>=0 and int(audit['redisAwards'][award])>=0,'奖品超卖'
-        # 创建接口当前未持久化 award_count；扣减基线采用明确的 fixture 配置，报告保留 NULL 缺陷。
+        # 当前奖品总量与剩余量均已持久化，按明确的 fixture 和账本核对结算。
         seeded=params['stock'] if params['award_stock']<0 else params['award_stock']
+        assert int(initial)==seeded,'奖品总量与fixture不符'
         assert seeded-int(left)==ledger.get(award,0)==order_counts[award],'奖品数据库、账本和订单不符'
         assert int(left)==int(audit['redisAwards'][award]),'奖品Redis与MySQL未收敛'
     if (directory/'initial-stock.tsv').exists():
@@ -100,7 +100,7 @@ def analyze(directory):
         l=low+i*(high-low)/6;h=low+(i+1)*(high-low)/6
         part=[r for r in measured if l<=int(r['timeStamp'])+int(r['elapsed'])<h]
         buckets.append(len(part)/(seconds/6))
-    result={'name':directory.name,'threads':params['threads'],'windowSeconds':seconds,'totalSamples':len(rows),'measuredSamples':len(measured),'rps':len(measured)/seconds,'newDrawRps':len(success)/seconds,'newDrawsWindow':len(success),'newDrawsTotal':len(takes),'ordersTotal':len(orders),'meanMs':sum(latencies)/len(latencies),'p50Ms':quantile(latencies,.5),'p95Ms':quantile(latencies,.95),'p99Ms':quantile(latencies,.99),'maxMs':max(latencies),'httpErrorRate':sum(r['responseCode']!='200' for r in measured)/len(measured),'systemErrorRate':sum(r['businessCode'] not in ('0000','D001','D004','D006','D007') or r['responseCode']!='200' for r in measured)/len(measured),'businessCodes':business,'cpuMeanPercentOfOneCore':sum(cpu)/len(cpu) if cpu else None,'heapMaxObservedMiB':max(s['app']['heapUsed'] for s in samples)/1048576,'gcMs':gctime,'gcPauseRatio':gctime/(samples[-1]['app']['time']-samples[0]['app']['time']),'pools':stats,'tomcatMaxBusy':max(v[0] for s in samples for v in s['app']['tomcat'].values()),'backlog':[(s['time'],s['async']) for s in pending],'rpsBuckets':buckets,'drainSeconds':json.loads((directory/'drain.json').read_text())['seconds'],'asyncP95LowerMs':quantile([b[0] for b in bounds],.95) if bounds else None,'asyncP95UpperMs':quantile([b[1] for b in bounds],.95) if bounds else None,'audit':'PASS'}
+    result={'name':directory.name,'threads':params['threads'],'windowSeconds':seconds,'totalSamples':len(rows),'measuredSamples':len(measured),'rps':len(measured)/seconds,'newDrawRps':len(success)/seconds,'newDrawsWindow':len(success),'newDrawsTotal':len(takes),'ordersTotal':len(orders),'meanMs':sum(latencies)/len(latencies),'p50Ms':quantile(latencies,.5),'p95Ms':quantile(latencies,.95),'p99Ms':quantile(latencies,.99),'maxMs':max(latencies),'httpErrorRate':sum(r['responseCode']!='200' for r in measured)/len(measured),'systemErrorRate':sum(r['businessCode'] not in ('0000','D001','D006','D007') or r['responseCode']!='200' for r in measured)/len(measured),'businessCodes':business,'cpuMeanPercentOfOneCore':sum(cpu)/len(cpu) if cpu else None,'heapMaxObservedMiB':max(s['app']['heapUsed'] for s in samples)/1048576,'gcMs':gctime,'gcPauseRatio':gctime/(samples[-1]['app']['time']-samples[0]['app']['time']),'pools':stats,'tomcatMaxBusy':max(v[0] for s in samples for v in s['app']['tomcat'].values()),'backlog':[(s['time'],s['async']) for s in pending],'rpsBuckets':buckets,'drainSeconds':json.loads((directory/'drain.json').read_text())['seconds'],'asyncP95LowerMs':quantile([b[0] for b in bounds],.95) if bounds else None,'asyncP95UpperMs':quantile([b[1] for b in bounds],.95) if bounds else None,'audit':'PASS'}
     result['observedThreads']=observed_threads
     (directory/'summary.json').write_text(json.dumps(result,ensure_ascii=False,indent=2))
     return result

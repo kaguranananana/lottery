@@ -4,6 +4,7 @@ import com.anontokyo.lottery.common.Constants;
 import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
+import com.anontokyo.lottery.domain.strategy.repository.IStrategyRepository;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.support.TransactionTemplate;
 import javax.annotation.Resource;
@@ -35,11 +36,14 @@ public class OrderRepository implements IOrderRepository {
     @Resource
     private TransactionTemplate transactionTemplate;
 
+    @Resource
+    private IStrategyRepository strategyRepository;
+
     @Override
     public Constants.ResponseCode saveDrawOrderWithTakeLock(DrawOrderVO drawOrder) {
         try {
             dbRouter.doRouter(drawOrder.getuId());
-            return transactionTemplate.execute(status -> {
+            return StockReservationTransactions.execute(transactionTemplate, status -> {
                 UserTakeActivity lockReq = new UserTakeActivity();
                 lockReq.setuId(drawOrder.getuId());
                 lockReq.setActivityId(drawOrder.getActivityId());
@@ -58,7 +62,10 @@ public class OrderRepository implements IOrderRepository {
                 }
 
                 return Constants.ResponseCode.SUCCESS;
-            });
+            }, () -> strategyRepository.recoverStrategyAwardStockByRedis(
+                    drawOrder.getStrategyId(), drawOrder.getAwardId()),
+                    "award uId=" + drawOrder.getuId() + " takeId=" + drawOrder.getTakeId()
+                            + " orderId=" + drawOrder.getOrderId());
         } finally {
             dbRouter.clear();
         }

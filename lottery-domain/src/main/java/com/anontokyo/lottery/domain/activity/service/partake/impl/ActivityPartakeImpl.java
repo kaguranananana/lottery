@@ -3,10 +3,8 @@ package com.anontokyo.lottery.domain.activity.service.partake.impl;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.common.Result;
 import com.anontokyo.lottery.domain.activity.model.req.PartakeReq;
-import com.anontokyo.lottery.domain.activity.model.res.StockResult;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
 import com.anontokyo.lottery.domain.activity.model.vo.UserTakeActivityVO;
-import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
 import com.anontokyo.lottery.domain.activity.repository.IUserTakeActivityRepository;
 import com.anontokyo.lottery.domain.activity.service.partake.BaseActivityPartake;
 import org.slf4j.Logger;
@@ -23,9 +21,6 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
     @Resource
     private IUserTakeActivityRepository userTakeActivityRepository;
 
-    @Resource
-    private IActivityRepository activityRepository;
-
     @Override
     protected Result checkActivityBill(PartakeReq partake, ActivityBillVO bill) {
         if (!Constants.ActivityState.DOING.getCode().equals(bill.getState())) {
@@ -39,10 +34,6 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
             return Result.buildResult(Constants.ResponseCode.UN_ERROR, "activity not in valid time range");
         }
 
-        if (bill.getStockSurplusCount() <= 0) {
-            logger.warn("activity stock unavailable stockSurplusCount:{}", bill.getStockSurplusCount());
-            return Result.buildResult(Constants.ResponseCode.UN_ERROR, "activity stock unavailable");
-        }
         return Result.buildSuccessResult();
     }
 
@@ -63,16 +54,6 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
             return Result.buildResult(code);
         }
         return Result.buildSuccessResult();
-    }
-
-    @Override
-    protected StockResult substractionActivityStockByRedis(String uId, Long activityId) {
-        return activityRepository.substractionActivityStockByRedis(uId, activityId);
-    }
-
-    @Override
-    protected void recoverActivityStockByRedis(Long activityId) {
-        activityRepository.recoverActivityStockByRedis(activityId);
     }
 
     @Override

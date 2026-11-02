@@ -9,8 +9,6 @@
         <result column="activity_desc" property="activityDesc"/>
         <result column="begin_date_time" property="beginDateTime"/>
         <result column="end_date_time" property="endDateTime"/>
-        <result column="stock_count" property="stockCount"/>
-        <result column="stock_surplus_count" property="stockSurplusCount"/>
         <result column="take_count" property="takeCount"/>
         <result column="strategy_id" property="strategyId"/>
         <result column="state" property="state"/>
@@ -22,23 +20,28 @@
     <insert id="insert" parameterType="com.anontokyo.lottery.infrastructure.po.Activity">
         INSERT INTO activity
         (activity_id, activity_name, activity_desc, begin_date_time, end_date_time,
-         stock_count, stock_surplus_count, strategy_id, take_count, state, creator, create_time, update_time)
+         strategy_id, take_count, state, creator, create_time, update_time)
         VALUES
             (#{activityId}, #{activityName}, #{activityDesc}, #{beginDateTime}, #{endDateTime},
-             #{stockCount}, #{stockSurplusCount}, #{strategyId}, #{takeCount}, #{state}, #{creator}, now(), now())
+             #{strategyId}, #{takeCount}, #{state}, #{creator}, now(), now())
     </insert>
 
     <select id="queryActivityById" parameterType="java.lang.Long" resultType="com.anontokyo.lottery.infrastructure.po.Activity">
         SELECT activity_id, activity_name, activity_desc, begin_date_time, end_date_time, strategy_id,
-               stock_count, stock_surplus_count, take_count, state, creator, create_time, update_time
+               take_count, state, creator, create_time, update_time
         FROM activity
         WHERE activity_id = #{activityId}
     </select>
 
     <!-- 启动和预热共用活动行锁，防止另一启动者在 DOING 后回填丢失库存。 -->
     <select id="queryActivityForUpdate" resultMap="activityMap">
-        SELECT id, activity_id, strategy_id, stock_surplus_count, state, begin_date_time, end_date_time
+        SELECT id, activity_id, strategy_id, state, begin_date_time, end_date_time
         FROM activity WHERE activity_id = #{activityId} FOR UPDATE
+    </select>
+
+    <!-- 不按活动结束时间过滤，关闭后仍可能有库存结算在途。策略行锁约束并发启动。 -->
+    <select id="countPublishedActivitiesByStrategy" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM activity WHERE strategy_id = #{strategyId} AND state IN (5, 7)
     </select>
 
     <update id="alterState" parameterType="com.anontokyo.lottery.domain.activity.model.vo.AlterStateVO">
@@ -69,7 +72,7 @@
 
     <select id="queryActivityInfoList" parameterType="com.anontokyo.lottery.domain.activity.model.req.ActivityInfoLimitPageReq" resultMap="activityMap">
         SELECT id, activity_id, activity_name, activity_desc, begin_date_time, end_date_time,
-        stock_count, stock_surplus_count, take_count, strategy_id, state, creator, create_time, update_time
+        take_count, strategy_id, state, creator, create_time, update_time
         FROM activity
         <trim prefix="where" prefixOverrides="AND | OR" suffixOverrides="and">
             <if test="null != activityId">

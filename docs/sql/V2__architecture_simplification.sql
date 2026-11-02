@@ -61,6 +61,6 @@ CREATE TABLE IF NOT EXISTS `award_stock_settlement` (
 --     UPDATE activity SET state = 1 WHERE state IN (2, 3, 8);
 --     UPDATE activity SET state = 1 WHERE state = 6;   -- 或按需要改 7 关闭
 --   strategy.strategy_mode 列继续存在但不再影响算法选择（单一加权随机算法）。
---   库存恢复说明：活动 RUNNING 期间 Redis 库存 key 丢失必须走预热/人工对账，
---   不允许用滞后的 MySQL 值回填（见 docs/refactor-audit.md 第 4 节）。
+--   当前库存恢复说明：仅保留策略奖品库存，运行期 Redis Key 丢失必须先人工对账，
+--   不允许用滞后的 MySQL 值回填；活动总库存已由 V4 移除（见 docs/activity-stock-removal.md）。
 -- ---------------------------------------------------------------------

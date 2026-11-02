@@ -1,5 +1,7 @@
 # Lottery 实际性能压测复现
 
+> 历史结果对应 2026-10 的实现。本次只同步工具与业务语义并验证编译/语法，未重新执行 JMeter 容量实验；不能把旧数字作为取消活动总库存后的性能结论。
+
 后续定向优化、当前字段修复及压测驱动数据耗尽修复见 [优化报告](optimization-report.md) 和 [本轮证据/复现步骤](results/20261012-optimization/README.md)。本文的首次测量数字和 NULL 字段描述对应原始测试版本，原始结果未覆盖。
 
 2026-10-13 的补偿索引同数据/反向实验及更高持续负载见 [持续容量与扫描证据](results/20261013-capacity-scan/README.md)。新空环境 init 已包含 `20261013_invoice_compensation_index.sql`；已有实例保留数据、核实身份后显式执行迁移，不能重新 init。`invoice_scan_compare.py <新目录> --repeats 6` 在应用停止且义务排空后交替比较索引路径，记录实际执行树、计数/状态及换页端点；不把 SQL 局部收益当整体吞吐倍数。
@@ -36,7 +38,7 @@ mkdir -p doc/performance/results/my-run
 bash doc/performance/start.sh doc/performance/results/my-run > doc/performance/results/my-run/application.log 2>&1
 ```
 
-每次新建活动先调用真实创建服务，再执行 PASS→DOING（事务内 SETNX 预热），不直接修改状态为运行中。每轮默认预置10万用户，按实际路由策略进入唯一正确分库，并记录八分片分布；每用户10次机会，每次基准请求使用新用户、新 requestId。活动100万库存，五种模拟券每种100万库存、20%概率，100%中奖以覆盖较重的订单与异步主链路。预置用户并未绕过生产每次 `initializeCount` SQL。
+每次新建活动先调用真实创建服务，再执行 PASS→DOING（事务内 SETNX 预热），不直接修改状态为运行中。每轮默认预置10万用户，按实际路由策略进入唯一正确分库，并记录八分片分布；每用户10次机会，每次基准请求使用新用户、新 requestId。活动无总库存，五种模拟券每种100万库存、20%概率，100%中奖以覆盖较重的订单与异步主链路。预置用户并未绕过生产每次 `initializeCount` SQL。
 
 ## 实际运行
 
@@ -50,16 +52,14 @@ python3 doc/performance/run.py --session my-run --name c50-confirm --id 720050 -
 # 固定到达速率与无等待阶梯分开；每个目标速率另建活动。
 python3 doc/performance/run.py --session my-run --name rate60 --id 720060 --threads 30 --duration 320 --warmup 20 --target-rps 60 --jmeter /path/to/jmeter
 python3 doc/performance/semantics.py --session my-run
-# 活动库存竞争：最多100次新抽奖，其余应返回D004。
-python3 doc/performance/run.py --session my-run --name finiteActivity --id 728001 --threads 50 --duration 15 --warmup 0 --stock 100 --users 100000 --jmeter /path/to/jmeter
-# 奖品库存竞争：总共50份奖品，活动足够；售罄命中应为D001，不重新抽样。
+# 奖品库存竞争：总共50份奖品；售罄命中仍为D001并消耗个人次数，不重新抽样。
 python3 doc/performance/run.py --session my-run --name finiteAward --id 728002 --threads 30 --duration 15 --warmup 0 --stock 100000 --award-stock 10 --users 100000 --jmeter /path/to/jmeter
 python3 doc/performance/analyze.py doc/performance/results/my-run/c10 doc/performance/results/my-run/c30 doc/performance/results/my-run/c50-confirm
 ```
 
 无等待阶梯默认爬升5秒、预热15秒、测量60秒，总80秒。统计从首条采样开始，按请求**完成时间**落入稳定窗口计算 RPS，分位数使用最近秩。JMeter结束前最后不足一秒的窗口可能低估完成量；所有阶梯采用同一方法，不把提前开始但未完成的请求算吞吐。
 
-`0000`为同步下单成功，`D001`为完成的未中奖抽奖，`D004/D006/D007`分别为售罄/处理中/原请求未完成。系统异常另计，HTTP 200 不等于业务成功。正常基准只允许0000/D001；幂等成功回放只算一个新操作。有限库存拒绝的高RPS不代表成功抽奖容量。
+`0000`为同步下单成功，`D001`为完成的未中奖抽奖，`D006/D007`分别为处理中/原请求未完成，活动售罄码 D004 已删除。系统异常另计，HTTP 200 不等于业务成功。正常基准只允许0000/D001；幂等成功回放只算一个新操作。奖品售罄后的未中奖RPS不能替代成功下单容量。`--stock` 现在只表示每种奖品的默认总量，`--award-stock` 仍可指定奖品总量；二者都不限制活动参与总数。
 
 ## 原始证据与采样
 
@@ -67,7 +67,7 @@ python3 doc/performance/analyze.py doc/performance/results/my-run/c10 doc/perfor
 
 审计逐项检查用户与请求身份、take与order关联、次数消耗、各奖品库存与账本、全局重复订单、未消费参与、BLOCKED、库存/发奖最终状态、Kafka八分区位点和Lag。数据库时间戳精度为秒，HTTP→异步完成延迟报告一秒宽的上下界；没有伪造毫秒精度。
 
-当前创建路径 `StrategyDetailVO.awardCount(Integer)` 与 `StrategyDetail.awardCount(String)` 不同，BeanUtils 不会复制，总库存列为NULL；剩余库存正常初始化。原始数据保留此缺陷，审计依据显式fixture数量与初始化剩余库存，不修改生产表掩盖缺陷。活动MySQL剩余库存当前不在参与链路扣减，运行期消耗以Redis活动库存与持久化参与记录解释，奖品库存最终结算到MySQL。
+2026-11-02 工具已同步单库存语义：参与数与个人次数核对，中奖订单与各奖品 Redis/MySQL 库存及账本核对，不再读取活动库存列或 Key。奖品总量/剩余量当前均为 Integer 并真实持久化；历史 NULL 总量和双库存压测只保留在原始结果，不回填或改写旧证据。当前分析器面向新会话，不承诺直接重算旧版格式的逐请求数据。
 
 ## 停止与安全清理
 

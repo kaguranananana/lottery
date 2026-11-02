@@ -20,7 +20,7 @@
 
 1. [LotteryController.java](../../lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/LotteryController.java) 校验请求，将 userId 转为内部 uId，调用抽奖用例。
 2. [ActivityProcessImpl.java](../../lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java) 获取用户与活动维度的短锁，按 requestId 查询参与记录；已消费则回放，未消费则继续原 take。
-3. [BaseActivityPartake.java](../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java) 编排参与资格、Redis 活动库存、数据库次数扣减和参与记录创建。
+3. [BaseActivityPartake.java](../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java) 校验活动状态与时间，编排 TX1：用户分片内条件扣减个人次数与创建参与记录。活动不再有总库存。
 4. [DrawExecutor.java](../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/strategy/service/draw/impl/DrawExecutor.java) 读取策略快照并加权采样。未中奖消费 take；中奖预扣奖品 Redis 库存并创建订单。
 5. [OrderRepository.java](../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java) 在用户分片事务内消费 take 并插入订单，订单包含库存 Outbox 状态；同步响应不等待 Kafka 结算或第三方发奖。
 6. [LotteryXxlJob.java](../../lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryXxlJob.java) 扫描 Outbox，库存消费者通过全局库账本结算后发送发奖消息，发奖消费者按奖品类型选择处理器。
@@ -36,7 +36,7 @@ MySQL 保存参与记录、订单与库存结算事实；Redis 锁用于并发�
 ## 已知边界
 
 - 发奖处理器模拟渠道调用并写本地状态；真实外部发奖尚未实现，本地 CAS 不证明外部副作用恰好一次。
-- Redis 库存丢失按不可售处理，需要预热或对账；配置缓存与库存的错误策略不同。
+- 奖品 Redis 库存缺失显式报错并保留原 take；运行期或共享奖池缺失须对账，不能用滞后 MySQL 值回填。配置缓存与库存的错误策略不同。
 - 快照缓存没有跨实例广播失效，TTL 内可能仍读到旧快照。
 - 本地 Kafka 为单副本、acks=1，不代表生产级消息可靠性。
 - 请求查询异常中断、库存 BLOCKED 对账与 FAIL 重试和 SENT 恢复边界见[错误处理](./backend/error-handling.md)与[应用规范](./backend/application-guidelines.md)。

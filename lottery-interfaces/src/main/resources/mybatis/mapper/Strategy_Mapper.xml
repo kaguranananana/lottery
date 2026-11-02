@@ -16,4 +16,8 @@
         FROM strategy
         WHERE strategy_id = #{strategyId}
     </select>
+    <!-- 全局库本地事务内锁定策略行，共享该策略的启动者不得同时重建奖池。 -->
+    <select id="queryStrategyForUpdate" resultType="com.anontokyo.lottery.infrastructure.po.Strategy">
+        SELECT strategy_id FROM strategy WHERE strategy_id = #{strategyId} FOR UPDATE
+    </select>
 </mapper>

@@ -26,8 +26,6 @@ CREATE TABLE `activity` (
     `activity_desc` varchar(128) CHARACTER SET utf8mb4 DEFAULT NULL COMMENT '活动描述',
     `begin_date_time` datetime DEFAULT NULL COMMENT '开始时间',
     `end_date_time` datetime DEFAULT NULL COMMENT '结束时间',
-    `stock_count` int(11) DEFAULT NULL COMMENT '库存',
-    `stock_surplus_count` int(11) DEFAULT NULL COMMENT '库存剩余',
     `take_count` int(11) DEFAULT NULL COMMENT '每人可参与次数',
     `strategy_id` bigint(11) DEFAULT NULL COMMENT '抽奖策略ID',
     `state` tinyint(2) DEFAULT NULL COMMENT '活动状态：1编辑、2提审、3撤审、4通过、5运行(审核通过后worker扫描状态)、6拒绝、7关闭、8开启',
@@ -38,11 +36,13 @@ CREATE TABLE `activity` (
     UNIQUE KEY `unique_activity_id` (`activity_id`)
 ) ENGINE = InnoDB AUTO_INCREMENT = 4 DEFAULT CHARSET = utf8mb4 COLLATE = utf8mb4_bin COMMENT = '活动配置';
 -- ----------------------------
--- Records of activity
+-- Records of activity：新库从 PASS 开始，由生命周期任务预热奖品后启动
 -- ----------------------------
 BEGIN;
 -- 活动100001: 男性年轻用户活动（男性+年龄<25）
 INSERT INTO `activity`
+(id, activity_id, activity_name, activity_desc, begin_date_time, end_date_time,
+ take_count, strategy_id, state, creator, create_time, update_time)
 VALUES (
         1,
         100001,
@@ -50,17 +50,17 @@ VALUES (
         '面向年轻男性用户的促销活动',
         '2025-01-01 00:00:00',
         '2030-12-31 23:59:59',
-        100,
-        100,
         10,
         10001,
-        5,
+        4,
         'xiaofuge',
         '2021-08-08 20:14:50',
         '2021-08-08 20:14:50'
     );
 -- 活动100002: 男性成熟用户活动（男性+年龄>=25）
 INSERT INTO `activity`
+(id, activity_id, activity_name, activity_desc, begin_date_time, end_date_time,
+ take_count, strategy_id, state, creator, create_time, update_time)
 VALUES (
         3,
         100002,
@@ -68,17 +68,17 @@ VALUES (
         '面向成熟男性用户的促销活动',
         '2025-01-01 00:00:00',
         '2030-12-31 23:59:59',
-        100,
-        100,
         10,
         10001,
-        5,
+        4,
         'xiaofuge',
         '2021-10-05 15:49:21',
         '2021-10-05 15:49:21'
     );
 -- 活动100003: 女性年轻用户活动（女性+年龄<25）
 INSERT INTO `activity`
+(id, activity_id, activity_name, activity_desc, begin_date_time, end_date_time,
+ take_count, strategy_id, state, creator, create_time, update_time)
 VALUES (
         4,
         100003,
@@ -86,17 +86,17 @@ VALUES (
         '面向年轻女性用户的促销活动',
         '2025-01-01 00:00:00',
         '2030-12-31 23:59:59',
-        200,
-        200,
         10,
         10002,
-        5,
+        4,
         'system',
         NOW(),
         NOW()
     );
 -- 活动100004: 女性成熟用户活动（女性+年龄>=25）
 INSERT INTO `activity`
+(id, activity_id, activity_name, activity_desc, begin_date_time, end_date_time,
+ take_count, strategy_id, state, creator, create_time, update_time)
 VALUES (
         5,
         100004,
@@ -104,11 +104,9 @@ VALUES (
         '面向成熟女性用户的促销活动',
         '2025-01-01 00:00:00',
         '2030-12-31 23:59:59',
-        200,
-        200,
         10,
         10003,
-        5,
+        4,
         'system',
         NOW(),
         NOW()

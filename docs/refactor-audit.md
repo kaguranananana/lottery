@@ -1,5 +1,7 @@
 # Refactor Audit — 以真实代码为唯一事实依据
 
+> 历史审计：本文描述早期双库存实现，活动总库存已于 2026-11-02 完整移除。当前流程、迁移和验证见 [业务简化记录](activity-stock-removal.md)。
+
 > 审计基线 commit：`a84ea24 feat: strengthen draw guard and config cache`
 > 本文档所有结论均来自对当前源码、mapper XML、SQL 初始化脚本的逐文件阅读，
 > 类名/方法名/表名如有出入以本文所列的真实代码为准。

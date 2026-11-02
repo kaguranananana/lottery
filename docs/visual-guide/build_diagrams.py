@@ -1,3 +1,4 @@
+"""历史生成器：适用于活动总库存重构前的快照；当前流程见activity-stock-removal.md。"""
 """按已核对的源码生成 Archify 规格；只写本图解目录，不修改业务文件。"""
 import json
 import subprocess

@@ -7,6 +7,8 @@ import com.anontokyo.lottery.infrastructure.utils.RedisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.support.TransactionSynchronizationAdapter;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
@@ -115,14 +117,32 @@ public class TwoLevelCacheService {
     }
 
     public void evictStrategySnapshotCache(String cacheKey) {
-        evict(cacheKey);
+        // 配置事务提交前不清缓存，防止其它请求从旧的已提交行重建缓存。
+        afterCommit(() -> evict(cacheKey));
     }
 
     public void evictActivityCache(String cacheKey) {
-        try {
-            redisUtil.delStringKey(cacheKey);
-        } catch (Exception e) {
-            logger.warn("invalidate redis cache failed, key:{}", cacheKey, e);
+        afterCommit(() -> {
+            try {
+                redisUtil.delStringKey(cacheKey);
+            } catch (Exception e) {
+                logger.warn("invalidate redis cache failed, key:{}", cacheKey, e);
+            }
+        });
+    }
+
+    private void afterCommit(Runnable invalidation) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            // 只在本次提交成功后失效；回滚保留与数据库旧版本一致的缓存。
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronizationAdapter() {
+                @Override
+                public void afterCommit() {
+                    invalidation.run();
+                }
+            });
+        } else {
+            // 无外层事务的写入已经完成，沿用即时失效。
+            invalidation.run();
         }
     }
 

@@ -39,10 +39,6 @@ public class ActivityVO {
      */
     private Date endDateTime;
 
-    /**
-     * 库存
-     */
-    private Integer stockCount;
 
     /** 活动所属抽奖策略，创建时由同一配置聚合绑定。 */
     private Long strategyId;
@@ -106,13 +102,6 @@ public class ActivityVO {
         this.endDateTime = endDateTime;
     }
 
-    public Integer getStockCount() {
-        return stockCount;
-    }
-
-    public void setStockCount(Integer stockCount) {
-        this.stockCount = stockCount;
-    }
 
     public Integer getTakeCount() {
         return takeCount;
@@ -155,7 +144,6 @@ public class ActivityVO {
                 ", activityDesc='" + activityDesc + '\'' +
                 ", beginDateTime=" + beginDateTime +
                 ", endDateTime=" + endDateTime +
-                ", stockCount=" + stockCount +
                 ", takeCount=" + takeCount +
                 ", state=" + state +
                 ", creator='" + creator + '\'' +

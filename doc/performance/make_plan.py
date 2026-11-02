@@ -57,8 +57,8 @@ def result = new groovy.json.JsonSlurper().parseText(prev.getResponseDataAsStrin
 vars.put('businessCode', String.valueOf(result.code))
 vars.put('takeId', result.takeId == null ? '' : String.valueOf(result.takeId))
 vars.put('orderId', result.orderId == null ? '' : String.valueOf(result.orderId))
-// 正常压测只允许成功或真实未中奖；库存竞争允许预期活动售罄。
-def accepted = props.getProperty('finite', 'false') == 'true' ? ['0000','D001','D004'] : ['0000','D001']
+// 奖品售罄仍为真实未中奖；活动不再有总库存拒绝码。
+def accepted = ['0000','D001']
 if (!accepted.contains(result.code)) { prev.setSuccessful(false); prev.setResponseMessage('业务码:' + result.code) }
 ''')
 i=list(parent).index(sampler);tree=list(parent)[i+1];tree.append(post);tree.append(E.Element('hashTree'))

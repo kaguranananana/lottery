@@ -2,7 +2,7 @@
 
 ## 参与与订单
 
-[ActivityPartakeImpl.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/impl/ActivityPartakeImpl.java) 检查活动为 DOING、参与时间在活动区间、活动库存有剩余。[BaseActivityPartake.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java) 从数据库查询未消费 take，仅同 requestId 能复用；其他请求返回 D007 与 pendingRequestId，归属缺失返回 D008。数据库获取资格失败时回补已预扣活动库存，并在唯一冲突场景重新核对归属。
+[ActivityPartakeImpl.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/impl/ActivityPartakeImpl.java) 检查活动为 DOING、参与时间在活动区间。[BaseActivityPartake.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java) 从数据库查询未消费 take，仅同 requestId 能复用；其他请求返回 D007 与 pendingRequestId，归属缺失返回 D008。TX1 只在同一用户分片事务中扣减个人次数并创建 take；唯一冲突回滚次数扣减并重新核对归属，不操作 Redis 活动库存。活动没有独立总参与名额。
 
 [AwardOrderImpl.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/award/service/order/impl/AwardOrderImpl.java) 使用 IdGenerator 创建订单，委托 saveDrawOrderWithTakeLock 同事务消费 take、写订单；返回 InvoiceVO 与结算数据。不要把路由及 MyBatis 细节移入领域服务，也不要将订单创建与消费 take 拆成两个独立提交。
 
@@ -18,10 +18,14 @@
 
 ## 活动生命周期
 
-[ActivityLifecycleService.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/lifecycle/ActivityLifecycleService.java) 的合法转换为 EDIT(1)→PASS(4)、PASS(4)→DOING(5)、PASS(4)→CLOSE(7)、DOING(5)→CLOSE(7)。仓储使用 expected state 的 CAS，影响行数决定是否成功。PASS→DOING 仓储在活动行锁内校验时间并先完成 SETNX 预热，Redis 失败保持 PASS；历史状态值不作为新增业务规则；不能绕过转换矩阵直接覆盖状态。
+[ActivityLifecycleService.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/lifecycle/ActivityLifecycleService.java) 的合法转换为 EDIT(1)→PASS(4)、PASS(4)→DOING(5)、PASS(4)→CLOSE(7)、DOING(5)→CLOSE(7)。仓储使用 expected state 的 CAS，影响行数决定是否成功。PASS→DOING 仓储在活动行锁内校验时间，锁定共享策略后只预热奖品。新奖池 SETNX 保留已有余额；DOING/CLOSE 活动使用过的共享奖池只检查现存 Key，缺失须先对账。Redis 失败保持 PASS；历史状态值不作为新增业务规则；不能绕过转换矩阵直接覆盖状态。
 
 ## 发奖扩展
 
 [AwardFulfillmentHandler.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/award/service/fulfillment/AwardFulfillmentHandler.java) 通过 supportType() 与 fulfill(InvoiceVO) 扩展。[AbstractAwardFulfillmentHandler.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/award/service/fulfillment/impl/AbstractAwardFulfillmentHandler.java) 当前只模拟发奖并写本地 CAS 状态；不能把重复返回 SUCCESS 推导为真实渠道恰好一次。
 
 真实外部渠道接入是独立任务，须定义 orderId 幂等键、外部成功但本地状态未更新时的处理与有效验证。当前注册表拒绝重复类型和缺失处理器；扩展新类型沿用接口，不再增加无必要的 Config/Factory 包装层。
+
+## ID 节点配置
+
+SnowflakeIdGenerator 从 `lottery.ids.worker-id`、`lottery.ids.datacenter-id` 读取节点配置；application.yml 对应 `LOTTERY_WORKER_ID`、`LOTTERY_DATACENTER_ID`，本地单实例默认 0/1。多实例同数据中心必须分配不同的 0..31 worker-id，数据中心号也为 0..31，非法范围由构造器拒绝。不得再从 IP 网段推导，不能把不同实例的默认值视为自动唯一分配。SnowflakeNodeConfigurationTest 在同宿主机启动两个 Spring 配置实例，检查实际 ID 节点位及 2,000 个 ID 不重复；未验证真实多节点部署或自动注册分配。

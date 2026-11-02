@@ -70,6 +70,11 @@ spring:
       missing-topics-fatal: false
 
 lottery:
+  ids:
+    # 默认值仅供本地单实例；多实例部署为每个实例分配唯一的 0..31 节点号。
+    worker-id: ${LOTTERY_WORKER_ID:0}
+    # 同一数据中心共用该值，不同数据中心使用不同的 0..31 编号。
+    datacenter-id: ${LOTTERY_DATACENTER_ID:1}
   kafka:
     invoice:
       enabled: true

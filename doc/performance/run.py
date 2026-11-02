@@ -54,11 +54,10 @@ def audit(id, directory):
         ('duplicateOrders',f'SELECT COUNT(*)-COUNT(DISTINCT order_id),COUNT(*)-COUNT(DISTINCT take_id) FROM ({orders_union(id)}) o'),
         ('stock',f'SELECT award_id,award_count,award_surplus_count FROM lottery.strategy_detail WHERE strategy_id={id} ORDER BY award_id'),
         ('ledger',f'SELECT award_id,COUNT(*) FROM lottery.award_stock_settlement WHERE strategy_id={id} GROUP BY award_id'),
-        ('activity',f'SELECT state,stock_count,stock_surplus_count FROM lottery.activity WHERE activity_id={id}'),
+        ('activity',f'SELECT state,take_count,strategy_id FROM lottery.activity WHERE activity_id={id}'),
     ]
     result={name:sql(query+';').strip() for name,query in queries}
     result['pending']=snapshot(id)
-    result['redisActivity']=redis('GET',f'lottery_activity_stock_count_{id}').strip()
     result['redisAwards']={f'p{id}_{i}':redis('GET',f'lottery_strategy_award_stock_count_{id}_p{id}_{i}').strip() for i in range(5)}
     result['kafka']=http('/__perf/lag')
     write(directory/'audit.json',result)
@@ -116,14 +115,14 @@ def run(args):
     setup=http('/__perf/setup',dict(id=args.id,stock=args.stock,quota=10,users=args.users,prefix=prefix,awardStock=args.award_stock))
     write(directory/'setup.json',setup)
     (directory/'initial-stock.tsv').write_text(sql(f'SELECT award_id,award_count,award_surplus_count FROM lottery.strategy_detail WHERE strategy_id={args.id} ORDER BY award_id;'))
-    write(directory/'initial-redis.json',{'activity':redis('GET',f'lottery_activity_stock_count_{args.id}').strip(),'awards':{f'p{args.id}_{i}':redis('GET',f'lottery_strategy_award_stock_count_{args.id}_p{args.id}_{i}').strip() for i in range(5)}})
+    write(directory/'initial-redis.json',{'awards':{f'p{args.id}_{i}':redis('GET',f'lottery_strategy_award_stock_count_{args.id}_p{args.id}_{i}').strip() for i in range(5)}})
     write(directory/'parameters.json',vars(args))
     digest(directory/'sql-before.tsv')
     write(directory/'before.json',{'mysql':mysql_metrics(),'app':http('/__perf/metrics'),'lag':http('/__perf/lag')})
     stop=threading.Event()
     thread=threading.Thread(target=monitor,args=(stop,directory,args.id),daemon=True);thread.start()
-    # JTL 保留业务码与参与/订单ID；有限库存 D004 单独统计为预期拒绝。
-    cli=[args.jmeter,'-n','-t',str(BASE/('paced.jmx' if args.target_rps else 'draw.jmx')),'-l',str(directory/'samples.jtl'),'-j',str(directory/'jmeter.log'),f'-Jthreads={args.threads}',f'-Jduration={args.duration}','-Jramp=5',f'-Jactivity={args.id}',f'-Jprefix={prefix}',f'-Jusers={args.users}',f'-Jrun={args.name}',f'-Jfinite={str(args.stock<1000000).lower()}', '-Jsample_variables=uId,activityId,requestId,businessCode,takeId,orderId','-Jjmeter.save.saveservice.timestamp_format=ms']
+    # JTL 保留业务码与参与/订单ID；奖品售罄命中以 D001 完成本次抽奖。
+    cli=[args.jmeter,'-n','-t',str(BASE/('paced.jmx' if args.target_rps else 'draw.jmx')),'-l',str(directory/'samples.jtl'),'-j',str(directory/'jmeter.log'),f'-Jthreads={args.threads}',f'-Jduration={args.duration}','-Jramp=5',f'-Jactivity={args.id}',f'-Jprefix={prefix}',f'-Jusers={args.users}',f'-Jrun={args.name}', '-Jsample_variables=uId,activityId,requestId,businessCode,takeId,orderId','-Jjmeter.save.saveservice.timestamp_format=ms']
     write(directory/'command.json',cli)
     cli.append(f'-JtargetRpm={args.target_rps*60}')
     write(directory/'command.json',cli)
@@ -171,7 +170,7 @@ if __name__=='__main__':
     p=argparse.ArgumentParser()
     p.add_argument('--session',default='20261012');p.add_argument('--name',required=True);p.add_argument('--id',type=int,required=True)
     p.add_argument('--threads',type=int,required=True);p.add_argument('--duration',type=int,default=80);p.add_argument('--warmup',type=int,default=20)
-    p.add_argument('--stock',type=int,default=1000000);p.add_argument('--award-stock',type=int,default=-1);p.add_argument('--users',type=int,default=100000)
+    p.add_argument('--stock',type=int,default=1000000,help='每种奖品的默认库存；活动无总库存限制');p.add_argument('--award-stock',type=int,default=-1);p.add_argument('--users',type=int,default=100000)
     p.add_argument('--jmeter',default=os.environ.get('JMETER_BIN','/tmp/apache-jmeter-5.6.3/bin/jmeter'))
     p.add_argument('--target-rps',type=float,default=0)
     p.add_argument('--drain-timeout',type=int,default=180)

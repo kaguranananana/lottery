@@ -4,7 +4,6 @@ import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.activity.model.aggregates.ActivityInfoLimitPageRich;
 import com.anontokyo.lottery.domain.activity.model.req.ActivityInfoLimitPageReq;
 import com.anontokyo.lottery.domain.activity.model.req.PartakeReq;
-import com.anontokyo.lottery.domain.activity.model.res.StockResult;
 import com.anontokyo.lottery.domain.activity.model.vo.*;
 import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
 import com.anontokyo.lottery.infrastructure.cache.CacheConfigProperties;
@@ -63,8 +62,6 @@ public class ActivityRepository implements IActivityRepository {
     public void addActivity(ActivityVO activity) {
         Activity req = new Activity();
         BeanUtils.copyProperties(activity, req);
-        // 新建活动尚未发生参与，剩余库存必须从总库存初始化。
-        req.setStockSurplusCount(activity.getStockCount());
         activityDao.insert(req);
         twoLevelCacheService.evictActivityCache(Constants.RedisKey.KEY_LOTTERY_CACHE_ACTIVITY(activity.getActivityId()));
     }
@@ -127,8 +124,8 @@ public class ActivityRepository implements IActivityRepository {
                     return false;
                 }
                 // 任意 Redis 写入失败必须抛出，事务回滚使状态保持 PASS。
-                warmupStock(activity);
-                // 全部库存 Key 已初始化后才发布 DOING，后续抽奖才能看到运行状态。
+                warmupAwardStock(activity);
+                // 奖品库存可用后才发布 DOING，后续抽奖才能看到运行状态。
                 return updateStatus(activityId, beforeState, afterState);
             }));
         }
@@ -162,8 +159,6 @@ public class ActivityRepository implements IActivityRepository {
         activityBillVO.setBeginDateTime(activity.getBeginDateTime());
         activityBillVO.setEndDateTime(activity.getEndDateTime());
         activityBillVO.setTakeCount(activity.getTakeCount());
-        activityBillVO.setStockCount(activity.getStockCount());
-        activityBillVO.setStockSurplusCount(activity.getStockSurplusCount());
         activityBillVO.setStrategyId(activity.getStrategyId());
         activityBillVO.setState(activity.getState());
         return activityBillVO;
@@ -187,96 +182,61 @@ public class ActivityRepository implements IActivityRepository {
         return activityVOList;
     }
 
-    /**
-     * Redis 原子预扣活动库存。RUNNING 期间 key 不存在属于异常状态：
-     * 绝不能用可能滞后的 MySQL 值回填（会造成库存复活），必须 fail closed 由人工/对账恢复。
-     */
+    /** 仅允许 PASS 活动预热奖品；共享奖池一旦投入使用，缺失库存必须先对账。 */
     @Override
-    public StockResult substractionActivityStockByRedis(String uId, Long activityId) {
-        String stockKey = Constants.RedisKey.KEY_LOTTERY_ACTIVITY_STOCK_COUNT(activityId);
-        try {
-            String cacheValue = redisUtil.get(stockKey);
-            if (cacheValue == null || cacheValue.length() == 0) {
-                logger.error("activity stock key missing on running activity, fail closed. "
-                        + "run stock warmup/recovery manually, activityId:{} key:{}", activityId, stockKey);
-                return new StockResult(Constants.ResponseCode.STOCK_STATE_ERROR.getCode(),
-                        Constants.ResponseCode.STOCK_STATE_ERROR.getInfo());
-            }
-            long current = Long.parseLong(cacheValue);
-            if (current <= 0) {
-                return new StockResult(Constants.ResponseCode.OUT_OF_STOCK.getCode(),
-                        Constants.ResponseCode.OUT_OF_STOCK.getInfo());
-            }
-
-            long stockSurplusCount = redisUtil.decr(stockKey, 1);
-            if (stockSurplusCount < 0) {
-                redisUtil.incr(stockKey, 1);
-                return new StockResult(Constants.ResponseCode.OUT_OF_STOCK.getCode(),
-                        Constants.ResponseCode.OUT_OF_STOCK.getInfo());
-            }
-            return new StockResult(Constants.ResponseCode.SUCCESS.getCode(), Constants.ResponseCode.SUCCESS.getInfo(),
-                    (int) stockSurplusCount);
-        } catch (Exception e) {
-            // fail closed：无法确认 Redis 库存状态时不允许继续抽奖
-            logger.error("activity stock redis operation failed, fail closed. activityId:{} key:{}",
-                    activityId, stockKey, e);
-            return new StockResult(Constants.ResponseCode.STOCK_STATE_ERROR.getCode(),
-                    Constants.ResponseCode.STOCK_STATE_ERROR.getInfo());
-        }
-    }
-
-    @Override
-    public void recoverActivityStockByRedis(Long activityId) {
-        String stockKey = Constants.RedisKey.KEY_LOTTERY_ACTIVITY_STOCK_COUNT(activityId);
-        try {
-            long stockSurplusCount = redisUtil.incr(stockKey, 1);
-            if (stockSurplusCount < 0) {
-                redisUtil.decr(stockKey, 1);
-                logger.warn("recover activity stock by redis got negative value, activityId:{} key:{}", activityId,
-                        stockKey);
-            }
-        } catch (Exception e) {
-            logger.error("recover activity stock by redis failed, activityId:{} key:{}", activityId, stockKey, e);
-        }
-    }
-
-    /** 仅允许未启动 PASS 活动预热；部分成功保留，下轮 SETNX 补齐，禁止运行期回填。 */
-    @Override
-    public int warmupStockForActivity(Long activityId) {
+    public int warmupAwardStockForActivity(Long activityId) {
         return transactionTemplate.execute(status -> {
             // 与启动使用同一行锁，保证检查 PASS 到最后一个 SETNX 期间不会启动。
             Activity activity = activityDao.queryActivityForUpdate(activityId);
             if (activity == null || !Constants.ActivityState.PASS.getCode().equals(activity.getState())) {
                 throw new IllegalStateException("只有 PASS 活动允许预热，activityId=" + activityId);
             }
-            return warmupStock(activity);
+            return warmupAwardStock(activity);
         });
     }
 
-    private int warmupStock(Activity activity) {
-        if (activity.getStrategyId() == null || activity.getStockSurplusCount() == null) {
-            throw new IllegalStateException("活动策略或库存未初始化，activityId=" + activity.getActivityId());
+    private int warmupAwardStock(Activity activity) {
+        if (activity.getStrategyId() == null) {
+            throw new IllegalStateException("活动未关联策略，activityId=" + activity.getActivityId());
         }
+        // 活动行锁只约束同一活动；策略行锁使共享奖池的多个启动者串行检查和预热。
+        if (strategyDao.queryStrategyForUpdate(activity.getStrategyId()) == null) {
+            throw new IllegalStateException("活动策略不存在，strategyId=" + activity.getStrategyId());
+        }
+        // DOING 奖池不能重建；CLOSE 后也可能有尚未结算的订单，缺失 Key 仍需对账。
+        boolean poolInUse = activityDao.countPublishedActivitiesByStrategy(activity.getStrategyId()) > 0;
         List<StrategyDetail> details = strategyDetailDao.queryStrategyDetailList(activity.getStrategyId());
         if (details.isEmpty()) {
             throw new IllegalStateException("活动策略没有奖品，strategyId=" + activity.getStrategyId());
         }
-        // 初始化活动 Key；已经存在的库存不覆盖，即使它已小于数据库值。
-        int warmedKeys = warmupKey(Constants.RedisKey.KEY_LOTTERY_ACTIVITY_STOCK_COUNT(activity.getActivityId()),
-                activity.getStockSurplusCount());
-        // 逐个初始化奖品 Key；任何一步失败都会阻止活动进入 DOING。
+        // 只初始化奖品 Key；任何配置错误或 Redis 故障都会阻止活动进入 DOING。
+        int warmedKeys = 0;
         for (StrategyDetail detail : details) {
-            warmedKeys += warmupKey(Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT(
-                    detail.getStrategyId(), detail.getAwardId()), detail.getAwardSurplusCount());
+            if (detail.getAwardId() == null || detail.getAwardId().trim().isEmpty()
+                    || detail.getAwardSurplusCount() == null || detail.getAwardSurplusCount() < 0) {
+                throw new IllegalStateException("策略奖品或剩余库存配置错误，strategyId="
+                        + activity.getStrategyId() + " awardId=" + detail.getAwardId());
+            }
+            String key = Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT(
+                    activity.getStrategyId(), detail.getAwardId());
+            if (poolInUse) {
+                // 只读取，不以 SETNX 修复缺失 Key，避免第二个活动启动时复活共享库存。
+                if (redisUtil.get(key) == null) {
+                    logger.error("shared award stock missing, reconciliation required activityId:{} key:{}",
+                            activity.getActivityId(), key);
+                    throw new IllegalStateException("共享奖品库存缺失，须先对账，key=" + key);
+                }
+            } else {
+                // 从未投入使用的奖池以 MySQL 剩余库存 SETNX 预热，保留已有实时值。
+                warmedKeys += warmupKey(key, detail.getAwardSurplusCount());
+            }
         }
-        logger.info("stock warmup finished activityId:{} keysWarmup:{}", activity.getActivityId(), warmedKeys);
+        logger.info("award stock warmup finished activityId:{} strategyId:{} keysWarmup:{}",
+                activity.getActivityId(), activity.getStrategyId(), warmedKeys);
         return warmedKeys;
     }
 
     private int warmupKey(String key, Integer initialValue) {
-        if (initialValue == null) {
-            throw new IllegalStateException("库存未初始化，key=" + key);
-        }
         try {
             // SETNX 保留之前成功预热的库存，绝不以数据库值覆盖实时库存。
             return redisUtil.setIfAbsent(key, String.valueOf(initialValue)) ? 1 : 0;

@@ -31,11 +31,40 @@ ActivityPartakeImpl   DrawExecutor ── AwardOrderImpl   (domain —— 业务
 依赖方向治理成果：`cn.bugstack.*`（dbRouterForGem）只出现在 `lottery-infrastructure`；
 `TransactionTemplate` 与手动 `doRouter/clear` 的模板代码全部下沉 repository。
 
+
+## 当前业务约束与事务主链路
+
+系统只限制每位用户的参与次数和策略奖品库存。活动保存名称、时间、状态、`take_count` 和 `strategy_id`，没有全场总抽奖名额。取消活动总库存，是因为该业务限制已不需要，且旧 MySQL 活动余量没有完整结算链路；不合并活动与策略，不改变概率算法。
+
+```mermaid
+flowchart TD
+    R[请求号幂等检查与未完成参与归属] --> A[校验活动状态和时间]
+    A --> T1[TX1 用户分片：条件扣个人次数 + 创建 take]
+    T1 --> D[加权随机抽奖]
+    D -->|NO_PRIZE| N[消费 take，消耗一次机会]
+    D -->|命中奖品| S[Redis 奖品库存原子预扣]
+    S -->|真实售罄| N
+    S -->|缺 Key 或故障| E[显式报错，保留原 take 供同请求恢复]
+    S -->|成功| T2[TX2 用户分片：消费 take + 订单 + Outbox INIT]
+    T2 --> J[XXL-Job 扫描 Outbox]
+    J --> K[Kafka 至少一次投递]
+    K --> T3[TX3 全局库：唯一结算账本 + 条件扣奖品库存]
+    T3 --> I[发奖消息与本地模拟发奖]
+```
+
+TX1 不访问 Redis 库存；次数扣减与参与插入一起回滚，唯一键冲突不重复耗次。TX2 失败保留现有奖品回补与事务结果判定，不在应用层扩大事务。TX3 扣减失败回滚新账本，再由独立订单 CAS 写 BLOCKED；已有账本证明同订单已结算。Redis 预扣后、TX2 提交前的 JVM 崩溃和提交结果未知仍需人工对账，Outbox 无法覆盖没有订单的预留。
+
+启动在活动行锁内检查 PASS 和有效时间，再锁共享策略行。新奖池只用 MySQL `award_surplus_count` SETNX，已有 Key 保留实时余量；已被 DOING/CLOSE 活动引用的奖池只检查现存 Key，缺失则拒绝启动，避免关闭后的在途结算或第二个活动把奖品复活。CLOSE 不能证明奖池从未使用，若在首次启动前关闭过唯一引用活动且 Redis 无 Key，也需人工确认奖池后初始化。任何预热异常使活动保持 PASS。
+
+[本次重构与 SQL 迁移](activity-stock-removal.md) 区分新库初始化与旧库 V4 升级；三个事务、Kafka/Outbox/账本、消息 CAS 和用户路由均保持独立职责。
+
 ## 2. 组件存在理由（自检清单）
 
 ### Redis 为什么存在？
-高并发库存原子扣减（活动 + 奖品）、抽奖并发防重入锁、StrategySnapshot L2、活动配置缓存。
+策略奖品库存原子预扣、抽奖并发防重入锁、StrategySnapshot L2、活动配置缓存。
 Redis 不承担任何“最终是否处理过”的事实判定：DONE 类 guard 已删除，幂等事实在 MySQL 唯一约束里。
+
+库存检查与条件扣减在单 Key Lua 中完成，售罄不写负数；缺失 Key 明确报错，奖品缺失不会被消费成未中奖。回补只修改现存 Key，异常不吞掉。订单 SQL 异常仅在事务未开始或确认回滚时归还奖品预扣，提交结果未知保留日志待对账，不能凭异常无条件加库存。
 
 ### Kafka 为什么存在？
 把数据库库存结算与发奖这两个慢操作从同步抽奖路径剥离，同时获得削峰与 at-least-once 重试能力。
@@ -58,7 +87,7 @@ Redis 不承担任何“最终是否处理过”的事实判定：DONE 类 guard
 
 | Job | 参数 | 职责 |
 | --- | --- | --- |
-| lotteryActivityStateJobHandler | — | READY→RUNNING（检查开始时间，活动行锁内先 SETNX 预热，再 CAS）；RUNNING 过期→CLOSED |
+| lotteryActivityStateJobHandler | — | READY→RUNNING（检查开始时间，活动与策略行锁内先预热奖品，再 CAS）；RUNNING 过期→CLOSED |
 | awardStockSettlementOutboxJobHandler | `"1"` 或 `"1,2"` | 库存 Outbox 分片扫描投递 |
 | lotteryOrderMQStateJobHandler | dbIdx 列表 | 发奖消息补偿重发（scan 带 LIMIT=100） |
 
@@ -67,6 +96,7 @@ StrategySnapshot 是每次抽奖必需、活动运行期基本不变的热点读
 Caffeine L1(60s, max 10000) + Redis L2(600s+jitter120s)。
 一致性边界明确为**短 TTL 最终一致**：运营变更后 TTL 内可能读到旧版本，不做广播失效。
 其余实体不再有 L1（activity 只留 Redis 单级；award 信息并入快照；ruleTree 已删除）。
+配置事务的缓存失效延迟到 afterCommit，回滚不删除；其它实例 L1 与在途加载仍遵循上述最终一致边界。
 
 ### 分库分表为什么存在？
 `user_take_activity`、`user_take_activity_count`、`user_strategy_export` 都是 user-centric 高增长数据，
@@ -100,7 +130,7 @@ migration 注释提供归并语句（默认不自动执行 DROP/UPDATE）。
 | 手工集成测试（ManualIT） | StockSettlementIdempotencyManualIT（场景 B 并发预扣不超卖、C/D 同一 orderId 二次结算被 UNIQUE 拦截）；DrawExecManualIT 等 legacy 场景 | 本机 MySQL+Redis，`mvn test -Dtest='*ManualIT'` |
 
 运行要求：MySQL（全局库 lottery 13306、分片库 lottery_01/02）、Redis localhost:6379、可选 Kafka localhost:9092；
-先执行 `doc/sql/` 基线脚本与 `docs/sql/V2__architecture_simplification.sql`。
+新库按基线、Outbox、V2、V3 及补偿索引初始化；旧库另执行 V4，详见迁移说明。
 
 ## 6. dbRouterForGem 使用记录与已知限制（本次未重写该组件）
 
@@ -119,3 +149,5 @@ migration 注释提供归并语句（默认不自动执行 DROP/UPDATE）。
 抽奖请求归属、未完成请求恢复和两库约束迁移见 [抽奖幂等接口说明](draw-request-idempotency.md)。
 
 最终一轮的活动创建、分页、预热恢复、库存分歧及真实 HTTP 主链路证据见[最终正确性与 E2E 报告](final-correctness-e2e.md)。
+
+后续库存异常、事务回补、缓存提交时序及显式 Snowflake 节点配置修复，见[2026-10-24 故障评估](failure-review-20261024.md)。

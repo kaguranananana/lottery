@@ -14,7 +14,6 @@ SET @user_prefix = 'jmeter_u_';
 SET @user_like = 'jmeter_u_%';
 SET @user_count = 20000;
 SET @user_take_count = 100;
-SET @activity_stock = 200000;
 
 START TRANSACTION;
 
@@ -42,20 +41,19 @@ VALUES
     (@load_strategy_id, '4', 'AirPods', 60000,  60000,  0.30, NOW(), NOW()),
     (@load_strategy_id, '5', 'Book',    80000,  80000,  0.40, NOW(), NOW());
 
+-- 活动以 PASS 创建，须经正常启动任务预热奖品库存后进入 DOING。
 INSERT INTO lottery.activity
-    (activity_id, activity_name, activity_desc, begin_date_time, end_date_time, stock_count,
-     stock_surplus_count, take_count, strategy_id, state, creator, create_time, update_time)
+    (activity_id, activity_name, activity_desc, begin_date_time, end_date_time,
+     take_count, strategy_id, state, creator, create_time, update_time)
 VALUES
     (@load_activity_id, 'JMeter Load Activity', 'Dedicated activity for HTTP gateway load testing',
-     '2025-01-01 00:00:00', '2035-12-31 23:59:59', @activity_stock, @activity_stock,
-     @user_take_count, @load_strategy_id, 5, 'codex', NOW(), NOW())
+     '2025-01-01 00:00:00', '2035-12-31 23:59:59',
+     @user_take_count, @load_strategy_id, 4, 'codex', NOW(), NOW())
 ON DUPLICATE KEY UPDATE
     activity_name = VALUES(activity_name),
     activity_desc = VALUES(activity_desc),
     begin_date_time = VALUES(begin_date_time),
     end_date_time = VALUES(end_date_time),
-    stock_count = VALUES(stock_count),
-    stock_surplus_count = VALUES(stock_surplus_count),
     take_count = VALUES(take_count),
     strategy_id = VALUES(strategy_id),
     state = VALUES(state),
@@ -159,8 +157,6 @@ DROP PROCEDURE IF EXISTS lottery.seed_jmeter_users;
 SELECT
     activity_id,
     strategy_id,
-    stock_count,
-    stock_surplus_count,
     take_count,
     state
 FROM lottery.activity

@@ -112,46 +112,33 @@ public class StrategyRepository implements IStrategyRepository {
 
     /**
      * Redis 原子预扣奖品库存。key 不存在时不回填 MySQL（结算滞后值会造成库存复活）：
-     * 视为不可售并记录 error，由活动启动预热或人工对账恢复。
+     * 抛出状态异常并保留原参与，由人工对账恢复后使用原请求继续。
      */
     @Override
     public StrategyAwardStockDeductResultVO deductStockByRedis(Long strategyId, String awardId) {
         String stockKey = Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT(strategyId, awardId);
-        long currentStockSurplusCount;
         try {
-            String cacheValue = redisUtil.get(stockKey);
-            if (cacheValue == null || cacheValue.length() == 0) {
-                logger.error("strategy award stock key missing on running strategy, treated as sold out. "
-                        + "run stock warmup/recovery, strategyId:{} awardId:{} key:{}", strategyId, awardId, stockKey);
-                return StrategyAwardStockDeductResultVO.soldOut();
-            }
-            currentStockSurplusCount = Long.parseLong(cacheValue);
+            // Lua 将存在性检查与条件扣减合并；缺失 Key 抛出，只有真实售罄才返回 soldOut。
+            long remaining = redisUtil.deductStock(stockKey);
+            return remaining < 0 ? StrategyAwardStockDeductResultVO.soldOut()
+                    : StrategyAwardStockDeductResultVO.success();
         } catch (Exception e) {
-            logger.error("read strategy award stock from redis failed, fail closed. strategyId:{} awardId:{}",
-                    strategyId, awardId, e);
+            logger.error("deduct strategy award stock failed, strategyId:{} awardId:{} key:{}",
+                    strategyId, awardId, stockKey, e);
             throw new IllegalStateException("strategy award stock state unavailable", e);
         }
-
-        if (currentStockSurplusCount <= 0) {
-            return StrategyAwardStockDeductResultVO.soldOut();
-        }
-
-        long stockSurplusCount = redisUtil.decr(stockKey, 1);
-        if (stockSurplusCount < 0) {
-            redisUtil.incr(stockKey, 1);
-            return StrategyAwardStockDeductResultVO.soldOut();
-        }
-        return StrategyAwardStockDeductResultVO.success();
     }
 
     @Override
     public void recoverStrategyAwardStockByRedis(Long strategyId, String awardId) {
         String stockKey = Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT(strategyId, awardId);
         try {
-            redisUtil.incr(stockKey, 1);
+            redisUtil.recoverStock(stockKey);
         } catch (Exception e) {
             logger.error("recover strategy award stock by redis failed, strategyId:{} awardId:{}", strategyId,
                     awardId, e);
+            // 回补失败必须暴露，不能只写日志就让调用方认为补偿已完成。
+            throw e;
         }
     }
 

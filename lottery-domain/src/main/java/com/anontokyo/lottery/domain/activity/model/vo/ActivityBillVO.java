@@ -19,8 +19,6 @@ public class ActivityBillVO {
     private Date beginDateTime;
     /** 结束时间 */
     private Date endDateTime;
-    /** 库存剩余 */
-    private Integer stockSurplusCount;
     /**
      * 活动状态：1编辑、2提审、3撤审、4通过、5运行(审核通过后worker扫描状态)、6拒绝、7关闭、8开启
      * Constants.ActivityState
@@ -34,8 +32,6 @@ public class ActivityBillVO {
     /** 剩余可领取次数 */
     private Integer userTakeLeftCount;
 
-    /** 库存 */
-    private Integer stockCount;
 
     public String getuId() {
         return uId;
@@ -77,13 +73,6 @@ public class ActivityBillVO {
         this.endDateTime = endDateTime;
     }
 
-    public Integer getStockSurplusCount() {
-        return stockSurplusCount;
-    }
-
-    public void setStockSurplusCount(Integer stockSurplusCount) {
-        this.stockSurplusCount = stockSurplusCount;
-    }
 
     public Integer getState() {
         return state;
@@ -117,13 +106,6 @@ public class ActivityBillVO {
         this.userTakeLeftCount = userTakeLeftCount;
     }
 
-    public Integer getStockCount() {
-        return stockCount;
-    }
-
-    public void setStockCount(Integer stockCount) {
-        this.stockCount = stockCount;
-    }
 
     @Override
     public String toString() {
@@ -133,8 +115,6 @@ public class ActivityBillVO {
                 ", activityName='" + activityName + '\'' +
                 ", beginDateTime=" + beginDateTime +
                 ", endDateTime=" + endDateTime +
-                ", stockCount=" + stockCount +
-                ", stockSurplusCount=" + stockSurplusCount +
                 ", state=" + state +
                 ", takeCount=" + takeCount +
                 ", userTakeLeftCount=" + userTakeLeftCount +

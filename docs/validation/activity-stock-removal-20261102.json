@@ -1,0 +1,271 @@
+{
+  "date": "2026-11-02",
+  "scope": "移除活动总库存，保留个人参与次数和策略奖品库存",
+  "suites": [
+    {
+      "suite": "com.anontokyo.lottery.infrastructure.repository.StockReservationTransactionsTest",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "javaVersion": "1.8.0_482",
+      "cases": [
+        "failureBeforeTransactionBeginsCanRestoreTheReservation",
+        "recoveryFailureIsAttachedWithoutReplacingTheSqlRootCause",
+        "failedRollbackMustNotPretendThatWritesWereUndone",
+        "explicitBusinessRollbackIsCompensatedByTheExistingCallerOnly",
+        "ambiguousCommitMustNotIncreaseInventory",
+        "confirmedRollbackRestoresStockAndPreservesTheSqlFailure"
+      ]
+    },
+    {
+      "suite": "com.anontokyo.lottery.test.domain.DrawRequestIdempotencyTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "javaVersion": "1.8.0_482",
+      "cases": [
+        "interruptedTakeIsReusedNotDuplicated",
+        "queryFailureStopsBeforeAnySideEffects",
+        "retryWithSameRequestIdReplaysConsumedTakeWithoutSideEffects",
+        "unfinishedConflictIsForwardedWithoutDrawing",
+        "guardIsAlwaysReleasedWithOwnerToken",
+        "losingCasConflictReplaysConcurrentWinningOrder",
+        "firstRequestRunsFullPipeline"
+      ]
+    },
+    {
+      "suite": "com.anontokyo.lottery.test.domain.PartakeRequestOwnershipTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "javaVersion": "1.8.0_482",
+      "cases": [
+        "closedOrFutureActivityDoesNotReachQuotaTransaction",
+        "differentRequestIsBlockedAndCanRecoverOriginalId",
+        "databaseFailureMustNotCreateParticipation",
+        "exhaustedPersonalQuotaRejectsNewParticipation",
+        "runningActivityAcquiresOnlyPersonalQuota",
+        "missingOwnershipIsExplicitError",
+        "sameRequestResumesWithoutAnotherQuotaDeduction"
+      ]
+    },
+    {
+      "suite": "com.anontokyo.lottery.test.domain.SnowflakeNodeConfigurationTest",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "javaVersion": "1.8.0_482",
+      "cases": [
+        "configuredNodesOnTheSameHostGenerateDistinctIds"
+      ]
+    },
+    {
+      "suite": "com.anontokyo.lottery.test.domain.WeightedRandomSelectorTest",
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "javaVersion": "1.8.0_482",
+      "cases": [
+        "build_keepsMicroPrecisionWeights",
+        "select_hitsCorrectBoundaries",
+        "negativeRateIsRejected",
+        "overHundredPercentIsRejected",
+        "sampleDistributionStaysWithinBounds",
+        "zeroProbabilityAwardNeverSelected",
+        "randomDrawNeverThrowsAndRespectsNullForFullNoPrize"
+      ]
+    },
+    {
+      "suite": "com.anontokyo.lottery.test.infrastructure.CacheTransactionInvalidationTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "javaVersion": "1.8.0_482",
+      "cases": [
+        "rolledBackConfigurationDoesNotInvalidateTheCommittedCache",
+        "activityInvalidationWaitsForCommit",
+        "snapshotInvalidationWaitsForCommit"
+      ]
+    },
+    {
+      "suite": "com.anontokyo.lottery.test.infrastructure.lock.RedisActivityDrawProcessGuardTest",
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "javaVersion": "1.8.0_482",
+      "cases": [
+        "releaseMustUseOwnerCompareAndDeleteNotPlainDel",
+        "shouldReturnTrueWhenDrawInflightKeyIsClaimed",
+        "shouldReturnFalseWhenDrawInflightKeyAlreadyExists",
+        "tryClaimStoresRandomTokenAsLockValue",
+        "shouldFailClosedWhenRedisClaimThrowsException"
+      ]
+    },
+    {
+      "suite": "com.anontokyo.lottery.test.manual.ActivitySchemaMigrationManualIT",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "javaVersion": "1.8.0_482",
+      "cases": [
+        "freshSeedsAndLegacyUpgradePreserveActivityAndPrizeData"
+      ]
+    },
+    {
+      "suite": "com.anontokyo.lottery.test.manual.DrawRequestOwnershipManualIT",
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "javaVersion": "1.8.0_482",
+      "cases": [
+        "orderInsertSqlFailureRollsBackConsumptionAndAResumes",
+        "firstReplayThenNewRoundAcrossAllShards",
+        "competingLastPersonalChanceCreatesExactlyOneTake",
+        "concurrentSameRequestCreatesOneTakeAndOneOrder",
+        "requestIdComparisonMatchesJavaBytes",
+        "realSqlFailureLeavesQuotaAndTakeUntouched",
+        "legacyTakeWithoutRequestOwnershipCannotBeClaimedByB",
+        "exhaustedQuotaDoesNotCreateTakeWithMatchedRowsDriver",
+        "concurrentDifferentRequestsRollbackLosingQuota",
+        "interruptionBlocksBAndAResumesWithoutCache"
+      ]
+    },
+    {
+      "suite": "com.anontokyo.lottery.test.manual.FinalBusinessE2eManualIT",
+      "tests": 22,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "javaVersion": "1.8.0_482",
+      "cases": [
+        "sharedPoolMissingKeyRequiresReconciliationBeforeAnotherStart",
+        "competingHttpRequestsCannotOverdrawQuota",
+        "stockGapIsDurableBlockedAndReconciledOrderCanFinish",
+        "httpPipelineReplaysRequestsAndRoutesAllEightTables",
+        "sharedStrategyPreservesLiveStockAndSettlesBothActivities",
+        "rolledBackOrderRestoresItsAwardReservation",
+        "expiredPassedAndRunningActivitiesCloseWithoutWarmup",
+        "noPrizeConsumesPersonalQuotaAndReplaysTheSameTake",
+        "redisOutagePreventsStartAndRecoversAfterRestart",
+        "realSqlFailureDoesNotAckOrBlockAndBrokerReplayCanSettle",
+        "rolledBackParticipationDoesNotConsumeQuotaOrReserveAwards",
+        "concurrentStartsAreSerializedAndDoNotResetStock",
+        "createdActivityHasQuotaAndStrategyWithOnlyAwardStock",
+        "partialWarmupFailureKeepsPassAndSetNxPreservesExistingStock",
+        "createFailureRollsBackActivityStrategyAndAwards",
+        "scanReturnsEveryCursorAcrossMoreThanTenActivities",
+        "soldOutAwardsStillConsumeQuotaAndReplayLosingResults",
+        "warmupUsesRemainingPrizeStockAndRejectsInvalidConfiguration",
+        "missingAwardInventoryPreservesTheUnfinishedTake",
+        "concurrentSharedActivityStartsUseOnePrizePool",
+        "unfinishedRequestOwnershipRecoversThroughHttp",
+        "futureActivityIsNotStartedOrWarmed"
+      ]
+    },
+    {
+      "suite": "com.anontokyo.lottery.test.manual.MqMiddlewareE2eManualIT",
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "javaVersion": "1.8.0_482",
+      "cases": [
+        "completePipelineRoutesAcrossAllEightOrderTables",
+        "timedOutSentStockIsReallyResentAndConsumed",
+        "invoiceCompensationRecoversFailSentAndLegacyComplete",
+        "consumersFinishBeforeInjectedLateFailureCallbacks",
+        "consumersFinishBeforeDelayedSuccessCallbacks",
+        "stockGapStopsAutomaticResendUntilReconciled",
+        "actualBrokerFailureIsRetriedAfterKafkaRestarts",
+        "duplicateBrokerMessagesDoNotRepeatInventoryOrGrant",
+        "realRedisExpiryAndOutOfOrderRetryCallbacksRemainSafe"
+      ]
+    },
+    {
+      "suite": "com.anontokyo.lottery.test.manual.MqStateCasManualIT",
+      "tests": 13,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "javaVersion": "1.8.0_482",
+      "cases": [
+        "retryCallbacksOutOfOrderKeepSendSuccessUntilConsumption",
+        "stockConsumerCompletesBeforeRealProducerCallbacks",
+        "concurrentSqlUpdatesNeverUndoConsumption",
+        "realScanSqlRecoversPendingStatesAndExcludesCompletedAwards",
+        "stockStateMatrixAllowsRetriesAndProtectsSentAndComplete",
+        "invoiceConsumerAndLateCallbacksShareRealCas",
+        "completedStockCannotBeOverwrittenByLateCallbacks",
+        "invoiceStateMatrixRequiresGrantFactForCompletion",
+        "invoiceRetriesAlsoIgnoreOldFailuresAfterNewSuccess",
+        "duplicateAndLateEventsDoNotPostponeTimeout",
+        "legacyInvoiceCompleteWithoutGrantIsActuallyRecoverable",
+        "stockGapBlocksCallbacksButSuccessfulLedgerCanComplete",
+        "timedOutStockCanBeResentEvenIfRetrySendFails"
+      ]
+    },
+    {
+      "suite": "com.anontokyo.lottery.test.manual.RedisStockFailureManualIT",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "javaVersion": "1.8.0_482",
+      "cases": [
+        "awardRecoveryMustNotRecreateMissingInventory",
+        "competingAwardDeductionsSellExactlyTheAvailableStock",
+        "soldOutAwardRemainsZeroAndReturnsNoPrize",
+        "awardRecoveryFailureMustReachTheCaller",
+        "awardRecoveryRestoresExactlyOneReservation",
+        "missingAwardStockIsAnErrorInsteadOfALosingDraw"
+      ]
+    },
+    {
+      "suite": "com.anontokyo.lottery.test.mq.MqCallbackStateTest",
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "javaVersion": "1.8.0_482",
+      "cases": [
+        "stockOutboxDispatchUsesScanWithoutPerOrderRead",
+        "otherConsumerCompletedInvoiceAlsoClosesMqBeforeAck",
+        "stockCompletionInvoiceSendUsesSentAndFailCallbacks",
+        "invoiceConsumerClosesMqBeforeAck",
+        "compensationSuccessMeansSent",
+        "stockGapPersistenceErrorMustPreventAck",
+        "duplicateGrantedInvoiceRepairsMqAndAcknowledges",
+        "stockGapPersistsReconciliationBeforeAcknowledgment",
+        "mqCloseSqlErrorMustPreventAck"
+      ]
+    },
+    {
+      "suite": "com.anontokyo.lottery.test.web.DrawHttpOwnershipTest",
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "javaVersion": "1.8.0_482",
+      "cases": [
+        "missingRequestIdCannotEnterApplication",
+        "blockedBReturnsAThroughSeparateRecoveryField",
+        "unknownResultRetainsOriginalRequestId"
+      ]
+    }
+  ],
+  "total": {
+    "tests": 109,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  }
+}

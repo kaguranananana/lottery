@@ -16,7 +16,8 @@
 
 | 主题 | 设计与实现 |
 | --- | --- |
-| 并发库存 | Redis 原子预扣控制活动与奖品库存，MySQL 条件更新作为持久化结算约束 |
+| 参与约束 | 用户受个人 `take_count` 限制，活动没有独立的总抽奖名额 |
+| 奖品库存 | Redis 原子预扣控制策略奖品库存，MySQL 条件更新完成持久化结算 |
 | 请求幂等 | `requestId` 标识一次逻辑抽奖，配合数据库唯一约束、未完成参与恢复和结果回放 |
 | 可靠异步结算 | 中奖订单和待投递状态在同一事务写入，通过 Transactional Outbox + Kafka 异步结算 |
 | 消费幂等与补偿 | `UNIQUE(order_id)` 结算账本、状态 CAS 和 XXL-Job 扫描处理重复消费与失败恢复 |
@@ -47,21 +48,23 @@ flowchart TD
 
 1. HTTP 接口接收 `userId`、`activityId` 和 `requestId`，进入应用层编排。
 2. 通过短时并发锁、请求号及参与记录，判断是新请求、结果回放还是未完成请求恢复。
-3. 校验活动和剩余参与次数，在 Redis 预扣活动库存，并在 MySQL 事务中记录参与事实。
-4. 读取策略快照进行加权随机抽样；中奖时预扣奖品 Redis 库存。
-5. 创建中奖订单，并将待结算状态作为 Outbox 义务持久化。
-6. XXL-Job 扫描 Outbox，将结算事件发送到 Kafka；消费者用唯一账本与条件更新完成 MySQL 库存结算，随后推进模拟发奖。
+3. 校验活动状态和时间；TX1 在同一用户分片事务中条件扣减个人次数并创建参与记录。
+4. 读取策略快照进行加权随机抽样；命中奖品后预扣其 Redis 库存。未中奖或命中已售罄奖品时消费参与记录，仍消耗一次个人机会。
+5. TX2 在同一用户分片事务中消费参与记录、创建中奖订单并写入 `stock_mq_state=INIT`。
+6. XXL-Job 扫描 Outbox 并发送 Kafka；TX3 在全局库事务中插入唯一账本、条件扣减 MySQL 奖品库存，再发送发奖消息。三个事务独立提交。
 
 ## 关键技术设计
 
 ### 1. 库存一致性：Redis 预扣与 MySQL 结算
 
-- **Redis** 承担高并发下的活动库存与奖品库存原子预扣，避免大量请求直接竞争数据库库存行。
+- **Redis** 按 `strategyId + awardId` 原子预扣奖品库存，避免每次中奖直接竞争 MySQL 库存行；活动自身不维护库存。
 - **MySQL** 保留持久化记录，奖品库存采用 `surplus > 0` 条件更新，阻止并发结算导致负库存。
-- 活动开始前由调度任务预热库存，活动状态通过数据库行锁和条件更新推进。
-- 对运行中丢失的 Redis 库存 Key 采用 **fail closed**：拒绝本次活动抽奖或将对应奖品视为不可售，不使用可能滞后的 MySQL 库存直接回填，避免“库存复活”。
+- 活动启动持有活动行锁及共享策略行锁；只用 MySQL 奖品剩余量 SETNX 预热，成功后才 CAS 到 DOING。第二个活动引用相同策略时共享已有奖池，保留实时余额。
+- 奖品库存 Key 缺失时明确报错，保留原未消费 take 与 requestId；只有真实售罄才视为未中奖。已运行或关闭的共享奖池缺 Key 时阻止新活动启动，须先对账，不能用滞后 MySQL 值回填。
 
-Redis 预扣与数据库异步结算并非跨存储原子事务，因此系统还需要结算账本、状态管理和故障补偿来处理不一致窗口。
+系统仅保留“用户个人参与次数”和“策略奖品库存”两种限制。旧活动总库存的 MySQL 剩余量没有完整结算链路，本次取消全场名额限制并移除两列及 Redis 预扣/回补；详见 [业务简化与迁移](docs/activity-stock-removal.md)。
+
+Redis 预扣与 MySQL 下单不是跨存储原子事务。明确业务拒绝与确认回滚时保留现有奖品回补；预扣后 JVM 退出、事务结果未知或回补失败仍可能遗留预留，需要按订单和账本对账。
 
 ### 2. 请求幂等：同一次抽奖只消耗一次机会
 
@@ -116,7 +119,7 @@ Kafka 按 `orderId` 发送结算事件，消费端将两项操作放在同一个
 
 ### 完整链路持续负载
 
-在本地单应用、单 Kafka Broker、模拟发奖条件下：
+以下为 2026-10 的历史双库存实现数据，本次业务简化后未重测容量，不能据此认定当前版本性能。在当时的本地单应用、单 Kafka Broker、模拟发奖条件下：
 
 - **150 RPS** 完成两次连续 **300 秒** 的完整异步链路验收，满足预设 HTTP、积压增长、异步完成和最终业务审计条件。
 - 更高的 **180 / 200 RPS** 长时间测试未全部满足稳定性条件；150 RPS 的早期一次测试也未通过，因此不能据此认定最大稳定容量。
@@ -157,8 +160,11 @@ mvn clean package
 
 1. 准备独立的 MySQL 测试实例，创建 `lottery`、`lottery_01` 和 `lottery_02` 三个数据库。
 2. 参考 `doc/sql/` 中的基线结构、库存 Outbox 和补偿索引脚本，以及 `docs/sql/V2__architecture_simplification.sql`、`docs/sql/V3__draw_request_ownership.sql` 完成建表及迁移。**部分基线脚本包含 `DROP TABLE` 和历史测试数据，只能在独立测试库操作；V2 包含需要按物理表处理的说明性 SQL，不能将其当作一键完整迁移。**
+   新建库的 `activity` 已无库存列，不执行 V4；旧库升级须停旧版应用与任务后执行 [V4__remove_activity_stock.sql](docs/sql/V4__remove_activity_stock.sql)，再启动新版。V4 只删除活动两列，不改用户分片、订单或结算账本；不自动执行。顺序与新旧场景详见 [迁移说明](docs/activity-stock-removal.md)。
 3. 根据本地环境配置 `lottery-interfaces/src/main/resources/application.yml`，包括 MySQL、Redis、Kafka 和 XXL-Job 地址及凭据；默认配置的 MySQL 端口为 `13306`、Redis 为 `6379`、Kafka 为 `9092`。
 4. 启动所需中间件与应用；活动应按正常状态流转完成库存预热，不能仅将数据库状态改为运行中来跳过预热。
+
+本地单实例的 Snowflake 节点默认 `LOTTERY_WORKER_ID=0`、`LOTTERY_DATACENTER_ID=1`。多实例部署必须给同一数据中心内每个实例分配不同的 0..31 worker-id；节点号不再从 IP 推导，也没有自动注册分配。
 
 ```bash
 java -jar lottery-interfaces/target/Lottery.war
@@ -184,7 +190,8 @@ curl -X POST http://localhost:8080/api/v1/draw \
 - `*ManualIT` 集成测试需要专用中间件、数据库初始化和测试配置；部分场景会修改专用测试库或停启 Broker，**不要直接对现有业务环境批量运行**。
 - 完整 E2E 覆盖真实 HTTP 请求、两库八张订单分表、库存结算、消息重复投递、故障恢复和本地模拟发奖。
 
-测试环境、覆盖范围与验证边界见 [正确性与 E2E 验证](docs/final-correctness-e2e.md)。
+本次业务简化的实际命令、结果和覆盖边界见 [2026-11-02 重构验证](docs/activity-stock-removal.md)。历史测试环境与证据见 [正确性与 E2E 验证](docs/final-correctness-e2e.md)。
+后续库存异常、事务回补与缓存时序修复，以及当前剩余 failure case，见 [2026-10-24 故障评估](docs/failure-review-20261024.md)。
 
 ## 项目结构
 
@@ -212,6 +219,7 @@ docs                      架构、幂等、一致性与 E2E 设计文档
 
 ## 延伸阅读
 
+- [取消活动总库存：流程、迁移与验证](docs/activity-stock-removal.md)
 - [架构设计与组件取舍](docs/architecture.md)
 - [抽奖请求幂等](docs/draw-request-idempotency.md)
 - [Kafka 消息状态与 CAS](docs/kafka-mq-state-cas.md)

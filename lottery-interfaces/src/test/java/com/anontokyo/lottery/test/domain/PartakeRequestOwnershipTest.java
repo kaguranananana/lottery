@@ -4,9 +4,11 @@ import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.activity.model.req.PartakeReq;
 import com.anontokyo.lottery.domain.activity.model.res.PartakeResult;
 import com.anontokyo.lottery.domain.activity.model.vo.UserTakeActivityVO;
+import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
 import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
 import com.anontokyo.lottery.domain.activity.repository.IUserTakeActivityRepository;
 import com.anontokyo.lottery.domain.activity.service.partake.impl.ActivityPartakeImpl;
+import com.anontokyo.lottery.domain.support.ids.IdGenerator;
 import org.junit.Before;
 import org.junit.Test;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -30,7 +32,7 @@ public class PartakeRequestOwnershipTest {
     }
 
     @Test
-    public void sameRequestResumesWithoutQuotaOrStock() {
+    public void sameRequestResumesWithoutAnotherQuotaDeduction() {
         unfinished("A");
         PartakeResult result = partake.doPartake(new PartakeReq("u1", 1L, "A"));
         assertEquals(Constants.ResponseCode.NOT_CONSUMED_TAKE.getCode(), result.getCode());
@@ -67,6 +69,57 @@ public class PartakeRequestOwnershipTest {
             assertEquals("database unavailable", expected.getMessage());
         }
         verifyZeroInteractions(activities);
+    }
+
+    @Test
+    public void runningActivityAcquiresOnlyPersonalQuota() {
+        ActivityBillVO bill = runningBill();
+        when(repository.takeParticipation(eq(bill), any(), eq(9L), eq("A")))
+                .thenReturn(Constants.ResponseCode.SUCCESS);
+        PartakeResult result = partake.doPartake(new PartakeReq("u1", 1L, "A"));
+        assertEquals(Constants.ResponseCode.SUCCESS.getCode(), result.getCode());
+        assertEquals(Long.valueOf(9), result.getTakeId());
+        assertEquals(Long.valueOf(8), result.getStrategyId());
+        verify(activities).queryActivityBill(any());
+        verifyNoMoreInteractions(activities);
+    }
+
+    @Test
+    public void exhaustedPersonalQuotaRejectsNewParticipation() {
+        ActivityBillVO bill = runningBill();
+        when(repository.takeParticipation(eq(bill), any(), eq(9L), eq("A")))
+                .thenReturn(Constants.ResponseCode.NO_UPDATE);
+        PartakeResult result = partake.doPartake(new PartakeReq("u1", 1L, "A"));
+        assertEquals(Constants.ResponseCode.NO_UPDATE.getCode(), result.getCode());
+        assertNull(result.getTakeId());
+    }
+
+    @Test
+    public void closedOrFutureActivityDoesNotReachQuotaTransaction() {
+        ActivityBillVO bill = runningBill();
+        bill.setState(Constants.ActivityState.CLOSE.getCode());
+        assertEquals(Constants.ResponseCode.UN_ERROR.getCode(),
+                partake.doPartake(new PartakeReq("u1", 1L, "A")).getCode());
+        bill.setState(Constants.ActivityState.DOING.getCode());
+        bill.setBeginDateTime(new java.util.Date(Long.MAX_VALUE));
+        assertEquals(Constants.ResponseCode.UN_ERROR.getCode(),
+                partake.doPartake(new PartakeReq("u1", 1L, "B")).getCode());
+        verify(repository, never()).takeParticipation(any(), any(), anyLong(), anyString());
+    }
+
+    private ActivityBillVO runningBill() {
+        // 配置仅含活动时间、状态、策略和个人次数，不再构造活动库存。
+        ActivityBillVO bill = new ActivityBillVO();
+        bill.setuId("u1");
+        bill.setActivityId(1L);
+        bill.setStrategyId(8L);
+        bill.setTakeCount(3);
+        bill.setState(Constants.ActivityState.DOING.getCode());
+        bill.setBeginDateTime(new java.util.Date(0));
+        bill.setEndDateTime(new java.util.Date(Long.MAX_VALUE));
+        when(activities.queryActivityBill(any())).thenReturn(bill);
+        ReflectionTestUtils.setField(partake, "idGenerator", (IdGenerator) () -> 9L);
+        return bill;
     }
 
     private void unfinished(String requestId) {

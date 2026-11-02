@@ -20,11 +20,48 @@ import java.util.concurrent.TimeUnit;
 @Component
 public class RedisUtil {
 
+    /** 检查存在性、判断余量及扣减在同一个脚本内完成，避免读后删 Key 或进程中断留下负库存。 */
+    private static final DefaultRedisScript<Long> DEDUCT_STOCK = new DefaultRedisScript<>(
+            // 读取当前库存；脚本执行期间其它命令不能插入。
+            "local stock = redis.call('GET', KEYS[1]); "
+                    // 缺失是状态错误，与售罄使用不同返回值。
+                    + "if not stock then return -1 end; "
+                    // 售罄直接拒绝，不先减成负数再回补。
+                    + "if tonumber(stock) <= 0 then return -2 end; "
+                    // 仅对存在且有余量的库存执行一次扣减。
+                    + "return redis.call('DECR', KEYS[1]);", Long.class);
+
+    /** 回补只作用于现存库存；禁止 INCR 隐式创建一个余量为 1 的新 Key。 */
+    private static final DefaultRedisScript<Long> RECOVER_STOCK = new DefaultRedisScript<>(
+            // 与 INCR 放在同一个原子脚本内，避免存在性检查后的删除竞争。
+            "if redis.call('EXISTS', KEYS[1]) == 0 then return -1 end; "
+                    // 现存库存才允许归还本次预扣量。
+                    + "return redis.call('INCR', KEYS[1]);", Long.class);
+
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
 
     @Resource
     private StringRedisTemplate stringRedisTemplate;
+
+    /** 返回非负剩余库存；-2 表示售罄，缺失库存或 Redis 执行失败直接抛出。 */
+    public long deductStock(String key) {
+        long remaining = stringRedisTemplate.execute(DEDUCT_STOCK, Collections.singletonList(key));
+        // 缺失库存不得转换为正常未中奖，更不能从数据库热路径回填。
+        if (remaining == -1L) {
+            throw new IllegalStateException("库存 Key 不存在，key=" + key);
+        }
+        return remaining;
+    }
+
+    /** 仅归还已有 Key 的一个预扣量；异常交给业务调用方处理。 */
+    public void recoverStock(String key) {
+        long remaining = stringRedisTemplate.execute(RECOVER_STOCK, Collections.singletonList(key));
+        // 需要对账恢复的缺失库存必须保持缺失，不能伪造恢复成功。
+        if (remaining == -1L) {
+            throw new IllegalStateException("回补库存 Key 不存在，key=" + key);
+        }
+    }
 
 
     public long incr(String key, int delta) {

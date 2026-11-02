@@ -11,10 +11,10 @@ import com.anontokyo.lottery.application.process.draw.impl.ActivityProcessImpl;
 import com.anontokyo.lottery.application.process.draw.req.DrawProcessReq;
 import com.anontokyo.lottery.application.process.draw.res.DrawProcessResult;
 import com.anontokyo.lottery.common.Constants;
-import com.anontokyo.lottery.domain.activity.model.res.StockResult;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
 import com.anontokyo.lottery.domain.activity.model.vo.UserTakeActivityVO;
 import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
+import com.anontokyo.lottery.domain.strategy.repository.IStrategyRepository;
 import com.anontokyo.lottery.domain.activity.service.partake.impl.ActivityPartakeImpl;
 import com.anontokyo.lottery.domain.award.service.order.impl.AwardOrderImpl;
 import com.anontokyo.lottery.domain.strategy.model.res.DrawResult;
@@ -50,7 +50,7 @@ import static org.mockito.Mockito.*;
 /**
  * 隔离 MySQL 集成测试：真实生产 Mapper、路由切面、事务及 Repository。
  * 必须在专用空 MySQL 实例运行，会建立 lottery/lottery_01/lottery_02 和测试表。
- * Redis 未消费缓存不再参与决策；仅活动库存、抽样与短锁用 Mock，数据库不使用 Mock。
+ * Redis 未消费缓存不再参与决策；仅活动配置、奖品抽样/预扣与短锁用 Mock，数据库不使用 Mock。
  */
 public class DrawRequestOwnershipManualIT {
     private static String mysqlUrl;
@@ -58,6 +58,7 @@ public class DrawRequestOwnershipManualIT {
     private static IDBRouterStrategy router;
     private static UserTakeActivityRepository takes;
     private static OrderRepository orders;
+    private IStrategyRepository stockReservations;
     private ActivityProcessImpl process;
     private IDrawExec draw;
     private String user;
@@ -140,19 +141,15 @@ public class DrawRequestOwnershipManualIT {
         bill.setState(Constants.ActivityState.DOING.getCode());
         bill.setBeginDateTime(new java.util.Date(0));
         bill.setEndDateTime(new java.util.Date(Long.MAX_VALUE));
-        bill.setStockCount(100);
-        bill.setStockSurplusCount(100);
         IActivityRepository activities = mock(IActivityRepository.class);
+        // SQL 专项只模拟奖品预扣与回补，用户事务和路由保持真实。
+        stockReservations = mock(IStrategyRepository.class);
+        ReflectionTestUtils.setField(orders, "strategyRepository", stockReservations);
         when(activities.queryActivityBill(any())).thenReturn(bill);
-        StockResult stock = new StockResult(Constants.ResponseCode.SUCCESS.getCode(), "成功", 99);
-        when(activities.substractionActivityStockByRedis(anyString(), anyLong())).thenReturn(stock);
         IdGenerator generator = ids::incrementAndGet;
         ActivityPartakeImpl partake = new ActivityPartakeImpl();
         ReflectionTestUtils.setField(partake, "userTakeActivityRepository", takes);
         ReflectionTestUtils.setField(partake, "activityRepository", activities);
-        // 参与支持类与实现类各持有一个活动仓储字段，手动装配须同时设置。
-        ReflectionTestUtils.setField(partake, com.anontokyo.lottery.domain.activity.service.partake.ActivityPartakeSupport.class,
-                "activityRepository", activities, IActivityRepository.class);
         ReflectionTestUtils.setField(partake, "idGenerator", generator);
         AwardOrderImpl awardOrder = new AwardOrderImpl();
         ReflectionTestUtils.setField(awardOrder, "orderRepository", orders);
@@ -262,6 +259,18 @@ public class DrawRequestOwnershipManualIT {
     }
 
     @Test
+    public void competingLastPersonalChanceCreatesExactlyOneTake() throws Exception {
+        bill.setTakeCount(1);
+        // 绕过短锁，让八个真实用户事务竞争最后一次机会，零更新不得再 INSERT take。
+        List<Constants.ResponseCode> results = concurrent(8, index ->
+                takes.takeParticipation(bill, new java.util.Date(), ids.incrementAndGet(), "last-" + index));
+        assertEquals(1, Collections.frequency(results, Constants.ResponseCode.SUCCESS));
+        assertEquals(7, Collections.frequency(results, Constants.ResponseCode.NO_UPDATE));
+        assertEquals(0, leftCount());
+        assertEquals(1, takeCount());
+    }
+
+    @Test
     public void realSqlFailureLeavesQuotaAndTakeUntouched() throws Exception {
         assertEquals(Constants.ResponseCode.SUCCESS,
                 takes.takeParticipation(bill, new java.util.Date(), ids.incrementAndGet(), "A"));
@@ -302,6 +311,8 @@ public class DrawRequestOwnershipManualIT {
         }
         UserTakeActivityVO unfinished = takes.queryTakeActivityByRequestId(100001L, user, "A");
         assertEquals(Constants.TaskState.NO_USED.getCode(), unfinished.getState());
+        // 已确认回滚只回补本次预扣一次；真实 Redis 行为另由 HTTP E2E 验证。
+        verify(stockReservations).recoverStrategyAwardStockByRedis(10001L, "3");
         assertEquals(9, leftCount());
         assertEquals(0, orderCount());
         DrawProcessResult resumed = request("A");

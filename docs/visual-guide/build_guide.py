@@ -1,3 +1,4 @@
+"""历史生成器：适用于活动总库存重构前的快照；当前流程见activity-stock-removal.md。"""
 """构建离线教学内容与带实际行号的源码摘录，不读取运行数据库。"""
 import html
 import json
@@ -348,7 +349,7 @@ data["sources"] = sources
 (OUT / "guide-data.js").write_text("// 当前源码教学内容；T1/O1与库存数值均为教学示例。\nwindow.LOTTERY_GUIDE = " + json.dumps(data, ensure_ascii=False, indent=2) + ";\n")
 
 # 使用普通行锚点定位，直接双击 HTML 也可离线阅读。
-source_html = '''<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lottery · 源码证据</title><link rel="stylesheet" href="guide.css"><body class="source-page"><header><a href="index.html">← 回到图解</a><h1>沿着图，读到实际代码</h1><p>摘录来自本次读取的当前源码，行号对应实际文件；未引用部分省略，业务代码更新后需重新生成。</p><p id="source-mode"></p><input id="source-search" aria-label="按文件名筛选" placeholder="搜索文件名，例如 OrderRepository"></header><main>''' + "".join(blocks) + '''</main><script>
+source_html = '''<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lottery · 源码证据</title><link rel="stylesheet" href="guide.css"><body class="source-page"><header><p class="view-summary"><strong>活动总库存重构前的历史快照</strong>：本组图与源码摘录包含旧活动库存链路。2026-11-02已移除活动总库存，当前仅限制个人次数和策略奖品库存；当前流程、迁移与验证见 <a href="../activity-stock-removal.md">业务简化记录</a>。</p><a href="index.html">← 回到图解</a><h1>沿着图，读到实际代码</h1><p>摘录来自本次读取的当前源码，行号对应实际文件；未引用部分省略，业务代码更新后需重新生成。</p><p id="source-mode"></p><input id="source-search" aria-label="按文件名筛选" placeholder="搜索文件名，例如 OrderRepository"></header><main>''' + "".join(blocks) + '''</main><script>
 // 本机HTTP预览只服务图解目录，原项目文件不属于其URL范围。
 const localFileMode = location.protocol === 'file:';
 // 说明当前可访问范围，保留完整源码摘录与行号定位。

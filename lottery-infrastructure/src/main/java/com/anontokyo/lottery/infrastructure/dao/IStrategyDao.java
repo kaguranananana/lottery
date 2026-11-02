@@ -14,5 +14,8 @@ public interface IStrategyDao {
 
     Strategy queryStrategy(Long strategyId);
 
+    /** 在启动事务中锁定共享策略，串行化不同活动的奖品库存初始化。 */
+    Strategy queryStrategyForUpdate(Long strategyId);
+
     void insert(Strategy strategy);
 }

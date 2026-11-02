@@ -6,11 +6,13 @@
 
 ## 库存扣减与预热
 
-[ActivityRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityRepository.java) 对运行期活动库存 key 缺失返回 STOCK_STATE_ERROR 并记录 error；库存为零返回 OUT_OF_STOCK。[StrategyRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java) 对奖品库存 key 缺失记录 error 并按售罄处理，读取异常抛 IllegalStateException。两者都是 Redis 预扣，最终策略奖品库存结算在数据库。
+活动总库存及对应 Key、预扣、回补和响应码已移除。[StrategyRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java) 只预扣策略奖品库存。奖品 Key 缺失或 Redis 异常抛 IllegalStateException 并保留 cause，不能转换为未中奖并消费 take；只有真实售罄才返回 soldOut。最终奖品库存通过唯一账本在 MySQL 结算。
 
-当前操作读取 key 后执行原子 DECR，减成负数则 INCR 回补；不是把整个读、扣、回补过程包成一个 Lua 脚本。新改动不得将缺 key 改为热路径按 MySQL 剩余值回填，异步结算滞后的值会恢复已预扣库存。
+[RedisUtil.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/utils/RedisUtil.java) 的 `long deductStock(String key)` 在一个 Lua 脚本中读取、检查存在性及余量，再 DECR：非负结果是剩余量，-2 为售罄，缺失或命令错误抛出。`void recoverStock(String key)` 仅对现存 Key 原子 INCR，缺失时不创建 Key 并抛出；仓储回补日志后继续传播异常。不能恢复为 GET→DECR→负数 INCR 的分步实现，也不能在热路径按 MySQL 剩余值回填，异步结算滞后的值会恢复已预扣库存。真实 Redis 覆盖见 RedisStockFailureManualIT。
 
-warmupStockForActivity 仅允许 PASS 活动，使用 SELECT FOR UPDATE 与启动共用活动行锁。PASS→DOING 在锁内检查 begin <= now < end，所有 SETNX 成功或 Key 已存在后才提交状态。Redis 异常保留 Key 与堆栈并抛出，状态回滚为 PASS；部分已成功 Key 留存，下轮补齐且不覆盖实时值。重复启动返回 false；DOING/CLOSE 的直接预热抛出，运行期缺失库存须人工对账，不能从滞后数据库自动回填。详见[最终验证](../../../docs/final-correctness-e2e.md)。
+warmupAwardStockForActivity 仅允许 PASS 活动，与启动共用活动行锁，并锁定关联策略，避免不同活动同时初始化同一奖池。PASS→DOING 锁内检查 begin <= now < end，只预热奖品：从未投入使用的奖池以 MySQL award_surplus_count SETNX；现存值不覆盖。若已有 DOING/CLOSE 活动引用同一策略，仅检查奖品 Key 是否存在，缺失抛出待对账错误，不自动回填；CLOSE 后仍可能有在途订单，不能凭关闭推定库存可重建。
+
+Redis 故障使活动保持 PASS。新奖池部分预热成功保留，下一轮 SETNX 补齐；重复启动返回 false，DOING/CLOSE 的直接预热抛出。共享奖池 Key 在运行期缺失时，抽奖和第二个活动启动都不能用滞后 MySQL 值复活库存。见 [重构与验证](../../../docs/activity-stock-removal.md)。
 
 ## 并发锁
 
@@ -24,8 +26,10 @@ warmupStockForActivity 仅允许 PASS 活动，使用 SELECT FOR UPDATE 与启�
 
 [application.yml](../../../lottery-interfaces/src/main/resources/application.yml) 的实际配置：快照 L1 60 秒、最大 10,000 条，L2 600 秒加 0..120 秒抖动，空值 60 秒；活动 300 秒加 0..60 秒抖动，空值 30 秒；未消费 take 1800 秒。配置以运行时绑定值为准，不照抄 [CacheConfigProperties.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/cache/CacheConfigProperties.java) 中未生效的默认值作为环境事实。
 
-缓存失效只删除当前实例 L1 和共享 Redis，不广播给其它实例，因此使用短 TTL 最终一致。现有缓存读取异常与回写异常处理不同：Redis 读/JSON 解析会抛出，回写或失效失败记录日志后继续。不能声称所有 Redis 缓存失败均自动回源；库存 key 也不能套用配置缓存的 miss 策略。
+配置写入的缓存失效在事务 afterCommit 执行；事务回滚不失效，没有外层事务则即时失效。不能在提交前删除缓存，否则其它请求可能回源旧的已提交行并缓存到 TTL 到期。CacheTransactionInvalidationTest 验证活动、快照的提交顺序与回滚行为。
+
+失效只删除当前实例 L1 和共享 Redis，不广播给其它实例，因此仍使用短 TTL 最终一致，也不消除已经在途的旧版本加载。现有缓存读取异常与回写异常处理不同：Redis 读/JSON 解析会抛出，回写或失效失败记录日志后继续。不能声称所有 Redis 缓存失败均自动回源；库存 key 也不能套用配置缓存的 miss 策略。
 
 ## 未完成参与记录
 
-未消费 take 不再缓存读写，归属与是否允许新建一律查询 MySQL。旧 Redis key/TTL 配置可自然留存，缓存过期、缺字段或陈旧数据不能改变请求归属。活动库存与抽奖短锁仍按原逻辑使用 Redis。
+未消费 take 不再缓存读写，归属与是否允许新建一律查询 MySQL。旧 Redis key/TTL 配置可自然留存，缓存过期、缺字段或陈旧数据不能改变请求归属。奖品库存和抽奖短锁仍使用 Redis，参与事务只扣个人次数。

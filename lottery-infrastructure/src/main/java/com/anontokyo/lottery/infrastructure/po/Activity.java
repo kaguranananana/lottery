@@ -32,8 +32,6 @@ public class Activity {
      * 策略ID
      */
     private Long strategyId;
-    // 库存
-    private Integer stockCount;
 
     // 每人可参与次数
     private Integer takeCount;
@@ -47,20 +45,9 @@ public class Activity {
     // 创建时间
     private Date createTime;
 
-    public Integer getStockSurplusCount() {
-        return stockSurplusCount;
-    }
-
-    public void setStockSurplusCount(Integer stockSurplusCount) {
-        this.stockSurplusCount = stockSurplusCount;
-    }
 
     // 修改时间
     private Date updateTime;
-    /**
-     * 库存剩余
-     */
-    private Integer stockSurplusCount;
 
 
     public Long getId() {
@@ -111,13 +98,6 @@ public class Activity {
         this.endDateTime = endDateTime;
     }
 
-    public Integer getStockCount() {
-        return stockCount;
-    }
-
-    public void setStockCount(Integer stockCount) {
-        this.stockCount = stockCount;
-    }
 
     public Integer getTakeCount() {
         return takeCount;

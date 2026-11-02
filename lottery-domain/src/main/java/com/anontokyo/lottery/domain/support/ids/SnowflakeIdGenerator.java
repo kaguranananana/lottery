@@ -1,31 +1,31 @@
 package com.anontokyo.lottery.domain.support.ids;
 
 import cn.hutool.core.lang.Snowflake;
-import cn.hutool.core.net.NetUtil;
 import cn.hutool.core.util.IdUtil;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 
 /**
- * Hutool Snowflake：workerId 取本机 IP 派生值低 5 位。
- * 单实例部署下没有冲突问题；多实例部署时应改为配置或注册中心分配 workerId（known limitation）。
+ * Hutool Snowflake：节点号由部署配置提供，同一数据中心的实例必须使用不同 workerId。
+ * 不再从 IP 网段推导节点号，避免同宿主机或同网段实例落到同一编号。
  */
 @Component
 public class SnowflakeIdGenerator implements IdGenerator {
 
     private Snowflake snowflake;
 
+    @Value("${lottery.ids.worker-id}")
+    private long workerId;
+
+    @Value("${lottery.ids.datacenter-id}")
+    private long datacenterId;
+
     @PostConstruct
     public void init() {
-        long workerId;
-        try {
-            workerId = NetUtil.ipv4ToLong(NetUtil.getLocalhostStr());
-        } catch (Exception e) {
-            workerId = NetUtil.getLocalhostStr().hashCode();
-        }
-        workerId = workerId >> 16 & 31;
-        snowflake = IdUtil.createSnowflake(workerId, 1L);
+        // 直接使用显式节点配置；超出 Snowflake 范围的配置由构造器在启动时拒绝。
+        snowflake = IdUtil.createSnowflake(workerId, datacenterId);
     }
 
     @Override
