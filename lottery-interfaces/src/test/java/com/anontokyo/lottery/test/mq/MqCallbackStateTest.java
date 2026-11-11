@@ -15,7 +15,6 @@ import com.anontokyo.lottery.domain.award.service.order.IAwardOrder;
 import com.anontokyo.lottery.domain.draw.repository.IDrawConfigRepository;
 import com.anontokyo.lottery.domain.support.lock.IAwardFulfillmentGuard;
 import com.anontokyo.lottery.domain.support.lock.IStockSettlementGuard;
-import com.xxl.job.core.context.XxlJobContext;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.After;
 import org.junit.Test;
@@ -41,7 +40,6 @@ public class MqCallbackStateTest {
     @After
     public void clearJobContext() {
         // XXL-Job 使用线程上下文，测试结束必须清理。
-        XxlJobContext.setXxlJobContext(null);
     }
 
     @Test
@@ -64,15 +62,12 @@ public class MqCallbackStateTest {
         IAwardOrder order = mock(IAwardOrder.class);
         KafkaProducer producer = mock(KafkaProducer.class);
         SettableListenableFuture<SendResult<String, Object>> future = new SettableListenableFuture<>();
-        when(order.shardingDbCount()).thenReturn(1);
-        when(order.shardingTableCount()).thenReturn(1);
-        when(order.scanFulfillmentEventStatus(1, 0, 100)).thenReturn(Collections.singletonList(invoice));
+        when(order.scanFulfillmentEventStatus(100)).thenReturn(Collections.singletonList(invoice));
         when(producer.sendAwardFulfillment(invoice)).thenReturn(future);
         LotteryXxlJob job = new LotteryXxlJob();
         ReflectionTestUtils.setField(job, "awardOrder", order);
         ReflectionTestUtils.setField(job, "kafkaProducer", producer);
         ReflectionTestUtils.setField(job, "invoiceMqEnabled", true);
-        XxlJobContext.setXxlJobContext(new XxlJobContext(1, "1", null, 0, 1));
         job.lotteryOrderMQStateJobHandler();
         // 发送成功只证明到达 Kafka，不能直接标记消费完成。
         future.set(null);
@@ -88,9 +83,7 @@ public class MqCallbackStateTest {
         AwardStockSettlementVO candidate = new AwardStockSettlementVO();
         candidate.setuId("mq-test"); candidate.setOrderId(1L);
         SettableListenableFuture<SendResult<String, Object>> future = new SettableListenableFuture<>();
-        when(order.shardingDbCount()).thenReturn(1);
-        when(order.shardingTableCount()).thenReturn(1);
-        when(order.scanStockSettlementEventStatus(1, 0, 200)).thenReturn(Collections.singletonList(candidate));
+        when(order.scanStockSettlementEventStatus(200)).thenReturn(Collections.singletonList(candidate));
         when(guard.tryClaimDispatch(1L)).thenReturn(true);
         when(producer.sendStockSettlement(candidate)).thenReturn(future);
         LotteryXxlJob job = new LotteryXxlJob();
@@ -98,7 +91,6 @@ public class MqCallbackStateTest {
         ReflectionTestUtils.setField(job, "kafkaProducer", producer);
         ReflectionTestUtils.setField(job, "stockSettlementGuard", guard);
         ReflectionTestUtils.setField(job, "stockSettlementDispatchBatchSize", 200);
-        XxlJobContext.setXxlJobContext(new XxlJobContext(1, "1", null, 0, 1));
         job.awardStockSettlementOutboxJobHandler();
         // 扫描已过滤 COMPLETE；逐条预读不能防止消费在读后完成，状态保护仍由回调 CAS 承担。
         verify(order, never()).isStockSettlementComplete(anyString(), anyLong());

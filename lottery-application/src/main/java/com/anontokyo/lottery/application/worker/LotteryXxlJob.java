@@ -9,8 +9,6 @@ import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 import com.anontokyo.lottery.domain.award.service.order.IAwardOrder;
 import com.anontokyo.lottery.domain.support.lock.IStockSettlementGuard;
-import com.alibaba.fastjson.JSON;
-import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -118,113 +116,39 @@ public class LotteryXxlJob {
             logger.warn("skip award fulfillment compensation because invoice mq is disabled");
             return;
         }
-        // 验证参数
-        String jobParam = XxlJobHelper.getJobParam();
-        if (jobParam == null) {
-            logger.info("扫描用户抽奖奖品发放MQ状态[Table = 2*4] 错误 params is null");
-            return;
-        }
+        // 单表按批扫描，沿用原状态机与发送回调。
+        for (AwardFulfillmentEvent fulfillmentEvent : awardOrder.scanFulfillmentEventStatus(INVOICE_COMPENSATION_BATCH_LIMIT)) {
+        ListenableFuture<SendResult<String, Object>> future = kafkaProducer.sendAwardFulfillment(fulfillmentEvent);
+        future.addCallback(new ListenableFutureCallback<SendResult<String, Object>>() {
 
-        String[] params = jobParam.split(",");
-        logger.info("扫描用户抽奖奖品发放MQ状态[Table = 2*4] 开始 params：{}", JSON.toJSONString(params));
-
-        if (params.length == 0) {
-            logger.info("扫描用户抽奖奖品发放MQ状态[Table = 2*4] 结束 params is null");
-            return;
-        }
-
-        // 获取分库分表配置下的分表数
-        int tbCount = awardOrder.shardingTableCount();
-
-        // 循环获取指定扫描库
-        for (String param : params) {
-            // 获取当前任务扫描的指定分库
-            int dbCount = Integer.parseInt(param);
-
-            if (dbCount > awardOrder.shardingDbCount()) {
-                logger.info("扫描用户抽奖奖品发放MQ状态[Table = 2*4] 结束 dbCount not exist");
-                continue;
+            @Override
+            public void onSuccess(SendResult<String, Object> result) {
+                // 发送成功只推进 SENT；COMPLETE 由发奖消费者确认，CAS 保护迟到回调。
+                awardOrder.updateFulfillmentEventStatus(fulfillmentEvent.getuId(), fulfillmentEvent.getOrderId(), Constants.FulfillmentEventStatus.SENT.getCode());
             }
 
-            // 循环扫描对应表
-            for (int i = 0; i < tbCount; i++) {
-
-                //  扫描表数据
-                List<AwardFulfillmentEvent> fulfillmentEventList = awardOrder.scanFulfillmentEventStatus(dbCount, i, INVOICE_COMPENSATION_BATCH_LIMIT);
-                logger.info("扫描用户抽奖奖品发放MQ状态[Table = 2*4] 扫描库：{} 扫描表：{} 扫描数：{}", dbCount, i, fulfillmentEventList.size());
-
-                // 补偿MQ消息
-                for (AwardFulfillmentEvent fulfillmentEvent : fulfillmentEventList) {
-
-                    ListenableFuture<SendResult<String, Object>> future = kafkaProducer.sendAwardFulfillment(fulfillmentEvent);
-                    future.addCallback(new ListenableFutureCallback<SendResult<String, Object>>() {
-
-                        @Override
-                        public void onSuccess(SendResult<String, Object> stringObjectSendResult) {
-                            // 发送成功只推进 SENT；COMPLETE 由发奖消费者确认，CAS 保护迟到回调。
-                            awardOrder.updateFulfillmentEventStatus(fulfillmentEvent.getuId(), fulfillmentEvent.getOrderId(), Constants.FulfillmentEventStatus.SENT.getCode());
-                        }
-
-                        @Override
-                        public void onFailure(Throwable throwable) {
-                            // 仅未发送状态可进入 FAIL，迟到失败不能覆盖已发送或已完成。
-                            awardOrder.updateFulfillmentEventStatus(fulfillmentEvent.getuId(), fulfillmentEvent.getOrderId(), Constants.FulfillmentEventStatus.FAIL.getCode());
-                            // 保留失败 cause 和订单标识，便于定位补偿发送异常。
-                            logger.error("award fulfillment compensation send failed uId:{} orderId:{}",
-                                    fulfillmentEvent.getuId(), fulfillmentEvent.getOrderId(), throwable);
-                        }
-
-                    });
-                }
-
+            @Override
+            public void onFailure(Throwable throwable) {
+                // 仅未发送状态可进入 FAIL，迟到失败不能覆盖已发送或已完成。
+                awardOrder.updateFulfillmentEventStatus(fulfillmentEvent.getuId(), fulfillmentEvent.getOrderId(), Constants.FulfillmentEventStatus.FAIL.getCode());
+                // 保留失败 cause 和订单标识，便于定位补偿发送异常。
+                logger.error("award fulfillment compensation send failed uId:{} orderId:{}",
+                        fulfillmentEvent.getuId(), fulfillmentEvent.getOrderId(), throwable);
             }
 
+        });
         }
-        logger.info("扫描用户抽奖奖品发放MQ状态[Table = 2*4] 完成 param：{}", JSON.toJSONString(params));
     }
 
-    /**
-     * 库存结算 Outbox 扫描投递任务（原 @Scheduled dispatcher 迁移至此）。
-     * 任务参数指定本 worker 负责的分库编号，逗号分隔，如 "1" 或 "1,2"：
-     * 多实例部署时在 XXL-Job 中配置不同分片参数即可，无需每个实例扫描全部分库。
-     * 状态机：INIT(0)/FAIL(2)/超时 SENT(3) 扫描 → 投递成功落 SENT(3) → 消费完成 COMPLETE(1)。
-     * crash 在发送与落状态之间最多造成一次重复投递，由 settlement 账本兜底幂等。
-     */
+    /** 库存结算 Outbox 单表扫描。重复投递仍由结算账本和状态 CAS 处理。 */
     @XxlJob("awardStockSettlementOutboxJobHandler")
     public void awardStockSettlementOutboxJobHandler() {
-        String jobParam = XxlJobHelper.getJobParam();
-        if (jobParam == null || jobParam.trim().isEmpty()) {
-            logger.warn("award stock outbox job requires db index param, e.g. \"1\"");
-            return;
+        List<AwardStockSettlementVO> pending = awardOrder.scanStockSettlementEventStatus(stockSettlementDispatchBatchSize);
+        if (!pending.isEmpty()) {
+            logger.info("scan award stock outbox size:{}", pending.size());
         }
-
-        int totalDbCount = awardOrder.shardingDbCount();
-        int tbCount = awardOrder.shardingTableCount();
-
-        for (String part : jobParam.split(",")) {
-            int dbIdx;
-            try {
-                dbIdx = Integer.parseInt(part.trim());
-            } catch (NumberFormatException e) {
-                logger.warn("invalid db index param:{}", part);
-                continue;
-            }
-            if (dbIdx < 1 || dbIdx > totalDbCount) {
-                logger.warn("db index out of range:{} totalDbCount:{}", dbIdx, totalDbCount);
-                continue;
-            }
-
-            for (int tbIdx = 0; tbIdx < tbCount; tbIdx++) {
-                List<AwardStockSettlementVO> pendingList =
-                        awardOrder.scanStockSettlementEventStatus(dbIdx, tbIdx, stockSettlementDispatchBatchSize);
-                if (pendingList.isEmpty()) {
-                    continue;
-                }
-                logger.info("scan award stock outbox dbIdx:{} tbIdx:{} size:{}", dbIdx, tbIdx, pendingList.size());
-                for (AwardStockSettlementVO settlementVO : pendingList) {
-                    dispatchAwardStockSettlement(settlementVO);
-                }
-            }
+        for (AwardStockSettlementVO settlement : pending) {
+            dispatchAwardStockSettlement(settlement);
         }
     }
 

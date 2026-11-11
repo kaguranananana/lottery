@@ -75,13 +75,13 @@ public class AwardOrderImpl implements IAwardOrder {
     }
 
     @Override
-    public List<AwardFulfillmentEvent> scanFulfillmentEventStatus(int dbCount, int tbCount, int limit) {
-        return orderRepository.scanFulfillmentEventStatusByShard(dbCount, tbCount, limit);
+    public List<AwardFulfillmentEvent> scanFulfillmentEventStatus(int limit) {
+        return orderRepository.scanFulfillmentEventStatus(limit);
     }
 
     @Override
-    public List<AwardStockSettlementVO> scanStockSettlementEventStatus(int dbCount, int tbCount, int limit) {
-        return orderRepository.scanStockSettlementEventStatusByShard(dbCount, tbCount, limit);
+    public List<AwardStockSettlementVO> scanStockSettlementEventStatus(int limit) {
+        return orderRepository.scanStockSettlementEventStatus(limit);
     }
 
     @Override
@@ -92,16 +92,6 @@ public class AwardOrderImpl implements IAwardOrder {
     @Override
     public boolean isStockSettlementComplete(String uId, Long orderId) {
         return orderRepository.isStockSettlementComplete(uId, orderId);
-    }
-
-    @Override
-    public int shardingDbCount() {
-        return orderRepository.shardingDbCount();
-    }
-
-    @Override
-    public int shardingTableCount() {
-        return orderRepository.shardingTableCount();
     }
 
     private DrawOrderVO buildDrawOrder(AwardOrderReq awardOrderReq) {

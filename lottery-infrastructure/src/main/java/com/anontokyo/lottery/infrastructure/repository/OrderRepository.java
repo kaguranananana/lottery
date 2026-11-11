@@ -1,7 +1,6 @@
 package com.anontokyo.lottery.infrastructure.repository;
 
 import com.anontokyo.lottery.common.Constants;
-import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
 import com.anontokyo.lottery.domain.draw.repository.IDrawConfigRepository;
@@ -30,9 +29,6 @@ public class OrderRepository implements IOrderRepository {
     private IDrawParticipationDao drawParticipationDao;
 
     @Resource
-    private IDBRouterStrategy dbRouter;
-
-    @Resource
     private TransactionTemplate transactionTemplate;
 
     @Resource
@@ -40,44 +36,30 @@ public class OrderRepository implements IOrderRepository {
 
     @Override
     public Constants.ResponseCode saveDrawOrderWithTakeLock(DrawOrderVO drawOrder) {
-        try {
-            dbRouter.doRouter(drawOrder.getuId());
-            return StockReservationTransactions.execute(transactionTemplate, status -> {
-                DrawParticipation lockReq = new DrawParticipation();
-                lockReq.setuId(drawOrder.getuId());
-                lockReq.setActivityId(drawOrder.getActivityId());
-                lockReq.setTakeId(drawOrder.getTakeId());
-                int lockCount = drawParticipationDao.consumeParticipation(lockReq);
-                if (lockCount == 0) {
-                    status.setRollbackOnly();
-                    return Constants.ResponseCode.NO_UPDATE;
-                }
+        // TX2 将参与记录消费与携带 Outbox 状态的订单写入同一事务。
+        return StockReservationTransactions.execute(transactionTemplate, status -> {
+            DrawParticipation lockReq = new DrawParticipation();
+            lockReq.setuId(drawOrder.getuId());
+            lockReq.setActivityId(drawOrder.getActivityId());
+            lockReq.setTakeId(drawOrder.getTakeId());
+            int lockCount = drawParticipationDao.consumeParticipation(lockReq);
+            if (lockCount == 0) {
+                status.setRollbackOnly();
+                return Constants.ResponseCode.NO_UPDATE;
+            }
 
-                try {
-                    insertDrawOrder(drawOrder);
-                } catch (DuplicateKeyException e) {
-                    status.setRollbackOnly();
-                    return Constants.ResponseCode.INDEX_DUP;
-                }
+            try {
+                insertDrawOrder(drawOrder);
+            } catch (DuplicateKeyException e) {
+                status.setRollbackOnly();
+                return Constants.ResponseCode.INDEX_DUP;
+            }
 
-                return Constants.ResponseCode.SUCCESS;
-            }, () -> drawConfigRepository.recoverDrawConfigPrizeStockByRedis(
-                    drawOrder.getDrawConfigId(), drawOrder.getAwardId()),
-                    "award uId=" + drawOrder.getuId() + " takeId=" + drawOrder.getTakeId()
-                            + " orderId=" + drawOrder.getOrderId());
-        } finally {
-            dbRouter.clear();
-        }
-    }
-
-    @Override
-    public int shardingDbCount() {
-        return dbRouter.dbCount();
-    }
-
-    @Override
-    public int shardingTableCount() {
-        return dbRouter.tbCount();
+            return Constants.ResponseCode.SUCCESS;
+        }, () -> drawConfigRepository.recoverDrawConfigPrizeStockByRedis(
+                drawOrder.getDrawConfigId(), drawOrder.getAwardId()),
+                "award uId=" + drawOrder.getuId() + " takeId=" + drawOrder.getTakeId()
+                        + " orderId=" + drawOrder.getOrderId());
     }
 
     @Override
@@ -129,7 +111,7 @@ public class OrderRepository implements IOrderRepository {
 
     @Override
     public void markStockSettlementFailed(String uId, Long orderId) {
-        // 用户标识提供分库分表路由键。
+        // 按用户与订单定位结算状态。
         DrawOrder drawOrderRow = new DrawOrder();
         drawOrderRow.setuId(uId);
         // 按订单限定本次结算失败的更新范围。
@@ -169,28 +151,6 @@ public class OrderRepository implements IOrderRepository {
             settlementVOList.add(settlementVO);
         }
         return settlementVOList;
-    }
-
-    @Override
-    public List<AwardFulfillmentEvent> scanFulfillmentEventStatusByShard(int dbIdx, int tbIdx, int limit) {
-        try {
-            dbRouter.setDBKey(dbIdx);
-            dbRouter.setTBKey(tbIdx);
-            return scanFulfillmentEventStatus(limit);
-        } finally {
-            dbRouter.clear();
-        }
-    }
-
-    @Override
-    public List<AwardStockSettlementVO> scanStockSettlementEventStatusByShard(int dbIdx, int tbIdx, int limit) {
-        try {
-            dbRouter.setDBKey(dbIdx);
-            dbRouter.setTBKey(tbIdx);
-            return scanStockSettlementEventStatus(limit);
-        } finally {
-            dbRouter.clear();
-        }
     }
 
     @Override

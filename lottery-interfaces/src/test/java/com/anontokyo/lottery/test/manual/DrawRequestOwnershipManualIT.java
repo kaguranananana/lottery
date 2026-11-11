@@ -1,12 +1,5 @@
 package com.anontokyo.lottery.test.manual;
 
-import cn.bugstack.middleware.db.router.DBContextHolder;
-import cn.bugstack.middleware.db.router.DBRouterConfig;
-import cn.bugstack.middleware.db.router.DBRouterJoinPoint;
-import cn.bugstack.middleware.db.router.dynamic.DynamicDataSource;
-import cn.bugstack.middleware.db.router.dynamic.DynamicMybatisPlugin;
-import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
-import cn.bugstack.middleware.db.router.strategy.impl.DBRouterStrategyHashCode;
 import com.anontokyo.lottery.application.process.draw.impl.ActivityProcessImpl;
 import com.anontokyo.lottery.application.process.draw.req.DrawProcessReq;
 import com.anontokyo.lottery.application.process.draw.res.DrawProcessResult;
@@ -28,7 +21,6 @@ import com.anontokyo.lottery.infrastructure.repository.DrawParticipationReposito
 import org.junit.*;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.SqlSessionTemplate;
-import org.springframework.aop.aspectj.annotation.AspectJProxyFactory;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
@@ -47,14 +39,13 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /**
- * 隔离 MySQL 集成测试：真实生产 Mapper、路由切面、事务及 Repository。
- * 必须在专用空 MySQL 实例运行，会建立 lottery/lottery_01/lottery_02 和测试表。
+ * 隔离 MySQL 集成测试：真实生产 Mapper、事务及 Repository。
+ * 必须在专用空 MySQL 实例运行，会建立 lottery 和测试表。
  * Redis 未消费缓存不再参与决策；仅活动配置、奖品抽样/预扣与短锁用 Mock，数据库不使用 Mock。
  */
 public class DrawRequestOwnershipManualIT {
     private static String mysqlUrl;
     private static final AtomicLong ids = new AtomicLong(System.currentTimeMillis());
-    private static IDBRouterStrategy router;
     private static DrawParticipationRepository takes;
     private static OrderRepository orders;
     private IDrawConfigRepository stockReservations;
@@ -72,30 +63,19 @@ public class DrawRequestOwnershipManualIT {
             org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(connection,
                     new org.springframework.core.io.FileSystemResource("../docs/sql/lottery-schema.sql"));
         }
-        DBRouterConfig config = new DBRouterConfig(2, 4, "uId");
-        router = new DBRouterStrategyHashCode(config);
-        DynamicDataSource datasource = new DynamicDataSource();
-        Map<Object, Object> targets = new HashMap<>();
-        for (int db = 0; db <= 2; db++) {
-            String schema = db == 0 ? "lottery" : String.format("lottery_%02d", db);
-            targets.put(String.format("db%02d", db), new DriverManagerDataSource(mysqlUrl + schema + "?useSSL=false&allowPublicKeyRetrieval=true", "root", ""));
-        }
-        datasource.setTargetDataSources(targets);
-        ReflectionTestUtils.setField(datasource, "defaultDataSource", "db00");
-        datasource.afterPropertiesSet();
+        DriverManagerDataSource datasource = new DriverManagerDataSource(
+                mysqlUrl + "lottery?useSSL=false&allowPublicKeyRetrieval=true", "root", "");
         SqlSessionFactoryBean factory = new SqlSessionFactoryBean();
         factory.setDataSource(datasource);
         factory.setTypeAliasesPackage("com.anontokyo.lottery.infrastructure.po");
-        factory.setPlugins(new DynamicMybatisPlugin());
         org.apache.ibatis.session.Configuration configuration = new org.apache.ibatis.session.Configuration();
         configuration.setMapUnderscoreToCamelCase(true);
         factory.setConfiguration(configuration);
         factory.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:mybatis/mapper/*_Mapper.xml"));
         SqlSessionTemplate session = new SqlSessionTemplate(factory.getObject());
-        DBRouterJoinPoint aspect = new DBRouterJoinPoint(config, router);
-        IDrawParticipationDao takeDao = routed(IDrawParticipationDao.class, session.getMapper(IDrawParticipationDao.class), aspect);
-        IUserActivityQuotaDao countDao = routed(IUserActivityQuotaDao.class, session.getMapper(IUserActivityQuotaDao.class), aspect);
-        IDrawOrderDao orderDao = routed(IDrawOrderDao.class, session.getMapper(IDrawOrderDao.class), aspect);
+        IDrawParticipationDao takeDao = session.getMapper(IDrawParticipationDao.class);
+        IUserActivityQuotaDao countDao = session.getMapper(IUserActivityQuotaDao.class);
+        IDrawOrderDao orderDao = session.getMapper(IDrawOrderDao.class);
         TransactionTemplate transaction = new TransactionTemplate(new DataSourceTransactionManager(datasource));
         takes = new DrawParticipationRepository();
         orders = new OrderRepository();
@@ -104,7 +84,6 @@ public class DrawRequestOwnershipManualIT {
         ReflectionTestUtils.setField(orders, "drawParticipationDao", takeDao);
         ReflectionTestUtils.setField(orders, "drawOrderDao", orderDao);
         for (Object repository : Arrays.asList(takes, orders)) {
-            ReflectionTestUtils.setField(repository, "dbRouter", router);
             ReflectionTestUtils.setField(repository, "transactionTemplate", transaction);
         }
     }
@@ -122,7 +101,7 @@ public class DrawRequestOwnershipManualIT {
         bill.setBeginDateTime(new java.util.Date(0));
         bill.setEndDateTime(new java.util.Date(Long.MAX_VALUE));
         IActivityRepository activities = mock(IActivityRepository.class);
-        // SQL 专项只模拟奖品预扣与回补，用户事务和路由保持真实。
+        // SQL 专项只模拟奖品预扣与回补，用户事务保持真实。
         stockReservations = mock(IDrawConfigRepository.class);
         ReflectionTestUtils.setField(orders, "drawConfigRepository", stockReservations);
         when(activities.queryActivityBill(any())).thenReturn(bill);
@@ -150,17 +129,12 @@ public class DrawRequestOwnershipManualIT {
     }
 
     @Test
-    public void firstReplayThenNewRoundAcrossAllShards() throws Exception {
-        Set<String> shards = new HashSet<>();
-        // 覆盖两库四分表；回放无路由注解时会查询全局库或错误分表并失败。
+    public void firstReplayThenNewRoundForEachUser() throws Exception {
         String prefix = "r" + ids.incrementAndGet();
-        for (int i = 0; shards.size() < 8; i++) {
+        // 多个用户复用同一逻辑请求号，回放仍按用户和活动隔离。
+        for (int i = 0; i < 8; i++) {
             user = prefix + i;
             bill.setuId(user);
-            router.doRouter(user);
-            String shard = DBContextHolder.getDBKey() + DBContextHolder.getTBKey();
-            router.clear();
-            if (!shards.add(shard)) { continue; }
             String requestId = "A" + ids.incrementAndGet();
             DrawProcessResult a = request(requestId);
             assertEquals(Constants.ResponseCode.SUCCESS.getCode(), a.getCode());
@@ -254,7 +228,7 @@ public class DrawRequestOwnershipManualIT {
     public void realSqlFailureLeavesQuotaAndTakeUntouched() throws Exception {
         assertEquals(Constants.ResponseCode.SUCCESS,
                 takes.takeParticipation(bill, new java.util.Date(), ids.incrementAndGet(), "A"));
-        String schema = schema();
+        String schema = "lottery";
         try (Connection connection = connect(); Statement statement = connection.createStatement()) {
             statement.execute("ALTER TABLE " + schema + ".draw_participation RENAME COLUMN request_id TO unavailable_request_id");
             try {
@@ -273,10 +247,7 @@ public class DrawRequestOwnershipManualIT {
 
     @Test
     public void orderInsertSqlFailureRollsBackConsumptionAndAResumes() throws Exception {
-        router.doRouter(user);
-        String table = "lottery_" + DBContextHolder.getDBKey()
-                + ".draw_order_" + DBContextHolder.getTBKey();
-        router.clear();
+        String table = "lottery.draw_order";
         try (Connection connection = connect(); Statement statement = connection.createStatement()) {
             // 在订单事务已执行 take CAS 后制造真实 INSERT 错误，验证整个事务回滚。
             statement.execute("ALTER TABLE " + table + " RENAME COLUMN award_content TO unavailable_award_content");
@@ -336,23 +307,13 @@ public class DrawRequestOwnershipManualIT {
         return process.doDrawProcess(new DrawProcessReq(user, 100001L, requestId));
     }
 
-    private String schema() {
-        router.doRouter(user);
-        String schema = "lottery_" + DBContextHolder.getDBKey();
-        router.clear();
-        return schema;
-    }
-
     private int orderCount() throws Exception {
-        router.doRouter(user);
-        String table = "lottery_" + DBContextHolder.getDBKey()
-                + ".draw_order_" + DBContextHolder.getTBKey();
-        router.clear();
+        String table = "lottery.draw_order";
         return count("SELECT COUNT(*) FROM " + table + " WHERE u_id=?");
     }
 
-    private int leftCount() throws Exception { return count("SELECT left_count FROM " + schema() + ".user_activity_quota WHERE u_id=?"); }
-    private int takeCount() throws Exception { return count("SELECT COUNT(*) FROM " + schema() + ".draw_participation WHERE u_id=?"); }
+    private int leftCount() throws Exception { return count("SELECT left_count FROM " + "lottery" + ".user_activity_quota WHERE u_id=?"); }
+    private int takeCount() throws Exception { return count("SELECT COUNT(*) FROM " + "lottery" + ".draw_participation WHERE u_id=?"); }
     private int count(String sql) throws Exception {
         try (Connection connection = connect(); PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, user);
@@ -362,12 +323,6 @@ public class DrawRequestOwnershipManualIT {
 
     private static Connection connect() throws SQLException {
         return DriverManager.getConnection(mysqlUrl + "?useSSL=false&allowPublicKeyRetrieval=true", "root", "");
-    }
-
-    private static <T> T routed(Class<T> type, T mapper, DBRouterJoinPoint aspect) {
-        AspectJProxyFactory proxy = new AspectJProxyFactory(mapper);
-        proxy.addAspect(aspect);
-        return type.cast(proxy.getProxy());
     }
 
     private interface ConcurrentAction<T> { T run(int index) throws Exception; }
