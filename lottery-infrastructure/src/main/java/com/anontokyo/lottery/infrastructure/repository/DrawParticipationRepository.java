@@ -8,7 +8,6 @@ import com.anontokyo.lottery.infrastructure.dao.IUserActivityQuotaDao;
 import com.anontokyo.lottery.infrastructure.dao.IDrawParticipationDao;
 import com.anontokyo.lottery.infrastructure.po.DrawParticipation;
 import com.anontokyo.lottery.infrastructure.po.UserActivityQuota;
-import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
@@ -28,9 +27,6 @@ public class DrawParticipationRepository implements IDrawParticipationRepository
 
     @Resource
     private IDrawParticipationDao drawParticipationDao;
-
-    @Resource
-    private IDBRouterStrategy dbRouter;
 
     @Resource
     private TransactionTemplate transactionTemplate;
@@ -86,47 +82,37 @@ public class DrawParticipationRepository implements IDrawParticipationRepository
     }
 
     /**
-     * 扣减剩余次数 + 创建参与记录：同一路由事务。DuplicateKey（take_id / request_id 唯一冲突）
+     * 扣减剩余次数 + 创建参与记录：同一数据库事务。DuplicateKey（take_id / request_id 唯一冲突）
      * 返回 INDEX_DUP，由上层按幂等复用语义处理。
      */
     @Override
     public Constants.ResponseCode takeParticipation(ActivityBillVO bill, Date participatedAt, Long takeId,
             String requestId) {
-        try {
-            dbRouter.doRouter(bill.getuId());
-            // TX1 仅包含用户次数和参与记录，不涉及 Redis 库存或其它 Repository。
-            return transactionTemplate.execute(status -> {
-                try {
-                    int updateCount = subtractionLeftCount(bill);
-                    if (updateCount == 0) {
-                        status.setRollbackOnly();
-                        logger.error("grab activity subtract user quota failed activityId:{} uId:{}",
-                                bill.getActivityId(), bill.getuId());
-                        return Constants.ResponseCode.NO_UPDATE;
-                    }
-                    takeActivity(bill, participatedAt, takeId, requestId);
-                } catch (DuplicateKeyException e) {
+        // TX1 仅包含用户次数和参与记录，不涉及 Redis 库存或其它 Repository。
+        return transactionTemplate.execute(status -> {
+            try {
+                int updateCount = subtractionLeftCount(bill);
+                if (updateCount == 0) {
                     status.setRollbackOnly();
-                    logger.warn("grab activity duplicate key activityId:{} uId:{} takeId:{} requestId:{}",
-                            bill.getActivityId(), bill.getuId(), takeId, requestId);
-                    return Constants.ResponseCode.INDEX_DUP;
+                    logger.error("grab activity subtract user quota failed activityId:{} uId:{}",
+                            bill.getActivityId(), bill.getuId());
+                    return Constants.ResponseCode.NO_UPDATE;
                 }
-                return Constants.ResponseCode.SUCCESS;
-            });
-        } finally {
-            dbRouter.clear();
-        }
+                takeActivity(bill, participatedAt, takeId, requestId);
+            } catch (DuplicateKeyException e) {
+                status.setRollbackOnly();
+                logger.warn("grab activity duplicate key activityId:{} uId:{} takeId:{} requestId:{}",
+                        bill.getActivityId(), bill.getuId(), takeId, requestId);
+                return Constants.ResponseCode.INDEX_DUP;
+            }
+            return Constants.ResponseCode.SUCCESS;
+        });
     }
 
     @Override
     public Constants.ResponseCode consumeTake(String uId, Long activityId, Long takeId) {
-        try {
-            dbRouter.doRouter(uId);
-            int lockCount = drawParticipationDao.consumeParticipation(buildLockRequest(uId, activityId, takeId));
-            return lockCount > 0 ? Constants.ResponseCode.SUCCESS : Constants.ResponseCode.NO_UPDATE;
-        } finally {
-            dbRouter.clear();
-        }
+        int lockCount = drawParticipationDao.consumeParticipation(buildLockRequest(uId, activityId, takeId));
+        return lockCount > 0 ? Constants.ResponseCode.SUCCESS : Constants.ResponseCode.NO_UPDATE;
     }
 
     private DrawParticipation buildLockRequest(String uId, Long activityId, Long takeId) {

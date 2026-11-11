@@ -1,7 +1,5 @@
 package com.anontokyo.lottery.test.manual;
 
-import cn.bugstack.middleware.db.router.DBContextHolder;
-import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
 import com.anontokyo.lottery.LotteryApplication;
 import com.anontokyo.lottery.application.worker.LotteryXxlJob;
 import com.anontokyo.lottery.application.mq.producer.KafkaProducer;
@@ -28,7 +26,6 @@ import com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao;
 import com.anontokyo.lottery.infrastructure.po.DrawOrder;
 import com.anontokyo.lottery.interfaces.web.dto.DrawRequest;
 import com.anontokyo.lottery.interfaces.web.dto.DrawResponse;
-import com.xxl.job.core.context.XxlJobContext;
 import org.junit.*;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -66,7 +63,6 @@ public class FinalBusinessE2eManualIT {
     @Autowired private LotteryXxlJob job;
     @Autowired private TestRestTemplate http;
     @Autowired private StringRedisTemplate redis;
-    @Autowired private IDBRouterStrategy router;
     @Autowired private IDrawOrderDao orders;
     @Autowired private KafkaListenerEndpointRegistry listeners;
     @Autowired private IOrderRepository orderRepository;
@@ -82,15 +78,9 @@ public class FinalBusinessE2eManualIT {
 
     @Before
     public void context() throws Exception {
-        XxlJobContext.setXxlJobContext(new XxlJobContext(1, "1,2", null, 0, 1));
         listeners.start();
         await("真实 Kafka 分区分配", () -> listeners.getListenerContainers().stream()
                 .allMatch(c -> c.getAssignedPartitions() != null && !c.getAssignedPartitions().isEmpty()));
-    }
-
-    @After
-    public void clearContext() {
-        XxlJobContext.setXxlJobContext(null);
     }
 
     @Test
@@ -102,7 +92,7 @@ public class FinalBusinessE2eManualIT {
         assertEquals("奖品库存缺失是系统错误，不能消费为未中奖", "0001", failed.getCode());
         assertEquals(1, countTakes(user, id));
         assertEquals(2, leftCount(user, id));
-        assertEquals(0, value("SELECT state FROM " + userSchema(user)
+        assertEquals(0, value("SELECT state FROM " + "lottery"
                 + ".draw_participation WHERE u_id=? AND activity_id=?", user, id));
         // 测试已知初始库存且没有在途中奖订单，恢复后原请求继续同一参与。
         redis.opsForValue().set(awardKey(id), "10");
@@ -116,15 +106,15 @@ public class FinalBusinessE2eManualIT {
     public void rolledBackOrderRestoresItsAwardReservation() throws Exception {
         long id = createStarted(10, 3);
         String user = "rollback" + IDS.incrementAndGet();
-        String physicalTable = table(user);
-        String trigger = userSchema(user) + ".reject_order_" + id;
+        String physicalTable = "lottery.draw_order";
+        String trigger = "lottery" + ".reject_order_" + id;
         // 在真实订单 INSERT 上制造 SQL 异常；同事务消费 take 的 UPDATE 必须回滚。
         update("CREATE TRIGGER " + trigger + " BEFORE INSERT ON " + physicalTable
                 + " FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='order rollback probe'");
         try {
             assertEquals("0001", draw(user, id, "order-rollback").getCode());
             assertEquals(0, value("SELECT COUNT(*) FROM " + physicalTable + " WHERE u_id=?", user));
-            assertEquals(0, value("SELECT state FROM " + userSchema(user)
+            assertEquals(0, value("SELECT state FROM " + "lottery"
                     + ".draw_participation WHERE u_id=? AND activity_id=?", user, id));
             assertEquals("已确认回滚的下单不能泄漏预扣奖品库存", "10", redis.opsForValue().get(awardKey(id)));
         } finally {
@@ -140,7 +130,7 @@ public class FinalBusinessE2eManualIT {
     public void rolledBackParticipationDoesNotConsumeQuotaOrReserveAwards() throws Exception {
         long id = createStarted(10, 3);
         String user = "takefail" + IDS.incrementAndGet();
-        String schema = userSchema(user);
+        String schema = "lottery";
         String trigger = schema + ".reject_take_" + id;
         // 次数扣减之后的参与 INSERT 失败，次数初始化和扣减必须随参与一起回滚。
         update("CREATE TRIGGER " + trigger + " BEFORE INSERT ON " + schema + ".draw_participation"
@@ -219,14 +209,11 @@ public class FinalBusinessE2eManualIT {
     }
 
     @Test
-    public void httpPipelineReplaysRequestsAndRoutesAllEightTables() throws Exception {
+    public void httpPipelineReplaysRequestsForMultipleUsers() throws Exception {
         long id = createStarted(30, 3);
-        Map<String, String> users = new HashMap<>();
-        while (users.size() < 8) {
+        // 八位用户使用相同请求号，验证每位用户的回放及结算保持独立。
+        for (int i = 0; i < 8; i++) {
             String user = "http" + IDS.incrementAndGet();
-            users.putIfAbsent(table(user), user);
-        }
-        for (String user : users.values()) {
             DrawResponse first = draw(user, id, "same-request");
             assertWin(first);
             DrawResponse replay = draw(user, id, "same-request");
@@ -237,7 +224,7 @@ public class FinalBusinessE2eManualIT {
             job.awardStockSettlementOutboxJobHandler();
             awaitComplete(user, first.getOrderId());
             assertEquals(1, value("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE order_id=?", first.getOrderId()));
-            assertEquals(1, value("SELECT COUNT(*) FROM " + table(user) + " WHERE order_id=?", first.getOrderId()));
+            assertEquals(1, value("SELECT COUNT(*) FROM " + "lottery.draw_order" + " WHERE order_id=?", first.getOrderId()));
         }
         assertEquals(22, value("SELECT award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id=?", id));
         assertEquals("22", redis.opsForValue().get(awardKey(id)));
@@ -344,7 +331,7 @@ public class FinalBusinessE2eManualIT {
         assertEquals(Constants.ResponseCode.NO_UPDATE.getCode(), draw(user, id, "fourth").getCode());
         assertEquals(3, countTakes(user, id));
         assertEquals(0, leftCount(user, id));
-        assertEquals(1, value("SELECT COUNT(*) FROM " + table(user) + " WHERE u_id=? AND activity_id=?", user, id));
+        assertEquals(1, value("SELECT COUNT(*) FROM " + "lottery.draw_order" + " WHERE u_id=? AND activity_id=?", user, id));
         assertNoActivityStock(id);
         job.awardStockSettlementOutboxJobHandler();
         awaitComplete(user, first.getOrderId());
@@ -366,9 +353,9 @@ public class FinalBusinessE2eManualIT {
         assertEquals(losing.getTakeId(), draw(user, id, "no-prize").getTakeId());
         assertEquals(1, countTakes(user, id));
         assertEquals(2, leftCount(user, id));
-        assertEquals(1, value("SELECT state FROM " + userSchema(user)
+        assertEquals(1, value("SELECT state FROM " + "lottery"
                 + ".draw_participation WHERE u_id=? AND activity_id=?", user, id));
-        assertEquals(0, value("SELECT COUNT(*) FROM " + table(user) + " WHERE u_id=? AND activity_id=?", user, id));
+        assertEquals(0, value("SELECT COUNT(*) FROM " + "lottery.draw_order" + " WHERE u_id=? AND activity_id=?", user, id));
         assertEquals("10", redis.opsForValue().get(awardKey(id)));
         assertNoActivityStock(id);
     }
@@ -581,7 +568,7 @@ public class FinalBusinessE2eManualIT {
         RecordMetadata record = producer.sendStockSettlement(settlement).get(30, TimeUnit.SECONDS).getRecordMetadata();
         awaitStockOffset(record);
         for (int i = 0; i < 3; i++) job.awardStockSettlementOutboxJobHandler();
-        assertFalse(orderRepository.scanStockSettlementEventStatusByShard(db(user), tb(user), 200).stream()
+        assertFalse(orderRepository.scanStockSettlementEventStatus(200).stream()
                 .anyMatch(row -> row.getOrderId().equals(result.getOrderId())));
         // 迟到发送成功/失败不可解除待对账状态。
         orderRepository.updateStockSettlementEventStatus(user, result.getOrderId(), 3);
@@ -589,7 +576,7 @@ public class FinalBusinessE2eManualIT {
         assertEquals(Integer.valueOf(4), order(user, result.getOrderId()).getStockSettlementEventStatus());
         // 人工确认并修复全局库存，再在正确用户分片按订单 CAS 释放原 Outbox。
         update("UPDATE lottery.draw_config_prize SET award_surplus_count=10 WHERE draw_config_id=?", id);
-        update("UPDATE " + table(user) + " SET stock_settlement_event_status=0 WHERE u_id=? AND order_id=? AND stock_settlement_event_status=4", user, result.getOrderId());
+        update("UPDATE " + "lottery.draw_order" + " SET stock_settlement_event_status=0 WHERE u_id=? AND order_id=? AND stock_settlement_event_status=4", user, result.getOrderId());
         job.awardStockSettlementOutboxJobHandler();
         awaitComplete(user, result.getOrderId());
         assertEquals(1, value("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE order_id=?", result.getOrderId()));
@@ -649,16 +636,6 @@ public class FinalBusinessE2eManualIT {
         result.setDrawConfigId(id);
         result.setAwardId("p" + id);
         return result;
-    }
-
-    private int db(String user) {
-        try { router.doRouter(user); return Integer.parseInt(DBContextHolder.getDBKey()); }
-        finally { router.clear(); }
-    }
-
-    private int tb(String user) {
-        try { router.doRouter(user); return Integer.parseInt(DBContextHolder.getTBKey()); }
-        finally { router.clear(); }
     }
 
     private void awaitStockOffset(RecordMetadata record) throws Exception {
@@ -757,26 +734,12 @@ public class FinalBusinessE2eManualIT {
         });
     }
 
-    private String table(String user) {
-        try {
-            router.doRouter(user);
-            return "lottery_" + DBContextHolder.getDBKey() + ".draw_order_" + DBContextHolder.getTBKey();
-        } finally { router.clear(); }
-    }
-
-    private String userSchema(String user) {
-        try {
-            router.doRouter(user);
-            return "lottery_" + DBContextHolder.getDBKey();
-        } finally { router.clear(); }
-    }
-
     private long countTakes(String user, long id) throws Exception {
-        return value("SELECT COUNT(*) FROM " + userSchema(user) + ".draw_participation WHERE u_id=? AND activity_id=?", user, id);
+        return value("SELECT COUNT(*) FROM " + "lottery" + ".draw_participation WHERE u_id=? AND activity_id=?", user, id);
     }
 
     private long leftCount(String user, long id) throws Exception {
-        return value("SELECT left_count FROM " + userSchema(user) + ".user_activity_quota WHERE u_id=? AND activity_id=?", user, id);
+        return value("SELECT left_count FROM " + "lottery" + ".user_activity_quota WHERE u_id=? AND activity_id=?", user, id);
     }
 
     private void assertNoActivityStock(long id) {

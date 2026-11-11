@@ -3,7 +3,6 @@ package com.anontokyo.lottery.test.manual;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao;
 import com.anontokyo.lottery.infrastructure.repository.OrderRepository;
-import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
 import com.alibaba.fastjson.JSON;
 import com.anontokyo.lottery.application.mq.consumer.AwardFulfillmentListener;
 import com.anontokyo.lottery.application.mq.consumer.StockSettlementListener;
@@ -17,7 +16,6 @@ import com.anontokyo.lottery.domain.draw.repository.IDrawConfigRepository;
 import com.anontokyo.lottery.domain.support.lock.IAwardFulfillmentGuard;
 import com.anontokyo.lottery.domain.support.lock.IStockSettlementGuard;
 import com.anontokyo.lottery.infrastructure.po.DrawOrder;
-import com.xxl.job.core.context.XxlJobContext;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -98,7 +96,6 @@ public class FulfillmentEventStatusCasManualIT {
 
     @After
     public void clearContext() {
-        XxlJobContext.setXxlJobContext(null);
     }
 
     @Before
@@ -374,10 +371,6 @@ public class FulfillmentEventStatusCasManualIT {
     }
 
     private LotteryXxlJob job(KafkaProducer producer) {
-        IDBRouterStrategy router = mock(IDBRouterStrategy.class);
-        when(router.dbCount()).thenReturn(1);
-        when(router.tbCount()).thenReturn(1);
-        ReflectionTestUtils.setField(repository, "dbRouter", router);
         IStockSettlementGuard guard = mock(IStockSettlementGuard.class);
         when(guard.tryClaimDispatch(1L)).thenReturn(true);
         LotteryXxlJob job = new LotteryXxlJob();
@@ -386,7 +379,6 @@ public class FulfillmentEventStatusCasManualIT {
         ReflectionTestUtils.setField(job, "stockSettlementGuard", guard);
         ReflectionTestUtils.setField(job, "stockSettlementDispatchBatchSize", 200);
         ReflectionTestUtils.setField(job, "invoiceMqEnabled", true);
-        XxlJobContext.setXxlJobContext(new XxlJobContext(1, "1", null, 0, 1));
         return job;
     }
 

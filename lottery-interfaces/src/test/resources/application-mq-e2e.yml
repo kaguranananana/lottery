@@ -1,5 +1,10 @@
 # 只用于独立 Docker 测试栈，生产 application.yml 保持原样。
 spring:
+  datasource:
+    url: jdbc:mysql://127.0.0.1:13309/lottery?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    hikari:
+      maximum-pool-size: 8
+      minimum-idle: 1
   redis:
     host: 127.0.0.1
     port: 16379
@@ -22,19 +27,6 @@ lottery:
     consumer:
       invoice-group-id: lottery-e2e-invoice-${lottery.e2e.run}
       strategy-award-stock-group-id: lottery-e2e-stock-${lottery.e2e.run}
-mini-db-router:
-  jdbc:
-    datasource:
-      global:
-        pool:
-          maximum-pool-size: 8
-          minimum-idle: 1
-      db00:
-        url: jdbc:mysql://127.0.0.1:13309/lottery?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
-      db01:
-        url: jdbc:mysql://127.0.0.1:13309/lottery_01?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
-      db02:
-        url: jdbc:mysql://127.0.0.1:13309/lottery_02?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
 xxl:
   job:
     admin:

@@ -1,7 +1,5 @@
 package com.anontokyo.lottery.test.manual;
 
-import cn.bugstack.middleware.db.router.DBContextHolder;
-import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
 import com.anontokyo.lottery.LotteryApplication;
 import com.anontokyo.lottery.application.mq.producer.KafkaProducer;
 import com.anontokyo.lottery.application.worker.LotteryXxlJob;
@@ -12,7 +10,6 @@ import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
 import com.anontokyo.lottery.domain.draw.repository.IDrawConfigRepository;
 import com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao;
 import com.anontokyo.lottery.infrastructure.po.DrawOrder;
-import com.xxl.job.core.context.XxlJobContext;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -70,7 +67,6 @@ public class MqMiddlewareE2eManualIT {
     @Autowired private IDrawOrderDao orderDao;
     @Autowired private IOrderRepository orders;
     @Autowired private IDrawConfigRepository strategies;
-    @Autowired private IDBRouterStrategy router;
     @Autowired private LotteryXxlJob job;
     @Autowired private KafkaProducer producer;
     @Autowired private KafkaListenerEndpointRegistry listeners;
@@ -95,10 +91,8 @@ public class MqMiddlewareE2eManualIT {
         // 运行标识固定后，两个真实消费者组在本轮测试内保持一致且不沿用旧消费位点。
         System.setProperty("lottery.e2e.run", String.valueOf(IDS.get()));
         try (Connection connection = connect(); Statement statement = connection.createStatement()) {
-            for (String schema : Arrays.asList("lottery", "lottery_01", "lottery_02")) {
-                // 13309 是测试 compose 的专用 MySQL；只在这个隔离实例重建 fixture。
-                statement.execute("DROP DATABASE IF EXISTS " + schema);
-            }
+            // 只在已验证的独立 E2E 实例重建本轮单库 fixture。
+            statement.execute("DROP DATABASE IF EXISTS lottery");
             ScriptUtils.executeSqlScript(connection,
                     new org.springframework.core.io.FileSystemResource("../docs/sql/lottery-schema.sql"));
         }
@@ -117,31 +111,24 @@ public class MqMiddlewareE2eManualIT {
         // 真实分区分配完成后发送，避免把监听器尚未就绪当成业务失败。
         await("消费者分区分配", () -> listeners.getListenerContainers().stream()
                 .allMatch(container -> container.getAssignedPartitions() != null && !container.getAssignedPartitions().isEmpty()));
-        XxlJobContext.setXxlJobContext(new XxlJobContext(1, "1,2", null, 0, 1));
     }
 
     @After
     public void closeTestContext() {
         // 即使用例失败，也恢复监听器，防止暂停状态影响后续用例。
         listeners.start();
-        XxlJobContext.setXxlJobContext(null);
         if (admin != null) {
             admin.close();
         }
     }
 
     @Test
-    public void completePipelineRoutesAcrossAllEightOrderTables() throws Exception {
-        Set<String> visited = new HashSet<>();
+    public void completePipelineForOrdersFromMultipleUsers() throws Exception {
         List<DrawOrder> rows = new ArrayList<>();
-        while (visited.size() < 8) {
-            String user = "e2e" + IDS.incrementAndGet();
-            String physicalTable = physicalTable(user);
-            if (visited.add(physicalTable)) {
-                rows.add(createOrder(user, 0, 0));
-            }
+        for (int i = 0; i < 8; i++) {
+            rows.add(createOrder("e2e" + IDS.incrementAndGet(), 0, 0));
         }
-        // 真实分片扫描、Redis dispatch marker、Kafka、结算事务、发奖消费者连续执行。
+        // 真实单表扫描、Redis dispatch marker、Kafka、结算事务、发奖消费者连续执行。
         job.awardStockSettlementOutboxJobHandler();
         for (DrawOrder row : rows) {
             awaitCompleted(row);
@@ -331,7 +318,7 @@ public class MqMiddlewareE2eManualIT {
         awaitCommitted();
         // 只修复 fixture 的错误库存，显式按订单释放原有 Outbox 后继续原业务链。
         sql("UPDATE lottery.draw_config_prize SET award_surplus_count=100 WHERE draw_config_id=?", drawConfigId);
-        sql("UPDATE " + physicalTable(row.getuId()) + " SET stock_settlement_event_status=0 WHERE order_id=? AND stock_settlement_event_status=4", row.getOrderId());
+        sql("UPDATE " + "lottery.draw_order" + " SET stock_settlement_event_status=0 WHERE order_id=? AND stock_settlement_event_status=4", row.getOrderId());
         job.awardStockSettlementOutboxJobHandler();
         awaitCompleted(row);
         gate.attempt(1).success();
@@ -393,18 +380,8 @@ public class MqMiddlewareE2eManualIT {
         assertEquals(Integer.valueOf(1), current.getAwardFulfillmentStatus());
     }
 
-    private String physicalTable(String user) {
-        try {
-            // 路由信息与动态 MyBatis 插件使用同一个生产上下文。
-            router.doRouter(user);
-            return "lottery_" + DBContextHolder.getDBKey() + ".draw_order_" + DBContextHolder.getTBKey();
-        } finally {
-            router.clear();
-        }
-    }
-
     private void age(DrawOrder row) throws SQLException {
-        sql("UPDATE " + physicalTable(row.getuId())
+        sql("UPDATE " + "lottery.draw_order"
                 + " SET update_time=DATE_SUB(NOW(),INTERVAL 11 MINUTE) WHERE order_id=?", row.getOrderId());
     }
 

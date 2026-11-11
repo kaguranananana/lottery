@@ -33,18 +33,12 @@ public interface IAwardOrder {
     /**
      * 扫描待补偿的发奖MQ订单。
      */
-    List<AwardFulfillmentEvent> scanFulfillmentEventStatus(int dbCount, int tbCount, int limit);
+    List<AwardFulfillmentEvent> scanFulfillmentEventStatus(int limit);
 
     /**
      * Scan award stock settlement outbox.
      */
-    List<AwardStockSettlementVO> scanStockSettlementEventStatus(int dbCount, int tbCount, int limit);
-
-    /** 分库元信息（供调度任务按分片遍历） */
-    int shardingDbCount();
-
-    /** 分表元信息 */
-    int shardingTableCount();
+    List<AwardStockSettlementVO> scanStockSettlementEventStatus(int limit);
 
     /**
      * Query invoice payload by order id.

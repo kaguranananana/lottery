@@ -1,6 +1,5 @@
 package com.anontokyo.lottery.test.manual;
 
-import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
 import com.anontokyo.lottery.domain.activity.model.vo.DrawConfigPrizeVO;
@@ -43,8 +42,8 @@ public class PerformanceSqlManualIT {
         // 仅创建测试自有 schema，不重建 lottery 或历史压测数据。
         try (Connection c = DriverManager.getConnection(url, "root", "perf-only"); Statement s = c.createStatement()) {
             s.execute("CREATE DATABASE IF NOT EXISTS " + SCHEMA);
-            s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".user_activity_quota LIKE lottery_01.user_activity_quota");
-            s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".draw_participation LIKE lottery_01.draw_participation");
+            s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".user_activity_quota LIKE lottery.user_activity_quota");
+            s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".draw_participation LIKE lottery.draw_participation");
             s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".draw_config_prize LIKE lottery.draw_config_prize");
             s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".award_stock_settlement LIKE lottery.award_stock_settlement");
         }
@@ -62,8 +61,6 @@ public class PerformanceSqlManualIT {
         takes = new DrawParticipationRepository();
         ReflectionTestUtils.setField(takes, "userActivityQuotaDao", session.getMapper(IUserActivityQuotaDao.class));
         ReflectionTestUtils.setField(takes, "drawParticipationDao", session.getMapper(IDrawParticipationDao.class));
-        // 该用例聚焦单库锁，分片行为另由真实 HTTP 幂等审计覆盖。
-        ReflectionTestUtils.setField(takes, "dbRouter", mock(IDBRouterStrategy.class));
         ReflectionTestUtils.setField(takes, "transactionTemplate", transaction);
         strategies = new DrawConfigRepository();
         ReflectionTestUtils.setField(strategies, "drawConfigPrizeDao", session.getMapper(IDrawConfigPrizeDao.class));

@@ -38,10 +38,6 @@ public interface IOrderRepository {
      */
     List<AwardFulfillmentEvent> scanFulfillmentEventStatus(int limit);
 
-    List<AwardFulfillmentEvent> scanFulfillmentEventStatusByShard(int dbIdx, int tbIdx, int limit);
-
-    List<AwardStockSettlementVO> scanStockSettlementEventStatusByShard(int dbIdx, int tbIdx, int limit);
-
     /**
      * Scan award stock settlement outbox.
      */
@@ -67,12 +63,6 @@ public interface IOrderRepository {
      * @return SUCCESS / NO_UPDATE(锁定失败) / INDEX_DUP(订单重复)
      */
     Constants.ResponseCode saveDrawOrderWithTakeLock(DrawOrderVO drawOrder);
-
-    /** 分库元信息（供调度任务分片遍历用） */
-    int shardingDbCount();
-
-    /** 分表元信息 */
-    int shardingTableCount();
 
     /**
      * Whether stock settlement is already complete.

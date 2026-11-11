@@ -1,10 +1,7 @@
--- MySQL 8.0 全新初始化。三个数据库须尚未创建。历史库使用 V5 升级流程。
+-- MySQL 8.0 新建单库。已有三库使用 V6 旁路迁移。
 SET NAMES utf8mb4;
 CREATE DATABASE lottery CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
-CREATE DATABASE lottery_01 CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
-CREATE DATABASE lottery_02 CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 
--- 全局库含活动、奖品配置和库存结算账本。
 USE lottery;
 CREATE TABLE `activity` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '自增ID',
@@ -71,15 +68,13 @@ CREATE TABLE `award_stock_settlement` (
   UNIQUE KEY `uk_order_id` (`order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='奖品库存结算幂等账本';
 
--- 用户参与及次数只分库；订单按用户分库后再分四张物理表。
-USE lottery_01;
 CREATE TABLE `draw_participation` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '自增ID',
   `u_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '用户ID',
   `take_id` bigint DEFAULT NULL COMMENT '活动领取ID',
   `activity_id` bigint DEFAULT NULL COMMENT '活动ID',
   `participated_at` datetime DEFAULT NULL COMMENT '请求进入抽奖参与流程的时间',
-  `draw_config_id` int DEFAULT NULL COMMENT '抽奖配置ID',
+  `draw_config_id` bigint DEFAULT NULL COMMENT '抽奖配置ID',
   `state` tinyint DEFAULT NULL COMMENT '活动单使用状态 0未使用、1已使用',
   `request_id` varbinary(256) DEFAULT NULL COMMENT '逻辑抽奖请求号',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
@@ -94,7 +89,7 @@ CREATE TABLE `draw_participation` (
 
 CREATE TABLE `user_activity_quota` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '自增ID',
-  `u_id` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '用户ID',
+  `u_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '用户ID',
   `activity_id` bigint DEFAULT NULL COMMENT '活动ID',
   `total_count` int DEFAULT NULL COMMENT '首次参与时的次数额度快照',
   `left_count` int DEFAULT NULL COMMENT '剩余参与次数',
@@ -104,7 +99,7 @@ CREATE TABLE `user_activity_quota` (
   UNIQUE KEY `uk_user_activity` (`u_id`,`activity_id`) USING BTREE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户活动次数额度';
 
-CREATE TABLE `draw_order_000` (
+CREATE TABLE `draw_order` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '自增ID',
   `u_id` varchar(32) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '用户ID',
   `activity_id` bigint DEFAULT NULL COMMENT '活动ID',
@@ -128,17 +123,6 @@ CREATE TABLE `draw_order_000` (
   UNIQUE KEY `uk_order_id` (`order_id`),
   UNIQUE KEY `uk_legacy_uuid` (`legacy_uuid`) USING BTREE,
   KEY `idx_stock_event_create_time` (`stock_settlement_event_status`,`create_time`),
-  KEY `idx_u_id_take_id` (`u_id`,`take_id`),
+  UNIQUE KEY `uk_take_id` (`take_id`),
   KEY `idx_award_fulfillment_status` (`award_fulfillment_status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户抽奖订单';
-CREATE TABLE draw_order_001 LIKE draw_order_000;
-CREATE TABLE draw_order_002 LIKE draw_order_000;
-CREATE TABLE draw_order_003 LIKE draw_order_000;
-
-USE lottery_02;
-CREATE TABLE draw_participation LIKE lottery_01.draw_participation;
-CREATE TABLE user_activity_quota LIKE lottery_01.user_activity_quota;
-CREATE TABLE draw_order_000 LIKE lottery_01.draw_order_000;
-CREATE TABLE draw_order_001 LIKE lottery_01.draw_order_000;
-CREATE TABLE draw_order_002 LIKE lottery_01.draw_order_000;
-CREATE TABLE draw_order_003 LIKE lottery_01.draw_order_000;

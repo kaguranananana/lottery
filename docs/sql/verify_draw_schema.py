@@ -42,7 +42,7 @@ def verify(container):
     else:
         raise RuntimeError(ping.stderr)
 
-    sql(source('docs/sql/lottery-schema.sql'))
+    sql(source('docs/sql/lottery-v5-schema.sql'))
     fresh = definitions()
     assert fresh.count('CREATE TABLE `') == 17
     sql(source('docs/sql/lottery-demo-seed.sql'))
@@ -107,7 +107,44 @@ def verify(container):
             table = f'{schema}.draw_order_{shard:03d}'
             sql(f"INSERT INTO {table}(u_id,order_id) VALUES ('new', 200);")
             sql(f"INSERT INTO {table}(u_id,order_id) VALUES ('different', 200);", 'uk_order_id')
-    print('新建与升级后 17 张表定义一致，历史数据、冲突阻断及八分表订单唯一键通过。')
+    # 八个历史物理表中的相同订单号必须阻断整个目标数据事务。
+    def merge(target, error=None):
+        script = subprocess.check_output(['python3', str(ROOT / 'docs/sql/V6__merge_lottery.py'),
+                                          '--target', target], text=True)
+        return sql(script, error)
+
+    merge('lottery_single_conflict', 'uk_order_id')
+    assert sql('SELECT COUNT(*) FROM lottery_single_conflict.draw_order;') == '0'
+    assert sql('SELECT COUNT(*) FROM lottery_single_conflict.draw_config;') == '0'
+    # 删除前面刻意制造的全局订单冲突；在另一来源保留相同自增主键的不同业务行。
+    for schema in SCHEMAS[1:]:
+        for shard in range(4):
+            sql(f'DELETE FROM {schema}.draw_order_{shard:03d} WHERE order_id=200;')
+    sql("""
+        UPDATE lottery_01.draw_order_001 SET activity_id=7,award_id='award' WHERE order_id=77;
+        INSERT INTO lottery_01.user_activity_quota(id,u_id,activity_id,total_count,left_count)
+            VALUES (1,'u',7,5,4);
+        INSERT INTO lottery_02.user_activity_quota(id,u_id,activity_id,total_count,left_count)
+            VALUES (1,'v',7,5,3);
+        INSERT INTO lottery_02.draw_participation(id,u_id,take_id,activity_id,state,draw_config_id,request_id)
+            VALUES (1,'v',21,7,1,7,'A');
+        INSERT INTO lottery_02.draw_order_002(id,u_id,activity_id,order_id,take_id,draw_config_id)
+            VALUES (1,'v',7,201,21,7);
+    """)
+    report = merge('lottery_single')
+    assert report == '2\n0', report
+    assert sql('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema="lottery_single";') == '8'
+    assert sql('SELECT COUNT(*),COUNT(DISTINCT id) FROM lottery_single.draw_order;') == '4\t4'
+    assert sql('SELECT COUNT(*),SUM(left_count) FROM lottery_single.user_activity_quota;') == '2\t7'
+    assert sql('SELECT COUNT(*) FROM lottery_single.draw_order o JOIN lottery_single.draw_participation p'
+               ' USING(take_id) WHERE o.u_id=p.u_id;') == '2'
+    assert sql('SELECT legacy_uuid,fulfilled_at FROM lottery_single.draw_order WHERE order_id=77;') == (
+        'earlier-id\t2026-11-01 00:00:00')
+    assert sql('SELECT COUNT(*) FROM lottery_single.award_stock_settlement WHERE order_id=77;') == '1'
+    assert sql('SELECT COUNT(*) FROM lottery_01.draw_order_001;') == '2'
+    sql("INSERT INTO lottery_single.draw_order (order_id,take_id) VALUES(900,21);", 'uk_take_id')
+    print('V5 历史升级、V6 单库八表、主键重编号、关联与状态保留、跨片冲突事务回滚通过。')
+
 
 
 if __name__ == '__main__':

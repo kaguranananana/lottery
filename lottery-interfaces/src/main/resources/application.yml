@@ -1,14 +1,17 @@
 server:
   port: 8080
 
-#spring:
-#  datasource:
-#    username: root
-#    password: root
-#    url: jdbc:mysql://127.0.0.1:3306/lottery?useUnicode=true&serverTimezone=Asia/Shanghai
-#    driver-class-name: com.mysql.cj.jdbc.Driver
-
 spring:
+  datasource:
+    # MyBatis 与 TransactionTemplate 共用 Spring Boot 自动配置的连接池。
+    url: ${LOTTERY_DB_URL:jdbc:mysql://127.0.0.1:13306/lottery?useUnicode=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true}
+    username: ${LOTTERY_DB_USER:root}
+    password: ${LOTTERY_DB_PASSWORD:root}
+    hikari:
+      maximum-pool-size: 48
+      minimum-idle: 12
+      connection-timeout: 5000
+      validation-timeout: 1000
   redis:
     host: localhost
     port: 6379
@@ -112,43 +115,6 @@ lottery:
       redis-expire-jitter-seconds: 60
       null-redis-expire-seconds: 30
 
-
-
-# 多数据源路由配置
-mini-db-router:
-  jdbc:
-    datasource:
-      dbCount: 2
-      tbCount: 4
-      default: db00
-      routerKey: uId
-      list: db01,db02
-      global:
-        pool:
-          maximum-pool-size: 48
-          minimum-idle: 12
-          connection-timeout: 5000
-          validation-timeout: 1000
-          idle-timeout: 600000
-          max-lifetime: 1800000
-      db00:
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        # 全局库会话由 JDBC 管理，缓存只读/自动提交状态，减少每条 SQL 的重复状态查询。
-        url: jdbc:mysql://127.0.0.1:13306/lottery?useUnicode=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true
-        username: root
-        password: root
-      db01:
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        # 用户分库一同样使用 JDBC 会话缓存，事务提交和消息 CAS 仍真实执行。
-        url: jdbc:mysql://127.0.0.1:13306/lottery_01?useUnicode=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true
-        username: root
-        password: root
-      db02:
-        driver-class-name: com.mysql.cj.jdbc.Driver
-        # 用户分库二保持相同驱动参数，禁止用 SQL 直接 SET 会话状态绕过缓存。
-        url: jdbc:mysql://127.0.0.1:13306/lottery_02?useUnicode=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true
-        username: root
-        password: root
 
 
 mybatis:
