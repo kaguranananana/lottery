@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#090f1d">
+    <meta name="description" content="选择一个活动，转动幸运转盘，体验 Lottery 抽奖。">
+    <title>幸运转盘 · Lottery</title>
+    <link rel="icon" href="./draw/mark.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="./draw/styles.css">
+    <script src="./draw/app.js" type="module"></script>
+</head>
+<body>
+    <header class="masthead">
+        <div class="masthead__inner">
+            <div class="brand"><img src="./draw/mark.svg" width="34" height="34" alt="">Lottery</div>
+            <a class="source-link" href="https://github.com/kaguranananana/lottery">
+                项目源码
+                <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+                    <path d="M4 12 12 4M5 4h7v7" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </a>
+        </div>
+    </header>
+
+    <main class="page">
+        <div class="intro">
+            <div class="intro__ornament" aria-hidden="true"><img src="./draw/mark.svg" width="15" height="15" alt=""></div>
+            <h1>幸运转盘</h1>
+            <p>选一个活动，转动转盘，看看你的手气。</p>
+        </div>
+
+        <div class="layout">
+            <!-- 转盘只负责揭晓动效；分区图案不对应奖品或概率。 -->
+            <figure class="stage">
+                <div class="stage__dial" aria-hidden="true">
+                    <span class="stage__spark stage__spark--left">✦</span>
+                    <span class="stage__spark stage__spark--right">✧</span>
+                    <span class="stage__spark stage__spark--bottom">✦</span>
+                    <div class="wheel">
+                        <img id="wheel-face" class="wheel__face" src="./draw/wheel.svg" width="500" height="500" alt="">
+                        <div class="wheel__hub"><span>好运</span></div>
+                        <svg class="wheel__pin" viewBox="0 0 44 58" aria-hidden="true">
+                            <defs>
+                                <linearGradient id="pin-metal" x1="0" y1="0" x2="1" y2="1" gradientUnits="objectBoundingBox">
+                                    <stop stop-color="#fff1c7"/><stop offset=".52" stop-color="#f1c680"/><stop offset="1" stop-color="#a96e32"/>
+                                </linearGradient>
+                            </defs>
+                            <path d="M22 2C11 2 4 8 4 18c0 8 7 19 18 37 11-18 18-29 18-37C40 8 33 2 22 2Z" fill="url(#pin-metal)" stroke="#f9dca7" stroke-width="1.5"/>
+                            <path d="m22 10 7 8-7 8-7-8Z" fill="#6f4525"/>
+                            <path d="m22 13 4 5-4 5-4-5Z" fill="#ffdf9b"/>
+                        </svg>
+                    </div>
+                </div>
+                <figcaption>转盘仅用于揭晓，结果以实际抽奖为准。</figcaption>
+            </figure>
+
+            <section class="panel" aria-labelledby="form-title">
+                <div class="panel__heading">
+                    <h2 id="form-title">参与抽奖</h2>
+                    <button class="quiet-button" id="refresh-activities" type="button">
+                        <svg viewBox="0 0 16 16" width="15" height="15" fill="none" aria-hidden="true">
+                            <path d="M13.2 6a5.5 5.5 0 1 0 .1 3.6M13.5 2.6v3.8H9.7" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        刷新活动
+                    </button>
+                </div>
+
+                <form id="draw-form">
+                    <div class="field">
+                        <label for="activity">抽奖活动</label>
+                        <div class="select-wrap">
+                            <select id="activity" required disabled aria-describedby="activity-note activity-period">
+                                <option value="">正在加载活动…</option>
+                            </select>
+                            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" aria-hidden="true">
+                                <path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <p class="field__note" id="activity-note" role="status"></p>
+                        <p class="field__period" id="activity-period" hidden>
+                            <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
+                                <circle cx="8" cy="8" r="5.6" stroke="currentColor" stroke-width="1.2"/>
+                                <path d="M8 4.8V8l2 1.3" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                            </svg>
+                            <span>截止 <time id="activity-end"></time></span>
+                        </p>
+                    </div>
+
+                    <div class="field">
+                        <label for="user-id">用户 ID <span class="field__aside">可使用默认游客 ID</span></label>
+                        <input id="user-id" type="text" required maxlength="32" autocomplete="off" spellcheck="false" disabled>
+                    </div>
+
+                    <button class="draw-button" id="draw-button" type="submit" disabled>
+                        <img src="./draw/mark.svg" width="20" height="20" alt="">
+                        <span id="draw-button-label">开始抽奖</span>
+                    </button>
+                </form>
+
+                <div class="result" id="result" data-state="idle" role="status" aria-atomic="true">
+                    <span class="result__icon" aria-hidden="true">✧</span>
+                    <div class="result__copy">
+                        <p class="result__label">本轮结果</p>
+                        <p class="result__title" id="result-title">等待揭晓</p>
+                        <p class="result__detail" id="result-detail">抽奖完成后，结果会显示在这里。</p>
+                        <p class="result__reference" id="result-reference" hidden></p>
+                    </div>
+                </div>
+                <noscript><p class="field__note">请启用 JavaScript 后参与抽奖。</p></noscript>
+            </section>
+        </div>
+
+        <footer class="footer">Lottery 项目演示 · 奖品为模拟发放</footer>
+    </main>
+</body>
+</html>

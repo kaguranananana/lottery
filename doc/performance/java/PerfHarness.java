@@ -104,11 +104,15 @@ public class PerfHarness {
     @PostMapping("/__perf/setup")
     public Map<String, Object> setup(@RequestParam("id") long id, @RequestParam("stock") int stock,
             @RequestParam("quota") int quota, @RequestParam("users") int users, @RequestParam("prefix") String prefix,
-            @RequestParam(value="awardStock", defaultValue="-1") int awardStock) throws Exception {
+            @RequestParam(value="awardStock", defaultValue="-1") int awardStock,
+            @RequestParam(value="name", required=false) String name,
+            @RequestParam(value="description", required=false) String description,
+            @RequestParam(value="awardRate", defaultValue="0.20") BigDecimal awardRate) throws Exception {
         ActivityVO activity = new ActivityVO();
         activity.setActivityId(id);
-        activity.setActivityName("隔离压测活动" + id);
-        activity.setActivityDesc("独立环境专用，真实业务组件");
+        // 网页演示可以设置活动文案；原压测调用继续使用既定名称和描述。
+        activity.setActivityName(name == null ? "隔离压测活动" + id : name);
+        activity.setActivityDesc(description == null ? "独立环境专用，真实业务组件" : description);
         activity.setBeginDateTime(new java.util.Date(System.currentTimeMillis() - 60000));
         activity.setEndDateTime(new java.util.Date(System.currentTimeMillis() + 86400000));
         activity.setTakeCount(quota);
@@ -121,13 +125,13 @@ public class PerfHarness {
         List<StrategyDetailVO> details = new ArrayList<>();
         List<AwardVO> awards = new ArrayList<>();
         // stock 仅作为每种奖品的默认总量；活动只有个人次数限制，没有总库存。
-        // 五种等概率奖品，使用已有模拟券 handler，所有请求均走中奖订单完整主链路。
+        // 五种等概率模拟券，压测默认总概率 100%；演示可留出未中奖概率。
         for (int i = 0; i < 5; i++) {
             StrategyDetailVO detail = new StrategyDetailVO();
             detail.setAwardId("p" + id + "_" + i);
             detail.setAwardName("模拟券" + i);
             detail.setAwardCount(awardStock < 0 ? stock : awardStock);
-            detail.setAwardRate(new BigDecimal("0.20"));
+            detail.setAwardRate(awardRate);
             details.add(detail);
             AwardVO award = new AwardVO();
             award.setAwardId(detail.getAwardId());

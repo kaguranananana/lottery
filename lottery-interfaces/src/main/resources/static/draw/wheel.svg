@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 500 500">
+    <!-- 用同一个扇区路径旋转八次，分隔线与外缘保持一致。 -->
+    <defs>
+        <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+            <stop stop-color="#fbe0a4"/><stop offset=".28" stop-color="#aa6e3e"/>
+            <stop offset=".51" stop-color="#f3c67e"/><stop offset=".76" stop-color="#875133"/>
+            <stop offset="1" stop-color="#e9b06a"/>
+        </linearGradient>
+        <linearGradient id="well" x1="0" y1="0" x2="0" y2="1">
+            <stop stop-color="#593f31"/><stop offset=".47" stop-color="#17182a"/><stop offset="1" stop-color="#3e2a27"/>
+        </linearGradient>
+        <linearGradient id="amber" x1="0" y1="0" x2="0" y2="1">
+            <stop stop-color="#654634"/><stop offset="1" stop-color="#2a2530"/>
+        </linearGradient>
+        <linearGradient id="blue" x1="0" y1="0" x2="0" y2="1">
+            <stop stop-color="#213854"/><stop offset="1" stop-color="#141e32"/>
+        </linearGradient>
+        <path id="sector" d="M250 250 175.38 69.84a195 195 0 0 1 149.24 0Z"/>
+        <path id="spark" d="M0-18C3-6 6-3 18 0 6 3 3 6 0 18-3 6-6 3-18 0-6-3-3-6 0-18Z"/>
+        <path id="diamond" d="M0-18 13 0 0 18-13 0Z M0-18 5 0 0 18-5 0Z"/>
+        <path id="star" d="m0-17 5.2 11.1 12.2 1.5-9 8.3 2.4 12L0 10-10.8 15.9l2.4-12-9-8.3 12.2-1.5Z"/>
+        <path id="moon" d="M8-14A16 16 0 1 0 14 8 13 13 0 0 1 8-14Z"/>
+    </defs>
+
+    <!-- 铜色轮缘与刻度包住可转动的表盘。 -->
+    <circle cx="250" cy="250" r="227" fill="#0b1221" stroke="#986f4f"/>
+    <circle cx="250" cy="250" r="221" fill="url(#rim)" stroke="#f1c482" stroke-width=".9"/>
+    <circle cx="250" cy="250" r="212" fill="url(#well)" stroke="#342635" stroke-width="2"/>
+    <circle cx="250" cy="250" r="206" fill="none" stroke="#ecc183" stroke-width="3" stroke-linecap="round" stroke-dasharray=".3 9.81" opacity=".8"/>
+    <circle cx="250" cy="250" r="199" fill="#111928" stroke="#b3885e" stroke-width="1"/>
+    <g stroke="#a27c5a" stroke-width="1" stroke-linejoin="round">
+        <use href="#sector" fill="url(#amber)"/>
+        <use href="#sector" fill="url(#blue)" transform="rotate(45 250 250)"/>
+        <use href="#sector" fill="url(#amber)" transform="rotate(90 250 250)"/>
+        <use href="#sector" fill="url(#blue)" transform="rotate(135 250 250)"/>
+        <use href="#sector" fill="url(#amber)" transform="rotate(180 250 250)"/>
+        <use href="#sector" fill="url(#blue)" transform="rotate(225 250 250)"/>
+        <use href="#sector" fill="url(#amber)" transform="rotate(270 250 250)"/>
+        <use href="#sector" fill="url(#blue)" transform="rotate(315 250 250)"/>
+    </g>
+    <g fill="none" stroke="#edba82" opacity=".27">
+        <circle cx="250" cy="250" r="181"/>
+        <circle cx="250" cy="250" r="110"/>
+        <circle cx="250" cy="250" r="86" stroke-dasharray="1 5"/>
+    </g>
+
+    <!-- 星、月和菱形是装饰纹样，不是奖品图例。 -->
+    <g fill="#eec78e" fill-opacity=".1" stroke="#efd096" stroke-width="1.65" stroke-linejoin="round">
+        <use href="#spark" transform="translate(250 103)"/>
+        <use href="#diamond" transform="translate(354 146) rotate(45)"/>
+        <use href="#moon" transform="translate(397 250) rotate(90)"/>
+        <use href="#star" transform="translate(354 354) rotate(135)"/>
+        <use href="#spark" transform="translate(250 397)"/>
+        <use href="#diamond" transform="translate(146 354) rotate(-45)"/>
+        <use href="#moon" transform="translate(103 250) rotate(-90)"/>
+        <use href="#star" transform="translate(146 146) rotate(-45)"/>
+    </g>
+    <g fill="#e4b679">
+        <circle cx="250" cy="77" r="2"/><circle cx="372" cy="128" r="2"/>
+        <circle cx="423" cy="250" r="2"/><circle cx="372" cy="372" r="2"/>
+        <circle cx="250" cy="423" r="2"/><circle cx="128" cy="372" r="2"/>
+        <circle cx="77" cy="250" r="2"/><circle cx="128" cy="128" r="2"/>
+    </g>
+</svg>

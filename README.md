@@ -12,6 +12,12 @@
 
 技术栈：**Spring Boot · MyBatis · MySQL · Redis · Caffeine · Kafka · XXL-Job · Maven · JMeter**
 
+## 网页演示
+
+启动后端后，打开 [幸运转盘](http://localhost:8080/) 即可选择活动、点击抽奖并查看结果。页面和 API 随同一个 Spring Boot WAR 发布，无需单独构建前端。想从空环境跑一场可抽的活动，可按 [本地演示步骤](docs/web-demo.md) 准备独立演示数据。
+
+![Lottery 幸运转盘，左侧是铜金转盘，右侧可选择活动并开始抽奖](docs/assets/draw-preview.webp)
+
 ## 核心特性
 
 | 主题 | 设计与实现 |
@@ -170,7 +176,7 @@ mvn clean package
 java -jar lottery-interfaces/target/Lottery.war
 ```
 
-可通过 HTTP 接口访问当前运行中的活动与提交抽奖请求：
+浏览器可打开 [http://localhost:8080/](http://localhost:8080/) 参与抽奖。也可直接调用 HTTP 接口：
 
 ```bash
 curl http://localhost:8080/api/v1/activities
@@ -196,7 +202,7 @@ curl -X POST http://localhost:8080/api/v1/draw \
 ## 项目结构
 
 ```text
-lottery-interfaces        Spring Boot 启动入口、HTTP API、测试
+lottery-interfaces        Spring Boot 启动入口、抽奖网页、HTTP API、测试
 lottery-application       抽奖流程编排、Kafka 生产/消费、XXL-Job 任务
 lottery-domain            资格校验、策略抽样、活动与订单业务规则
 lottery-infrastructure    MyBatis / Redis / Repository / 缓存与路由实现
