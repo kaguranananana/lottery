@@ -4,7 +4,7 @@
 
 编译目标 Java 8，保留现有 Spring Boot 2.3 和 javax.* API；不要使用 record、var 或 Java 9 之后的集合工厂。局部沿用现有显式 getter/setter、@Resource 注入和 @Service/@Repository/@Component；不要为初始化或小改动引入 Lombok、统一注入重构或新增框架。
 
-生成代码须加入简体中文注释，关键逻辑逐行解释。事务、路由清理、库存扣减、ack 与补偿注释应说明每一步的实际语义。遵循 [AGENTS.md](../../../AGENTS.md) 的根因优先原则，不为通过测试改变契约或增加样例特例，不做无依据的过度防御。
+生成代码须加入简体中文注释，关键逻辑逐行解释。事务、入口准入、库存扣减、ack 与补偿注释应说明每一步的实际语义。遵循 [AGENTS.md](../../../AGENTS.md) 的根因优先原则，不为通过测试改变契约或增加样例特例，不做无依据的过度防御。
 
 common 只承载真实共享契约，优先复用 [Result.java](../../../lottery-common/src/main/java/com/anontokyo/lottery/common/Result.java)、[Constants.java](../../../lottery-common/src/main/java/com/anontokyo/lottery/common/Constants.java) 与 [PageRequest.java](../../../lottery-common/src/main/java/com/anontokyo/lottery/common/PageRequest.java)。不要把仅某个业务域使用的算法或 DTO 提升到 common。
 
@@ -40,19 +40,17 @@ mvn test -Dtest='*ManualIT' -Dsurefire.failIfNoSpecifiedTests=false
 
 该选项只允许 common/domain 等没有匹配测试的模块继续，不改变匹配用例的失败结果。手工集成会写数据，只在明确要验证该链路的任务中运行。
 
-路由依赖为 cn.bugstack.middleware:db-router-spring-boot-starter:1.0.4。若本机 Maven 无该制品，先检查相邻 db-router-spring-boot-starter 仓库的实际 artifact/version 与本地安装，再解决依赖；不能改 Lottery 版本号来绕过解析失败。
-
 ## 按改动选择验证
 
-纯项目流程文档、规范或 Agent 配置变更检查文档引用与活动配置路由；没有运行时代码变化时，不运行无关业务测试。业务改动根据所触及的契约选择既有单测；涉及真实路由、SQL、库存或 Kafka 时，mock 结果不能替代对应环境验证。报告实际执行的命令、结果与未覆盖部分，不复制泛化检查清单。
+纯项目流程文档、规范或 Agent 配置变更检查文档引用与活动配置路由；没有运行时代码变化时，不运行无关业务测试。业务改动根据所触及的契约选择既有单测；涉及 SQL、库存或 Kafka 时，mock 结果不能替代对应环境验证。报告实际执行的命令、结果与未覆盖部分，不复制泛化检查清单。
 
-新增 DrawRequestOwnershipManualIT 使用专用空 MySQL 实例，按 [抽奖幂等接口说明](../../../docs/draw-request-idempotency.md) 的单独命令运行并传入 lottery.it.mysql；不能把它混同为默认业务实例上的全环境 ManualIT。该测试执行生产 Mapper、路由切面、Repository 和事务，真实数据库约束测试与 Redis/抽样 Mock 的边界须同时报告。
+新增 DrawRequestOwnershipManualIT 使用专用空 MySQL 实例，按 [抽奖幂等接口说明](../../../docs/draw-request-idempotency.md) 的单独命令运行并传入 lottery.it.mysql；不能把它混同为默认业务实例上的全环境 ManualIT。该测试执行生产 Mapper、Repository 和事务，真实数据库约束测试与 Redis/抽样 Mock 的边界须同时报告。
 
-消息状态测试：MqCallbackStateTest 进入默认 mvn test 门禁；FulfillmentEventStatusCasManualIT 须传入专用空 MySQL URL，测试自行建删 lottery_mq_cas_it，不装配分片插件。真实 Mapper/Repository CAS、并发和超时 SQL 已与 Kafka/Redis Mock 边界区分，见[消息修复说明](../../../docs/kafka-mq-state-cas.md)。
+消息状态测试：MqCallbackStateTest 进入默认 mvn test 门禁；FulfillmentEventStatusCasManualIT 须传入专用空 MySQL URL，测试自行建删 lottery_mq_cas_it。真实 Mapper/Repository CAS、并发和超时 SQL 已与 Kafka/Redis Mock 边界区分，见[订单 Outbox](../../../docs/outbox-delivery.md)。
 
 MqMiddlewareE2eManualIT 在独立 Docker compose 中运行真实 MySQL 8、Redis、Kafka 与生产 Spring 组件，覆盖多用户订单、库存账本事务、实际 Kafka ack、迟到通知、重复消息与真实 broker 停机恢复。测试仅通过生产者装饰器延后 Future 通知，不使用中间件 Mock；注入失败与真实 broker 失败必须分开报告。会重建测试端口 13309 的专用单库 fixture，运行步骤与已确认的停止宽限期要求见[端到端验证记录](../../../docs/kafka-middleware-e2e.md)。
 
-最终验证增加 FinalBusinessE2eManualIT：真实随机端口 HTTP、活动配置事务、Redis、两库八张订单表、Kafka 与库存账本，不替换任何中间件。测试包含 Redis 停机、ACL 第二个 Key 写入失败、SQL 账本表临时改名；异常 ACK 用例直接调用生产消费者，恢复后通过真实 Kafka 完成。MqMiddlewareE2eManualIT 在 DROP 前检查 Docker 标签及端口；两者只能在专用 compose 13309 实例运行。SQL-only 集成测试使用另一专用空 MySQL（13319），结果与命令见[最终报告](../../../docs/final-correctness-e2e.md)。
+最终验证增加 FinalBusinessE2eManualIT：真实随机端口 HTTP、活动配置事务、Redis、单库订单表、Kafka 与库存账本，不替换任何中间件。测试包含 Redis 停机、ACL 第二个 Key 写入失败、SQL 账本表临时改名；异常 ACK 用例直接调用生产消费者，恢复后通过真实 Kafka 完成。MqMiddlewareE2eManualIT 在 DROP 前检查 Docker 标签及端口；两者只能在专用 compose 13309 实例运行。SQL-only 集成测试使用另一专用空 MySQL（13319），结果与命令见[当前全链路实测](../../../docs/single-db-load-test.md)。
 
 2026-10-24 扩展 HTTP E2E：缺失奖品库存时保留原 take；真实 take/order INSERT trigger 失败后事务回滚与库存归还；同请求恢复且次数不重复扣减。后续运行结果与剩余边界见[故障评估](../../../docs/failure-review-20261024.md)。
 
