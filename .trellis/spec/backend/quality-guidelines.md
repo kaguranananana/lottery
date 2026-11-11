@@ -15,6 +15,8 @@ common 只承载真实共享契约，优先复用 [Result.java](../../../lottery
 | [WeightedRandomSelectorTest.java](../../../lottery-interfaces/src/test/java/com/anontokyo/lottery/test/domain/WeightedRandomSelectorTest.java) | 微精度、边界采样、NO_PRIZE、负概率与总和超限 | JUnit 4，无外部服务 |
 | [DrawRequestIdempotencyTest.java](../../../lottery-interfaces/src/test/java/com/anontokyo/lottery/test/domain/DrawRequestIdempotencyTest.java) | 首次编排、已消费回放、未完成 take 复用、异常释放锁 | Mockito / ReflectionTestUtils，无外部服务 |
 | [RedisActivityDrawProcessGuardTest.java](../../../lottery-interfaces/src/test/java/com/anontokyo/lottery/test/infrastructure/lock/RedisActivityDrawProcessGuardTest.java) | 锁冲突、获取失败、token 与 Lua compare-delete 调用 | Mockito，无真实 Redis |
+| StockReservationTransactionsTest、CacheTransactionInvalidationTest、SnowflakeNodeConfigurationTest | Spring 事务完成状态、缓存提交后失效、同宿主机显式节点配置 | 默认单元门禁；数据库连接/事务故障注入，不替代真实数据库提交证据 |
+| RedisStockFailureManualIT | 缺失奖品库存不变未中奖、回补不复活 Key、不吞异常、64 请求竞争有限库存 | 显式指定 `-Dlottery.it.redis.port=16379`，真实专用 Redis |
 | [StockSettlementIdempotencyManualIT.java](../../../lottery-interfaces/src/test/java/com/anontokyo/lottery/test/manual/StockSettlementIdempotencyManualIT.java) | 手写 JDBC 结算 SQL 与 Redis 并发操作 | 本机 MySQL/Redis；不是生产 Repository 或 Kafka 全链路测试 |
 | 其它 ManualIT 及 legacy DAO/API 测试 | Spring 上下文与真实中间件场景 | 按具体用例准备环境 |
 
@@ -42,7 +44,7 @@ mvn test -Dtest='*ManualIT' -Dsurefire.failIfNoSpecifiedTests=false
 
 ## 按改动选择验证
 
-纯 Trellis 文档与配置变更检查索引、源码链接、无残留模板，以及 get_context/task 脚本的正常输出；不自动扩大为业务测试或重构。业务改动根据所触及的契约选择既有单测；涉及真实路由、SQL、库存或 Kafka 时，mock 结果不能替代对应环境验证。报告执行命令、实际结果与未覆盖部分，不复制泛化检查清单。
+纯项目流程文档、规范或 Agent 配置变更检查文档引用与活动配置路由；没有运行时代码变化时，不运行无关业务测试。业务改动根据所触及的契约选择既有单测；涉及真实路由、SQL、库存或 Kafka 时，mock 结果不能替代对应环境验证。报告实际执行的命令、结果与未覆盖部分，不复制泛化检查清单。
 
 新增 DrawRequestOwnershipManualIT 使用专用空 MySQL 实例，按 [抽奖幂等接口说明](../../../docs/draw-request-idempotency.md) 的单独命令运行并传入 lottery.it.mysql；不能把它混同为默认业务实例上的全环境 ManualIT。该测试执行生产 Mapper、路由切面、Repository 和事务，真实数据库约束测试与 Redis/抽样 Mock 的边界须同时报告。
 
@@ -51,5 +53,7 @@ mvn test -Dtest='*ManualIT' -Dsurefire.failIfNoSpecifiedTests=false
 MqMiddlewareE2eManualIT 在独立 Docker compose 中运行真实 MySQL 8、Redis、Kafka 与生产 Spring 组件，覆盖两库八分表、库存账本事务、实际 Kafka ack、迟到通知、重复消息与真实 broker 停机恢复。测试仅通过生产者装饰器延后 Future 通知，不使用中间件 Mock；注入失败与真实 broker 失败必须分开报告。会重建测试端口 13309 的三个 fixture schema，运行步骤与已确认的停止宽限期要求见[端到端验证记录](../../../docs/kafka-middleware-e2e.md)。
 
 最终验证增加 FinalBusinessE2eManualIT：真实随机端口 HTTP、活动配置事务、Redis、两库八张订单表、Kafka 与库存账本，不替换任何中间件。测试包含 Redis 停机、ACL 第二个 Key 写入失败、SQL 账本表临时改名；异常 ACK 用例直接调用生产消费者，恢复后通过真实 Kafka 完成。MqMiddlewareE2eManualIT 在 DROP 前检查 Docker 标签及端口；两者只能在专用 compose 13309 实例运行。SQL-only 集成测试使用另一专用空 MySQL（13319），结果与命令见[最终报告](../../../docs/final-correctness-e2e.md)。
+
+2026-10-24 扩展 HTTP E2E：缺失奖品库存时保留原 take；真实 take/order INSERT trigger 失败后事务回滚与库存归还；同请求恢复且次数不重复扣减。后续运行结果与剩余边界见[故障评估](../../../docs/failure-review-20261024.md)。
 
 性能压测使用doc/performance独立栈与启动器；环境、实际接口与容量证据边界见[性能压测契约](./performance-testing.md)。历史JMeter/SQL不能直接视为当前业务的可执行基线。

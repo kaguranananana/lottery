@@ -25,3 +25,6 @@ logs/
 .agent
 
 *.jtl
+
+# macOS metadata
+.DS_Store

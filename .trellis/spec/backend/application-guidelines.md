@@ -4,7 +4,7 @@
 
 [ActivityProcessImpl.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java) 的 doDrawProcess 是编排入口。先获得活动与用户维度的短锁，再按 requestId 查 take：已消费回放原订单或未中奖结果；未消费继续原 take；不存在才调用参与服务。锁在 finally 中携带原 token 释放。
 
-未中奖需要消费 take；中奖创建订单。订单服务返回非成功业务码时，当前编排回补已预扣奖品库存。同步方法完成后返回结果，库存结算通过订单 Outbox 异步驱动，不在 HTTP 链路同步发 Kafka。
+未中奖需要消费 take；中奖创建订单。订单服务返回非成功业务码时，当前编排回补已预扣奖品库存。SQL 异常的回补由仓储按事务完成状态处理；不能在编排外层无条件捕获并回补。奖品库存 Key 缺失抛出，保留未消费 take，不得返回未中奖。同步方法完成后返回结果，库存结算通过订单 Outbox 异步驱动，不在 HTTP 链路同步发 Kafka。
 
 不能把「每次调用都新建参与记录」作为新用例默认流程。[DrawRequestIdempotencyTest.java](../../../lottery-interfaces/src/test/java/com/anontokyo/lottery/test/domain/DrawRequestIdempotencyTest.java) 验证首次、已消费回放、未完成 take 复用与异常释放锁；它使用 mock，不能证明数据库路由与唯一约束部署正确。
 

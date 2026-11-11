@@ -1,5 +1,7 @@
 # Development Workflow
 
+> 历史参考（已停用）：Trellis Phase/Task/PRD/Hook 不再作为 Lottery 日常开发的强制流程。当前有效的项目约定见根目录 `AGENTS.md`，跨会话进度见 `docs/PROJECT_STATUS.md` 和 `docs/DEVLOG.md`。旧内容保留供历史任务查询。
+
 ---
 
 ## Core Principles
