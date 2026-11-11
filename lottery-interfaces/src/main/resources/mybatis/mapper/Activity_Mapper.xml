@@ -54,7 +54,9 @@
         <!-- 游标按自增 id 推进，查询必须同时返回该列。 -->
         SELECT id, activity_id, activity_name, begin_date_time, end_date_time, state, creator
         FROM activity
-        WHERE id > #{id} AND state in (4,5)
+        WHERE id > #{id}
+          AND ((state = 4 AND begin_date_time &lt;= NOW())
+            OR (state = 5 AND end_date_time &lt;= NOW()))
         ORDER BY ID ASC
             LIMIT 10
     </select>

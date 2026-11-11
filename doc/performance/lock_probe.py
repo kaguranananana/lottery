@@ -10,7 +10,7 @@ from environment import sql
 
 def experiment(schema, table, held_sql, other_sql):
     # 第一连接执行语句后等待三秒，便于观察第二连接是否必须等其提交。
-    cli=['docker','exec','-i','lottery-perf-mysql-1','mysql','-uroot','-pperf-only','-N','-B']
+    cli=['docker','exec','-i','lottery-single-perf-mysql-1','mysql','-uroot','-pperf-only','-N','-B']
     held=subprocess.Popen(cli,stdin=subprocess.PIPE,stdout=subprocess.PIPE,stderr=subprocess.PIPE)
     held.stdin.write(f'USE {schema}; START TRANSACTION; {held_sql}; SELECT SLEEP(3); ROLLBACK;'.encode())
     held.stdin.close()
@@ -52,7 +52,7 @@ def experiment(schema, table, held_sql, other_sql):
 def run(output):
     # 每次新建名字，CREATE 冲突显式失败，不清空既有 fixture。
     schema='lottery_perf_probe_'+str(int(time.time()*1000))
-    sql(f"CREATE DATABASE {schema}; CREATE TABLE {schema}.user_activity_quota LIKE lottery_01.user_activity_quota; CREATE TABLE {schema}.draw_config_prize LIKE lottery.draw_config_prize;")
+    sql(f"CREATE DATABASE {schema}; CREATE TABLE {schema}.user_activity_quota LIKE lottery.user_activity_quota; CREATE TABLE {schema}.draw_config_prize LIKE lottery.draw_config_prize;")
     sql(f"INSERT INTO {schema}.user_activity_quota(u_id,activity_id,total_count,left_count) VALUES ('userA',1,10,10),('userB',1,10,10);")
     # 固定 75 行，与初步诊断时生产压测表的大小相同；两种奖品分属不同记录。
     stock_rows=','.join(f"({1 if i<5 else i},'award{i}',10000,10000)" for i in range(75))

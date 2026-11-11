@@ -14,7 +14,7 @@
 
 ## 3. 数据与环境契约
 
-MySQL/Redis/Kafka专用端口13329/17379/29092；应用18090绑定127.0.0.1。init只接受空schema，实际执行Outbox/V2/V3迁移；清理须核实Docker项目/service/端口。通过生产活动创建与PASS→DOING初始化Redis，不直接写DOING或回填运行期库存。用户按生产路由放入一个正确分库，每次新操作用新requestId。
+MySQL/Redis/Kafka专用端口13339/17479/29192；应用18190绑定127.0.0.1。init只接受空schema，创建完整单库 DDL；清理须核实Docker项目/service/端口。通过生产活动创建与PASS→DOING初始化Redis，不直接写DOING或回填运行期库存。用户预置在单表，每次新操作用新requestId。
 
 XXL handler由一秒固定延迟触发，消费者真实运行；该方式不证明admin调度。本地模拟发奖不证明外部副作用。RPS按完成时间计算，业务码与HTTP状态分开，异步时间戳只有秒精度。原始JTL、参数、执行JMX、指标和ID关联必须保留。
 
@@ -31,7 +31,7 @@ XXL handler由一秒固定延迟触发，消费者真实运行；该方式不证
 | 正常基准D006/D007 | 单列拒绝并说明原因，不计新抽奖成功 |
 | 实际线程数不符/请求或订单关联不符 | 分析失败，不进入正式曲线 |
 | 采样/任务失败或异步未收敛 | 保存错误/堆栈/积压，非零退出 |
-| 分库没有次数行 | SQL聚合COALESCE(SUM(...),0)，事实为零，不让NULL污染指标 |
+| 活动没有次数行 | SQL聚合COALESCE(SUM(...),0)，事实为零，不让NULL污染指标 |
 
 `stop.py` 从保存PID读取macOS `ps comm,args`，按可执行文件名等于java且参数含专用PerfHarness主类核对身份后才SIGTERM。真实macOS案例中comm只返回java，不能要求固定的/java后缀；进程名解析不得取消主类校验或允许任意PID停止。
 

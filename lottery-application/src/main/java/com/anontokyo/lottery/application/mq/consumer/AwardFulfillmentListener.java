@@ -5,7 +5,8 @@ import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
 import com.anontokyo.lottery.domain.award.service.fulfillment.AwardFulfillmentHandler;
-import com.anontokyo.lottery.domain.support.lock.IAwardFulfillmentGuard;
+import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
+import org.springframework.beans.BeanUtils;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +21,6 @@ import javax.annotation.Resource;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 /**
  * 发奖消费者。Spring 注入全部 {@link AwardFulfillmentHandler} 后按奖品类型构建注册表，
@@ -36,9 +36,6 @@ public class AwardFulfillmentListener {
 
     @Resource
     private IOrderRepository orderRepository;
-
-    @Resource
-    private IAwardFulfillmentGuard awardFulfillmentGuard;
 
     private final Map<Integer, AwardFulfillmentHandler> handlerRegistry = new HashMap<>();
 
@@ -56,57 +53,51 @@ public class AwardFulfillmentListener {
 
     @KafkaListener(topics = "lottery_invoice",
             groupId = "${lottery.kafka.consumer.invoice-group-id:lottery-invoice}",
-            concurrency = "${lottery.kafka.consumer.invoice-concurrency:8}")
+            concurrency = "${lottery.kafka.consumer.invoice-concurrency:4}")
     public void onMessage(ConsumerRecord<?, ?> record, Acknowledgment ack,
             @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
-        Optional<?> message = Optional.ofNullable(record.value());
-        if (!message.isPresent()) {
+        if (record.value() == null) {
             ack.acknowledge();
             return;
         }
-
         try {
-            AwardFulfillmentEvent fulfillmentEvent = JSON.parseObject((String) message.get(), AwardFulfillmentEvent.class);
-
-            // DB 兜底：已发奖完成的订单直接跳过（重复投递安全）
-            if (orderRepository.isAwardCompleted(fulfillmentEvent.getuId(), fulfillmentEvent.getOrderId())) {
-                // 重放时修复发奖已完成但消息尚未收口的窗口，更新失败则交还 Kafka 重投。
-                orderRepository.updateFulfillmentEventStatus(fulfillmentEvent.getuId(), fulfillmentEvent.getOrderId(),
-                        Constants.FulfillmentEventStatus.COMPLETE.getCode());
-                // 只有数据库收口调用成功返回后才提交消费位点。
+            AwardFulfillmentEvent message = JSON.parseObject((String) record.value(), AwardFulfillmentEvent.class);
+            DrawOrderVO order = orderRepository.findOrder(message.getuId(), message.getOrderId());
+            if (order == null) {
+                logger.warn("fulfillment event order missing user:{} order:{}", message.getuId(), message.getOrderId());
+                ack.acknowledge();
+                return;
+            }
+            if (!Constants.StockSettlementEventStatus.COMPLETE.getCode().equals(order.getStockSettlementEventStatus())) {
+                // 旧消息可能在库存完成前抵达，后续库存 CAS 会持久登记发奖义务。
+                ack.acknowledge();
+                return;
+            }
+            if (Constants.AwardFulfillmentStatus.COMPLETE.getCode().equals(order.getAwardFulfillmentStatus())) {
+                if (!Constants.FulfillmentEventStatus.COMPLETE.getCode().equals(order.getFulfillmentEventStatus())) {
+                    // 已经有历史发奖事实时只修复消息状态。
+                    orderRepository.updateFulfillmentEventStatus(order.getuId(), order.getOrderId(),
+                            Constants.FulfillmentEventStatus.COMPLETE.getCode());
+                }
                 ack.acknowledge();
                 return;
             }
 
-            if (awardFulfillmentGuard.tryClaimProcessing(fulfillmentEvent.getOrderId())) {
-                // award_fulfillment_status CAS 同时是本地业务幂等兜底，orderId 即未来真实渠道的 idempotencyKey
-                AwardFulfillmentHandler handler = handlerRegistry.get(fulfillmentEvent.getAwardType());
-                if (handler == null) {
-                    throw new IllegalStateException("no award fulfillment handler for type "
-                            + fulfillmentEvent.getAwardType() + ", orderId:" + fulfillmentEvent.getOrderId());
-                }
-                Constants.AwardState state = handler.fulfill(fulfillmentEvent).getState();
-                if (!Constants.AwardState.SUCCESS.getCode().equals(state.getCode())) {
-                    throw new IllegalStateException("award fulfillment failed, orderId:" + fulfillmentEvent.getOrderId()
-                            + " info:" + state.getInfo());
-                }
-                awardFulfillmentGuard.releaseProcessing(fulfillmentEvent.getOrderId());
-                logger.info("award fulfilled uId:{} orderId:{} awardId:{}",
-                        fulfillmentEvent.getuId(), fulfillmentEvent.getOrderId(), fulfillmentEvent.getAwardId());
-            } else {
-                // 其他实例正在处理同一订单：等待其完成后再投递校验即可
-                if (!orderRepository.isAwardCompleted(fulfillmentEvent.getuId(), fulfillmentEvent.getOrderId())) {
-                    throw new IllegalStateException("award fulfillment event is processing, orderId:"
-                            + fulfillmentEvent.getOrderId());
-                }
+            AwardFulfillmentHandler handler = handlerRegistry.get(order.getAwardType());
+            if (handler == null) {
+                throw new IllegalStateException("unsupported award type " + order.getAwardType() + ", order " + order.getOrderId());
             }
-            // 本消费者发奖成功，或已确认并发消费者完成后，统一收口消息状态。
-            orderRepository.updateFulfillmentEventStatus(fulfillmentEvent.getuId(), fulfillmentEvent.getOrderId(),
-                    Constants.FulfillmentEventStatus.COMPLETE.getCode());
-            // 先持久化消费结果，再提交位点，重放可以修复中途失败。
+            // 当前四种处理器只写本地 CAS。同一订单的 Kafka key 保证同分区顺序。
+            AwardFulfillmentEvent event = new AwardFulfillmentEvent();
+            BeanUtils.copyProperties(order, event);
+            Constants.AwardState state = handler.fulfill(event).getState();
+            if (state != Constants.AwardState.SUCCESS) {
+                throw new IllegalStateException("award fulfillment failed, order " + order.getOrderId() + ": " + state.getInfo());
+            }
+            // 本地发奖事实和消息终态由同一条 SQL 写入，成功后才确认消息。
             ack.acknowledge();
-        } catch (Exception e) {
-            logger.error("consume award fulfillment event failed, topic:{} message:{}", topic, message.get(), e);
+        } catch (RuntimeException e) {
+            logger.error("fulfillment consume failed topic:{} key:{}", topic, record.key(), e);
             throw e;
         }
     }

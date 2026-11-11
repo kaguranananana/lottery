@@ -96,6 +96,26 @@ public class DrawAdmissionRedisManualIT {
     }
 
     @Test
+    public void expiredDrawOwnerCannotDeleteNewRedisMarker() throws Exception {
+        com.anontokyo.lottery.infrastructure.utils.RedisUtil commands =
+                new com.anontokyo.lottery.infrastructure.utils.RedisUtil();
+        org.springframework.test.util.ReflectionTestUtils.setField(commands, "stringRedisTemplate", redis);
+        com.anontokyo.lottery.infrastructure.lock.RedisActivityDrawProcessGuard guard =
+                new com.anontokyo.lottery.infrastructure.lock.RedisActivityDrawProcessGuard();
+        org.springframework.test.util.ReflectionTestUtils.setField(guard, "redisUtil", commands);
+        org.springframework.test.util.ReflectionTestUtils.setField(guard, "drawInflightRedisTtlSeconds", 1L);
+        long activity = System.nanoTime();
+        assertTrue(guard.tryClaim(activity, "ttl-probe", "old-owner"));
+        Thread.sleep(1100);
+        assertTrue(guard.tryClaim(activity, "ttl-probe", "new-owner"));
+        guard.release(activity, "ttl-probe", "old-owner");
+        assertFalse(guard.tryClaim(activity, "ttl-probe", "third-owner"));
+        guard.release(activity, "ttl-probe", "new-owner");
+        assertTrue(guard.tryClaim(activity, "ttl-probe", "third-owner"));
+        guard.release(activity, "ttl-probe", "third-owner");
+    }
+
+    @Test
     public void localPermitIsIndependentFromGlobalAndUserBudgets() {
         DrawAdmission admission = new DrawAdmission(redis, true, 1, 100, 20, 10, 10);
         assertTrue(admission.tryAcquire());

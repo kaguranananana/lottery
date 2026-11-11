@@ -17,7 +17,7 @@ def summarize(directory):
     resources={}
     for container in ('mysql','redis','kafka'):
         # Docker百分比以单核100%表示，与应用累计CPU时间统一口径。
-        values=[json.loads(v) for sample in measured for v in sample['docker'] if json.loads(v)['Name']==f'lottery-perf-{container}-1']
+        values=[json.loads(v) for sample in measured for v in sample['docker'] if json.loads(v)['Name']==f'lottery-single-perf-{container}-1']
         resources[container]={'cpuMean':statistics.mean(float(x['CPUPerc'][:-1]) for x in values),'cpuMax':max(float(x['CPUPerc'][:-1]) for x in values),'memoryPeak':max(values,key=lambda x:float(x['MemPerc'][:-1]))['MemUsage']}
     statuses=[dict(line.split('\t') for line in s['mysql'].strip().splitlines()) for s in measured if 'mysql' in s]
     resources['mysqlStatuses']={'maxConnections':max(int(s['Threads_connected']) for s in statuses),'maxRunning':max(int(s['Threads_running']) for s in statuses),'rowLockWaitsDelta':int(statuses[-1]['Innodb_row_lock_waits'])-int(statuses[0]['Innodb_row_lock_waits']),'rowLockTimeMsDelta':int(statuses[-1]['Innodb_row_lock_time'])-int(statuses[0]['Innodb_row_lock_time'])}

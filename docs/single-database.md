@@ -13,12 +13,12 @@
 | draw_order | 订单号、非空参与号、非空历史 UUID 分别唯一 |
 | award_stock_settlement | 订单号唯一，作为库存结算幂等账本 |
 
-单个 Hikari 池供 MyBatis 和 Spring 事务管理使用。TX1 原子扣次数并插入参与，TX2 CAS 消费参与并写入带 Outbox 状态的订单，TX3 原子写入账本并扣减 MySQL 奖品库存。Redis Lua、Kafka 事件、消费者组配置及订单状态协议沿用原实现。两个 XXL-JOB 订单 handler 保留名称，调度任务移除原分片参数，并为每个 handler 配置单一调度责任。
+单个 Hikari 池供 MyBatis 和 Spring 事务管理使用。TX1 原子扣次数并插入参与，TX2 CAS 消费参与并写入带 Outbox 状态的订单，TX3 原子写入账本并扣减 MySQL 奖品库存。Redis Lua、Kafka 事件、消费者组配置及订单状态协议沿用原实现。活动和消息补偿由 Spring 调度。V6 旁路合并生成包含 V7 字段的最新结构。 [订单 Outbox](outbox-delivery.md)
 
 ## 旁路迁移
 
 1. 确认源为 V5，备份 `lottery`、`lottery_01`、`lottery_02` 和 Redis 实时库存，先在隔离实例还原并演练。旧库低于 V5 时依照 [历史升级步骤](draw-schema-refactor.md) 处理。
-2. 停止接收新抽奖，让旧版 Outbox 和消费者处理存量后暂停旧应用和 XXL 调度。记录在途及待对账订单、Kafka 消费位点和 Redis 实时库存。复制期间源库必须停止写入。
+2. 停止接收新抽奖，让旧版 Outbox 和消费者处理存量后暂停旧应用及其调度。记录在途及待对账订单、Kafka 消费位点和 Redis 实时库存。复制期间源库必须停止写入。
 3. 在同一 MySQL 实例创建新的目标库。使用遇错停止的 mysql 批处理模式，禁用 `--force`。下面命令在仓库根目录运行。
 
    ```sh

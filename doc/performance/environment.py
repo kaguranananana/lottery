@@ -6,20 +6,20 @@ import subprocess
 import sys
 
 ROOT = pathlib.Path(__file__).resolve().parents[2]
-COMPOSE = ['docker', 'compose', '-p', 'lottery-perf', '-f', str(ROOT / 'doc/performance/compose.yml')]
+COMPOSE = ['docker', 'compose', '-p', 'lottery-single-perf', '-f', str(ROOT / 'doc/performance/compose.yml')]
 
 def verify():
     # 以 Docker 容器标签和实际绑定端口确定身份，不能只凭数据库名判断环境。
-    info = json.loads(subprocess.check_output(['docker', 'inspect', 'lottery-perf-mysql-1']))[0]
+    info = json.loads(subprocess.check_output(['docker', 'inspect', 'lottery-single-perf-mysql-1']))[0]
     labels = info['Config']['Labels']
     binding = info['HostConfig']['PortBindings']['3306/tcp'][0]
-    assert labels['com.docker.compose.project'] == 'lottery-perf'
+    assert labels['com.docker.compose.project'] == 'lottery-single-perf'
     assert labels['com.docker.compose.service'] == 'mysql'
-    assert binding == {'HostIp': '127.0.0.1', 'HostPort': '13329'}
+    assert binding == {'HostIp': '127.0.0.1', 'HostPort': '13339'}
 
 def sql(query):
     verify()
-    process = subprocess.run(['docker', 'exec', '-i', 'lottery-perf-mysql-1', 'mysql', '-uroot', '-pperf-only', '-N', '-B'], input=query.encode(), capture_output=True)
+    process = subprocess.run(['docker', 'exec', '-i', 'lottery-single-perf-mysql-1', 'mysql', '-uroot', '-pperf-only', '-N', '-B'], input=query.encode(), capture_output=True)
     if process.returncode:
         # SQL 失败必须带原始诊断抛出；正常客户端密码提示不混入测量输出。
         raise RuntimeError(process.stderr.decode())

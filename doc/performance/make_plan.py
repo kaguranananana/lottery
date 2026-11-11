@@ -24,18 +24,23 @@ loop=tg.find('.//stringProp[@name="LoopController.loops"]'); loop.text='-1'
 E.SubElement(tg,'boolProp',name='ThreadGroup.scheduler').text='true'
 E.SubElement(tg,'stringProp',name='ThreadGroup.duration').text='${__P(duration,80)}'
 E.SubElement(tg,'stringProp',name='ThreadGroup.delay').text='0'
-for name,value in [('HTTPSampler.domain','127.0.0.1'),('HTTPSampler.port','18090'),('HTTPSampler.protocol','http'),('HTTPSampler.connect_timeout','3000'),('HTTPSampler.response_timeout','10000')]:
+for name,value in [('HTTPSampler.domain','127.0.0.1'),('HTTPSampler.port','18190'),('HTTPSampler.protocol','http'),('HTTPSampler.connect_timeout','3000'),('HTTPSampler.response_timeout','10000')]:
     root.find(f'.//ConfigTestElement/stringProp[@name="{name}"]').text=value
 sampler=root.find('.//HTTPSamplerProxy');sampler.set('testname','POST /api/v1/draw')
 sampler.find("stringProp[@name='HTTPSampler.path']").text='/api/v1/draw'
 sampler.find(".//stringProp[@name='Argument.value']").text='{"userId":"${uId}","activityId":${activityId},"requestId":"${requestId}"}'
+# 测试启动器将合成账户映射成 Servlet Principal，生产入口不读取该头。
+headers=root.find('.//HeaderManager/collectionProp')
+header=E.SubElement(headers,'elementProp',name='',elementType='Header')
+E.SubElement(header,'stringProp',name='Header.name').text='X-Perf-Principal'
+E.SubElement(header,'stringProp',name='Header.value').text='${uId}'
 # 预处理器在实际采样前分配本轮唯一用户，禁止 CSV 耗尽后悄悄停止线程。
 parent=next(p for p in root.iter() if sampler in list(p))
 pre=E.Element('JSR223PreProcessor',guiclass='TestBeanGUI',testclass='JSR223PreProcessor',testname='真实独立抽奖身份')
 def props(node, script):
     for name,value in [('cacheKey','true'),('filename',''),('parameters',''),('scriptLanguage','groovy'),('script',script)]:
         E.SubElement(node,'stringProp',name=name).text=value
-props(pre, '''// 所有线程共享单调序号，用户只访问自己的真实路由分片。
+props(pre, '''// 所有线程共享单调序号，请求号与独立用户序号可逐条对账。
 long index = org.apache.jmeter.util.JMeterUtils.getJMeterProperties().computeIfAbsent('perf.counter', {new java.util.concurrent.atomic.AtomicLong()}).getAndIncrement()
 // 预置用户不足必须使运行失败，不能复用样本掩盖数据不足。
 if (index >= Long.parseLong(props.getProperty('users'))) {
@@ -45,7 +50,7 @@ if (index >= Long.parseLong(props.getProperty('users'))) {
     ctx.getEngine().stopTest(true)
     throw new IllegalStateException('[PERF_USER_EXHAUSTED] 压测用户耗尽')
 }
-vars.put('uId', props.getProperty('prefix') + String.format('%07d', index))
+vars.put('uId', props.getProperty('prefix') + String.format('%07d', props.getProperty('singleUser') == 'true' ? 0L : index))
 vars.put('activityId', props.getProperty('activity'))
 // 每次独立操作使用新的业务幂等号，不把回放吞吐混入新抽奖吞吐。
 vars.put('requestId', props.getProperty('run') + '-' + index)
@@ -53,6 +58,10 @@ vars.put('requestId', props.getProperty('run') + '-' + index)
 i=list(parent).index(sampler);parent.insert(i,pre);parent.insert(i+1,E.Element('hashTree'))
 post=E.Element('JSR223PostProcessor',guiclass='TestBeanGUI',testclass='JSR223PostProcessor',testname='记录业务结果与持久ID')
 props(post, '''// HTTP 200 只说明传输完成，业务码决定是否完成抽奖。
+vars.put('businessCode', '')
+vars.put('takeId', '')
+vars.put('orderId', '')
+if (!prev.getContentType()?.contains('json')) return
 def result = new groovy.json.JsonSlurper().parseText(prev.getResponseDataAsString())
 vars.put('businessCode', String.valueOf(result.code))
 vars.put('takeId', result.takeId == null ? '' : String.valueOf(result.takeId))

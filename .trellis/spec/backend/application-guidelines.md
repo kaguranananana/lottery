@@ -16,13 +16,13 @@
 
 [AwardFulfillmentListener.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/AwardFulfillmentListener.java) 在启动时按 supportType 建立处理器注册表，重复类型直接抛异常。消费时先看数据库发奖状态，再用 Redis processing 锁减少并发；没有 handler 或处理失败则抛异常。当前处理器为模拟渠道，详见[领域规范](./domain-guidelines.md)。
 
-## XXL-Job 的已有职责
+## Spring 调度 的已有职责
 
 | Job 名 | 范围和参数 |
 | --- | --- |
-| lotteryActivityStateJobHandler | 返回 id 按游标分页；时间已到时在活动行锁内 SETNX 预热，再 CAS DOING；过期关闭 |
-| awardStockSettlementOutboxJobHandler | 参数为分库编号，如 1 或 1,2；遍历该库四张订单表，批次来自配置，当前为 200 |
-| lotteryOrderMQStateJobHandler | 参数为分库编号列表；发奖补偿每张表最多扫描 100 条 |
+| advanceActivities | 返回 id 按游标分页；时间已到时在活动行锁内 SETNX 预热，再 CAS DOING；过期关闭 |
+| recoverStock | 单表到期扫描，共享有界实时投递池 |
+| recoverFulfillment | 单表到期扫描，仅库存已完成的发奖义务 |
 
 源码在 [LotteryXxlJob.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryXxlJob.java)。扫描通过领域接口进入仓储显式分片遍历，不能改成每实例 @Scheduled 扫描全量用户表。
 
@@ -64,7 +64,7 @@ FulfillmentEventStatus 和 StockSettlementEventStatus 分别定义 INIT=0、COMP
 
 ### 6. 必需测试与实际边界
 
-[MqCallbackStateTest.java](../../../lottery-interfaces/src/test/java/com/anontokyo/lottery/test/mq/MqCallbackStateTest.java) 验证应用入口语义、重复发奖修复、异常阻止 ack，以及两个发奖发送入口的状态一致性（Mock）。[FulfillmentEventStatusCasManualIT.java](../../../lottery-interfaces/src/test/java/com/anontokyo/lottery/test/manual/FulfillmentEventStatusCasManualIT.java) 在专用空 MySQL 执行生产 Mapper/Repository，覆盖矩阵、消费者先完成、迟到成功/失败、多轮重试、真实 SQL 并发、重复事件不刷新时间、超时扫描与旧发奖状态恢复。后者不装配分片插件，Kafka Future、Redis guard 和库存业务结算被 Mock，不证明真实 Kafka、Redis 或八分表端到端结果。运行命令及本次结果见 [修复说明](../../../docs/kafka-mq-state-cas.md)。
+[MqCallbackStateTest.java](../../../lottery-interfaces/src/test/java/com/anontokyo/lottery/test/mq/MqCallbackStateTest.java) 验证应用入口语义、重复发奖修复、异常阻止 ack，以及两个发奖发送入口的状态一致性（Mock）。[FulfillmentEventStatusCasManualIT.java](../../../lottery-interfaces/src/test/java/com/anontokyo/lottery/test/manual/FulfillmentEventStatusCasManualIT.java) 在专用空 MySQL 执行生产 Mapper/Repository，覆盖矩阵、消费者先完成、迟到成功/失败、多轮重试、真实 SQL 并发、重复事件不刷新时间、超时扫描与旧发奖状态恢复。该用例用 Mock 控制 Kafka Future、Redis guard 和库存结算，真实中间件路径由独立 E2E 覆盖。运行命令及本次结果见 [修复说明](../../../docs/kafka-mq-state-cas.md)。
 
 [MqMiddlewareE2eManualIT.java](../../../lottery-interfaces/src/test/java/com/anontokyo/lottery/test/manual/MqMiddlewareE2eManualIT.java) 进一步使用真实 MySQL 8、Redis、Kafka 与两库八表、生产 Repository 和消费者验证完整 Outbox 到发奖链路，以及 broker 停机后的补偿恢复。Future 故障注入只延迟通知，消息仍真实发送；真实失败另由停机用例证明。该 MQ 用例不覆盖 HTTP；FinalBusinessE2eManualIT 补齐创建活动到 HTTP 到发奖、分页、启动/Redis 故障与库存对账。外部 admin 与外部渠道仍未覆盖，见[最终验证](../../../docs/final-correctness-e2e.md)及[端到端验证](../../../docs/kafka-middleware-e2e.md)。
 
@@ -75,3 +75,5 @@ FulfillmentEventStatus 和 StockSettlementEventStatus 分别定义 INIT=0、COMP
 正确：发送成功更新在 WHERE 中加 `stock_settlement_event_status IN (0,2)`；完成事件允许从所有未完成状态收口；消费失败使用独立条件入口。不能只允许 INIT，否则 FAIL 重试无法推进，也不能让发送失败将 SENT 回退为 FAIL。
 
 抽奖请求归属：参与查询失败中断，不允许降级为新请求。其他未完成请求返回 D007 与 pendingRequestId；无归属记录 D008。短锁过期造成参与唯一键或消费 CAS 竞争时，根据已提交 take/订单回放，不将零更新直接解释为未中奖。完整恢复与部署前提见 [接口说明](../../../docs/draw-request-idempotency.md)。
+
+新版提交事件、独立重试时间、发送代数与 BLOCKED 恢复见 [订单 Outbox](../../../docs/outbox-delivery.md)。

@@ -4,6 +4,8 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 mvn -q install -DskipTests
 mvn -q -pl lottery-interfaces dependency:build-classpath -Dmdep.outputFile=target/perf-classpath.txt -Dmdep.includeScope=runtime
+# AOP 仅供压测计时，保持生产 WAR 无此额外依赖。
+mvn -q -pl lottery-interfaces dependency:copy -Dartifact=org.aspectj:aspectjweaver:1.9.6 -DoutputDirectory=target/perf-libs
 python3 - <<'PY'
 from pathlib import Path
 root=Path.cwd()
@@ -11,7 +13,7 @@ modules=['lottery-interfaces','lottery-application','lottery-domain','lottery-in
 # 优先实际 reactor 编译类，防止本地 Maven 旧制品混入测量。
 classes=[str(root/m/'target/classes') for m in modules]
 cp=(root/'lottery-interfaces/target/perf-classpath.txt').read_text().strip()
-(root/'doc/performance/.classpath').write_text(':'.join(classes)+':'+cp)
+(root/'doc/performance/.classpath').write_text(':'.join(classes)+':'+cp+':'+str(root/'lottery-interfaces/target/perf-libs/aspectjweaver-1.9.6.jar'))
 PY
 mkdir -p doc/performance/.classes
 javac -encoding UTF-8 -source 8 -target 8 -cp "$(cat doc/performance/.classpath)" -d doc/performance/.classes doc/performance/java/PerfHarness.java doc/performance/java/PerfTiming.java

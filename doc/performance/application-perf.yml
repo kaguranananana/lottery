@@ -1,17 +1,20 @@
 # 仅测试启动器加载；保留生产池大小、缓存与消费者并发。
 server:
   address: 127.0.0.1
-  port: 18090
+  port: 18190
   tomcat:
     mbeanregistry:
       enabled: true
 spring:
+  datasource:
+    url: jdbc:mysql://127.0.0.1:13339/lottery?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true
+    password: perf-only
   redis:
     host: 127.0.0.1
-    port: 17379
+    port: 17479
     password: ''
   kafka:
-    bootstrap-servers: 127.0.0.1:29092
+    bootstrap-servers: 127.0.0.1:29192
     consumer:
       auto-offset-reset: earliest
 lottery:
@@ -19,26 +22,3 @@ lottery:
     consumer:
       invoice-group-id: lottery-perf-invoice
       strategy-award-stock-group-id: lottery-perf-stock
-mini-db-router:
-  jdbc:
-    datasource:
-      db00:
-        # 覆盖专用端口时保留同一会话缓存参数，才能测试当前业务连接配置。
-        url: jdbc:mysql://127.0.0.1:13329/lottery?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true
-        password: perf-only
-      db01:
-        # 分库一仅新增会话缓存，池大小与数据库持久化参数不变。
-        url: jdbc:mysql://127.0.0.1:13329/lottery_01?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true
-        password: perf-only
-      db02:
-        # 分库二保持同一变量，反向实验显式改回 false 后须恢复 true。
-        url: jdbc:mysql://127.0.0.1:13329/lottery_02?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true
-        password: perf-only
-xxl:
-  job:
-    admin:
-      addresses: ''
-    executor:
-      port: 29999
-      address: http://127.0.0.1:29999
-      logpath: /tmp/lottery-perf-xxl

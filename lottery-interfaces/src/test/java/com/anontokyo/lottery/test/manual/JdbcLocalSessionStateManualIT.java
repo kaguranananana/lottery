@@ -22,7 +22,7 @@ public class JdbcLocalSessionStateManualIT {
     public static void createFixture() throws Exception {
         String endpoint = System.getProperty("lottery.perf.mysql");
         // 与其它性能 SQL 门禁相同，必须显式选择已核实的专用实例。
-        assertEquals("jdbc:mysql://127.0.0.1:13329/", endpoint);
+        assertEquals("jdbc:mysql://127.0.0.1:13339/", endpoint);
         try (Connection c = DriverManager.getConnection(endpoint, "root", "perf-only"); Statement s = c.createStatement()) {
             // 已有同名库则失败，不能清掉其它会话的临时证据。
             s.execute("CREATE DATABASE " + SCHEMA);

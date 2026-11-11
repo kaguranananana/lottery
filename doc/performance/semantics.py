@@ -13,10 +13,10 @@ import time
 from run import http as control,write,audit,snapshot,BASE
 
 def draw(user,id,request):
-    connection=http.client.HTTPConnection('127.0.0.1',18090,timeout=15)
+    connection=http.client.HTTPConnection('127.0.0.1',18190,timeout=15)
     started=time.time()
     try:
-        connection.request('POST','/api/v1/draw',json.dumps({'userId':user,'activityId':id,'requestId':request}),{'Content-Type':'application/json'})
+        connection.request('POST','/api/v1/draw',json.dumps({'userId':user,'activityId':id,'requestId':request}),{'Content-Type':'application/json','X-Perf-Principal':user})
         response=connection.getresponse()
         result=json.loads(response.read())
         return {'user':user,'request':request,'startedMs':int(started*1000),'endedMs':int(time.time()*1000),'http':response.status,'result':result}
@@ -44,9 +44,9 @@ def main(session, name, id):
     assert len({r['result']['orderId'] for r in same_success})==1
     assert len({r['result']['award']['awardId'] for r in same_success})==1
     # 请求体已发送，再把客户端读取超时设为 1 毫秒；只模拟客户端放弃等待，不停止中间件。
-    connection=http.client.HTTPConnection('127.0.0.1',18090,timeout=15)
+    connection=http.client.HTTPConnection('127.0.0.1',18190,timeout=15)
     connection.connect()
-    connection.request('POST','/api/v1/draw',json.dumps({'userId':'timeout-user','activityId':id,'requestId':'timeout-original'}),{'Content-Type':'application/json'})
+    connection.request('POST','/api/v1/draw',json.dumps({'userId':'timeout-user','activityId':id,'requestId':'timeout-original'}),{'Content-Type':'application/json','X-Perf-Principal':'timeout-user'})
     connection.sock.settimeout(.001)
     timeout_result=None
     try:
@@ -91,7 +91,7 @@ def verify_saved(directory,id):
     by_user=collections.Counter(t['user'] for t in takes)
     successes=sum(r['result']['code']=='0000' for r in diff)
     assert by_user=={'hot-different':successes,'hot-same':1,'timeout-user':1,'pending-user':1}
-    assert len(orders)==len(takes)==sum(int(line.split('\t')[2]) for line in result['quota'].splitlines())
+    assert len(orders)==len(takes)==sum(int(line.split('\t')[1]) for line in result['quota'].splitlines())
     assert sum(10000-int(left) for left in result['redisAwards'].values())==len(orders)
     assert len({r['order'] for r in orders})==len(orders)
     assert len({r['take'] for r in orders})==len(orders)

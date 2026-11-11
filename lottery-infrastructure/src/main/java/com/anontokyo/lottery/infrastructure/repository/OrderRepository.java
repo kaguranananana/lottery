@@ -5,6 +5,8 @@ import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
 import com.anontokyo.lottery.domain.draw.repository.IDrawConfigRepository;
 import org.springframework.beans.BeanUtils;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.support.TransactionTemplate;
 import javax.annotation.Resource;
@@ -34,6 +36,9 @@ public class OrderRepository implements IOrderRepository {
     @Resource
     private IDrawConfigRepository drawConfigRepository;
 
+    @Autowired
+    private ApplicationEventPublisher events;
+
     @Override
     public Constants.ResponseCode saveDrawOrderWithTakeLock(DrawOrderVO drawOrder) {
         // TX2 将参与记录消费与携带 Outbox 状态的订单写入同一事务。
@@ -50,6 +55,10 @@ public class OrderRepository implements IOrderRepository {
 
             try {
                 insertDrawOrder(drawOrder);
+                // 事务内发布事件。监听器只在真实提交后安排发送。
+                AwardStockSettlementVO settlement = new AwardStockSettlementVO();
+                BeanUtils.copyProperties(drawOrder, settlement);
+                events.publishEvent(settlement);
             } catch (DuplicateKeyException e) {
                 status.setRollbackOnly();
                 return Constants.ResponseCode.INDEX_DUP;
@@ -69,7 +78,14 @@ public class OrderRepository implements IOrderRepository {
         drawOrderRow.setOrderId(orderId);
         drawOrderRow.setAwardId(awardId);
         drawOrderRow.setAwardFulfillmentStatus(Constants.AwardFulfillmentStatus.COMPLETE.getCode());
-        return drawOrderDao.markUserAwardGranted(drawOrderRow) > 0;
+        if (drawOrderDao.markUserAwardGranted(drawOrderRow) > 0) {
+            return true;
+        }
+        // 零行只有在能读取到已完成发奖事实时才是幂等成功。
+        if (!isAwardCompleted(uId, orderId)) {
+            throw new IllegalStateException("发奖事实未持久化，orderId=" + orderId);
+        }
+        return false;
     }
 
     private void insertDrawOrder(DrawOrderVO drawOrder) {
@@ -129,28 +145,38 @@ public class OrderRepository implements IOrderRepository {
     }
 
     @Override
-    public List<AwardFulfillmentEvent> scanFulfillmentEventStatus(int limit) {
-        List<DrawOrder> drawOrderRowList = drawOrderDao.scanFulfillmentEventStatus(limit);
-        List<AwardFulfillmentEvent> fulfillmentEventList = new ArrayList<>(drawOrderRowList.size());
-        for (DrawOrder drawOrderRow : drawOrderRowList) {
-            fulfillmentEventList.add(toFulfillmentEvent(drawOrderRow));
+    public List<DrawOrderVO> scanOutbox(OutboxKind kind, int limit) {
+        List<DrawOrder> rows = kind == OutboxKind.STOCK
+                ? drawOrderDao.scanStockSettlementEventStatus(limit)
+                : drawOrderDao.scanFulfillmentEventStatus(limit);
+        List<DrawOrderVO> candidates = new ArrayList<>(rows.size());
+        for (DrawOrder row : rows) {
+            DrawOrderVO candidate = new DrawOrderVO();
+            BeanUtils.copyProperties(row, candidate);
+            candidates.add(candidate);
         }
-        return fulfillmentEventList;
+        return candidates;
     }
 
     @Override
-    public List<AwardStockSettlementVO> scanStockSettlementEventStatus(int limit) {
-        List<DrawOrder> drawOrderRowList = drawOrderDao.scanStockSettlementEventStatus(limit);
-        List<AwardStockSettlementVO> settlementVOList = new ArrayList<>(drawOrderRowList.size());
-        for (DrawOrder drawOrderRow : drawOrderRowList) {
-            AwardStockSettlementVO settlementVO = new AwardStockSettlementVO();
-            settlementVO.setuId(drawOrderRow.getuId());
-            settlementVO.setOrderId(drawOrderRow.getOrderId());
-            settlementVO.setDrawConfigId(drawOrderRow.getDrawConfigId());
-            settlementVO.setAwardId(drawOrderRow.getAwardId());
-            settlementVOList.add(settlementVO);
+    public boolean claimOutbox(OutboxKind kind, long orderId, int attempt, boolean immediate, int leaseSeconds) {
+        return drawOrderDao.claimOutbox(kind, orderId, attempt, immediate, leaseSeconds) == 1;
+    }
+
+    @Override
+    public void finishOutbox(OutboxKind kind, long orderId, int attempt, boolean sent, int delaySeconds) {
+        drawOrderDao.finishOutbox(kind, orderId, attempt, sent, delaySeconds);
+    }
+
+    @Override
+    public DrawOrderVO findOrder(String uId, Long orderId) {
+        DrawOrder row = queryOrder(uId, orderId);
+        if (row == null) {
+            return null;
         }
-        return settlementVOList;
+        DrawOrderVO order = new DrawOrderVO();
+        BeanUtils.copyProperties(row, order);
+        return order;
     }
 
     @Override

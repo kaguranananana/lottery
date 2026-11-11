@@ -23,7 +23,10 @@ def analyze(directory):
     assert rows,'未产生 HTTP 样本'
     start=min(int(row['timeStamp']) for row in rows)
     low=start+params['warmup']*1000
-    high=start+params['duration']*1000
+    # 提前停止的 JMeter 仅覆盖最后一条响应之前的区间。
+    last_completed=max(int(row['timeStamp'])+int(row['elapsed']) for row in rows)
+    high=min(start+params['duration']*1000,last_completed+1)
+    assert high>low, '实际采样未覆盖预热后的测量窗口'
     # 采用实际完成时间落在窗口内的请求，排除预热；排队请求不能提前计入RPS。
     measured=[r for r in rows if low<=int(r['timeStamp'])+int(r['elapsed'])<high]
     observed_threads=collections.Counter(int(r['allThreads']) for r in measured).most_common(1)[0][0]
@@ -56,8 +59,9 @@ def analyze(directory):
     ledger_rows=read_table(directory/'ledger.tsv')
     assert {(o['order'],o['user'],o['award']) for o in orders}=={(o['order'],o['user'],o['award']) for o in ledger_rows},'订单与账本关联ID不符'
     assert len(ledger_rows)==len(orders),'出现重复账本'
-    quota=sum(int(line.split('\t')[2]) for line in audit['quota'].splitlines())
-    assert quota==len(takes),'次数扣减与参与记录不符'
+    quota=sum(int(line.split('\t')[1]) for line in audit['quota'].splitlines())
+    assert quota==len(takes) and int(audit['quota'].split('\t')[2])==0,'次数扣减与参与记录不符或存在负额度'
+    assert all((r['uId'],r['requestId']) not in by_request for r in rows if r['responseCode'] in ('429','503')),'入口拒绝产生参与记录'
     ledger=dict((a,int(n)) for a,n in (line.split('\t') for line in audit['ledger'].splitlines()))
     order_counts=collections.Counter(o['award'] for o in orders)
     for line in audit['stock'].splitlines():
@@ -101,7 +105,49 @@ def analyze(directory):
         part=[r for r in measured if l<=int(r['timeStamp'])+int(r['elapsed'])<h]
         buckets.append(len(part)/(seconds/6))
     result={'name':directory.name,'threads':params['threads'],'windowSeconds':seconds,'totalSamples':len(rows),'measuredSamples':len(measured),'rps':len(measured)/seconds,'newDrawRps':len(success)/seconds,'newDrawsWindow':len(success),'newDrawsTotal':len(takes),'ordersTotal':len(orders),'meanMs':sum(latencies)/len(latencies),'p50Ms':quantile(latencies,.5),'p95Ms':quantile(latencies,.95),'p99Ms':quantile(latencies,.99),'maxMs':max(latencies),'httpErrorRate':sum(r['responseCode']!='200' for r in measured)/len(measured),'systemErrorRate':sum(r['businessCode'] not in ('0000','D001','D006','D007') or r['responseCode']!='200' for r in measured)/len(measured),'businessCodes':business,'cpuMeanPercentOfOneCore':sum(cpu)/len(cpu) if cpu else None,'heapMaxObservedMiB':max(s['app']['heapUsed'] for s in samples)/1048576,'gcMs':gctime,'gcPauseRatio':gctime/(samples[-1]['app']['time']-samples[0]['app']['time']),'pools':stats,'tomcatMaxBusy':max(v[0] for s in samples for v in s['app']['tomcat'].values()),'backlog':[(s['time'],s['async']) for s in pending],'rpsBuckets':buckets,'drainSeconds':json.loads((directory/'drain.json').read_text())['seconds'],'asyncP95LowerMs':quantile([b[0] for b in bounds],.95) if bounds else None,'asyncP95UpperMs':quantile([b[1] for b in bounds],.95) if bounds else None,'audit':'PASS'}
+    # 提交发生于订单 INSERT 与 HTTP 返回之间，因此分别保留结算时延上下界。
+    stock_bounds=[]
+    for row in success:
+        if row['businessCode']=='0000':
+            order=by_take[row['takeId']]
+            settled=int(order['stockDoneMs'])
+            responded=int(row['timeStamp'])+int(row['elapsed'])
+            stock_bounds.append((max(0,settled-responded),max(0,settled-int(order['createdMs']))))
+    result['stockLatencyBoundsMs']={str(q):[quantile([b[i] for b in stock_bounds],q) for i in (0,1)]
+                                    for q in (.5,.95,.99)} if stock_bounds else {}
+    result['settlementRps']=sum(low<=int(row['stockDoneMs'])<high for row in orders)/seconds
+    result['fulfillmentRps']=sum(low<=int(row['grantDoneMs'])<high for row in orders)/seconds
     result['observedThreads']=observed_threads
+    result['plannedWindowSeconds']=params['duration']-params['warmup']
+    http_codes=collections.Counter(r['responseCode'] for r in measured)
+    result['httpCodes']=http_codes
+    result['offeredRps']=sum(low<=int(r['timeStamp'])<high for r in rows)/seconds
+    result['admittedRps']=http_codes['200']/seconds
+    result['completedLatencyMs']={str(q):quantile([int(r['elapsed']) for r in success],q)
+                                  for q in (.5,.95,.99)} if success else {}
+    result['systemErrorRate']=sum(r['responseCode'] not in ('200','429')
+                                  or (r['responseCode']=='200' and r['businessCode']
+                                      not in ('0000','D001','0004','D006','D007')) for r in measured)/len(measured)
+    result['settledOrders']=len(ledger_rows)
+    result['peakSampledKafkaLag']={group:max((s['kafka'][group][1] for s in pending),default=0)
+                                   for group in audit['kafka']}
+    before=json.loads((directory/'before.json').read_text())
+    after=json.loads((directory/'after.json').read_text())
+    def counters(row):
+        return {key:int(value) for key,value in (line.split('\t') for line in row['mysql'].splitlines())}
+    result['mysqlDelta']={key:value-counters(before)[key] for key,value in counters(after).items()}
+    result['mysqlCpuMean']=sum(
+        float(next(json.loads(row)['CPUPerc'] for row in s['docker']
+                   if json.loads(row)['Name']=='lottery-single-perf-mysql-1').rstrip('%'))
+        for s in samples)/len(samples)
+    result['mysqlConnectionsMax']=max((counters(s)['Threads_connected'] for s in pending),default=None)
+    result['slowQueries']=int((directory/'slow-after.tsv').read_text().split()[0])-int((directory/'slow-before.tsv').read_text().split()[0])
+    first_outbox,last_outbox=before['app']['outbox'],after['app']['outbox']
+    result['outbox']={k:last_outbox[k]-v for k,v in first_outbox.items()}
+    first,last=before['app']['admission'],after['app']['admission']
+    result['admission']={k:last[k]-v for k,v in first.items()}
+    calls=result['admission']['redisCalls']
+    result['redisAdmissionMeanMs']=result['admission']['redisNanos']/calls/1e6 if calls else None
     (directory/'summary.json').write_text(json.dumps(result,ensure_ascii=False,indent=2))
     return result
 

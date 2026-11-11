@@ -1,6 +1,7 @@
 package com.anontokyo.lottery.infrastructure.dao;
 
 import com.anontokyo.lottery.infrastructure.po.DrawOrder;
+import com.anontokyo.lottery.domain.award.repository.IOrderRepository.OutboxKind;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -31,7 +32,7 @@ public interface IDrawOrderDao {
      */
     DrawOrder queryDrawOrderByOrderId(DrawOrder drawOrderRow);
 
-    /** 回放查询必须按用户同时路由库与订单分表。 */
+    /** 回放查询按用户和参与号核对订单归属。 */
     DrawOrder queryDrawOrderByTakeId(DrawOrder drawOrderRow);
 
     /**
@@ -52,10 +53,18 @@ public interface IDrawOrderDao {
      */
     int updateStockSettlementEventStatus(DrawOrder drawOrderRow);
 
-    /** 消费失败按 uId 路由，以条件更新保留并发完成的终态。 */
+    /** 消费失败按用户与订单定位，以条件更新保留并发完成的终态。 */
     int markStockSettlementFailed(DrawOrder drawOrderRow);
 
-    List<DrawOrder> scanFulfillmentEventStatus(int limit);
+    List<DrawOrder> scanStockSettlementEventStatus(@Param("limit") int limit);
 
-    List<DrawOrder> scanStockSettlementEventStatus(@Param("limit") Integer limit);
+    List<DrawOrder> scanFulfillmentEventStatus(@Param("limit") int limit);
+
+    int claimOutbox(@Param("kind") OutboxKind kind, @Param("orderId") long orderId,
+            @Param("attempt") int attempt, @Param("immediate") boolean immediate,
+            @Param("leaseSeconds") int leaseSeconds);
+
+    int finishOutbox(@Param("kind") OutboxKind kind, @Param("orderId") long orderId,
+            @Param("attempt") int attempt, @Param("sent") boolean sent,
+            @Param("delaySeconds") int delaySeconds);
 }

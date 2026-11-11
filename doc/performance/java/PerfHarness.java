@@ -1,7 +1,11 @@
-import cn.bugstack.middleware.db.router.DBContextHolder;
-import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
 import com.anontokyo.lottery.LotteryApplication;
-import com.anontokyo.lottery.application.worker.LotteryXxlJob;
+import com.anontokyo.lottery.interfaces.web.DrawAdmission;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import javax.servlet.Filter;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
+import com.anontokyo.lottery.application.mq.producer.OutboxDispatcher;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.activity.model.aggregates.ActivityConfigRich;
 import com.anontokyo.lottery.domain.activity.model.req.ActivityConfigReq;
@@ -10,23 +14,19 @@ import com.anontokyo.lottery.domain.activity.model.vo.*;
 import com.anontokyo.lottery.domain.activity.service.deploy.IActivityDeploy;
 import com.anontokyo.lottery.domain.activity.service.lifecycle.ActivityLifecycleService;
 import com.anontokyo.lottery.domain.activity.service.partake.IActivityPartake;
-import com.xxl.job.core.context.XxlJobContext;
 import com.zaxxer.hikari.HikariDataSource;
 import com.zaxxer.hikari.metrics.IMetricsTracker;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
 import org.springframework.web.bind.annotation.*;
 import org.apache.kafka.clients.admin.*;
 import org.apache.kafka.common.TopicPartition;
 import java.lang.management.*;
-import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.LongAdder;
-import javax.sql.DataSource;
 
 /** 独立测试启动器：所有抽奖、活动启动和消息处理均复用生产组件。 */
 @RestController
@@ -34,9 +34,6 @@ public class PerfHarness {
     private static ConfigurableApplicationContext context;
     private static final List<HikariDataSource> pools = new ArrayList<>();
     private static final Map<String, PoolTiming> timings = new LinkedHashMap<>();
-    private static final LongAdder jobCalls = new LongAdder();
-    private static final LongAdder jobNanos = new LongAdder();
-    private static volatile Throwable jobFailure;
     private static AdminClient admin;
 
     /** Hikari 原生计时回调只做累加，避免采样线程改变连接获取行为。 */
@@ -58,47 +55,41 @@ public class PerfHarness {
 
     private static void launch(String[] args) throws Exception {
         // 主应用与测试控制器使用同一真实 Spring 上下文，不替换业务组件。
-        context = SpringApplication.run(new Class<?>[]{LotteryApplication.class, PerfHarness.class, PerfTiming.class}, args);
-        // 读取路由数据源实际物理连接池，包含全局库和两个用户分库。
-        AbstractRoutingDataSource routing = (AbstractRoutingDataSource) context.getBean("mysqlDataSource", DataSource.class);
-        for (String fieldName : Arrays.asList("resolvedDataSources", "resolvedDefaultDataSource")) {
-            Field field = AbstractRoutingDataSource.class.getDeclaredField(fieldName);
-            field.setAccessible(true);
-            Object value = field.get(routing);
-            Collection<?> sources = value instanceof Map ? ((Map<?, ?>) value).values() : Collections.singleton(value);
-            for (Object source : sources) {
-                HikariDataSource pool = (HikariDataSource) source;
-                // 连接池名称在首次初始化时确定，先建立连接再安装计时器和索引。
-                try (Connection ignored = pool.getConnection()) { }
-                pools.add(pool);
-                PoolTiming timing = new PoolTiming();
-                timings.put(pool.getPoolName(), timing);
-                pool.setMetricsTrackerFactory((name, stats) -> timing);
+        SpringApplication application = new SpringApplication(LotteryApplication.class, PerfHarness.class, PerfTiming.class);
+        application.addInitializers(applicationContext -> {
+            if (!"127.0.0.1".equals(applicationContext.getEnvironment().getProperty("server.address"))) {
+                throw new IllegalStateException("压测控制面与合成身份只允许监听 127.0.0.1");
             }
-        }
-        admin = AdminClient.create(Collections.singletonMap("bootstrap.servers", "127.0.0.1:29092"));
-        // 固定一秒延迟触发已有 handler；任务越慢，实际调度周期越长，不能虚构吞吐。
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-        scheduler.scheduleWithFixedDelay(() -> {
-            long start = System.nanoTime();
-            try {
-                // XXL 参数是线程上下文，必须在执行任务的线程设置分库列表。
-                XxlJobContext.setXxlJobContext(new XxlJobContext(1, "1,2", null, 0, 1));
-                LotteryXxlJob job = context.getBean(LotteryXxlJob.class);
-                job.awardStockSettlementOutboxJobHandler();
-                job.lotteryOrderMQStateJobHandler();
-                jobCalls.increment();
-            } catch (Throwable failure) {
-                // 采样会显式报告异常，同时输出原始堆栈，不把任务失败视为正常完成。
-                jobFailure = failure;
-                failure.printStackTrace();
-                throw new IllegalStateException("压测异步任务失败", failure);
-            } finally {
-                jobNanos.add(System.nanoTime() - start);
-                XxlJobContext.setXxlJobContext(null);
-            }
-        }, 1, 1, TimeUnit.SECONDS);
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> { scheduler.shutdownNow(); admin.close(); }));
+        });
+        context = application.run(args);
+        // 从真实生产单数据源采集 Hikari 指标。
+        HikariDataSource pool = context.getBean(HikariDataSource.class);
+        try (Connection ignored = pool.getConnection()) { }
+        pools.add(pool);
+        PoolTiming timing = new PoolTiming();
+        timings.put(pool.getPoolName(), timing);
+        pool.setMetricsTrackerFactory((name, stats) -> timing);
+        admin = AdminClient.create(Collections.singletonMap("bootstrap.servers",
+                context.getEnvironment().getRequiredProperty("spring.kafka.bootstrap-servers")));
+        // 测量实际 Spring 调度，不额外启动压测调度器。
+        Runtime.getRuntime().addShutdownHook(new Thread(admin::close));
+    }
+
+    @Bean
+    public FilterRegistrationBean<Filter> perfIdentity() {
+        // 仅独立 loopback 压测进程装配，模拟已经认证的 Servlet Principal。
+        FilterRegistrationBean<Filter> registration = new FilterRegistrationBean<>();
+        registration.setFilter((request, response, chain) -> {
+            HttpServletRequest http = (HttpServletRequest) request;
+            String user = http.getHeader("X-Perf-Principal");
+            chain.doFilter(new HttpServletRequestWrapper(http) {
+                @Override public java.security.Principal getUserPrincipal() {
+                    return user == null ? super.getUserPrincipal() : () -> user;
+                }
+            }, response);
+        });
+        registration.addUrlPatterns("/api/v1/draw");
+        return registration;
     }
 
     @PostMapping("/__perf/setup")
@@ -107,7 +98,8 @@ public class PerfHarness {
             @RequestParam(value="awardStock", defaultValue="-1") int awardStock,
             @RequestParam(value="name", required=false) String name,
             @RequestParam(value="description", required=false) String description,
-            @RequestParam(value="awardRate", defaultValue="0.20") BigDecimal awardRate) throws Exception {
+            @RequestParam(value="awardRate", defaultValue="0.20") BigDecimal awardRate,
+            @RequestParam(value="start", defaultValue="true") boolean start) throws Exception {
         ActivityVO activity = new ActivityVO();
         activity.setActivityId(id);
         // 网页演示可以设置活动文案；原压测调用继续使用既定名称和描述。
@@ -142,42 +134,27 @@ public class PerfHarness {
         // 创建聚合时生产服务绑定策略并初始化剩余库存，禁止直接把数据库设为运行态。
         context.getBean(IActivityDeploy.class).createActivity(new ActivityConfigReq(id, new ActivityConfigRich(activity, drawConfig, awards)));
         // PASS->DOING 在生产行锁事务内预热 Redis，再提交运行状态。
-        if (!context.getBean(ActivityLifecycleService.class).transition(id, Constants.ActivityState.PASS, Constants.ActivityState.DOING)) {
+        if (start && !context.getBean(ActivityLifecycleService.class).transition(id, Constants.ActivityState.PASS, Constants.ActivityState.DOING)) {
             throw new IllegalStateException("专用活动启动失败 " + id);
         }
-        IDBRouterStrategy router = context.getBean(IDBRouterStrategy.class);
-        Map<String, Integer> distribution = new TreeMap<>();
-        try (Connection connection = connection()) {
+        // 预置足量用户，压测仍执行真实 TX1 查询与扣减。
+        String insertQuota = "INSERT INTO user_activity_quota(u_id,activity_id,total_count,left_count) VALUES (?,?,?,?)";
+        try (Connection connection = connection(); PreparedStatement insert = connection.prepareStatement(insertQuota)) {
             connection.setAutoCommit(false);
-            Map<String, PreparedStatement> inserts = new HashMap<>();
-            try {
-                for (int i = 0; i < users; i++) {
-                    String user = prefix + String.format("%07d", i);
-                    // 路由调用生产策略，避免自行复制算法或往两个库重复放用户。
-                    router.doRouter(user);
-                    String db = DBContextHolder.getDBKey();
-                    String location = db + "/" + DBContextHolder.getTBKey();
-                    distribution.put(location, distribution.getOrDefault(location, 0) + 1);
-                    router.clear();
-                    PreparedStatement insert = inserts.get(db);
-                    if (insert == null) {
-                        insert = connection.prepareStatement("INSERT INTO lottery_" + db + ".user_activity_quota(u_id,activity_id,total_count,left_count) VALUES (?,?,?,?)");
-                        inserts.put(db, insert);
-                    }
-                    insert.setString(1, user); insert.setLong(2, id); insert.setInt(3, quota); insert.setInt(4, quota);
-                    insert.addBatch();
-                    // 控制初始化批次内存，不改变压测请求的业务语义。
-                    if (i % 2000 == 1999) { for (PreparedStatement statement : inserts.values()) statement.executeBatch(); connection.commit(); }
-                }
-                for (PreparedStatement statement : inserts.values()) statement.executeBatch();
-                connection.commit();
-            } finally {
-                router.clear();
-                for (PreparedStatement statement : inserts.values()) statement.close();
+            for (int i = 0; i < users; i++) {
+                insert.setString(1, prefix + String.format("%07d", i));
+                insert.setLong(2, id);
+                insert.setInt(3, quota);
+                insert.setInt(4, quota);
+                insert.addBatch();
+                if (i % 2000 == 1999) { insert.executeBatch(); connection.commit(); }
             }
+            insert.executeBatch();
+            connection.commit();
         }
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("activityId", id); result.put("users", users); result.put("shards", distribution);
+        result.put("activityId", id);
+        result.put("users", users);
         return result;
     }
 
@@ -230,8 +207,9 @@ public class PerfHarness {
             poolStats.put(pool.getPoolName(), stats);
         }
         result.put("pools", poolStats);
-        result.put("jobCalls", jobCalls.sum()); result.put("jobNanos", jobNanos.sum());
-        result.put("jobFailure", jobFailure == null ? null : jobFailure.toString());
+        result.put("admission", context.getBean(DrawAdmission.class).metrics());
+        result.put("outbox", context.getBean(OutboxDispatcher.class).metrics());
+        result.putAll(PerfTiming.scheduling());
         // 可选诊断仅在测试启动器中提供，业务阶段与 SQL 计时均为累计值。
         result.put("timing", PerfTiming.snapshot());
         // 保存实际监听器提交策略，不能仅由配置文件推断 acknowledge 是否同步等待 broker。
@@ -269,6 +247,6 @@ public class PerfHarness {
     }
 
     private static Connection connection() throws SQLException {
-        return DriverManager.getConnection("jdbc:mysql://127.0.0.1:13329/?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true", "root", "perf-only");
+        return DriverManager.getConnection("jdbc:mysql://127.0.0.1:13339/lottery?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true", "root", "perf-only");
     }
 }

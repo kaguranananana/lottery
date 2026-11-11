@@ -2,6 +2,12 @@ server:
   port: 8080
 
 spring:
+  task:
+    scheduling:
+      # 三个固定延迟任务各有调度线程，扫描不会互相等待。
+      pool:
+        size: 3
+      thread-name-prefix: lottery-schedule-
   datasource:
     # MyBatis 与 TransactionTemplate 共用 Spring Boot 自动配置的连接池。
     url: ${LOTTERY_DB_URL:jdbc:mysql://127.0.0.1:13306/lottery?useUnicode=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true}
@@ -46,6 +52,10 @@ spring:
       # acks=1：只要集群的首领节点收到消息，生产者就会收到一个来自服务器成功响应
       # acks=all：只有当所有参与复制的节点全部收到消息时，生产者才会收到一个来自服务器的成功响应
       acks: 1
+      properties:
+        max.block.ms: 1000
+        request.timeout.ms: 10000
+        delivery.timeout.ms: 30000
 
     # 消费者配置
     consumer:
@@ -73,6 +83,17 @@ spring:
       missing-topics-fatal: false
 
 lottery:
+  scheduling:
+    activity-delay-ms: 10000
+    stock-delay-ms: 10000
+    fulfillment-delay-ms: 10000
+  outbox:
+    workers: 4
+    max-in-flight: 128
+    lease-seconds: 45
+    consume-timeout-seconds: 600
+    scan-batch-size: 100
+    scan-batches: 3
   draw:
     # HTTP 限流共享 Redis 配额，本机并发阈值独立配置。
     admission:
@@ -102,14 +123,9 @@ lottery:
       strategy-award-stock-group-id: lottery-strategy-award-stock-20260315
       invoice-concurrency: 4
       strategy-award-stock-concurrency: 4
-    dispatcher:
-      strategy-award-stock-batch-size: 200
   cache:
     draw-inflight-redis-ttl-seconds: 3
     no-consumed-order-redis-ttl-seconds: 1800
-    strategy-award-stock-mq-processing-redis-ttl-seconds: 300
-    strategy-award-stock-mq-dispatch-redis-ttl-seconds: 60
-    invoice-mq-processing-redis-ttl-seconds: 300
     # 抽奖策略快照：唯一的两级缓存（Caffeine L1 + Redis L2），高频读、低变更。
     # 一致性边界：快照为短 TTL 最终一致，运营变更配置后需等 TTL 过期生效；不做广播失效。
     strategy-snapshot:
@@ -136,26 +152,3 @@ mybatis:
     map-underscore-to-camel-case: true
     # 4. 打印 SQL 日志（调试神器，建议开启）
     log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
-
-
-# XXL-JOB配置
-xxl:
-  job:
-    admin:
-      # 调度中心地址（多个用逗号分隔）
-      addresses: http://localhost:7397/xxl-job-admin
-    executor:
-      # 执行器名称（唯一，在调度中心配置）
-      appname: lottery-job
-      # 执行器注册地址（为空则自动获取）
-      address: http://127.0.0.1:9999
-      # 执行器IP（为空则自动获取）
-      ip:
-      # 执行器端口（调度中心通过此端口调用）
-      port: 9999
-      # 执行器日志路径
-      logpath: D:/logs/xxl-job/jobhandler
-      # 日志保留天数
-      logretentiondays: 30
-    # 访问令牌（调度中心和执行器要一致）
-    accessToken:

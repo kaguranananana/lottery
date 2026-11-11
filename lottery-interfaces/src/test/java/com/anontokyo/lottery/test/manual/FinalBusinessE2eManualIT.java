@@ -1,8 +1,14 @@
 package com.anontokyo.lottery.test.manual;
 
 import com.anontokyo.lottery.LotteryApplication;
-import com.anontokyo.lottery.application.worker.LotteryXxlJob;
+import com.anontokyo.lottery.application.worker.LotteryScheduledTasks;
 import com.anontokyo.lottery.application.mq.producer.KafkaProducer;
+import com.anontokyo.lottery.application.mq.producer.OutboxDispatcher;
+import org.springframework.boot.test.mock.mockito.SpyBean;
+import org.springframework.transaction.support.TransactionTemplate;
+import com.anontokyo.lottery.domain.award.model.req.AwardOrderReq;
+import com.anontokyo.lottery.domain.award.model.res.AwardOrderResult;
+import com.anontokyo.lottery.domain.award.service.order.IAwardOrder;
 import com.anontokyo.lottery.application.mq.consumer.StockSettlementListener;
 import com.alibaba.fastjson.JSON;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -74,7 +80,10 @@ public class FinalBusinessE2eManualIT {
     @Autowired private IActivityRepository activities;
     @Autowired private ActivityLifecycleService lifecycle;
     @Autowired private IActivityPartake partake;
-    @Autowired private LotteryXxlJob job;
+    @Autowired private LotteryScheduledTasks job;
+    @SpyBean private OutboxDispatcher outbox;
+    @Autowired private TransactionTemplate transaction;
+    @Autowired private IAwardOrder awardOrder;
     @Autowired private TestRestTemplate http;
     @Autowired private StringRedisTemplate redis;
     @Autowired private IDrawOrderDao orders;
@@ -92,6 +101,8 @@ public class FinalBusinessE2eManualIT {
 
     @Before
     public void context() throws Exception {
+        // 旧故障场景按需控制提交后调度缺失窗口，实时投递由单独用例验证。
+        org.mockito.Mockito.doNothing().when(outbox).afterOrderCommit(org.mockito.ArgumentMatchers.any());
         listeners.start();
         await("真实 Kafka 分区分配", () -> listeners.getListenerContainers().stream()
                 .allMatch(c -> c.getAssignedPartitions() != null && !c.getAssignedPartitions().isEmpty()));
@@ -130,6 +141,8 @@ public class FinalBusinessE2eManualIT {
             assertEquals(0, value("SELECT state FROM " + "lottery"
                     + ".draw_participation WHERE u_id=? AND activity_id=?", user, id));
             assertEquals("已确认回滚的下单不能泄漏预扣奖品库存", "10", redis.opsForValue().get(awardKey(id)));
+            org.mockito.Mockito.verify(outbox, org.mockito.Mockito.never())
+                    .afterOrderCommit(org.mockito.ArgumentMatchers.any());
         } finally {
             update("DROP TRIGGER " + trigger);
         }
@@ -201,9 +214,9 @@ public class FinalBusinessE2eManualIT {
             }
         }
         assertTrue("23 条活动均须被扫描", visited.containsAll(expected));
-        job.lotteryActivityStateJobHandler();
+        job.advanceActivities();
         for (Long id : expected) assertEquals(Integer.valueOf(5), activityDao.queryActivityById(id).getState());
-        job.lotteryActivityStateJobHandler();
+        job.advanceActivities();
         for (Long id : expected) {
             assertEquals("10", redis.opsForValue().get(awardKey(id)));
             assertNoActivityStock(id);
@@ -234,7 +247,7 @@ public class FinalBusinessE2eManualIT {
             assertEquals(first.getOrderId(), replay.getOrderId());
             assertEquals(1, countTakes(user, id));
             assertEquals(2, leftCount(user, id));
-            job.awardStockSettlementOutboxJobHandler();
+            recoverStock();
             awaitComplete(user, first.getOrderId());
             assertEquals(1, value("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE order_id=?", first.getOrderId()));
             assertEquals(1, value("SELECT COUNT(*) FROM lottery.draw_order WHERE order_id=?", first.getOrderId()));
@@ -262,7 +275,7 @@ public class FinalBusinessE2eManualIT {
         assertEquals(scheduledAt, order(user, first.getOrderId()).getScheduledAt());
         assertNull(order(user, first.getOrderId()).getFulfilledAt());
 
-        job.awardStockSettlementOutboxJobHandler();
+        recoverStock();
         awaitComplete(user, first.getOrderId());
         DrawOrder saved = order(user, first.getOrderId());
         assertEquals(scheduledAt, saved.getScheduledAt());
@@ -292,7 +305,7 @@ public class FinalBusinessE2eManualIT {
         assertEquals(pending.getTakeId(), resumed.getTakeId());
         assertEquals(1, countTakes(user, id));
         assertEquals(2, leftCount(user, id));
-        job.awardStockSettlementOutboxJobHandler();
+        recoverStock();
         awaitComplete(user, resumed.getOrderId());
     }
 
@@ -321,7 +334,7 @@ public class FinalBusinessE2eManualIT {
             assertEquals(won.size(), countTakes(user, id));
             assertEquals(3 - won.size(), leftCount(user, id));
             assertEquals(String.valueOf(50 - won.size()), redis.opsForValue().get(awardKey(id)));
-            job.awardStockSettlementOutboxJobHandler();
+            recoverStock();
             for (DrawResponse result : won) awaitComplete(user, result.getOrderId());
         } finally {
             pool.shutdownNow();
@@ -346,7 +359,7 @@ public class FinalBusinessE2eManualIT {
         assertEquals(0, leftCount(user, id));
         assertEquals(1, value("SELECT COUNT(*) FROM lottery.draw_order WHERE u_id=? AND activity_id=?", user, id));
         assertNoActivityStock(id);
-        job.awardStockSettlementOutboxJobHandler();
+        recoverStock();
         awaitComplete(user, first.getOrderId());
         assertEquals(0, value("SELECT award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id=?", id));
         assertEquals("0", redis.opsForValue().get(awardKey(id)));
@@ -391,7 +404,7 @@ public class FinalBusinessE2eManualIT {
         assertEquals(2, leftCount(user, second));
         assertNoActivityStock(first);
         assertNoActivityStock(second);
-        job.awardStockSettlementOutboxJobHandler();
+        recoverStock();
         awaitComplete(user, a.getOrderId());
         awaitComplete(user, b.getOrderId());
         assertEquals(8, value("SELECT award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id=?", first));
@@ -420,7 +433,7 @@ public class FinalBusinessE2eManualIT {
         redis.opsForValue().set(awardKey(first), "9");
         assertTrue(lifecycle.transition(second, Constants.ActivityState.PASS, Constants.ActivityState.DOING));
         assertEquals("9", redis.opsForValue().get(awardKey(first)));
-        job.awardStockSettlementOutboxJobHandler();
+        recoverStock();
         awaitComplete(user, pending.getOrderId());
     }
 
@@ -547,7 +560,7 @@ public class FinalBusinessE2eManualIT {
             for (Future<Boolean> future : futures) if (future.get(30, TimeUnit.SECONDS)) started++;
             assertEquals(1, started);
             redis.opsForValue().decrement(awardKey(req.getActivityId()));
-            job.lotteryActivityStateJobHandler();
+            job.advanceActivities();
             assertEquals("9", redis.opsForValue().get(awardKey(req.getActivityId())));
         } finally { pool.shutdownNow(); }
     }
@@ -571,7 +584,7 @@ public class FinalBusinessE2eManualIT {
         assertWin(result);
         // 已预扣且有持久订单，但全局库存被置为零，模拟真实库存分歧。
         update("UPDATE lottery.draw_config_prize SET award_surplus_count=0 WHERE draw_config_id=?", id);
-        job.awardStockSettlementOutboxJobHandler();
+        recoverStock();
         await("库存分歧持久化为 BLOCKED", () -> order(user, result.getOrderId()).getStockSettlementEventStatus() == 4);
         assertEquals(0, value("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE order_id=?", result.getOrderId()));
         assertEquals(Integer.valueOf(0), order(user, result.getOrderId()).getAwardFulfillmentStatus());
@@ -579,17 +592,17 @@ public class FinalBusinessE2eManualIT {
         AwardStockSettlementVO settlement = settlement(user, id, result.getOrderId());
         RecordMetadata record = producer.sendStockSettlement(settlement).get(30, TimeUnit.SECONDS).getRecordMetadata();
         awaitStockOffset(record);
-        for (int i = 0; i < 3; i++) job.awardStockSettlementOutboxJobHandler();
-        assertFalse(orderRepository.scanStockSettlementEventStatus(200).stream()
+        for (int i = 0; i < 3; i++) recoverStock();
+        assertFalse(orderRepository.scanOutbox(com.anontokyo.lottery.domain.award.repository.IOrderRepository.OutboxKind.STOCK, 200).stream()
                 .anyMatch(row -> row.getOrderId().equals(result.getOrderId())));
         // 迟到发送成功/失败不可解除待对账状态。
         orderRepository.updateStockSettlementEventStatus(user, result.getOrderId(), 3);
         orderRepository.updateStockSettlementEventStatus(user, result.getOrderId(), 2);
         assertEquals(Integer.valueOf(4), order(user, result.getOrderId()).getStockSettlementEventStatus());
-        // 人工确认并修复全局库存，再在正确用户分片按订单 CAS 释放原 Outbox。
+        // 人工确认并修复全局库存，再按订单 CAS 释放原 Outbox。
         update("UPDATE lottery.draw_config_prize SET award_surplus_count=10 WHERE draw_config_id=?", id);
-        update("UPDATE lottery.draw_order SET stock_settlement_event_status=0 WHERE u_id=? AND order_id=? AND stock_settlement_event_status=4", user, result.getOrderId());
-        job.awardStockSettlementOutboxJobHandler();
+        update("UPDATE lottery.draw_order SET stock_settlement_event_status=0,stock_retry_at=NOW(3),stock_attempt=stock_attempt+1 WHERE u_id=? AND order_id=? AND stock_settlement_event_status=4", user, result.getOrderId());
+        recoverStock();
         awaitComplete(user, result.getOrderId());
         assertEquals(1, value("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE order_id=?", result.getOrderId()));
         assertEquals(9, value("SELECT award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id=?", id));
@@ -607,7 +620,7 @@ public class FinalBusinessE2eManualIT {
         listeners.stop();
         update("RENAME TABLE lottery.award_stock_settlement TO lottery.award_stock_settlement_unavailable");
         try {
-            // 直接调用生产消费者验证 ACK 边界，但 SQL、事务、分片均真实执行。
+            // 直接调用生产消费者验证 ACK 边界，但 SQL、事务均真实执行。
             assertThrows(org.springframework.dao.DataAccessException.class, () -> stockListener.onMessage(
                     new ConsumerRecord<>("lottery_strategy_award_stock", 0, 0, String.valueOf(result.getOrderId()), JSON.toJSONString(settlement)),
                     () -> acknowledged.set(true), "lottery_strategy_award_stock"));
@@ -621,7 +634,7 @@ public class FinalBusinessE2eManualIT {
         }
         assertEquals(0, value("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE order_id=?", result.getOrderId()));
         // 原订单仍处于可补偿 INIT，由真实 Kafka 重新投递完成，而非测试直接结算。
-        job.awardStockSettlementOutboxJobHandler();
+        recoverStock();
         awaitComplete(user, result.getOrderId());
         assertEquals(1, value("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE order_id=?", result.getOrderId()));
         assertEquals(9, value("SELECT award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id=?", id));
@@ -634,11 +647,57 @@ public class FinalBusinessE2eManualIT {
         update("UPDATE lottery.activity SET end_date_time=DATE_SUB(NOW(),INTERVAL 1 MINUTE) WHERE activity_id=?", passed.getActivityId());
         long running = createStarted(10, 3);
         update("UPDATE lottery.activity SET end_date_time=DATE_SUB(NOW(),INTERVAL 1 MINUTE) WHERE activity_id=?", running);
-        job.lotteryActivityStateJobHandler();
+        job.advanceActivities();
         assertEquals(Integer.valueOf(7), activityDao.queryActivityById(passed.getActivityId()).getState());
         assertFalse(redis.hasKey(awardKey(passed.getActivityId())));
         assertEquals(Integer.valueOf(7), activityDao.queryActivityById(running).getState());
         assertEquals("10", redis.opsForValue().get(awardKey(running)));
+    }
+
+    private void recoverStock() throws Exception {
+        // 仅使本测试中跳过实时调度的首发订单到期，租约、超时与回调仍由生产实现处理。
+        update("UPDATE lottery.draw_order SET stock_retry_at=NOW(3)"
+                + " WHERE stock_settlement_event_status=0 AND stock_attempt=0 AND stock_retry_at IS NOT NULL");
+        job.recoverStock();
+    }
+
+    @Test
+    public void committedOrderIsSentWithoutCallingTheScheduler() throws Exception {
+        org.mockito.Mockito.doCallRealMethod().when(outbox).afterOrderCommit(org.mockito.ArgumentMatchers.any());
+        long id = createStarted(10, 3);
+        String user = "realtime" + IDS.incrementAndGet();
+        DrawResponse result = draw(user, id, "realtime-commit");
+        assertWin(result);
+        // 禁用调度的测试上下文仍能完成，只有真实提交事件可触发本单投递。
+        awaitComplete(user, result.getOrderId());
+        assertEquals(1, value("SELECT stock_attempt FROM lottery.draw_order WHERE order_id=?", result.getOrderId()));
+        assertEquals(1, value("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE order_id=?", result.getOrderId()));
+    }
+
+    @Test
+    public void registeredOrderEventDoesNotRunWhenOuterTransactionRollsBack() throws Exception {
+        long id = createStarted(10, 3);
+        String user = "outer" + IDS.incrementAndGet();
+        PartakeResult participation = partake.doPartake(new PartakeReq(user, id, "outer-rollback"));
+        AwardOrderReq order = new AwardOrderReq();
+        order.setuId(user);
+        order.setTakeId(participation.getTakeId());
+        order.setActivityId(id);
+        order.setDrawConfigId(id);
+        order.setAwardId("p" + id);
+        order.setAwardType(3);
+        order.setGrantType(1);
+        AwardOrderResult result = transaction.execute(status -> {
+            AwardOrderResult created = awardOrder.placeOrder(order);
+            assertEquals("0000", created.getCode());
+            // 此时订单已 INSERT 且事件已注册，外层事务实际回滚。
+            status.setRollbackOnly();
+            return created;
+        });
+        org.mockito.Mockito.verify(outbox, org.mockito.Mockito.never())
+                .afterOrderCommit(org.mockito.ArgumentMatchers.any());
+        assertNull(order(user, result.getAwardFulfillmentEvent().getOrderId()));
+        assertEquals(0, value("SELECT state FROM lottery.draw_participation WHERE take_id=?", participation.getTakeId()));
     }
 
     private AwardStockSettlementVO settlement(String user, long id, long orderId) {
@@ -740,7 +799,7 @@ public class FinalBusinessE2eManualIT {
         assertEquals(1, countTakes(user, id));
         assertEquals(2, leftCount(user, id));
         assertEquals("9", redis.opsForValue().get(awardKey(id)));
-        job.awardStockSettlementOutboxJobHandler();
+        recoverStock();
         awaitComplete(user, first.getOrderId());
     }
 

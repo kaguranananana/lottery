@@ -14,7 +14,7 @@ import urllib.request
 from environment import sql, verify
 
 BASE = Path(__file__).resolve().parent
-URL = 'http://127.0.0.1:18090'
+URL = 'http://127.0.0.1:18190'
 
 def http(path, params=None):
     # HTTP 控制面仅运行在专用启动器中，正常抽奖仍由 JMeter 请求原接口。
@@ -29,29 +29,32 @@ def command(args):
     return subprocess.check_output(args, stderr=subprocess.PIPE, timeout=20).decode()
 
 def redis(*args):
-    return command(['docker','exec','lottery-perf-redis-1','redis-cli','--raw',*args])
+    return command(['docker','exec','lottery-single-perf-redis-1','redis-cli','--raw',*args])
 
-def orders_union(id):
-    return ' UNION ALL '.join(f'SELECT u_id,activity_id,order_id,take_id,award_id,stock_settlement_event_status,fulfillment_event_status,award_fulfillment_status,UNIX_TIMESTAMP(update_time)*1000 AS done_ms FROM lottery_{db:02d}.draw_order_{tb:03d} WHERE activity_id={id}' for db in (1,2) for tb in range(4))
+def orders_query(id):
+    return f'SELECT u_id,activity_id,order_id,take_id,award_id,stock_settlement_event_status,fulfillment_event_status,award_fulfillment_status,UNIX_TIMESTAMP(update_time)*1000 AS done_ms,CAST(UNIX_TIMESTAMP(create_time)*1000 AS UNSIGNED) AS created_ms,CAST(UNIX_TIMESTAMP(stock_settled_at)*1000 AS UNSIGNED) AS stock_done_ms,CAST(UNIX_TIMESTAMP(fulfilled_at)*1000 AS UNSIGNED) AS grant_done_ms FROM lottery.draw_order WHERE activity_id={id}'
 
 def snapshot(id):
-    # 各表用真实物理名审计，不通过路由器执行跨分片聚合业务查询。
-    union=orders_union(id)
-    query=f"SELECT COUNT(*),COALESCE(SUM(stock_settlement_event_status<>1),0),COALESCE(SUM(fulfillment_event_status<>1 OR award_fulfillment_status<>1),0),COALESCE(SUM(stock_settlement_event_status=4),0) FROM ({union}) o;"
-    rows=sql(query).strip().split('\t')
-    return dict(zip(('orders','stockPending','grantPending','blocked'),map(int,rows)))
+    query=f"""SELECT COUNT(*),COUNT(CASE WHEN stock_settlement_event_status<>1 THEN 1 END),
+        COUNT(CASE WHEN fulfillment_event_status<>1 OR award_fulfillment_status<>1 THEN 1 END),
+        COUNT(CASE WHEN stock_settlement_event_status=4 THEN 1 END),
+        COUNT(CASE WHEN stock_retry_at<=NOW(3) THEN 1 END),
+        COUNT(CASE WHEN fulfillment_retry_at<=NOW(3) THEN 1 END)
+        FROM lottery.draw_order WHERE activity_id={id};"""
+    fields=('orders','stockPending','grantPending','blocked','stockDue','fulfillmentDue')
+    return dict(zip(fields,map(int,sql(query).split())))
 
 def audit(id, directory):
     # 导出关联ID，随后逐项与所有 HTTP 样本核对，不能只比较总量。
-    data=sql(orders_union(id)+';')
-    (directory/'orders.tsv').write_text('user\tactivity\torder\ttake\taward\tstockState\tmqState\tgrantState\tdoneMs\n'+data)
-    take_union=' UNION ALL '.join(f'SELECT u_id,take_id,CONVERT(request_id USING utf8mb4) AS request_id,state FROM lottery_{db:02d}.draw_participation WHERE activity_id={id}' for db in (1,2))
-    (directory/'takes.tsv').write_text('user\ttake\trequest\tstate\n'+sql(take_union+';'))
+    data=sql(orders_query(id)+';')
+    (directory/'orders.tsv').write_text('user\tactivity\torder\ttake\taward\tstockState\tmqState\tgrantState\tdoneMs\tcreatedMs\tstockDoneMs\tgrantDoneMs\n'+data)
+    take_query=f'SELECT u_id,take_id,CONVERT(request_id USING utf8mb4) AS request_id,state FROM lottery.draw_participation WHERE activity_id={id}'
+    (directory/'takes.tsv').write_text('user\ttake\trequest\tstate\n'+sql(take_query+';'))
     (directory/'ledger.tsv').write_text('order\tuser\taward\n'+sql(f'SELECT order_id,u_id,award_id FROM lottery.award_stock_settlement WHERE draw_config_id={id};'))
     queries=[
-        ('quota', ' UNION ALL '.join(f'SELECT {db},COUNT(*),COALESCE(SUM(total_count-left_count),0),COALESCE(SUM(left_count<0),0) FROM lottery_{db:02d}.user_activity_quota WHERE activity_id={id}' for db in (1,2))),
-        ('takes', f'SELECT COUNT(*),SUM(state=0),COUNT(*)-COUNT(DISTINCT take_id) FROM ({take_union}) t'),
-        ('duplicateOrders',f'SELECT COUNT(*)-COUNT(DISTINCT order_id),COUNT(*)-COUNT(DISTINCT take_id) FROM ({orders_union(id)}) o'),
+        ('quota', f'SELECT COUNT(*),COALESCE(SUM(total_count-left_count),0),COALESCE(SUM(left_count<0),0) FROM lottery.user_activity_quota WHERE activity_id={id}'),
+        ('takes', f'SELECT COUNT(*),SUM(state=0),COUNT(*)-COUNT(DISTINCT take_id) FROM ({take_query}) t'),
+        ('duplicateOrders',f'SELECT COUNT(*)-COUNT(DISTINCT order_id),COUNT(*)-COUNT(DISTINCT take_id) FROM ({orders_query(id)}) o'),
         ('stock',f'SELECT award_id,award_count,award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id={id} ORDER BY award_id'),
         ('ledger',f'SELECT award_id,COUNT(*) FROM lottery.award_stock_settlement WHERE draw_config_id={id} GROUP BY award_id'),
         ('activity',f'SELECT state,take_count,draw_config_id FROM lottery.activity WHERE activity_id={id}'),
@@ -64,10 +67,14 @@ def audit(id, directory):
     return result
 
 def mysql_metrics():
-    return sql("SHOW GLOBAL STATUS WHERE Variable_name IN ('Threads_connected','Threads_running','Connections','Slow_queries','Innodb_row_lock_waits','Innodb_row_lock_time','Innodb_buffer_pool_reads','Questions');")
+    return sql("SHOW GLOBAL STATUS WHERE Variable_name IN ('Threads_connected','Threads_running','Connections','Slow_queries','Innodb_row_lock_waits','Innodb_row_lock_time','Innodb_buffer_pool_reads','Questions','Innodb_rows_read','Innodb_rows_inserted','Innodb_rows_updated','Innodb_rows_deleted','Innodb_deadlocks','Aborted_connects','Innodb_buffer_pool_read_requests');")
+
+def slow_queries():
+    return sql("SELECT COUNT(*),COALESCE(MAX(TIME_TO_SEC(query_time)),0) "
+               "FROM mysql.slow_log WHERE db='lottery';")
 
 def digest(path):
-    path.write_text(sql("SELECT SCHEMA_NAME,DIGEST_TEXT,COUNT_STAR,SUM_TIMER_WAIT/1000000000000,SUM_LOCK_TIME/1000000000000,SUM_ROWS_EXAMINED,SUM_ROWS_AFFECTED FROM performance_schema.events_statements_summary_by_digest WHERE SCHEMA_NAME IN ('lottery','lottery_01','lottery_02') ORDER BY SUM_TIMER_WAIT DESC;"))
+    path.write_text(sql("SELECT SCHEMA_NAME,DIGEST_TEXT,COUNT_STAR,SUM_TIMER_WAIT/1000000000000,SUM_LOCK_TIME/1000000000000,SUM_ROWS_EXAMINED,SUM_ROWS_AFFECTED FROM performance_schema.events_statements_summary_by_digest WHERE SCHEMA_NAME='lottery' ORDER BY SUM_TIMER_WAIT DESC;"))
 
 def monitor(stop, directory, id):
     index=0
@@ -112,19 +119,25 @@ def run(args):
     directory=BASE/'results'/args.session/args.name
     directory.mkdir(parents=True,exist_ok=False)
     prefix=args.name.replace('-','')[:12]+'_'
-    setup=http('/__perf/setup',dict(id=args.id,stock=args.stock,quota=10,users=args.users,prefix=prefix,awardStock=args.award_stock))
+    setup=http('/__perf/setup',dict(id=args.id,stock=args.stock,quota=args.quota,users=1 if args.single_user else args.users,prefix=prefix,awardStock=args.award_stock))
     write(directory/'setup.json',setup)
     (directory/'initial-stock.tsv').write_text(sql(f'SELECT award_id,award_count,award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id={args.id} ORDER BY award_id;'))
     write(directory/'initial-redis.json',{'awards':{f'p{args.id}_{i}':redis('GET',f'lottery_strategy_award_stock_count_{args.id}_p{args.id}_{i}').strip() for i in range(5)}})
     write(directory/'parameters.json',vars(args))
     digest(directory/'sql-before.tsv')
+    (directory/'slow-before.tsv').write_text(slow_queries())
     write(directory/'before.json',{'mysql':mysql_metrics(),'app':http('/__perf/metrics'),'lag':http('/__perf/lag')})
+    if args.slow_ms:
+        # 仅隔离压测库：模拟真实 TX1 慢 SQL，每个独立用户的行仍可并发更新。
+        injection = (f"CREATE TRIGGER lottery.perf_slow_{args.id} BEFORE UPDATE ON lottery.user_activity_quota "
+                     f"FOR EACH ROW DO IF(NEW.activity_id={args.id}, SLEEP({args.slow_ms / 1000}), 0);")
+        (directory/'slow-sql.txt').write_text(injection + '\n')
+        sql(injection)
     stop=threading.Event()
     thread=threading.Thread(target=monitor,args=(stop,directory,args.id),daemon=True);thread.start()
     # JTL 保留业务码与参与/订单ID；奖品售罄命中以 D001 完成本次抽奖。
-    cli=[args.jmeter,'-n','-t',str(BASE/('paced.jmx' if args.target_rps else 'draw.jmx')),'-l',str(directory/'samples.jtl'),'-j',str(directory/'jmeter.log'),f'-Jthreads={args.threads}',f'-Jduration={args.duration}','-Jramp=5',f'-Jactivity={args.id}',f'-Jprefix={prefix}',f'-Jusers={args.users}',f'-Jrun={args.name}', '-Jsample_variables=uId,activityId,requestId,businessCode,takeId,orderId','-Jjmeter.save.saveservice.timestamp_format=ms']
-    write(directory/'command.json',cli)
-    cli.append(f'-JtargetRpm={args.target_rps*60}')
+    cli=[args.jmeter,'-n','-t',str(BASE/('paced.jmx' if args.target_rps else 'draw.jmx')),'-l',str(directory/'samples.jtl'),'-j',str(directory/'jmeter.log'),f'-Jthreads={args.threads}',f'-Jduration={args.duration}',f'-Jramp={args.ramp}',f'-Jactivity={args.id}',f'-Jprefix={prefix}',f'-Jusers={args.users}',f'-Jrun={args.name}', '-Jsample_variables=uId,activityId,requestId,businessCode,takeId,orderId','-Jjmeter.save.saveservice.timestamp_format=ms']
+    cli.extend([f'-JtargetRpm={args.target_rps*60}', f'-JsingleUser={str(args.single_user).lower()}'])
     write(directory/'command.json',cli)
     # 保存实际执行计划，之后修改模板不会改变这轮的复现证据。
     (directory/'plan.jmx').write_bytes(Path(cli[3]).read_bytes())
@@ -146,8 +159,11 @@ def run(args):
         deadline=ended+args.drain_timeout
         drain=[]
         while True:
-            current=snapshot(args.id);drain.append({'time':int(time.time()*1000),**current})
-            if not current['stockPending'] and not current['grantPending']:
+            current=snapshot(args.id)
+            lag=http('/__perf/lag')
+            drain.append({'time':int(time.time()*1000), **current, 'lag':lag})
+            if not current['stockPending'] and not current['grantPending'] and all(
+                    values[1] == 0 and values[2] == 8 for values in lag.values()):
                 break
             if current['blocked'] or time.time()>deadline:
                 write(directory/'drain.json',{'seconds':time.time()-ended,'samples':drain,'timeout':True})
@@ -158,12 +174,16 @@ def run(args):
         write(directory/'drain.json',{'seconds':time.time()-ended,'samples':drain})
         audit(args.id,directory)
         digest(directory/'sql-after.tsv')
+        (directory/'slow-after.tsv').write_text(slow_queries())
         write(directory/'after.json',{'mysql':mysql_metrics(),'app':http('/__perf/metrics'),'lag':http('/__perf/lag')})
         # 审计必须实际通过后才宣称完成，不能只保存查询结果。
         from analyze import analyze
         analyze(directory)
     finally:
-        stop.set();thread.join(timeout=25)
+        stop.set()
+        thread.join(timeout=25)
+        if args.slow_ms:
+            sql(f"DROP TRIGGER lottery.perf_slow_{args.id};")
     print(directory.name+' 已执行并对账',flush=True)
 
 if __name__=='__main__':
@@ -173,6 +193,10 @@ if __name__=='__main__':
     p.add_argument('--stock',type=int,default=1000000,help='每种奖品的默认库存；活动无总库存限制');p.add_argument('--award-stock',type=int,default=-1);p.add_argument('--users',type=int,default=100000)
     p.add_argument('--jmeter',default=os.environ.get('JMETER_BIN','/tmp/apache-jmeter-5.6.3/bin/jmeter'))
     p.add_argument('--target-rps',type=float,default=0)
+    p.add_argument('--ramp',type=int,default=5)
+    p.add_argument('--quota',type=int,default=10)
+    p.add_argument('--single-user',action='store_true')
+    p.add_argument('--slow-ms',type=int,default=0)
     p.add_argument('--drain-timeout',type=int,default=180)
     args=p.parse_args()
     try:

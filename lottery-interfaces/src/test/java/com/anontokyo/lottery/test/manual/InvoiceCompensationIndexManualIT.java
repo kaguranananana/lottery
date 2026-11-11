@@ -43,9 +43,10 @@ public class InvoiceCompensationIndexManualIT {
         jdbc = new JdbcTemplate(source);
         // 字段覆盖生产扫描投影与条件，旧库存状态索引用于复现历史读放大。
         jdbc.execute("CREATE TABLE draw_order (id BIGINT AUTO_INCREMENT PRIMARY KEY,"
-                + "u_id VARCHAR(32),order_id BIGINT,take_id BIGINT,award_id VARCHAR(64),award_type INT,"
+                + "u_id VARCHAR(32),order_id BIGINT,take_id BIGINT,draw_config_id BIGINT,award_id VARCHAR(64),award_type INT,"
                 + "award_name VARCHAR(64),award_content VARCHAR(128),grant_type INT,scheduled_at DATETIME,"
                 + "award_fulfillment_status TINYINT,fulfillment_event_status TINYINT,stock_settlement_event_status TINYINT,create_time DATETIME,update_time DATETIME,"
+                + "fulfillment_retry_at DATETIME(3), stock_attempt INT DEFAULT 0, fulfillment_attempt INT DEFAULT 0,"
                 + "INDEX idx_stock_settlement_event_status_create_time(stock_settlement_event_status,create_time)) ENGINE=InnoDB");
         SqlSessionFactoryBean bean = new SqlSessionFactoryBean();
         bean.setDataSource(source);
@@ -69,8 +70,8 @@ public class InvoiceCompensationIndexManualIT {
         // 每个用例重建自有表数据和索引状态，前后计划使用同一份数据。
         jdbc.execute("TRUNCATE draw_order");
         if (jdbc.queryForObject("SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema=?"
-                + " AND table_name='draw_order' AND index_name='idx_award_fulfillment_status'", Integer.class, SCHEMA) > 0) {
-            jdbc.execute("ALTER TABLE draw_order DROP INDEX idx_award_fulfillment_status");
+                + " AND table_name='draw_order' AND index_name='idx_fulfillment_retry'", Integer.class, SCHEMA) > 0) {
+            jdbc.execute("ALTER TABLE draw_order DROP INDEX idx_fulfillment_retry");
         }
         try (Connection c = source.getConnection(); PreparedStatement s = c.prepareStatement(
                 "INSERT INTO draw_order(u_id,order_id,award_fulfillment_status,stock_settlement_event_status,fulfillment_event_status,create_time,update_time)"
@@ -94,30 +95,26 @@ public class InvoiceCompensationIndexManualIT {
         // 原谓词不变，新索引使无候选时不再读取已发奖订单。
         assertTrue(dao.scanFulfillmentEventStatus(100).isEmpty());
         String after = plan();
-        assertTrue(after, after.contains("idx_award_fulfillment_status"));
+        assertTrue(after, after.contains("idx_fulfillment_retry"));
         assertEquals(after, 0, scannedRows(after));
         assertEquals(5000, jdbc.queryForObject("SELECT COUNT(*) FROM draw_order", Integer.class).intValue());
     }
 
     @Test
     public void indexPreservesAllCompensationEligibility() throws Exception {
-        // FAIL 立即补偿；INIT 保留三十分钟；旧 COMPLETE 和 SENT 保留十分钟窗口。
-        insert(6001, 1, 0, 2, 0, 0);
-        insert(6002, 1, 0, 0, 31, 0);
-        insert(6003, 1, 0, 1, 0, 11);
-        insert(6004, 1, 0, 3, 0, 11);
-        // award_fulfillment_status 的真实 FAIL=2 也未完成，必须保留不等于一的第二段索引范围。
-        insert(6005, 1, 2, 2, 0, 0);
-        // 当前未超时的义务不提前发送，库存未结算和 BLOCKED 不进入发奖补偿。
-        insert(6011, 1, 0, 0, 0, 0);
-        insert(6012, 1, 0, 1, 0, 0);
-        insert(6013, 1, 0, 3, 0, 0);
-        insert(6014, 0, 0, 2, 31, 11);
-        insert(6015, 4, 0, 2, 31, 11);
-        insert(6016, 1, 1, 2, 31, 11);
-        // 生产 award_fulfillment_status 可空，索引不能改变 SQL 三值逻辑对 NULL 的排除。
-        jdbc.update("INSERT INTO draw_order(order_id,stock_settlement_event_status,award_fulfillment_status,fulfillment_event_status,create_time,update_time)"
-                + " VALUES (6017,1,NULL,2,NOW(),NOW())");
+        // 退避时间独立于订单 update_time。到期未完成候选才可投递。
+        insert(6001, 1, 0, 2, -1);
+        insert(6002, 1, 0, 0, -1);
+        insert(6003, 1, 0, 3, -1);
+        insert(6004, 1, 2, 2, -1);
+        insert(6005, 1, null, 2, -1);
+        insert(6011, 1, 0, 0, 10);
+        insert(6012, 1, 0, 2, 10);
+        insert(6013, 1, 0, 3, 10);
+        insert(6014, 0, 0, 2, -1);
+        insert(6015, 4, 0, 2, -1);
+        insert(6016, 1, 1, 2, -1);
+        insert(6017, 1, 1, 1, -1);
         Set<Long> expected = new HashSet<>(Arrays.asList(6001L, 6002L, 6003L, 6004L, 6005L));
         Set<Long> before = orders();
         assertEquals(expected, before);
@@ -126,16 +123,15 @@ public class InvoiceCompensationIndexManualIT {
         // 同一 fixture、同一 Mapper、相同返回集合，计划只遍历少量未发奖订单。
         assertEquals(before, orders());
         String after = plan();
-        assertTrue(after, after.contains("idx_award_fulfillment_status"));
+        assertTrue(after, after.contains("idx_fulfillment_retry"));
         assertTrue(after, scannedRows(after) <= 10);
         assertEquals(5012, jdbc.queryForObject("SELECT COUNT(*) FROM draw_order", Integer.class).intValue());
     }
 
-    private void insert(long order, int stock, int grant, int mq, int createMinutes, int updateMinutes) {
-        // 时间只用于既有补偿契约，使用远离边界的实际 MySQL NOW() fixture。
-        jdbc.update("INSERT INTO draw_order(order_id,stock_settlement_event_status,award_fulfillment_status,fulfillment_event_status,create_time,update_time)"
-                        + " VALUES (?,?,?,?,DATE_SUB(NOW(),INTERVAL ? MINUTE),DATE_SUB(NOW(),INTERVAL ? MINUTE))",
-                order, stock, grant, mq, createMinutes, updateMinutes);
+    private void insert(long order, int stock, Integer grant, int mq, int retryMinutes) {
+        jdbc.update("INSERT INTO draw_order(order_id,stock_settlement_event_status,award_fulfillment_status,fulfillment_event_status,fulfillment_retry_at,create_time,update_time)"
+                        + " VALUES (?,?,?,?,TIMESTAMPADD(MINUTE,?,NOW(3)),NOW(),NOW())",
+                order, stock, grant, mq, retryMinutes);
     }
 
     private Set<Long> orders() {
@@ -147,7 +143,7 @@ public class InvoiceCompensationIndexManualIT {
 
     private void applyMigration() throws Exception {
         // 对生产 DDL 中同一索引做有无对照，验证查询结果及实际扫描行数。
-        jdbc.execute("ALTER TABLE draw_order ADD KEY idx_award_fulfillment_status (award_fulfillment_status)");
+        jdbc.execute("ALTER TABLE draw_order ADD KEY idx_fulfillment_retry (fulfillment_retry_at,order_id)");
     }
 
     private String plan() {

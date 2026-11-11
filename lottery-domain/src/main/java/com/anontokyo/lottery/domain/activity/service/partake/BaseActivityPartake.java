@@ -11,7 +11,7 @@ import com.anontokyo.lottery.domain.support.ids.IdGenerator;
 import javax.annotation.Resource;
 
 /**
- * 活动参与模板：校验活动后，在用户分片事务中取得个人参与资格。
+ * 活动参与模板：校验活动后，在 TX1 本地事务中取得个人参与资格。
  */
 public abstract class BaseActivityPartake extends ActivityPartakeSupport implements IActivityPartake {
 
