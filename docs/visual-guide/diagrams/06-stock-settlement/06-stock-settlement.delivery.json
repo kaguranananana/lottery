@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "112c2330-e402-4a7c-9917-4b31e2ee5ae3",
+  "receiptId": "f4b430df-64c8-47cd-96b0-cbdfdf4f4d32",
   "status": "current",
   "command": "deliver",
   "type": "sequence",
   "input": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/06-stock-settlement/candidate.json",
   "output": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/06-stock-settlement/06-stock-settlement.html",
   "specification": {
-    "sha256": "867d2fd24b6519deb2bf7efe0fe8444976d381f80366aba1d13f51012a2cd953",
+    "sha256": "1fad7dcc78d2e93b7e5649aa6672c4c5e330a2309e1779f956e15be37e607f60",
     "bytes": 6446
   },
   "artifact": {
-    "sha256": "4de1803c4fffc6b7a4b23020d3a888c83aa37214a21a7ec69b17367aec6865af",
-    "bytes": 757770
+    "sha256": "09283ebd1addd70af9a3bcf7c346cedea72ac22db1acef08b5b339ad48ffbab2",
+    "bytes": 837635
   }
 }

@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "a45edc3b-2742-4f0d-adac-07f12eb28c83",
+  "receiptId": "f2cb1f58-f7f1-4a6a-8f26-81cc775d8d1c",
   "status": "current",
   "command": "deliver",
   "type": "workflow",
   "input": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/13-blocked-reconcile/candidate.json",
   "output": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/13-blocked-reconcile/13-blocked-reconcile.html",
   "specification": {
-    "sha256": "97faecd1f00fde353dcdf2e879fb762cc648a86737ec57a0413e7c4947da7ba3",
+    "sha256": "c58460fdbac64d93fd2eb18f021b43c6d271a8d5d61ae793c82aaee4ee471d50",
     "bytes": 6590
   },
   "artifact": {
-    "sha256": "7cd1ac00ec8fd161c5ee91d204fe748baab878d95890ad05e6cdd200627719a3",
-    "bytes": 756423
+    "sha256": "bc55fcebfa523d3039c0b3767294db6149623dd737ec58263f2d3c2257aa7000",
+    "bytes": 840087
   }
 }

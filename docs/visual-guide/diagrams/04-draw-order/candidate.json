@@ -8,7 +8,7 @@
     "output": "docs/visual-guide/diagrams/04-draw-order/04-draw-order.html",
     "repository": {
       "url": "git@github.com:kaguranananana/lottery.git",
-      "revision": "076af9fc607749c018c1cbec630daef61a99af55",
+      "revision": "1138fd5d27ddc4edfc2ca438fa87daf7ad504d32",
       "link_mode": "local-only"
     },
     "legend": {
@@ -89,7 +89,7 @@
         {
           "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java",
           "line": 117,
-          "end_line": 145,
+          "end_line": 142,
           "label": "StrategyRepository.java"
         }
       ]
@@ -103,7 +103,7 @@
         {
           "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java",
           "line": 117,
-          "end_line": 145,
+          "end_line": 142,
           "label": "StrategyRepository.java"
         }
       ]
@@ -136,9 +136,15 @@
       "sources": [
         {
           "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
-          "line": 38,
-          "end_line": 65,
+          "line": 42,
+          "end_line": 72,
           "label": "OrderRepository.java"
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StockReservationTransactions.java",
+          "line": 19,
+          "end_line": 57,
+          "label": "StockReservationTransactions.java"
         }
       ]
     },
@@ -201,7 +207,7 @@
       "from": "strategy",
       "to": "redis",
       "y": 354,
-      "label": "GET 检查 → DECR 奖品库存 1",
+      "label": "Lua：存在且 >0 才扣奖品库存 1",
       "variant": "security"
     },
     {
@@ -280,11 +286,11 @@
       ]
     },
     {
-      "title": "未中奖支路",
+      "title": "售罄与库存异常",
       "dot": "amber",
       "items": [
-        "NO_PRIZE 或命中的奖品不可售：consumeTake CAS 0→1，返回 D001、win=false。",
-        "活动库存和参与次数已消耗；不建中奖订单、不产生库存结算消息、不重摇其他奖品。"
+        "NO_PRIZE 或奖品真实售罄：consumeTake CAS 0→1，返回 D001，不建订单、不重摇。",
+        "奖品 Key 缺失或 Redis 异常：抛出状态异常，保留未消费 take；修复后以原 requestId 继续。"
       ]
     },
     {
@@ -293,6 +299,14 @@
       "items": [
         "正常图取 L1 命中。未命中时 Caffeine → Redis L2 → MySQL strategy/detail/award → 编译快照。",
         "取样先使用固定概率。库存不会重新归一化概率。"
+      ]
+    },
+    {
+      "title": "TX2 异常回补",
+      "dot": "rose",
+      "items": [
+        "下单业务拒绝仍由应用入口回补；SQL 异常由仓储观察 afterCompletion，再决定是否归还奖品预扣。",
+        "确认回滚或事务未开始才回补；已提交或结果未知不加库存，保留关联日志待对账。"
       ]
     }
   ]

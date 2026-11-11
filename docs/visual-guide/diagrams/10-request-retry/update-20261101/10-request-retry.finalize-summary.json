@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/10-request-retry/candidate.json",
+    "sha256": "edf83ed2d9dbe21e90f917210e4f076f1895f9ad19e91113682166fc2188744d",
+    "bytes": 8192
+  },
+  "artifact": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/10-request-retry/10-request-retry.html",
+    "sha256": "36678992472b5cfa028fb580c03c693ae7f64208300ae06c9789bbf8ff272809",
+    "bytes": 841679
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/10-request-retry/update-20261101/10-request-retry.finalize.json",
+    "summaryReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/10-request-retry/update-20261101/10-request-retry.finalize-summary.json",
+    "browserCheckReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/10-request-retry/update-20261101/10-request-retry.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 15578,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

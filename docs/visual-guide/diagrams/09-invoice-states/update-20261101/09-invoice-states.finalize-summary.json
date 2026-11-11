@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "lifecycle",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/09-invoice-states/candidate.json",
+    "sha256": "b6fc196bd8dc3b979c5b3115b28fb75d0a32cabd699a16967c19059051f7cb34",
+    "bytes": 4645
+  },
+  "artifact": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/09-invoice-states/09-invoice-states.html",
+    "sha256": "9bffad4bb8b2cc4342997e513f0843e7d05622ff682624ca7977375035a0c3f6",
+    "bytes": 833701
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/09-invoice-states/update-20261101/09-invoice-states.finalize.json",
+    "summaryReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/09-invoice-states/update-20261101/09-invoice-states.finalize-summary.json",
+    "browserCheckReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/09-invoice-states/update-20261101/09-invoice-states.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2597,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

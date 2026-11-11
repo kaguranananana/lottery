@@ -1,14 +1,15 @@
 {
-  "checked_date": "2026-10-14",
-  "diagram_count": 14,
+  "checked_date": "2026-11-01",
+  "diagram_count": 15,
   "all_automated_gates_passed": true,
   "quality_profile": "showcase",
+  "source_evidence": "independent local snapshot of current working tree including uncommitted optimizations",
   "rows": [
     {
       "diagram": "01-layers",
       "type": "architecture",
       "html": "diagrams/01-layers/01-layers.html",
-      "receipt": "diagrams/01-layers/01-layers.finalize.json",
+      "receipt": "diagrams/01-layers/update-20261101/01-layers.finalize.json",
       "gates": {
         "validate": "pass",
         "deliver": "pass",
@@ -30,7 +31,7 @@
       "diagram": "02-runtime",
       "type": "architecture",
       "html": "diagrams/02-runtime/02-runtime.html",
-      "receipt": "diagrams/02-runtime/review-3/02-runtime.finalize.json",
+      "receipt": "diagrams/02-runtime/update-20261101/02-runtime.finalize.json",
       "gates": {
         "validate": "pass",
         "deliver": "pass",
@@ -46,13 +47,21 @@
         "warnings": 0
       },
       "browser_evidence": "passed",
-      "visual_review": "not_requested"
+      "visual_review": "not_requested",
+      "perceptual_review": {
+        "status": "passed",
+        "scope": [
+          "1440x900.light",
+          "2048x1320.dark"
+        ],
+        "capture_receipt": "diagrams/02-runtime/update-20261101/visual-check/02-runtime.visual-check.json"
+      }
     },
     {
       "diagram": "03-participation",
       "type": "sequence",
       "html": "diagrams/03-participation/03-participation.html",
-      "receipt": "diagrams/03-participation/flow-styles/03-participation.finalize.json",
+      "receipt": "diagrams/03-participation/update-20261101/03-participation.finalize.json",
       "gates": {
         "validate": "pass",
         "deliver": "pass",
@@ -74,7 +83,7 @@
       "diagram": "04-draw-order",
       "type": "sequence",
       "html": "diagrams/04-draw-order/04-draw-order.html",
-      "receipt": "diagrams/04-draw-order/flow-styles/04-draw-order.finalize.json",
+      "receipt": "diagrams/04-draw-order/update-20261101/04-draw-order.finalize.json",
       "gates": {
         "validate": "pass",
         "deliver": "pass",
@@ -96,7 +105,7 @@
       "diagram": "05-outbox-dispatch",
       "type": "sequence",
       "html": "diagrams/05-outbox-dispatch/05-outbox-dispatch.html",
-      "receipt": "diagrams/05-outbox-dispatch/flow-styles/05-outbox-dispatch.finalize.json",
+      "receipt": "diagrams/05-outbox-dispatch/update-20261101/05-outbox-dispatch.finalize.json",
       "gates": {
         "validate": "pass",
         "deliver": "pass",
@@ -118,7 +127,7 @@
       "diagram": "06-stock-settlement",
       "type": "sequence",
       "html": "diagrams/06-stock-settlement/06-stock-settlement.html",
-      "receipt": "diagrams/06-stock-settlement/flow-styles/06-stock-settlement.finalize.json",
+      "receipt": "diagrams/06-stock-settlement/update-20261101/06-stock-settlement.finalize.json",
       "gates": {
         "validate": "pass",
         "deliver": "pass",
@@ -140,7 +149,7 @@
       "diagram": "07-fulfillment",
       "type": "sequence",
       "html": "diagrams/07-fulfillment/07-fulfillment.html",
-      "receipt": "diagrams/07-fulfillment/flow-styles/07-fulfillment.finalize.json",
+      "receipt": "diagrams/07-fulfillment/update-20261101/07-fulfillment.finalize.json",
       "gates": {
         "validate": "pass",
         "deliver": "pass",
@@ -162,7 +171,7 @@
       "diagram": "08-stock-states",
       "type": "lifecycle",
       "html": "diagrams/08-stock-states/08-stock-states.html",
-      "receipt": "diagrams/08-stock-states/08-stock-states.finalize.json",
+      "receipt": "diagrams/08-stock-states/update-20261101/08-stock-states.finalize.json",
       "gates": {
         "validate": "pass",
         "deliver": "pass",
@@ -178,13 +187,22 @@
         "warnings": 0
       },
       "browser_evidence": "passed",
-      "visual_review": "not_requested"
+      "visual_review": "not_requested",
+      "perceptual_review": {
+        "status": "passed",
+        "scope": [
+          "1440x900.light",
+          "2048x1320.dark"
+        ],
+        "capture_receipt": "diagrams/08-stock-states/update-20261101/visual-check/08-stock-states.visual-check.json"
+      },
+      "layout_observation": "One automatic crossover retained; both transitions remain readable in sampled screenshots."
     },
     {
       "diagram": "09-invoice-states",
       "type": "lifecycle",
       "html": "diagrams/09-invoice-states/09-invoice-states.html",
-      "receipt": "diagrams/09-invoice-states/09-invoice-states.finalize.json",
+      "receipt": "diagrams/09-invoice-states/update-20261101/09-invoice-states.finalize.json",
       "gates": {
         "validate": "pass",
         "deliver": "pass",
@@ -206,7 +224,7 @@
       "diagram": "10-request-retry",
       "type": "workflow",
       "html": "diagrams/10-request-retry/10-request-retry.html",
-      "receipt": "diagrams/10-request-retry/business-legend/10-request-retry.finalize.json",
+      "receipt": "diagrams/10-request-retry/update-20261101/10-request-retry.finalize.json",
       "gates": {
         "validate": "pass",
         "deliver": "pass",
@@ -228,7 +246,7 @@
       "diagram": "11-stock-key-missing",
       "type": "workflow",
       "html": "diagrams/11-stock-key-missing/11-stock-key-missing.html",
-      "receipt": "diagrams/11-stock-key-missing/business-legend/11-stock-key-missing.finalize.json",
+      "receipt": "diagrams/11-stock-key-missing/update-20261101/11-stock-key-missing.finalize.json",
       "gates": {
         "validate": "pass",
         "deliver": "pass",
@@ -250,7 +268,7 @@
       "diagram": "12-consumer-crash",
       "type": "workflow",
       "html": "diagrams/12-consumer-crash/12-consumer-crash.html",
-      "receipt": "diagrams/12-consumer-crash/business-legend/12-consumer-crash.finalize.json",
+      "receipt": "diagrams/12-consumer-crash/update-20261101/12-consumer-crash.finalize.json",
       "gates": {
         "validate": "pass",
         "deliver": "pass",
@@ -272,7 +290,7 @@
       "diagram": "13-blocked-reconcile",
       "type": "workflow",
       "html": "diagrams/13-blocked-reconcile/13-blocked-reconcile.html",
-      "receipt": "diagrams/13-blocked-reconcile/business-legend/13-blocked-reconcile.finalize.json",
+      "receipt": "diagrams/13-blocked-reconcile/update-20261101/13-blocked-reconcile.finalize.json",
       "gates": {
         "validate": "pass",
         "deliver": "pass",
@@ -294,7 +312,7 @@
       "diagram": "14-no-prize",
       "type": "sequence",
       "html": "diagrams/14-no-prize/14-no-prize.html",
-      "receipt": "diagrams/14-no-prize/flow-styles/14-no-prize.finalize.json",
+      "receipt": "diagrams/14-no-prize/update-20261101/14-no-prize.finalize.json",
       "gates": {
         "validate": "pass",
         "deliver": "pass",
@@ -311,48 +329,65 @@
       },
       "browser_evidence": "passed",
       "visual_review": "not_requested"
+    },
+    {
+      "diagram": "15-stock-recovery",
+      "type": "workflow",
+      "html": "diagrams/15-stock-recovery/15-stock-recovery.html",
+      "receipt": "diagrams/15-stock-recovery/update-20261101/15-stock-recovery.finalize.json",
+      "gates": {
+        "validate": "pass",
+        "deliver": "pass",
+        "check": "pass",
+        "browser-check": "pass"
+      },
+      "validation": {
+        "checksPassed": 9,
+        "checkCount": 9,
+        "compositionProfile": "showcase",
+        "compositionStatus": "pass",
+        "errors": 0,
+        "warnings": 0
+      },
+      "browser_evidence": "passed",
+      "visual_review": "not_requested",
+      "perceptual_review": {
+        "status": "passed",
+        "scope": [
+          "1440x900.light",
+          "2048x1320.dark"
+        ],
+        "capture_receipt": "diagrams/15-stock-recovery/update-20261101/visual-check/15-stock-recovery.visual-check.json"
+      }
     }
   ],
   "resource_checks": {
     "path_steps": 41,
-    "source_files": 38,
+    "source_files": 40,
+    "local_links_and_resources": 2061,
     "result": "passed"
+  },
+  "regeneration_check": {
+    "candidates_unchanged": 15,
+    "current_worktree_files_matched": 30,
+    "comparison": "direct byte equality"
   },
   "entry_browser_observations": {
     "method": "CUA over http://127.0.0.1",
-    "viewports": [
-      {
-        "width": 1440,
-        "height": 900
-      },
-      {
-        "width": 1600,
-        "height": 1000
-      },
-      {
-        "width": 1920,
-        "height": 1080
-      },
-      {
-        "width": 2048,
-        "height": 1320
-      }
-    ],
+    "width": 1280,
     "horizontal_overflow": false,
     "verified_interactions": [
       "chapter and diagram navigation",
-      "winner and no-prize traces",
-      "step data snapshots",
-      "relationship focus",
-      "keyboard arrows",
-      "saved deep link restore",
-      "source line anchors and file filter",
-      "light and dark themes",
-      "same-document deep link navigation after loading final resource version"
+      "updated runtime inventory/cache/ID facts",
+      "winner/no-prize/async traces and data snapshots",
+      "Lua relationship focus with aria-pressed=true",
+      "keyboard next step",
+      "new recovery diagram deep link restore",
+      "source line anchor and file filter",
+      "light and dark themes"
     ],
-    "local_file_protocol_check": "blocked_by_in_app_browser_url_policy",
-    "perceptual_review_scope": "entry and selected diagrams; not every diagram",
-    "host_console_observation": "anonymous MutationObserver exceptions include Electron host frames; a separate Immersive Translate extension fetch error was also observed; no guide.js frames identified; recorded separately from artifact gate results"
+    "perceptual_review_scope": "02/08/15, 1440 light and 2048 dark; not every diagram",
+    "host_console_observation": "Anonymous MutationObserver exception reproduced after reload; anonymous script stack includes node:electron/js2c/sandbox_bundle, with no guide.js or diagram URL frames."
   },
   "business_runtime_tests": "not_run_documentation_only"
 }

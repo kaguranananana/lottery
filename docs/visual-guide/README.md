@@ -1,6 +1,6 @@
 # Lottery 交互式架构与业务数据流图解
 
-> 历史图解：本目录的图、教学数据和源码摘录保留活动总库存重构前的实现。2026-11-02已移除该业务限制；当前流程、SQL与测试见 [业务简化记录](../activity-stock-removal.md)。本次不重绘或改写原有图解证据。
+> 历史快照：本目录15幅图、教学数据、生成器和源码行号适用于2026-11-01。活动总库存已于2026-11-02移除；本轮保留既有图解与验证证据，未重绘。当前流程、SQL与测试见 [业务简化记录](../activity-stock-removal.md)。
 
 入口为 [index.html](index.html)。本目录包含全部必需资源，没有 CDN、构建步骤或业务服务依赖。可以用普通浏览器打开入口；若浏览器限制本地文件，使用本机预览：
 
@@ -10,12 +10,24 @@ python3 -m http.server 8768 --bind 127.0.0.1 --directory docs/visual-guide
 
 然后访问 [本机入口](http://127.0.0.1:8768/index.html)。Codex 内置浏览器只接受 HTTP/HTTPS，本次入口交互通过本机预览验证，没有绕过其本地文件协议限制。
 
+## 2026-11-01 更新
+
+以当前工作区为准，包含尚未提交的库存、事务、缓存与 ID 配置优化。原有14幅图同步刷新，新增加第15幅“事务异常与回补”；41个路径步骤与40个源码文件摘录重新生成。
+
+- `RedisUtil.java`：单Key Lua检查并条件扣减；回补只修改现存Key，缺失明确报错。
+- `StrategyRepository.java`：奖品库存Key缺失抛出，保留原take及requestId；正常未中奖图只包含NO_PRIZE与真实售罄。
+- `BaseActivityPartake.java`、`UserTakeActivityRepository.java`、`OrderRepository.java`、`StockReservationTransactions.java`：takeId先于活动预扣生成，异常回补依据真实事务结果；业务拒绝保持原回补入口。
+- `TwoLevelCacheService.java`：事务提交后失效、回滚保留缓存、无事务即时失效；跨实例L1仍依赖TTL。
+- `SnowflakeIdGenerator.java`、`application.yml`：显式配置节点号，多实例部署需分配唯一workerId。
+
+当前源码中仍存在的JVM崩溃预留窗口、事务结果未知、人工库存恢复和模拟发奖边界继续如实保留。
+
 ## 建议阅读顺序
 
 1. **系统全貌**：代码分层 → 运行组件。五个 Maven 模块构成同一应用；组件位置与数据存储分别解释。
 2. **一次抽奖**：正常中奖 14 步 → 正常未中奖 12 步。观察 requestId、takeId、orderId 与各类库存。
 3. **请求之后**：沿同一中奖订单继续 15 个异步步骤，再单独阅读库存/发奖消息状态。
-4. **失败与恢复**：重复请求、Redis 库存缺失、重复消息/消费者宕机、BLOCKED 对账。发送失败与超时恢复在状态图和说明中展开。
+4. **失败与恢复**：重复请求、Redis 库存缺失、重复消息/消费者宕机、BLOCKED 对账、事务异常与回补。发送失败与超时恢复在状态图和说明中展开。
 
 编号、上一步/下一步、左右方向键控制步骤。数据面板显示本步之后的教学状态，改变的字段同时显示前后值。箭头通过 Archify 公开关系深链高亮；图内支持聚焦、上下游、搜索、路径探索、主题和导出。单独打开完整图可以获得更大画布。
 
@@ -39,6 +51,7 @@ python3 -m http.server 8768 --bind 127.0.0.1 --directory docs/visual-guide
 | 消费者宕机 | [12-consumer-crash.html](diagrams/12-consumer-crash/12-consumer-crash.html) | workflow |
 | BLOCKED对账 | [13-blocked-reconcile.html](diagrams/13-blocked-reconcile/13-blocked-reconcile.html) | workflow |
 | 未中奖结束 | [14-no-prize.html](diagrams/14-no-prize/14-no-prize.html) | sequence |
+| 事务异常与回补 | [15-stock-recovery.html](diagrams/15-stock-recovery/15-stock-recovery.html) | workflow |
 
 ## 源码事实与实现范围
 
@@ -53,18 +66,23 @@ python3 -m http.server 8768 --bind 127.0.0.1 --directory docs/visual-guide
 
 ## 资源与再生成
 
-guide-data.js保存步骤/职责/源码位置；guide.js管理本地阅读；guide.css为入口与摘录样式。每张图保留candidate.json和Archify规格、产物、浏览器回执；修订回执放在对应review目录。
+guide-data.js保存步骤/职责/源码位置；guide.js管理本地阅读；guide.css为入口与摘录样式。每张图保留candidate.json、产物与回执，本轮回执位于各图的update-20261101目录，历史回执保留。
+
+Archify按提交校验源码证据。为覆盖尚未提交的优化，prepare_source_evidence.py只复制当前源码到系统临时目录并在独立本地Git仓库冻结，再用该快照核对；不提交项目、不改暂存区、不推送。快照不在HTTP预览目录，也不上传。临时目录清理后，重新生成快照并重新生成候选即可。
 
 ~~~bash
+# 冻结本次当前工作区；后续生成规格和校验必须使用同一份证据。
+SOURCE_REPO=$(python3 docs/visual-guide/prepare_source_evidence.py)
+
 # 可在命令末尾指定一张图名，只刷新那一张规格。
-python3 docs/visual-guide/build_diagrams.py
+ARCHIFY_SOURCE_REPO="$SOURCE_REPO" python3 docs/visual-guide/build_diagrams.py
 
 # 使用已安装 Archify；每个规格都需要完整 finalize。
 ARCHIFY_CLI="$HOME/.agents/skills/archify/bin/archify.mjs"
 node "$ARCHIFY_CLI" finalize sequence \
   docs/visual-guide/diagrams/03-participation/candidate.json \
   docs/visual-guide/diagrams/03-participation/03-participation.html \
-  --repo-root . --quality showcase \
+  --repo-root "$SOURCE_REPO" --quality showcase \
   --out-dir docs/visual-guide/diagrams/03-participation/new-review --json
 
 # 刷新教学数据和摘录，核对链接、源码锚点与步骤关系。

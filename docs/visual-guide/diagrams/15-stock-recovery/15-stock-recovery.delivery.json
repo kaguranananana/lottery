@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "receiptId": "78572093-3fbf-4996-9ce0-f82876b64969",
+  "status": "current",
+  "command": "deliver",
+  "type": "workflow",
+  "input": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/15-stock-recovery/candidate.json",
+  "output": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/15-stock-recovery/15-stock-recovery.html",
+  "specification": {
+    "sha256": "abca4fd73b203e339cfe64bbcbcba565101923b34346f549ded193eb83cbb61d",
+    "bytes": 7852
+  },
+  "artifact": {
+    "sha256": "68b4a20e5e313bde459d6f6b4547d4d1be3343b88ea9ee6c01b6b22a146d7ab7",
+    "bytes": 842435
+  }
+}

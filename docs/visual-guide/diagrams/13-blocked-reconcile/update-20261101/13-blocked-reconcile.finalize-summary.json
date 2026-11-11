@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/13-blocked-reconcile/candidate.json",
+    "sha256": "c58460fdbac64d93fd2eb18f021b43c6d271a8d5d61ae793c82aaee4ee471d50",
+    "bytes": 6590
+  },
+  "artifact": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/13-blocked-reconcile/13-blocked-reconcile.html",
+    "sha256": "bc55fcebfa523d3039c0b3767294db6149623dd737ec58263f2d3c2257aa7000",
+    "bytes": 840087
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/13-blocked-reconcile/update-20261101/13-blocked-reconcile.finalize.json",
+    "summaryReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/13-blocked-reconcile/update-20261101/13-blocked-reconcile.finalize-summary.json",
+    "browserCheckReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/13-blocked-reconcile/update-20261101/13-blocked-reconcile.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 15488,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

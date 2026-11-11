@@ -1,16 +1,18 @@
-"""历史生成器：适用于活动总库存重构前的快照；当前流程见activity-stock-removal.md。"""
+"""历史生成器：仅适用于2026-11-01源码快照；当前流程见activity-stock-removal.md。"""
 """按已核对的源码生成 Archify 规格；只写本图解目录，不修改业务文件。"""
 import json
+import os
 import subprocess
 import sys
 from pathlib import Path
 
 # 以脚本所在位置定位资源目录，避免依赖执行者的当前工作目录。
 OUT = Path(__file__).resolve().parent
-# 项目根目录用于定位源码以及读取 Git 的版本身份。
+# 项目根目录定位当前源码；证据仓库可指向包含未提交优化的独立快照。
 ROOT = OUT.parent.parent
-REV = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip()
-ORIGIN = subprocess.check_output(["git", "remote", "get-url", "origin"], cwd=ROOT, text=True).strip()
+EVIDENCE_ROOT = Path(os.environ.get("ARCHIFY_SOURCE_REPO", ROOT))
+REV = subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=EVIDENCE_ROOT, text=True).strip()
+ORIGIN = subprocess.check_output(["git", "remote", "get-url", "origin"], cwd=EVIDENCE_ROOT, text=True).strip()
 
 # 名称映射只覆盖已经阅读的源码，每条图解引用仍指定真实行号。
 FILES = {
@@ -102,9 +104,10 @@ diagrams.append({"schema_version": 1, "diagram_type": "architecture",
         node("application", "lottery-application", "抽奖用例、Kafka 收发、XXL-Job", 550, 100,
              [source("ActivityProcessImpl.java", 62, 180), source("LotteryXxlJob.java", 193, 229)]),
         node("infrastructure", "lottery-infrastructure", "Repository 实现、事务、路由、缓存", 80, 370,
-             [source("OrderRepository.java", 38, 65), source("StrategyRepository.java", 67, 145)]),
+             [source("OrderRepository.java", 42, 72), source("StockReservationTransactions.java", 19, 46),
+              source("TwoLevelCacheService.java", 119, 163)]),
         node("domain", "lottery-domain", "资格、抽样、订单规则、仓储接口", 550, 370,
-             [source("BaseActivityPartake.java", 23, 72), source("DrawExecutor.java", 31, 61),
+             [source("BaseActivityPartake.java", 23, 68), source("DrawExecutor.java", 31, 61),
               source("AwardOrderImpl.java", 38, 58)]),
         node("common", "lottery-common", "业务码、状态枚举、RedisKey", 550, 620,
              [source("Constants.java", 10, 23), source("Constants.java", 297, 307)]),
@@ -120,7 +123,9 @@ diagrams.append({"schema_version": 1, "diagram_type": "architecture",
                     "运行时领域调用注入的仓储对象，执行会进入 infrastructure。interfaces 的 pom 也直接依赖 domain。"),
               card("当前源码的边界", "五个 Maven 模块不是五个微服务。启动模块将它们装入同一应用。",
                    "Mapper XML 物理存放在 interfaces 资源目录，仍承担持久化 SQL 职责。",
-                   "domain 仍有 Spring 注解、Redis 配置及路由 Maven 依赖，不能说完全脱离框架。", dot="amber")]
+                   "domain 仍有 Spring 注解、Redis 配置及路由 Maven 依赖，不能说完全脱离框架。", dot="amber"),
+              card("本轮优化的归属", "RedisUtil 负责单 Key Lua 扣减及现存 Key 回补；仓储调用 StockReservationTransactions 判定异常回补。",
+                   "TwoLevelCacheService 将事务内配置失效延后到 afterCommit；Snowflake 在 domain 中使用显式节点配置。", dot="emerald")]
 })
 
 # 图 2 展示运行中的参与者；库内表的具体归属由侧栏展开。
@@ -133,10 +138,11 @@ diagrams.append({"schema_version": 1, "diagram_type": "architecture",
              [source("LotteryController.java", 27, 44), source("LotteryXxlJob.java", 193, 229),
               source("LotteryInvoiceListener.java", 57, 107)], width=280),
         node("redis", "Redis", "实时库存、配置缓存、短期锁", 480, 90,
-             [source("ActivityRepository.java", 190, 225), source("RedisActivityDrawProcessGuard.java", 24, 45)], "database", 280),
+             [source("RedisUtil.java", 23, 64), source("RedisActivityDrawProcessGuard.java", 24, 45),
+              source("TwoLevelCacheService.java", 119, 163)], "database", 280),
         node("mysql", "MySQL", "db00 配置/账本；db01/02 用户数据", 980, 300,
-             [source("OrderRepository.java", 38, 65), source("StrategyRepository.java", 87, 110),
-              source("IUserStrategyExportDao.java", 16, 24)], "database", 280),
+             [source("OrderRepository.java", 42, 72), source("StrategyRepository.java", 87, 110),
+              source("StockReservationTransactions.java", 19, 57)], "database", 280),
         node("kafka", "Kafka", "库存结算与发奖两个 topic", 480, 600,
              [source("KafkaProducer.java", 18, 41), source("LotteryStrategyAwardStockListener.java", 50, 53)], "messagebus", 280),
         node("xxl", "XXL-Job 调度中心", "触发应用内三类 Job Handler", 980, 600,
@@ -144,7 +150,7 @@ diagrams.append({"schema_version": 1, "diagram_type": "architecture",
               source("LotteryXxlJob.java", 193, 194)], "external", 280),
     ],
     "connections": [edge("client", "lottery", "HTTP 请求", "emphasis"),
-        edge("lottery", "redis", "GET / DECR / SETNX"),
+        edge("lottery", "redis", "Lua / 缓存 / 短锁"),
         edge("lottery", "mysql", "经仓储执行 SQL"),
         edge("xxl", "lottery", "触发 Job"),
         edge("lottery", "kafka", "生产消息", "dashed"),
@@ -154,7 +160,10 @@ diagrams.append({"schema_version": 1, "diagram_type": "architecture",
               card("存储的两类事实", "Redis 的库存数控制运行期可售数量。MySQL 用户库保存参与、次数与中奖订单。",
                    "MySQL 全局库保存配置、strategy_detail 剩余奖品库存和 award_stock_settlement。", dot="emerald"),
               card("已确认的边界", "当前应用没有同步发 Kafka；创建订单后的 Outbox 由 Job 驱动。",
-                   "真实网关与部署栈在相邻仓库，本图从当前 Controller 开始。发奖渠道仍为模拟。", dot="amber")]
+                   "真实网关与部署栈在相邻仓库，本图从当前 Controller 开始。发奖渠道仍为模拟。", dot="amber"),
+              card("本轮更新", "库存操作由单 Key Lua 执行，缺失与真实售罄分开处理。事务异常按实际完成状态决定回补。",
+                   "配置缓存事务提交后失效，回滚不失效；无事务即时失效。其他实例 L1 仍依赖 TTL。",
+                   "Snowflake 节点由 LOTTERY_WORKER_ID / LOTTERY_DATACENTER_ID 配置，多实例需唯一 workerId。", dot="violet")]
 })
 
 # 参与链路以缓存命中的正常请求为例；缓存未命中条件在说明中展开。
@@ -162,9 +171,9 @@ diagrams.append(sequence("03-participation", "03 · 同步上半程：从 HTTP �
     participant("client", "客户端", "外部请求", [source("DrawRequest.java", 11, 23)], "external"),
     participant("http", "HTTP 入口", "interfaces", [source("LotteryController.java", 37, 53)]),
     participant("app", "用例编排", "application", [source("ActivityProcessImpl.java", 62, 127)]),
-    participant("partake", "参与规则", "domain", [source("BaseActivityPartake.java", 23, 72)]),
-    participant("repo", "参与仓储", "infrastructure", [source("UserTakeActivityRepository.java", 38, 118), source("ActivityRepository.java", 150, 225)]),
-    participant("redis", "Redis", "库存 / 配置", [source("ActivityRepository.java", 150, 225)], "database"),
+    participant("partake", "参与规则", "domain", [source("BaseActivityPartake.java", 23, 68)]),
+    participant("repo", "参与仓储", "infrastructure", [source("UserTakeActivityRepository.java", 42, 124), source("ActivityRepository.java", 150, 225), source("StockReservationTransactions.java", 19, 57)]),
+    participant("redis", "Redis", "库存 / 配置", [source("ActivityRepository.java", 150, 225), source("RedisUtil.java", 23, 64)], "database"),
     participant("userdb", "用户库", "db01 或 db02", [source("UserTakeActivity_Mapper.xml", 19, 47), source("UserTakeActivityCount_Mapper.xml", 13, 32)], "database"),
 ], [
     ("s01", "client", "http", "01 POST /draw 三个字段", "default"),
@@ -180,32 +189,33 @@ diagrams.append(sequence("03-participation", "03 · 同步上半程：从 HTTP �
     ("s06cache", "repo", "redis", "GET 活动配置缓存", "emphasis"),
     ("s06back", "redis", "repo", "活动配置缓存命中", "return"),
     ("s06domain", "repo", "partake", "返回状态、时间、策略、次数", "return"),
-    ("s07", "partake", "repo", "07 预扣活动库存", "default"),
-    ("s07redis", "repo", "redis", "GET 存在且 >0 → DECR 1", "dashed"),
-    ("s08", "partake", "repo", "08 Snowflake takeId + requestId", "default"),
+    ("s07", "partake", "repo", "07 先生成 takeId，再请求活动预扣", "default"),
+    ("s07redis", "repo", "redis", "Lua：存在且 >0 才 DECR 1", "dashed"),
+    ("s08", "partake", "repo", "08 携 takeId + requestId 创建参与", "default"),
     ("s08tx", "repo", "userdb", "TX1：次数-1 + INSERT take(state=0)", "dashed"),
     ("s08commit", "userdb", "repo", "TX1 提交；失败整体回滚", "return"),
     ("s08back", "partake", "app", "strategyId / takeId / 活动剩余量", "return"),
 ], [card("教学前提", "这是一条首次请求且最终中奖的正常路径：活动 DOING、时间有效、库存已预热、配置缓存命中。",
              "缓存未命中可从 MySQL 加载配置；运行期库存 Key 丢失则拒绝，二者不是同一种 miss。"),
-    card("TX1 的作用", "次数扣减和 take 创建在同一用户分库事务内。Redis DECR 在事务外。",
-         "创建失败回补已预扣的活动库存；回补错误仅记日志，不能宣称 Redis/MySQL 全链路原子。", dot="amber")]))
+    card("TX1 与回补", "次数扣减和 take 创建在同一用户分库事务内；Redis 条件预扣在事务外。takeId 在预扣前生成。",
+         "业务拒绝由领域入口回补；异常由仓储按实际事务结果处理，仅未开始或确认回滚才回补。",
+         "回补只改现存 Key；回补失败保留异常，事务结果未知记对账日志，不自动加库存。", dot="amber")]))
 
 diagrams.append(sequence("04-draw-order", "04 · 同步下半程：选奖品、预扣、建订单、返回", [
     participant("http", "HTTP 入口", "interfaces", [source("LotteryController.java", 72, 96)]),
     participant("app", "用例编排", "application", [source("ActivityProcessImpl.java", 129, 179)]),
     participant("draw", "抽奖规则", "domain", [source("DrawExecutor.java", 31, 65)]),
-    participant("strategy", "策略仓储", "infrastructure", [source("StrategyRepository.java", 67, 84), source("StrategyRepository.java", 117, 145)]),
-    participant("redis", "Redis", "奖品实时库存", [source("StrategyRepository.java", 117, 145)], "database"),
+    participant("strategy", "策略仓储", "infrastructure", [source("StrategyRepository.java", 67, 84), source("StrategyRepository.java", 117, 142)]),
+    participant("redis", "Redis", "奖品实时库存", [source("StrategyRepository.java", 117, 142)], "database"),
     participant("order", "订单规则", "domain", [source("AwardOrderImpl.java", 38, 58), source("AwardOrderImpl.java", 107, 124)]),
-    participant("repo", "订单仓储", "infrastructure", [source("OrderRepository.java", 38, 65)]),
+    participant("repo", "订单仓储", "infrastructure", [source("OrderRepository.java", 42, 72), source("StockReservationTransactions.java", 19, 57)]),
     participant("userdb", "用户库", "订单分表 / take", [source("UserStrategyExport_Mapper.xml", 27, 35), source("UserTakeActivity_Mapper.xml", 28, 30)], "database"),
 ], [
     ("s09", "app", "draw", "09 DrawReq{uId,strategyId,uuid=takeId}", "default"),
     ("s09snapshot", "draw", "strategy", "queryStrategySnapshot(strategyId)", "emphasis"),
     ("s09back", "strategy", "draw", "快照：权重前缀和 + 奖品详情", "return"),
     ("s10", "draw", "strategy", "10 采样命中 awardId → 预扣", "default"),
-    ("s10redis", "strategy", "redis", "GET 检查 → DECR 奖品库存 1", "dashed"),
+    ("s10redis", "strategy", "redis", "Lua：存在且 >0 才扣奖品库存 1", "dashed"),
     ("s10back", "draw", "app", "DrawAwardInfo{awardId,type,name,content}", "return"),
     ("s11", "app", "order", "11 AwardOrderReq 带 takeId + award", "default"),
     ("s11repo", "order", "repo", "Snowflake orderId；三个状态置 0", "default"),
@@ -217,14 +227,16 @@ diagrams.append(sequence("04-draw-order", "04 · 同步下半程：选奖品、�
 ], [card("响应边界", "Controller 把 DrawProcessResult 转为 DrawResponse，再返回 HTTP 客户端。",
              "同步成功 code=0000、win=true；grant_state / mq_state / stock_mq_state 都仍为 INIT(0)。",
              "此时 MySQL strategy_detail 尚未扣减，真实发奖也没有发生。"),
-    card("未中奖支路", "NO_PRIZE 或命中的奖品不可售：consumeTake CAS 0→1，返回 D001、win=false。",
-         "活动库存和参与次数已消耗；不建中奖订单、不产生库存结算消息、不重摇其他奖品。", dot="amber"),
+    card("售罄与库存异常", "NO_PRIZE 或奖品真实售罄：consumeTake CAS 0→1，返回 D001，不建订单、不重摇。",
+         "奖品 Key 缺失或 Redis 异常：抛出状态异常，保留未消费 take；修复后以原 requestId 继续。", dot="amber"),
     card("快照来源", "正常图取 L1 命中。未命中时 Caffeine → Redis L2 → MySQL strategy/detail/award → 编译快照。",
-         "取样先使用固定概率。库存不会重新归一化概率。", dot="emerald")]))
+         "取样先使用固定概率。库存不会重新归一化概率。", dot="emerald"),
+    card("TX2 异常回补", "下单业务拒绝仍由应用入口回补；SQL 异常由仓储观察 afterCompletion，再决定是否归还奖品预扣。",
+         "确认回滚或事务未开始才回补；已提交或结果未知不加库存，保留关联日志待对账。", dot="rose")]))
 
 diagrams.append(sequence("05-outbox-dispatch", "05 · 异步起点：XXL-Job 把订单 Outbox 发到 Kafka", [
     participant("job", "库存 Job", "application", [source("LotteryXxlJob.java", 193, 271)]),
-    participant("repo", "订单仓储", "infrastructure", [source("OrderRepository.java", 155, 189)]),
+    participant("repo", "订单仓储", "infrastructure", [source("OrderRepository.java", 162, 197)]),
     participant("db", "用户库", "持久 Outbox", [source("UserStrategyExport_Mapper.xml", 112, 120)], "database"),
     participant("redis", "Redis", "短期投递标记", [source("RedisStrategyAwardStockMqGuard.java", 55, 83)], "database"),
     participant("kafka", "Kafka", "stock topic", [source("KafkaProducer.java", 34, 41)], "messagebus"),
@@ -250,7 +262,7 @@ diagrams.append(sequence("06-stock-settlement", "06 · 库存消费：账本与�
     participant("listener", "库存消费", "application", [source("LotteryStrategyAwardStockListener.java", 62, 101)]),
     participant("strategy", "结算仓储", "infrastructure", [source("StrategyRepository.java", 87, 110)]),
     participant("global", "全局库", "db00 / lottery", [source("ledger-sql", 14, 29), source("StrategyDetail_Mapper.xml", 43, 48)], "database"),
-    participant("order", "订单仓储", "infrastructure", [source("OrderRepository.java", 118, 143), source("OrderRepository.java", 218, 228)]),
+    participant("order", "订单仓储", "infrastructure", [source("OrderRepository.java", 124, 150), source("OrderRepository.java", 224, 235)]),
     participant("userdb", "用户库", "stock_mq_state", [source("UserStrategyExport_Mapper.xml", 52, 67)], "database"),
 ], [
     ("a05", "kafka", "listener", "A05 AwardStockSettlementVO", "default"),
@@ -275,7 +287,7 @@ diagrams.append(sequence("07-fulfillment", "07 · 发奖消费：模拟渠道与
     participant("listener", "发奖消费", "application", [source("LotteryInvoiceListener.java", 71, 107)]),
     participant("guard", "Redis 锁", "PROCESSING", [source("RedisInvoiceMqProcessGuard.java", 24, 50)], "database"),
     participant("handler", "发奖处理器", "domain / 模拟", [source("AbstractAwardFulfillmentHandler.java", 24, 39)]),
-    participant("repo", "订单仓储", "infrastructure", [source("OrderRepository.java", 78, 84), source("OrderRepository.java", 108, 115)]),
+    participant("repo", "订单仓储", "infrastructure", [source("OrderRepository.java", 84, 92), source("OrderRepository.java", 115, 122)]),
     participant("db", "用户库", "grant / mq 状态", [source("UserStrategyExport_Mapper.xml", 37, 50)], "database"),
 ], [
     ("a10", "kafka", "listener", "A10 InvoiceVO 发奖数据", "default"),
@@ -296,49 +308,49 @@ diagrams.append(sequence("07-fulfillment", "07 · 发奖消费：模拟渠道与
     card("完成判定", "库存账本存在、stock_mq_state=1、grant_state=1、mq_state=1 且消费者已 ack：本地异步链闭环。",
          "HTTP 的 win=true 早于这些事件，不证明用户已实际收到外部奖品。", dot="emerald")]))
 
-def state(sid, typ, label, sub, lane, col, refs):
-    return {"id": sid, "type": typ, "label": label, "sublabel": sub, "lane": lane,
-            "col": col, "width": 156, "height": 70, "sources": refs}
+def state(sid, typ, label, sub, refs):
+    """状态图使用当前 v3 主路径布局，状态与 SQL 推进条件不变。"""
+    return {"id": sid, "type": typ, "label": label, "sublabel": sub, "sources": refs}
 
 mq_refs = [source("UserStrategyExport_Mapper.xml", 52, 67), source("Constants.java", 297, 307)]
-diagrams.append({"schema_version": 2, "diagram_type": "lifecycle",
+diagrams.append({"schema_version": 3, "diagram_type": "lifecycle",
     "meta": meta("08-stock-states", "08 · stock_mq_state：发送失败与库存分歧分开处理"),
-    "lanes": [{"id": "main", "label": "库存消息状态 · 存在于用户中奖订单"},
-              {"id": "recovery", "label": "故障状态 · FAIL 可重投，BLOCKED 等人工对账"}],
+    "mainPath": ["init", "sent", "done"],
     "states": [
-        state("init", "start", "INIT · 0", "订单事务创建", "main", 0, mq_refs),
-        state("sent", "waiting", "SENT · 3", "发送成功等消费", "main", 2, mq_refs),
-        state("done", "success", "COMPLETE · 1", "库存消费完成", "main", 4, mq_refs),
-        state("fail", "failure", "FAIL · 2", "投递失败可重试", "recovery", 0, mq_refs),
-        state("blocked", "waiting", "BLOCKED · 4", "库存分歧待对账", "recovery", 2,
-              [source("LotteryStrategyAwardStockListener.java", 81, 95), source("OrderRepository.java", 126, 142)]),
+        state("init", "start", "INIT · 0", "订单事务创建", mq_refs),
+        state("sent", "waiting", "SENT · 3", "发送成功等消费", mq_refs),
+        state("done", "success", "COMPLETE · 1", "库存消费完成", mq_refs),
+        state("fail", "failure", "FAIL · 2", "投递失败可重试", mq_refs),
+        state("blocked", "waiting", "BLOCKED · 4", "库存分歧待对账",
+              [source("LotteryStrategyAwardStockListener.java", 81, 95), source("OrderRepository.java", 133, 150)]),
     ],
     "transitions": [edge("init", "sent", "发送成功"), edge("sent", "done", "结算成功"),
-        edge("init", "fail", "发送失败", "security"), edge("fail", "sent", "重发成功"),
+        edge("init", "fail", "发送失败", "security"), edge("fail", "sent", "成功"),
         edge("sent", "blocked", "库存分歧", "security"),
-        edge("init", "done", "消费先完成", "dashed", route="top-channel"),
-        edge("fail", "done", "消费结算完成", "dashed", route="bottom-channel"),
+        edge("init", "done", "消费先完成", "dashed"),
+        edge("fail", "done", "消费结算完成", "dashed"),
         edge("blocked", "done", "原消息结算成功", "dashed"),
     ],
     "cards": [card("状态规则", "消费成功允许0/2/3/4→1；库存分歧从0/2/3→4，图中以SENT分支表示典型路径。",
-                    "发送成功只允许0/2→3；发送失败只允许0→2。终态1以及待对账4不被发送回调覆盖。"),
+                    "发送成功只允许0/2→3；FAIL→SENT 的“成功”指重发确认成功。发送失败只允许0→2。终态1和待对账4不被发送回调覆盖。"),
         card("重投与人工恢复", "Job 扫0/2以及update_time超过10分钟的3；对已有3重复发送成功不刷新时钟。",
              "BLOCKED 没有自动恢复边。人工核实并修复后，按正确用户分片CAS 4→0，再由Job投递原订单。", dot="amber")]
 })
 
 invoice_refs = [source("UserStrategyExport_Mapper.xml", 42, 50), source("LotteryInvoiceListener.java", 71, 107)]
-diagrams.append({"schema_version": 2, "diagram_type": "lifecycle",
+diagrams.append({"schema_version": 3, "diagram_type": "lifecycle",
     "meta": meta("09-invoice-states", "09 · mq_state：发送成功还需要消费确认"),
-    "lanes": [{"id": "main", "label": "发奖消息状态 · mq_state"}, {"id": "recovery", "label": "发送失败及超时恢复"}],
-    "states": [state("init", "start", "INIT · 0", "库存完成后待发送", "main", 0, invoice_refs),
-        state("sent", "waiting", "SENT · 3", "消息已发送", "main", 2, invoice_refs),
-        state("done", "success", "COMPLETE · 1", "要求 grant_state=1", "main", 4, invoice_refs),
-        state("fail", "failure", "FAIL · 2", "发送失败待补偿", "recovery", 0, invoice_refs)],
+    "mainPath": ["init", "sent", "done"],
+    "states": [state("init", "start", "INIT · 0", "库存完成后待发送", invoice_refs),
+        state("sent", "waiting", "SENT · 3", "消息已发送", invoice_refs),
+        state("done", "success", "COMPLETE · 1", "要求 grant_state=1", invoice_refs),
+        state("fail", "failure", "FAIL · 2", "发送失败待补偿", invoice_refs)],
     "transitions": [edge("init", "sent", "发送成功"), edge("sent", "done", "发奖完成确认"),
-        edge("init", "fail", "发送失败", "security"), edge("fail", "sent", "补偿成功"),
-        edge("init", "done", "消费先完成", "dashed", route="top-channel"),
-        edge("fail", "done", "发奖已完成", "dashed", route="bottom-channel")],
-    "cards": [card("补偿筛选", "必须stock_mq_state=1且grant_state!=1。FAIL直接扫；INIT创建超过30分钟才扫。",
+        edge("init", "fail", "发送失败", "security"), edge("fail", "sent", "成功"),
+        edge("init", "done", "消费先完成", "dashed"),
+        edge("fail", "done", "发奖已完成", "dashed")],
+    "cards": [card("补偿筛选", "FAIL→SENT 的“成功”指补偿投递确认成功，不代表已经发奖。",
+                    "必须stock_mq_state=1且grant_state!=1。FAIL直接扫；INIT创建超过30分钟才扫。",
                     "SENT更新超过10分钟可补偿；历史mq=1但grant!=1也按10分钟恢复。每张表LIMIT100。"),
               card("本地发奖状态", "grant_state 由handler CAS 0→1；失败时消费者抛异常，没有主链路写grant=2。",
                    "消息状态COMPLETE只能在grant=1时写入。示意消费顺序并不要求发送回调先抵达。", dot="amber")]
@@ -353,8 +365,8 @@ diagrams.append(workflow("10-request-retry", "10 · 重复请求：恢复原请�
     wfnode("replay", "outcome", 3, "回放原结果", "有订单中奖 / 无订单D001", apprefs),
     wfnode("pending", "fact", 3, "take 未消费", "state=0 / 归属当前请求", apprefs, "database"),
     wfnode("resume", "outcome", 4, "继续原 take", "不再扣活动库存或次数", apprefs),
-    wfnode("foreign", "request", 4, "新请求遇到旧 take", "B 不能消费 A 的机会", [source("BaseActivityPartake.java", 74, 90)]),
-    wfnode("reject", "outcome", 5, "D007 恢复原请求", "pendingRequestId=A", [source("BaseActivityPartake.java", 81, 90)]),
+    wfnode("foreign", "request", 4, "新请求遇到旧 take", "B 不能消费 A 的机会", [source("BaseActivityPartake.java", 70, 87)]),
+    wfnode("reject", "outcome", 5, "D007 恢复原请求", "pendingRequestId=A", [source("BaseActivityPartake.java", 77, 86)]),
 ], [edge("retry", "lookup", "获得短锁后查询"), edge("lookup", "used", "state=1"),
     edge("used", "replay", "按takeId查订单"), edge("lookup", "pending", "state=0", "dashed", role="branch"),
     edge("pending", "resume", "同请求恢复"), edge("foreign", "reject", "归属不同", "security", role="error")],
@@ -365,20 +377,25 @@ diagrams.append(workflow("10-request-retry", "10 · 重复请求：恢复原请�
 
 diagrams.append(workflow("11-stock-key-missing", "11 · Redis 库存丢失：保留现场，停止不可确认的销售", [
     ("activity", "活动库存 Key · 参与前"), ("award", "奖品库存 Key · take 已创建"), ("ops", "恢复边界 · 当前需人工核实")], [
-    wfnode("activitykey", "activity", 0, "GET 活动库存", "运行期 Key 丢失", [source("ActivityRepository.java", 195, 204)], "database"),
-    wfnode("activityerror", "activity", 2, "记录 error → D005", "不 DECR，不创建 take", [source("ActivityRepository.java", 198, 224)]),
-    wfnode("awardkey", "award", 0, "GET 奖品库存", "采样已命中奖品", [source("StrategyRepository.java", 118, 132)], "database"),
-    wfnode("soldout", "award", 2, "视为不可售", "error 日志；不重摇", [source("StrategyRepository.java", 122, 126), source("DrawExecutor.java", 40, 46)]),
-    wfnode("losing", "award", 4, "消费 take → D001", "无订单，活动/次数已消耗", [source("ActivityProcessImpl.java", 132, 150)]),
-    wfnode("manual", "ops", 2, "人工对账核实", "无运行期自动修复入口", [source("ActivityRepository.java", 243, 253), source("StrategyRepository.java", 113, 126)], "external"),
+    wfnode("activitykey", "activity", 0, "Lua 预扣活动库存", "Key 缺失 / Redis 异常", [source("ActivityRepository.java", 195, 213), source("RedisUtil.java", 23, 55)], "database"),
+    wfnode("activityerror", "activity", 2, "记录 error → D005", "不建新 take / 不扣次数", [source("ActivityRepository.java", 198, 213)]),
+    wfnode("awardkey", "award", 0, "Lua 预扣奖品库存", "采样已命中奖品", [source("StrategyRepository.java", 118, 130), source("RedisUtil.java", 23, 55)], "database"),
+    wfnode("awarderror", "award", 2, "抛出库存状态异常", "Key 缺失 / Redis 异常", [source("StrategyRepository.java", 120, 129)]),
+    wfnode("preserve", "award", 4, "保留未消费 take", "不建订单 / 不返回 D001", [source("ActivityProcessImpl.java", 129, 159), source("DrawExecutor.java", 40, 46)]),
+    wfnode("manual", "ops", 2, "人工核实并恢复", "不以滞后 MySQL 盲目回填", [source("ActivityRepository.java", 227, 237), source("StrategyRepository.java", 113, 130)], "external"),
+    wfnode("resume", "ops", 4, "原 requestId 继续", "复用 take / 不重扣次数", [source("ActivityProcessImpl.java", 98, 105)]),
 ], [edge("activitykey", "activityerror", "Key 不存在", "security", role="error"),
-    edge("awardkey", "soldout", "Key 不存在", "security", role="error"),
-    edge("soldout", "losing", "DrawState.FAIL"),
-    edge("activityerror", "manual", "日志提示核实", "dashed", role="branch")],
-    ["awardkey", "soldout", "losing"], [card("为什么不能回填", "奖品MySQL结算可能滞后，活动MySQL也未随每次参与扣减。用这些值覆盖运行库存会让已售库存复活。",
+    edge("awardkey", "awarderror", "缺失或执行失败", "security", role="error"),
+    edge("awarderror", "preserve", "异常中断抽奖"),
+    edge("activityerror", "manual", "日志提示核实", "dashed", role="branch"),
+    edge("preserve", "resume", "人工恢复后", "dashed", role="branch"),
+    edge("manual", "resume", "奖品库存已恢复")],
+    ["awardkey", "awarderror", "preserve", "resume"], [card("为什么不能回填", "奖品MySQL结算可能滞后，活动MySQL也未随每次参与扣减。用这些值覆盖运行库存会让已售库存复活。",
          "warmupStockForActivity只允许PASS，DOING不能靠启动预热恢复；没有实现运行期对账算法。", dot="amber"),
-        card("Key 缺失与连接异常", "奖品Key缺失返回soldOut并落D001；读Redis抛异常则向上抛IllegalStateException。",
-             "后者保留未消费take，客户端用原requestId恢复。不能把所有Redis异常都画成未中奖。")]))
+        card("真实售罄与状态错误", "Lua 对存在且余量<=0的 Key 返回售罄，此时才走未中奖；缺失 Key 明确抛出。",
+             "奖品异常保留 state=0 与原 requestId；活动异常发生在新 take 持久化之前。"),
+        card("恢复不等于重新预热", "人工节点表示当前待处理边界，不表示已有运行期自动修复功能。",
+             "回补也只能修改现存 Key，缺失时继续抛出；绝不隐式创建余量为1的新库存。", dot="rose")]))
 
 diagrams.append(workflow("12-consumer-crash", "12 · 库存消费者宕机：账本跨越已扣减但未收口的窗口", [
     ("consumer", "application · 同一 orderId 的多次消息"),
@@ -406,10 +423,10 @@ diagrams.append(workflow("13-blocked-reconcile", "13 · 库存分歧：BLOCKED �
     ("manual", "人工处置 · 非自动修复程序")], [
     wfnode("gap", "database", 0, "条件扣减失败", "award_surplus_count<=0", [source("StrategyDetail_Mapper.xml", 43, 48)], "database"),
     wfnode("rollback", "database", 1, "TX3 回滚账本", "本次没有结算成功事实", [source("StrategyRepository.java", 103, 110)], "database"),
-    wfnode("block", "consumer", 2, "持久化 BLOCKED=4", "消费失败独立CAS", [source("OrderRepository.java", 126, 142), source("UserStrategyExport_Mapper.xml", 62, 67)]),
+    wfnode("block", "consumer", 2, "持久化 BLOCKED=4", "消费失败独立CAS", [source("OrderRepository.java", 133, 150), source("UserStrategyExport_Mapper.xml", 62, 67)]),
     wfnode("ack", "consumer", 3, "记录对账日志 + ack", "Outbox 扫描排除4", [source("LotteryStrategyAwardStockListener.java", 81, 91)]),
-    wfnode("repair", "manual", 3, "人工核实并修复", "保持原orderId / 不盲目加库存", [source("architecture", 44, 48)], "external"),
-    wfnode("release", "manual", 4, "按订单 CAS 4→0", "正确用户库与订单分表", [source("architecture", 44, 48)], "external"),
+    wfnode("repair", "manual", 3, "人工核实并修复", "保持原orderId / 不盲目加库存", [source("architecture", 46, 50)], "external"),
+    wfnode("release", "manual", 4, "按订单 CAS 4→0", "正确用户库与订单分表", [source("architecture", 46, 50)], "external"),
     wfnode("dispatch", "consumer", 5, "Job 重投原订单", "结算成功后继续发奖", [source("UserStrategyExport_Mapper.xml", 112, 120), source("LotteryXxlJob.java", 217, 225)]),
 ], [edge("gap", "rollback", "扣减0行", "security", role="error"), edge("rollback", "block", "返回false"),
     edge("block", "ack", "持久化成功才ack"), edge("ack", "repair", "等待人工处理", "dashed", role="branch"),
@@ -425,7 +442,7 @@ diagrams.append(sequence("14-no-prize", "14 · 未中奖：消费参与机会，
     participant("draw", "抽奖规则", "domain", [source("DrawExecutor.java", 32, 46)]),
     participant("app", "用例编排", "application", [source("ActivityProcessImpl.java", 132, 150)]),
     participant("partake", "参与规则", "domain", [source("ActivityPartakeImpl.java", 58, 65)]),
-    participant("repo", "参与仓储", "infrastructure", [source("UserTakeActivityRepository.java", 120, 128)]),
+    participant("repo", "参与仓储", "infrastructure", [source("UserTakeActivityRepository.java", 126, 135)]),
     participant("db", "用户库", "参与state", [source("UserTakeActivity_Mapper.xml", 28, 30)], "database"),
     participant("redis", "Redis", "原请求token锁", [source("RedisActivityDrawProcessGuard.java", 39, 49)], "database"),
     participant("http", "HTTP 入口", "interfaces", [source("LotteryController.java", 72, 95)]),
@@ -437,10 +454,39 @@ diagrams.append(sequence("14-no-prize", "14 · 未中奖：消费参与机会，
     ("l10back", "partake", "app", "消费成功；零行须回读", "return"),
     ("l11", "app", "redis", "11 finally 校验token后释放", "security"),
     ("l12", "app", "http", "12 D001 / takeId / win=false", "return"),
-], [card("本次流程结束", "NO_PRIZE或命中的奖品不可售：不重摇，消费take并返回D001。",
+], [card("本次流程结束", "NO_PRIZE或命中的奖品真实售罄：不重摇，消费take并返回D001。",
          "活动库存与次数已消耗。无中奖订单，所以没有本次Outbox、账本、invoice。"),
     card("锁释放的实际位置", "finally由应用调用Redis Guard，只有原token仍匹配时删除短锁。",
-         "同requestId重试：已消费take无订单，回放D001，不再采样。", dot="amber")]))
+         "同requestId重试：已消费take无订单，回放D001，不再采样。", dot="amber"),
+    card("库存异常另行处理", "奖品 Key 缺失或 Redis 执行失败抛出异常，不进入本图的 consumeTake。",
+         "原 take 保持未消费；修复后用原 requestId 恢复。", dot="rose")]))
+
+# 新增事务异常分支图，明确回补资格来自 Spring 完成状态，而非异常名称。
+txrefs = [source("StockReservationTransactions.java", 19, 57)]
+diagrams.append(workflow("15-stock-recovery", "15 · 事务异常：确认结果后，才归还本次预扣", [
+    ("tx", "仓储 · 参与 TX1 / 订单 TX2"),
+    ("redis", "Redis · 独立于 MySQL 事务"),
+    ("result", "调用方 · 保留根因与对账线索")], [
+    wfnode("failure", "tx", 0, "捕获事务异常", "Redis 已预扣", [source("OrderRepository.java", 43, 68), source("UserTakeActivityRepository.java", 97, 120)]),
+    wfnode("completion", "tx", 1, "读取实际完成状态", "afterCompletion 观察结果", txrefs),
+    wfnode("recover", "redis", 2, "回补一次预扣", "Lua 只修改现存 Key", [source("StockReservationTransactions.java", 30, 39), source("RedisUtil.java", 34, 64)], "database"),
+    wfnode("keep", "tx", 3, "不自动加库存", "已提交 / 结果未知", txrefs),
+    wfnode("recoveryfail", "redis", 3, "回补也发生异常", "缺失 Key / Redis 故障", [source("StockReservationTransactions.java", 34, 39)]),
+    wfnode("reconcile", "result", 4, "记录关联日志待对账", "用户 / 请求 / 参与 / 订单", [source("StockReservationTransactions.java", 41, 46), source("OrderRepository.java", 65, 68), source("UserTakeActivityRepository.java", 118, 120)]),
+    wfnode("raise", "result", 5, "原异常继续抛出", "回补异常附在 suppressed", [source("StockReservationTransactions.java", 30, 46)]),
+], [edge("failure", "completion", "异常出口"),
+    edge("completion", "recover", "未开始 / 确认回滚"),
+    edge("completion", "keep", "已提交 / UNKNOWN", "security", role="error"),
+    edge("keep", "reconcile", "不推测回滚", "dashed", role="branch"),
+    edge("reconcile", "raise", "对账责任保留"),
+    edge("recover", "raise", "回补完成"),
+    edge("recover", "recoveryfail", "回补失败", "security", role="error"),
+    edge("recoveryfail", "raise", "保留两类异常")],
+    ["failure", "completion", "recover", "raise"], [
+        card("两个入口，共用规则", "参与仓储异常回补活动预扣；订单仓储异常回补奖品预扣。先路由用户库，再执行事务。",
+             "正常返回的业务拒绝仍由 BaseActivityPartake / ActivityProcessImpl 原入口回补，避免同一次预扣归还两次。"),
+        card("仍未覆盖的窗口", "预扣后 JVM 直接退出不能执行异常出口；提交结果未知也不能自行判成回滚。",
+             "当前没有持久预留与自动对账协议，这些窗口仍需后续处理，不能宣称 Redis/MySQL 恰好一次。", dot="amber")]))
 
 # 保留完整数据语义，仅用列宽与节点宽度承接已测得的布局空间需求。
 written_count = 0
@@ -448,7 +494,7 @@ for diagram in diagrams:
     slug = Path(diagram["meta"]["output"]).stem
     if slug in ["05-outbox-dispatch", "06-stock-settlement", "07-fulfillment", "14-no-prize"]:
         diagram["meta"]["column_fit"] = "spread"
-    if slug == "11-stock-key-missing":
+    if slug in ["11-stock-key-missing", "15-stock-recovery"]:
         for current_node in diagram["nodes"]:
             current_node["width"] = 180
 

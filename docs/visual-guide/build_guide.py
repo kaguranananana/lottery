@@ -1,4 +1,4 @@
-"""历史生成器：适用于活动总库存重构前的快照；当前流程见activity-stock-removal.md。"""
+"""历史生成器：仅适用于2026-11-01源码快照；当前流程见activity-stock-removal.md。"""
 """构建离线教学内容与带实际行号的源码摘录，不读取运行数据库。"""
 import html
 import json
@@ -56,7 +56,7 @@ sync = [
          "查用户活动state=0的take。原requestId才能继续；B遇到A的take返回D007与pendingRequestId=A。",
          "本例无未完成记录，可以检查活动。未知请求归属的旧take返回D008。",
          "take代表已经消耗的机会，不能让后来的不同请求接管。",
-         "queryActivityBill", [R("BaseActivityPartake.java", 29, 39), R("BaseActivityPartake.java", 74, 90)],
+         "queryActivityBill", [R("BaseActivityPartake.java", 29, 39), R("BaseActivityPartake.java", 70, 87)],
          "03-participation", "s05pending"),
     step("s06", "读取活动单据并检查资格", "domain → infrastructure → Redis / MySQL", "queryActivityBill → ActivityPartakeImpl.checkActivityBill",
          "activityId；PartakeReq中的参与时间",
@@ -65,19 +65,19 @@ sync = [
          "活动配置决定是否允许参与；配置库存不替代下一步Redis实时库存检查。用户次数由TX1条件UPDATE校验。",
          "substractionActivityStockByRedis", [R("ActivityRepository.java", 150, 169), R("ActivityPartakeImpl.java", 29, 46)],
          "03-participation", "s06cache"),
-    step("s07", "预扣一份活动库存", "domain → infrastructure → Redis", "substractionActivityStockByRedis",
+    step("s07", "先生成 takeId，再原子预扣活动库存", "domain → infrastructure → Redis", "IdGenerator.nextId → substractionActivityStockByRedis",
          "lottery_activity_stock_count_100001=100（教学值）",
-         "GET确认Key存在且>0，再DECR 1。并发扣成负数则INCR回补并返回D004；Key缺失或操作异常返回D005。",
-         "Redis活动剩余100→99；MySQL activity仍为100。",
-         "Redis原子扣减控制可创建的参与机会。运行期不能用滞后数据库值回填。",
-         "生成takeId并调用参与仓储", [R("ActivityRepository.java", 190, 225), R("BaseActivityPartake.java", 42, 52)],
+         "先生成Snowflake takeId=T1，尚未持久化；再由单Key Lua检查存在与余量，>0才DECR。真实售罄D004；缺失或Redis异常D005。",
+         "T1已生成；Redis活动剩余100→99；MySQL activity仍为100。",
+         "ID生成失败不会遗留活动预扣；Lua避免检查与扣减之间的窗口，售罄不写负数。运行期不回填滞后数据库值。",
+         "携已生成takeId调用参与仓储", [R("BaseActivityPartake.java", 42, 49), R("ActivityRepository.java", 195, 213), R("RedisUtil.java", 23, 55)],
          "03-participation", "s07redis", {"activityRedis": 99}),
-    step("s08", "TX1 扣次数并创建 take", "domain → infrastructure → 用户 MySQL", "IdGenerator.nextId → takeParticipation",
+    step("s08", "TX1 扣次数并创建 take", "domain → infrastructure → 用户 MySQL", "takeParticipation → StockReservationTransactions.execute",
          "ActivityBillVO + requestId + Snowflake takeId=T1；用户余次数3",
          "按uId选库再开本地事务；必要时初始化次数行，条件扣left_count，再INSERT take(state=0,request_id)。finally清路由。",
          "次数3→2；持久take T1关联用户、活动、策略和requestId。返回PartakeResult。",
-         "次数与take同事务。失败回滚TX1并回补活动Redis；回补错误只记日志，不能宣称补偿必达。",
-         "应用拿到strategyId / takeId → DrawExecutor", [R("BaseActivityPartake.java", 49, 71), R("UserTakeActivityRepository.java", 88, 117), R("UserTakeActivityCount_Mapper.xml", 13, 25)],
+         "次数与take同事务。业务拒绝由领域入口回补；异常仅在事务未开始或确认回滚时回补。结果未知记对账日志，回补失败附在原异常后继续抛出。",
+         "应用拿到strategyId / takeId → DrawExecutor", [R("BaseActivityPartake.java", 51, 67), R("UserTakeActivityRepository.java", 96, 124), R("StockReservationTransactions.java", 19, 57)],
          "03-participation", "s08tx", {"quota": 2, "take": "T1 · 未消费(0)"}),
     step("s09", "策略快照与固定概率采样", "application → domain → infrastructure", "DrawExecutor.doDrawExec / WeightedRandomSelector.select",
          "DrawReq{uId=u1,strategyId=10001,uuid=String.valueOf(T1)}",
@@ -88,10 +88,10 @@ sync = [
          "04-draw-order", "s09snapshot"),
     step("s10", "预扣命中奖品的 Redis 库存", "domain → infrastructure → Redis", "StrategyRepository.deductStockByRedis",
          "lottery_strategy_award_stock_count_10001_3=5（教学值）",
-         "GET存在且>0后DECR 1；负数回补并判不可售。Key缺失记error并不可售；读取Redis异常向上抛出，保留未完成take。",
+         "单Key Lua原子检查与扣减，存在且>0才DECR；真实售罄返回soldOut。Key缺失或Redis异常记录error并抛IllegalStateException，保留未完成take。",
          "奖品Redis 5→4；DrawAwardInfo含奖品详情与发奖配置；MySQL奖品仍为5。",
          "概率命中不等于库存足够，Redis控制实时销售，MySQL库存后续异步结算。",
-         "应用层 → AwardOrderImpl.placeOrder", [R("StrategyRepository.java", 117, 145), R("DrawExecutor.java", 49, 60)],
+         "应用层 → AwardOrderImpl.placeOrder", [R("StrategyRepository.java", 117, 142), R("RedisUtil.java", 23, 55), R("DrawExecutor.java", 40, 60)],
          "04-draw-order", "s10redis", {"prizeRedis": 4, "award": "awardId=3 · 优惠券类型3"}),
     step("s11", "生成中奖订单标识", "application → domain", "buildAwardOrderReq → AwardOrderImpl.buildDrawOrder",
          "uId + activityId + strategyId + takeId=T1 + DrawAwardInfo",
@@ -104,8 +104,8 @@ sync = [
          "DrawOrderVO{T1,O1,uId,活动,策略,奖品,三个状态}",
          "同一用户库事务：CAS take 0→1，再INSERT中奖订单分表；uuid=String(orderId)。任一业务失败整体回滚。",
          "take已消费；O1落库；stock_mq_state=0同时留下待发送责任。",
-         "take消费与订单提交原子完成。Outbox是订单字段，不是另一张表；HTTP链路不直接发Kafka。",
-         "返回InvoiceVO；XXL-Job后续扫描原订单", [R("OrderRepository.java", 38, 65), R("OrderRepository.java", 87, 105), R("UserStrategyExport_Mapper.xml", 27, 35)],
+         "take消费与订单共同提交。业务拒绝由应用回补；SQL异常由仓储按实际事务结果回补奖品，未知结果不加库存。Outbox是订单字段，HTTP不直接发Kafka。",
+         "返回InvoiceVO；XXL-Job后续扫描原订单", [R("OrderRepository.java", 42, 72), R("StockReservationTransactions.java", 19, 57), R("UserStrategyExport_Mapper.xml", 27, 35)],
          "04-draw-order", "s12", {"take": "T1 · 已消费(1)", "order": "O1 · 已提交", "orderDraft": None, "stockState": "INIT(0)", "invoiceState": "INIT(0)", "grantState": "INIT(0)"}),
     step("s13", "释放本请求的短锁", "application → infrastructure → Redis", "finally → RedisActivityDrawProcessGuard.release",
          "原activityId + uId + token", "Lua比较原token，相同才删除；过期或已归新线程时不删除对方锁。",
@@ -124,7 +124,7 @@ sync = [
 losing = sync[:8] + [
     step("l09", "NO_PRIZE：正常未中奖", "domain → application", "WeightedRandomSelector.select → DrawExecutor.doDrawExec",
          "T1与同一策略快照；本次随机命中NO_PRIZE",
-         "返回DrawState.FAIL；命中奖品售罄或Key缺失也走FAIL，不重摇。",
+         "返回DrawState.FAIL；命中奖品真实售罄也走FAIL，不重摇。Key缺失或Redis异常会抛出，保留take，不进入本分支。",
          "本例无有效奖品、无奖品Redis预扣。", "保留原概率与未中奖语义，不转移售罄奖品的概率。",
          "IActivityPartake.consumeTakeActivity", [R("DrawExecutor.java", 32, 46), R("StrategySnapshotFactory.java", 69, 84)], "14-no-prize", "l09"),
     step("l10", "消费本次 take", "application → domain → infrastructure → 用户 MySQL", "consumeTakeActivity → consumeTake → lockTakeActivity",
@@ -132,7 +132,7 @@ losing = sync[:8] + [
          "单条CAS UPDATE state=1 WHERE ... state=0。零行说明消费权被其他线程取得，必须回读最终结果。",
          "take 0→1；次数与活动库存保持已消耗；没有中奖订单。",
          "不消费take会让同requestId下次恢复再次抽样，改变已完成结果。",
-         "返回D001，并finally释放锁", [R("ActivityProcessImpl.java", 132, 150), R("UserTakeActivityRepository.java", 120, 128), R("UserTakeActivity_Mapper.xml", 28, 30)],
+         "返回D001，并finally释放锁", [R("ActivityProcessImpl.java", 132, 150), R("UserTakeActivityRepository.java", 126, 135), R("UserTakeActivity_Mapper.xml", 28, 30)],
          "14-no-prize", "l10sql", {"take": "T1 · 已消费(1)"}),
     step("l11", "结束请求并释放短锁", "application → infrastructure → Redis", "finally → release(activityId,uId,token)",
          "原短锁token", "只删除属主匹配的锁。", "本次调用结束。", "正常和异常结束都要释放并发控制责任。",
@@ -150,7 +150,7 @@ async_steps = [
          "逐库逐订单分表扫stock=0/2，以及update_time超10分钟的3；配置每表最多200条，按create_time排序。",
          "AwardStockSettlementVO{uId,orderId,strategyId,awardId}，不带requestId或takeId。",
          "应用退出后仍能从数据库发现未完成工作。实际触发频率由admin配置。",
-         "领取DISPATCHING标记", [R("LotteryXxlJob.java", 193, 225), R("OrderRepository.java", 155, 189), R("UserStrategyExport_Mapper.xml", 112, 120)], "05-outbox-dispatch", "a01sql"),
+         "领取DISPATCHING标记", [R("LotteryXxlJob.java", 193, 225), R("OrderRepository.java", 162, 197), R("UserStrategyExport_Mapper.xml", 112, 120)], "05-outbox-dispatch", "a01sql"),
     step("a02", "减少同轮重复投递", "application → infrastructure → Redis", "tryClaimDispatch(orderId)",
          "orderId=O1", "SETNX lottery_strategy_award_stock_mq_dispatching_O1，TTL60秒；未领取则留给后续任务。",
          "短期投递标记，不表示结算完成。", "多worker可能扫到同订单；标记减少重复发送，账本负责最终安全。",
@@ -175,7 +175,7 @@ async_steps = [
          "反序列化VO，查询stock是否COMPLETE；已完成直接ack。再确认订单存在，才进入结算；不存在的旧消息记warn并ack。",
          "有效O1进入settleAwardStock。",
          "避免重复主流程；当前库存消费者没有调用Redis PROCESSING或DONE锁。",
-         "StrategyRepository.settleAwardStock", [R("LotteryStrategyAwardStockListener.java", 50, 81), R("OrderRepository.java", 218, 228)], "06-stock-settlement", "a05read"),
+         "StrategyRepository.settleAwardStock", [R("LotteryStrategyAwardStockListener.java", 50, 81), R("OrderRepository.java", 224, 235)], "06-stock-settlement", "a05read"),
     step("a06", "TX3：唯一账本与奖品库存", "infrastructure → 全局 MySQL db00", "StrategyRepository.settleAwardStock",
          "库存VO，O1；strategy_detail剩余5",
          "事务先INSERT award_stock_settlement（order_id唯一），再条件UPDATE库存-1。唯一冲突直接成功；扣减0行回滚账本。",
@@ -256,17 +256,19 @@ views = [
     view("overview", "01-layers", "代码分层", "先看每层负责什么。箭头展示主要代码关系；运行时调用在后续时序图展开。", [
         fact("interfaces：请求翻译与启动装配", "校验HTTP、转换DTO；启动模块装入其他模块。Mapper XML物理存放于interfaces资源目录，职责仍是持久化SQL。", "让外部契约与业务规则分开变化。", [R("LotteryController.java", 24, 44), R("interface-pom", 19, 70)]),
         fact("application：安排先后与结果", "串联请求幂等、参与、抽奖、下单、回放；Kafka收发与XXL Job也位于应用层。", "多领域服务完成同一个用例，需要统一编排。", [R("ActivityProcessImpl.java", 62, 180), R("LotteryXxlJob.java", 193, 229)]),
-        fact("domain：定义业务规则与端口", "参与资格、概率、订单、活动状态、发奖抽象和Repository接口。仍使用Spring注解及部分框架依赖。", "注入的仓储实现执行存储动作，业务规则不必拼SQL。", [R("BaseActivityPartake.java", 23, 72), R("DrawExecutor.java", 31, 61)]),
-        fact("infrastructure：执行副作用", "Repository、DAO/PO、事务、路由、RedisUtil、Guard与缓存实现。", "将领域端口落实为SQL/Redis动作，封装分片上下文。", [R("OrderRepository.java", 38, 65), R("StrategyRepository.java", 87, 110)]),
+        fact("domain：定义业务规则与端口", "参与资格、概率、订单、活动状态、发奖抽象和Repository接口。仍使用Spring注解及部分框架依赖。", "注入的仓储实现执行存储动作，业务规则不必拼SQL。", [R("BaseActivityPartake.java", 23, 68), R("DrawExecutor.java", 31, 61)]),
+        fact("infrastructure：执行副作用", "Repository、DAO/PO、事务、路由、RedisUtil、Guard与缓存实现。StockReservationTransactions统一观察事务结果，决定异常回补。", "将领域端口落实为SQL/Redis动作，封装分片上下文；回补不再凭异常类型推测回滚。", [R("OrderRepository.java", 42, 72), R("StockReservationTransactions.java", 19, 57)]),
         fact("common：共同值与枚举", "Result、业务码、状态、RedisKey；五个Maven模块组装成同一Lottery应用。", "统一跨层语义；五模块并非五个微服务。", [R("Constants.java", 10, 23), R("root-pom", 12, 18)]),
     ]),
     view("overview", "02-runtime", "运行组件与存储", "Redis/MySQL/Kafka是外部服务；Caffeine和dbRouter是应用内依赖。运行边界与代码分层分别阅读。", [
-        fact("Redis：实时销售、缓存和短锁", "活动/奖品库存预热后不设缓存TTL；配置有TTL；并发锁、投递标记、发奖标记分别3/60/300秒。", "DECR承接竞争；缓存减少读取，锁不记录最终完成。", [R("ActivityRepository.java", 195, 218), R("ActivityRepository.java", 264, 285), R("Constants.java", 335, 398)]),
-        fact("MySQL：全局事实与用户事实", "db00保存activity/strategy/detail/award和库存账本。lottery_01/02保存参与、次数、中奖订单。", "唯一键与事务形成最终幂等事实。", [R("StrategyRepository.java", 75, 110), R("UserTakeActivityRepository.java", 93, 117)]),
-        fact("dbRouterForGem：选库与订单表", "外部starter按uId选库；参与/次数只分库，订单每库4张_000..003。后台显式遍历dbIdx/tbIdx。", "同用户数据同库可开本地事务；它不是跨库事务协调器或网络网关。", [R("IUserTakeActivityDao.java", 11, 24), R("IUserStrategyExportDao.java", 16, 24), R("OrderRepository.java", 171, 188)]),
+        fact("Redis：实时销售、缓存和短锁", "活动/奖品库存单Key Lua检查与扣减，售罄不写负数；回补只改现存Key。库存不设TTL；并发锁、投递标记、发奖标记分别3/60/300秒。", "原子条件扣减控制竞争；缺失库存明确报错，不能隐式复活库存。", [R("RedisUtil.java", 23, 64), R("ActivityRepository.java", 248, 270), R("Constants.java", 335, 398)]),
+        fact("MySQL：全局事实与用户事实", "db00保存activity/strategy/detail/award和库存账本。lottery_01/02保存参与、次数、中奖订单。", "唯一键与事务形成最终幂等事实。", [R("StrategyRepository.java", 75, 110), R("UserTakeActivityRepository.java", 96, 124)]),
+        fact("dbRouterForGem：选库与订单表", "外部starter按uId选库；参与/次数只分库，订单每库4张_000..003。后台显式遍历dbIdx/tbIdx。", "同用户数据同库可开本地事务；它不是跨库事务协调器或网络网关。", [R("IUserTakeActivityDao.java", 11, 24), R("IUserStrategyExportDao.java", 16, 24), R("OrderRepository.java", 177, 197)]),
         fact("Kafka：两个异步topic", "lottery_strategy_award_stock和lottery_invoice，消息key都是orderId，不同topic位点独立。", "脱离请求线程；允许重复投递，数据库保证重复执行安全。", [R("KafkaProducer.java", 18, 41), R("application.yml", 47, 70)]),
         fact("XXL-Job：三类任务", "活动状态/预热、库存Outbox投递、发奖补偿；执行器在应用内，admin在外部。触发计划需在调度中心配置。", "代码注册不代表环境已经调度；持久责任需要任务实际执行。", [R("LotteryXxlJob.java", 61, 114), R("LotteryXxlJob.java", 115, 184), R("LotteryXxlJob.java", 193, 229)]),
-        fact("Caffeine：只缓存策略快照", "L1默认60秒/10000项，Redis L2=600秒+0~120秒；活动只用单级Redis。", "高频配置编译结果复用；没有跨实例广播，TTL内可能读到旧配置。", [R("TwoLevelCacheService.java", 17, 22), R("TwoLevelCacheService.java", 39, 90), R("application.yml", 96, 108)]),
+        fact("Caffeine：只缓存策略快照", "L1默认60秒/10000项，Redis L2=600秒+0~120秒；活动只用单级Redis。", "高频配置编译结果复用；没有跨实例广播，TTL内可能读到旧配置。", [R("TwoLevelCacheService.java", 19, 24), R("TwoLevelCacheService.java", 41, 92), R("application.yml", 101, 113)]),
+        fact("配置缓存：提交后失效", "事务内登记afterCommit：提交成功才清策略L1/L2或活动Redis缓存，回滚保留旧缓存；无外层事务即时失效。清理失败仍记录warn。", "避免提交前删除缓存，让并发请求从旧的已提交行重建缓存。其他实例L1仍依赖TTL，不代表强一致。", [R("TwoLevelCacheService.java", 119, 163), R("ActivityRepository.java", 138, 147)]),
+        fact("Snowflake：部署显式分配节点", "LOTTERY_WORKER_ID默认0，LOTTERY_DATACENTER_ID默认1；二者范围0..31。同数据中心每实例需唯一workerId。takeId在活动预扣前生成。", "去掉按IP派生节点号的碰撞来源；默认值供单实例，多实例唯一性仍依赖正确部署。", [R("SnowflakeIdGenerator.java", 11, 34), R("application.yml", 72, 77), R("BaseActivityPartake.java", 42, 49)]),
     ]),
     view("draw", "03-participation", "参与与资格", "首次请求：活动100份、优惠券5份、用户3次机会。T1/O1是实际Long类型Snowflake ID的教学代号。"),
     view("draw", "04-draw-order", "中奖与订单", "沿T1继续：策略采样、奖品预扣、TX2与HTTP返回。同步成功仍未完成MySQL奖品结算或发奖。"),
@@ -285,13 +287,13 @@ views = [
     view("recovery", "10-request-retry", "重复与中断请求", "区分并发D006、原请求回放/继续、不同请求遇旧take的D007。", [
         fact("同请求已完成", "take=1，有订单回放同O1和奖品；无订单回放D001，不重复扣库存或次数。", "网络超时后取回原结果。", [R("ActivityProcessImpl.java", 208, 229)]),
         fact("同请求未完成", "take=0，继续原strategyId/takeId；尚未持久完成的采样可能再次执行。", "不重复创建机会，但不保证重放尚未落库的随机结果。", [R("ActivityProcessImpl.java", 98, 105), R("ActivityProcessImpl.java", 129, 130)]),
-        fact("不同请求不能接管", "B遇A返回D007和pendingRequestId=A。无归属旧take返回D008核实。", "保护机会归属。", [R("BaseActivityPartake.java", 74, 90)]),
+        fact("不同请求不能接管", "B遇A返回D007和pendingRequestId=A。无归属旧take返回D008核实。", "保护机会归属。", [R("BaseActivityPartake.java", 70, 87)]),
         fact("唯一键和消费CAS", "V3为UNIQUE(u_id,activity_id,request_id)；生成列唯一限制一条未完成参与。锁过期竞争用take CAS决定消费权。", "不能只依赖3秒短锁。查询异常直接中断，不当作无记录。", [R("ownership", 35, 61), R("UserTakeActivity_Mapper.xml", 28, 30), R("ActivityProcessImpl.java", 183, 201)]),
     ]),
     view("recovery", "11-stock-key-missing", "Redis 库存缺失", "活动Key在take前检查；奖品Key在take创建后检查。运行期不以MySQL自动回填。", [
-        fact("活动 Key 缺失", "D005 + error，不建新take、不扣用户次数。activity数据库不随每次请求实时扣减。", "不能把已消耗活动库存重新上架。", [R("ActivityRepository.java", 195, 224), R("Activity_Mapper.xml", 44, 49)]),
-        fact("奖品 Key 缺失与连接异常", "Key缺失soldOut→FAIL→消费take→D001；读连接异常抛出，保留未消费take由原requestId恢复。", "两种现有分支不能混画成自动补库存。", [R("StrategyRepository.java", 122, 142), R("ActivityProcessImpl.java", 132, 150)]),
-        fact("启动能补齐，运行恢复未实现", "PASS活动行锁内SETNX全部库存，再CAS DOING；失败保持PASS，已写Key保留，下轮补齐。DOING不能再次预热。", "运行期有未结算责任，需人工核实；没有自动对账算法。", [R("ActivityRepository.java", 113, 133), R("ActivityRepository.java", 243, 285)]),
+        fact("活动 Key 缺失", "D005 + error，不建新take、不扣用户次数。activity数据库不随每次请求实时扣减。", "不能把已消耗活动库存重新上架。", [R("ActivityRepository.java", 195, 225), R("Activity_Mapper.xml", 44, 49)]),
+        fact("奖品 Key 缺失或 Redis 异常", "记录error并抛IllegalStateException；保留state=0与原requestId，不建订单，也不返回正常未中奖。人工恢复后以原请求继续。", "机会已经创建，库存状态不明时不能消耗成未中奖。只有真实售罄才返回soldOut。", [R("StrategyRepository.java", 118, 142), R("RedisUtil.java", 23, 55), R("ActivityProcessImpl.java", 98, 105)]),
+        fact("启动能补齐，运行恢复未实现", "PASS活动行锁内SETNX全部库存，再CAS DOING；失败保持PASS，已写Key保留，下轮补齐。DOING不能再次预热。", "运行期有未结算责任，需人工核实；没有自动对账算法。", [R("ActivityRepository.java", 113, 133), R("ActivityRepository.java", 227, 271)]),
     ]),
     view("recovery", "12-consumer-crash", "重复消息与宕机", "同orderId崩溃前后靠持久账本接续，不依赖Redis DONE。", [
         fact("TX3 提交后状态没完成", "INSERT相同orderId唯一冲突，成功短路不再扣减；继续stock=1、invoice、ack。", "覆盖库存已扣但应用退出的窗口。", [R("StrategyRepository.java", 87, 110), R("LotteryStrategyAwardStockListener.java", 81, 101)]),
@@ -300,8 +302,14 @@ views = [
         fact("部署前提", "手动位点提交、异常不ack；没有配置专用死信队列或永久无限重试保证。超时扫描依赖Job真实运行。", "源码恢复路径不等价于未经验证的部署可靠性承诺。", [R("application.yml", 47, 70), R("LotteryInvoiceListener.java", 103, 110)]),
     ]),
     view("recovery", "13-blocked-reconcile", "库存分歧与人工对账", "扣减失败是业务分歧：回滚账本、持久BLOCKED、停止自动扫描，等待人工核实。", [
-        fact("先持久化事实才 ack", "独立CAS写4；零行回读确认BLOCKED/COMPLETE，否则抛异常、不ack。", "避免应结算订单没有任何待处理事实。", [R("OrderRepository.java", 126, 142), R("LotteryStrategyAwardStockListener.java", 81, 91)]),
-        fact("对账后释放原 Outbox", "人工修复后在正确用户分片按同orderId CAS 4→0，由Job重投。没有自动对账接口或运行期通用修复脚本。", "先修复原因，保持同一个账本幂等键；盲目重试不修复库存事实。", [R("architecture", 44, 48), R("UserStrategyExport_Mapper.xml", 112, 120)]),
+        fact("先持久化事实才 ack", "独立CAS写4；零行回读确认BLOCKED/COMPLETE，否则抛异常、不ack。", "避免应结算订单没有任何待处理事实。", [R("OrderRepository.java", 133, 150), R("LotteryStrategyAwardStockListener.java", 81, 91)]),
+        fact("对账后释放原 Outbox", "人工修复后在正确用户分片按同orderId CAS 4→0，由Job重投。没有自动对账接口或运行期通用修复脚本。", "先修复原因，保持同一个账本幂等键；盲目重试不修复库存事实。", [R("architecture", 46, 50), R("UserStrategyExport_Mapper.xml", 112, 120)]),
+    ]),
+    view("recovery", "15-stock-recovery", "事务异常与回补", "参与与订单异常共用实际事务完成状态：确认可归还，才回补本次预扣。", [
+        fact("异常回补由仓储判断", "TX1回补活动、TX2回补奖品；Spring afterCompletion提供结果。仅事务未开始或确认回滚时执行一次回补；已提交或未知结果不自动加库存。", "异常可能发生在提交后，不能把所有异常等同回滚。", [R("StockReservationTransactions.java", 19, 57), R("UserTakeActivityRepository.java", 97, 120), R("OrderRepository.java", 43, 68)]),
+        fact("业务拒绝仍走原入口", "次数耗尽、唯一键冲突和take CAS竞争等以业务码返回，领域或应用原入口归还本线程预扣。仓储异常出口只处理抛出的异常。", "区分返回业务码和抛出异常，避免把一次预扣归还两次。", [R("BaseActivityPartake.java", 51, 64), R("ActivityProcessImpl.java", 156, 166)]),
+        fact("回补失败保留根因", "Lua只允许现存Key加1。失败继续向上传播；事务异常后的回补错误作为suppressed附到原异常并记录error。未知结果保留用户、请求、参与或订单日志待对账。", "不吞异常，也不新建一个余量为1的库存Key冒充恢复成功。", [R("RedisUtil.java", 34, 64), R("StockReservationTransactions.java", 30, 46)]),
+        fact("进程崩溃窗口仍在", "Redis预扣后JVM直接退出无法执行回补；事务结果未知与回补失败也没有持久预留或自动对账协议。", "本轮改进覆盖可观察到的异常，不构成跨存储恰好一次。", [R("BaseActivityPartake.java", 42, 52), R("OrderRepository.java", 43, 68), R("StockReservationTransactions.java", 41, 46)]),
     ]),
 ]
 
@@ -349,7 +357,7 @@ data["sources"] = sources
 (OUT / "guide-data.js").write_text("// 当前源码教学内容；T1/O1与库存数值均为教学示例。\nwindow.LOTTERY_GUIDE = " + json.dumps(data, ensure_ascii=False, indent=2) + ";\n")
 
 # 使用普通行锚点定位，直接双击 HTML 也可离线阅读。
-source_html = '''<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lottery · 源码证据</title><link rel="stylesheet" href="guide.css"><body class="source-page"><header><p class="view-summary"><strong>活动总库存重构前的历史快照</strong>：本组图与源码摘录包含旧活动库存链路。2026-11-02已移除活动总库存，当前仅限制个人次数和策略奖品库存；当前流程、迁移与验证见 <a href="../activity-stock-removal.md">业务简化记录</a>。</p><a href="index.html">← 回到图解</a><h1>沿着图，读到实际代码</h1><p>摘录来自本次读取的当前源码，行号对应实际文件；未引用部分省略，业务代码更新后需重新生成。</p><p id="source-mode"></p><input id="source-search" aria-label="按文件名筛选" placeholder="搜索文件名，例如 OrderRepository"></header><main>''' + "".join(blocks) + '''</main><script>
+source_html = '''<!doctype html><html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lottery · 源码证据</title><link rel="stylesheet" href="guide.css"><body class="source-page"><header><a href="index.html">← 回到图解</a><h1>沿着图，读到实际代码</h1><p>摘录来自本次读取的当前源码，行号对应实际文件；未引用部分省略，业务代码更新后需重新生成。</p><p id="source-mode"></p><input id="source-search" aria-label="按文件名筛选" placeholder="搜索文件名，例如 OrderRepository"></header><main>''' + "".join(blocks) + '''</main><script>
 // 本机HTTP预览只服务图解目录，原项目文件不属于其URL范围。
 const localFileMode = location.protocol === 'file:';
 // 说明当前可访问范围，保留完整源码摘录与行号定位。

@@ -8,7 +8,7 @@
     "output": "docs/visual-guide/diagrams/05-outbox-dispatch/05-outbox-dispatch.html",
     "repository": {
       "url": "git@github.com:kaguranananana/lottery.git",
-      "revision": "076af9fc607749c018c1cbec630daef61a99af55",
+      "revision": "1138fd5d27ddc4edfc2ca438fa87daf7ad504d32",
       "link_mode": "local-only"
     },
     "legend": {
@@ -55,8 +55,8 @@
       "sources": [
         {
           "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
-          "line": 155,
-          "end_line": 189,
+          "line": 162,
+          "end_line": 197,
           "label": "OrderRepository.java"
         }
       ]

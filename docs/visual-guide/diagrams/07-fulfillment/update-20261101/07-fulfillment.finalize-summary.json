@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "sequence",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/07-fulfillment/candidate.json",
+    "sha256": "03815694f44c65a570c295e8bbcd32a17fe1c3dd0dc667b2851a986b23c7c11a",
+    "bytes": 6508
+  },
+  "artifact": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/07-fulfillment/07-fulfillment.html",
+    "sha256": "1c08324862b85db9b69724b4c5b461a67d5b38fbcdbd72ad83406114f0d603c9",
+    "bytes": 838288
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/07-fulfillment/update-20261101/07-fulfillment.finalize.json",
+    "summaryReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/07-fulfillment/update-20261101/07-fulfillment.finalize-summary.json",
+    "browserCheckReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/07-fulfillment/update-20261101/07-fulfillment.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 15407,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

@@ -1,0 +1,282 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "15 · 事务异常：确认结果后，才归还本次预扣",
+    "locale": "zh-CN",
+    "quality_profile": "showcase",
+    "output": "docs/visual-guide/diagrams/15-stock-recovery/15-stock-recovery.html",
+    "repository": {
+      "url": "git@github.com:kaguranananana/lottery.git",
+      "revision": "1138fd5d27ddc4edfc2ca438fa87daf7ad504d32",
+      "link_mode": "local-only"
+    },
+    "legend": {
+      "entries": {
+        "backend": {
+          "label": "业务处理"
+        },
+        "database": {
+          "label": "数据存储"
+        },
+        "messagebus": {
+          "label": "消息处理"
+        },
+        "external": {
+          "label": "进程中断 / 人工"
+        }
+      }
+    }
+  },
+  "lanes": [
+    {
+      "id": "tx",
+      "label": "仓储 · 参与 TX1 / 订单 TX2"
+    },
+    {
+      "id": "redis",
+      "label": "Redis · 独立于 MySQL 事务"
+    },
+    {
+      "id": "result",
+      "label": "调用方 · 保留根因与对账线索"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "failure",
+      "lane": "tx",
+      "col": 0,
+      "type": "backend",
+      "label": "捕获事务异常",
+      "sublabel": "Redis 已预扣",
+      "width": 180,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
+          "line": 43,
+          "end_line": 68,
+          "label": "OrderRepository.java"
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/UserTakeActivityRepository.java",
+          "line": 97,
+          "end_line": 120,
+          "label": "UserTakeActivityRepository.java"
+        }
+      ]
+    },
+    {
+      "id": "completion",
+      "lane": "tx",
+      "col": 1,
+      "type": "backend",
+      "label": "读取实际完成状态",
+      "sublabel": "afterCompletion 观察结果",
+      "width": 180,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StockReservationTransactions.java",
+          "line": 19,
+          "end_line": 57,
+          "label": "StockReservationTransactions.java"
+        }
+      ]
+    },
+    {
+      "id": "recover",
+      "lane": "redis",
+      "col": 2,
+      "type": "database",
+      "label": "回补一次预扣",
+      "sublabel": "Lua 只修改现存 Key",
+      "width": 180,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StockReservationTransactions.java",
+          "line": 30,
+          "end_line": 39,
+          "label": "StockReservationTransactions.java"
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/utils/RedisUtil.java",
+          "line": 34,
+          "end_line": 64,
+          "label": "RedisUtil.java"
+        }
+      ]
+    },
+    {
+      "id": "keep",
+      "lane": "tx",
+      "col": 3,
+      "type": "backend",
+      "label": "不自动加库存",
+      "sublabel": "已提交 / 结果未知",
+      "width": 180,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StockReservationTransactions.java",
+          "line": 19,
+          "end_line": 57,
+          "label": "StockReservationTransactions.java"
+        }
+      ]
+    },
+    {
+      "id": "recoveryfail",
+      "lane": "redis",
+      "col": 3,
+      "type": "backend",
+      "label": "回补也发生异常",
+      "sublabel": "缺失 Key / Redis 故障",
+      "width": 180,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StockReservationTransactions.java",
+          "line": 34,
+          "end_line": 39,
+          "label": "StockReservationTransactions.java"
+        }
+      ]
+    },
+    {
+      "id": "reconcile",
+      "lane": "result",
+      "col": 4,
+      "type": "backend",
+      "label": "记录关联日志待对账",
+      "sublabel": "用户 / 请求 / 参与 / 订单",
+      "width": 180,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StockReservationTransactions.java",
+          "line": 41,
+          "end_line": 46,
+          "label": "StockReservationTransactions.java"
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
+          "line": 65,
+          "end_line": 68,
+          "label": "OrderRepository.java"
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/UserTakeActivityRepository.java",
+          "line": 118,
+          "end_line": 120,
+          "label": "UserTakeActivityRepository.java"
+        }
+      ]
+    },
+    {
+      "id": "raise",
+      "lane": "result",
+      "col": 5,
+      "type": "backend",
+      "label": "原异常继续抛出",
+      "sublabel": "回补异常附在 suppressed",
+      "width": 180,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StockReservationTransactions.java",
+          "line": 30,
+          "end_line": 46,
+          "label": "StockReservationTransactions.java"
+        }
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "id": "failure-to-completion",
+      "from": "failure",
+      "to": "completion",
+      "label": "异常出口",
+      "variant": "default"
+    },
+    {
+      "id": "completion-to-recover",
+      "from": "completion",
+      "to": "recover",
+      "label": "未开始 / 确认回滚",
+      "variant": "default"
+    },
+    {
+      "id": "completion-to-keep",
+      "from": "completion",
+      "to": "keep",
+      "label": "已提交 / UNKNOWN",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "keep-to-reconcile",
+      "from": "keep",
+      "to": "reconcile",
+      "label": "不推测回滚",
+      "variant": "dashed",
+      "role": "branch"
+    },
+    {
+      "id": "reconcile-to-raise",
+      "from": "reconcile",
+      "to": "raise",
+      "label": "对账责任保留",
+      "variant": "default"
+    },
+    {
+      "id": "recover-to-raise",
+      "from": "recover",
+      "to": "raise",
+      "label": "回补完成",
+      "variant": "default"
+    },
+    {
+      "id": "recover-to-recoveryfail",
+      "from": "recover",
+      "to": "recoveryfail",
+      "label": "回补失败",
+      "variant": "security",
+      "role": "error"
+    },
+    {
+      "id": "recoveryfail-to-raise",
+      "from": "recoveryfail",
+      "to": "raise",
+      "label": "保留两类异常",
+      "variant": "default"
+    }
+  ],
+  "mainPath": [
+    "failure",
+    "completion",
+    "recover",
+    "raise"
+  ],
+  "cards": [
+    {
+      "title": "两个入口，共用规则",
+      "dot": "cyan",
+      "items": [
+        "参与仓储异常回补活动预扣；订单仓储异常回补奖品预扣。先路由用户库，再执行事务。",
+        "正常返回的业务拒绝仍由 BaseActivityPartake / ActivityProcessImpl 原入口回补，避免同一次预扣归还两次。"
+      ]
+    },
+    {
+      "title": "仍未覆盖的窗口",
+      "dot": "amber",
+      "items": [
+        "预扣后 JVM 直接退出不能执行异常出口；提交结果未知也不能自行判成回滚。",
+        "当前没有持久预留与自动对账协议，这些窗口仍需后续处理，不能宣称 Redis/MySQL 恰好一次。"
+      ]
+    }
+  ]
+}

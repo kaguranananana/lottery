@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/11-stock-key-missing/candidate.json",
+    "sha256": "d9643a1832b77bda4f4f215fcf75b0a21a8e1603bcf6fca1fd59da46ceb83eae",
+    "bytes": 7761
+  },
+  "artifact": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/11-stock-key-missing/11-stock-key-missing.html",
+    "sha256": "f079d11d064ae9d493747f371d4afa43a97b6d69c534cb29de7ed944d57c9020",
+    "bytes": 841439
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/11-stock-key-missing/update-20261101/11-stock-key-missing.finalize.json",
+    "summaryReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/11-stock-key-missing/update-20261101/11-stock-key-missing.finalize-summary.json",
+    "browserCheckReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/11-stock-key-missing/update-20261101/11-stock-key-missing.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 15443,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

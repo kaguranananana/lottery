@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "sequence",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/05-outbox-dispatch/candidate.json",
+    "sha256": "19b16e534d528385f7e2c024ed3b5f3dba04f57875b5c9ab50d6c48c4c5ff6b8",
+    "bytes": 5392
+  },
+  "artifact": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/05-outbox-dispatch/05-outbox-dispatch.html",
+    "sha256": "71c7bc782dae53c283af81bf889f59265e6bd7214b7413ea8d2dcac0674b8380",
+    "bytes": 834913
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/05-outbox-dispatch/update-20261101/05-outbox-dispatch.finalize.json",
+    "summaryReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/05-outbox-dispatch/update-20261101/05-outbox-dispatch.finalize-summary.json",
+    "browserCheckReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/05-outbox-dispatch/update-20261101/05-outbox-dispatch.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 15606,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/12-consumer-crash/candidate.json",
+    "sha256": "f2ce1db1f1460bb8863fdbe0b953bb7a8792d074b2bdb9afc51260b43ed0eaab",
+    "bytes": 6762
+  },
+  "artifact": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/12-consumer-crash/12-consumer-crash.html",
+    "sha256": "a7c9bb4ec84e01d24fc57b7b09c424536cc4d6f59837c7ceb1b20ae35d8ef70b",
+    "bytes": 841190
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/12-consumer-crash/update-20261101/12-consumer-crash.finalize.json",
+    "summaryReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/12-consumer-crash/update-20261101/12-consumer-crash.finalize-summary.json",
+    "browserCheckReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/12-consumer-crash/update-20261101/12-consumer-crash.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 15601,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

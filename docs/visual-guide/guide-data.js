@@ -1,5 +1,4 @@
-// 历史教学数据：保留活动总库存重构前的实现；当前业务见activity-stock-removal.md。
-// 当前源码教学内容；T1/O1与库存数值均为教学示例。
+// 2026-11-01 历史源码教学内容（活动总库存已于次日移除）；T1/O1与库存数值均为教学示例。
 window.LOTTERY_GUIDE = {
   "views": [
     {
@@ -50,7 +49,7 @@ window.LOTTERY_GUIDE = {
             {
               "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java",
               "line": 23,
-              "end_line": 72
+              "end_line": 68
             },
             {
               "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/strategy/service/draw/impl/DrawExecutor.java",
@@ -61,18 +60,18 @@ window.LOTTERY_GUIDE = {
         },
         {
           "title": "infrastructure：执行副作用",
-          "body": "Repository、DAO/PO、事务、路由、RedisUtil、Guard与缓存实现。",
-          "why": "将领域端口落实为SQL/Redis动作，封装分片上下文。",
+          "body": "Repository、DAO/PO、事务、路由、RedisUtil、Guard与缓存实现。StockReservationTransactions统一观察事务结果，决定异常回补。",
+          "why": "将领域端口落实为SQL/Redis动作，封装分片上下文；回补不再凭异常类型推测回滚。",
           "sources": [
             {
               "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
-              "line": 38,
-              "end_line": 65
+              "line": 42,
+              "end_line": 72
             },
             {
-              "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java",
-              "line": 87,
-              "end_line": 110
+              "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StockReservationTransactions.java",
+              "line": 19,
+              "end_line": 57
             }
           ]
         },
@@ -103,18 +102,18 @@ window.LOTTERY_GUIDE = {
       "facts": [
         {
           "title": "Redis：实时销售、缓存和短锁",
-          "body": "活动/奖品库存预热后不设缓存TTL；配置有TTL；并发锁、投递标记、发奖标记分别3/60/300秒。",
-          "why": "DECR承接竞争；缓存减少读取，锁不记录最终完成。",
+          "body": "活动/奖品库存单Key Lua检查与扣减，售罄不写负数；回补只改现存Key。库存不设TTL；并发锁、投递标记、发奖标记分别3/60/300秒。",
+          "why": "原子条件扣减控制竞争；缺失库存明确报错，不能隐式复活库存。",
           "sources": [
             {
-              "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityRepository.java",
-              "line": 195,
-              "end_line": 218
+              "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/utils/RedisUtil.java",
+              "line": 23,
+              "end_line": 64
             },
             {
               "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityRepository.java",
-              "line": 264,
-              "end_line": 285
+              "line": 248,
+              "end_line": 270
             },
             {
               "path": "lottery-common/src/main/java/com/anontokyo/lottery/common/Constants.java",
@@ -135,8 +134,8 @@ window.LOTTERY_GUIDE = {
             },
             {
               "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/UserTakeActivityRepository.java",
-              "line": 93,
-              "end_line": 117
+              "line": 96,
+              "end_line": 124
             }
           ]
         },
@@ -157,8 +156,8 @@ window.LOTTERY_GUIDE = {
             },
             {
               "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
-              "line": 171,
-              "end_line": 188
+              "line": 177,
+              "end_line": 197
             }
           ]
         },
@@ -208,18 +207,57 @@ window.LOTTERY_GUIDE = {
           "sources": [
             {
               "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/cache/TwoLevelCacheService.java",
-              "line": 17,
-              "end_line": 22
+              "line": 19,
+              "end_line": 24
             },
             {
               "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/cache/TwoLevelCacheService.java",
-              "line": 39,
-              "end_line": 90
+              "line": 41,
+              "end_line": 92
             },
             {
               "path": "lottery-interfaces/src/main/resources/application.yml",
-              "line": 96,
-              "end_line": 108
+              "line": 101,
+              "end_line": 113
+            }
+          ]
+        },
+        {
+          "title": "配置缓存：提交后失效",
+          "body": "事务内登记afterCommit：提交成功才清策略L1/L2或活动Redis缓存，回滚保留旧缓存；无外层事务即时失效。清理失败仍记录warn。",
+          "why": "避免提交前删除缓存，让并发请求从旧的已提交行重建缓存。其他实例L1仍依赖TTL，不代表强一致。",
+          "sources": [
+            {
+              "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/cache/TwoLevelCacheService.java",
+              "line": 119,
+              "end_line": 163
+            },
+            {
+              "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityRepository.java",
+              "line": 138,
+              "end_line": 147
+            }
+          ]
+        },
+        {
+          "title": "Snowflake：部署显式分配节点",
+          "body": "LOTTERY_WORKER_ID默认0，LOTTERY_DATACENTER_ID默认1；二者范围0..31。同数据中心每实例需唯一workerId。takeId在活动预扣前生成。",
+          "why": "去掉按IP派生节点号的碰撞来源；默认值供单实例，多实例唯一性仍依赖正确部署。",
+          "sources": [
+            {
+              "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/support/ids/SnowflakeIdGenerator.java",
+              "line": 11,
+              "end_line": 34
+            },
+            {
+              "path": "lottery-interfaces/src/main/resources/application.yml",
+              "line": 72,
+              "end_line": 77
+            },
+            {
+              "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java",
+              "line": 42,
+              "end_line": 49
             }
           ]
         }
@@ -383,8 +421,8 @@ window.LOTTERY_GUIDE = {
           "sources": [
             {
               "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java",
-              "line": 74,
-              "end_line": 90
+              "line": 70,
+              "end_line": 87
             }
           ]
         },
@@ -426,7 +464,7 @@ window.LOTTERY_GUIDE = {
             {
               "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityRepository.java",
               "line": 195,
-              "end_line": 224
+              "end_line": 225
             },
             {
               "path": "lottery-interfaces/src/main/resources/mybatis/mapper/Activity_Mapper.xml",
@@ -436,19 +474,24 @@ window.LOTTERY_GUIDE = {
           ]
         },
         {
-          "title": "奖品 Key 缺失与连接异常",
-          "body": "Key缺失soldOut→FAIL→消费take→D001；读连接异常抛出，保留未消费take由原requestId恢复。",
-          "why": "两种现有分支不能混画成自动补库存。",
+          "title": "奖品 Key 缺失或 Redis 异常",
+          "body": "记录error并抛IllegalStateException；保留state=0与原requestId，不建订单，也不返回正常未中奖。人工恢复后以原请求继续。",
+          "why": "机会已经创建，库存状态不明时不能消耗成未中奖。只有真实售罄才返回soldOut。",
           "sources": [
             {
               "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java",
-              "line": 122,
+              "line": 118,
               "end_line": 142
             },
             {
+              "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/utils/RedisUtil.java",
+              "line": 23,
+              "end_line": 55
+            },
+            {
               "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
-              "line": 132,
-              "end_line": 150
+              "line": 98,
+              "end_line": 105
             }
           ]
         },
@@ -464,8 +507,8 @@ window.LOTTERY_GUIDE = {
             },
             {
               "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityRepository.java",
-              "line": 243,
-              "end_line": 285
+              "line": 227,
+              "end_line": 271
             }
           ]
         }
@@ -560,8 +603,8 @@ window.LOTTERY_GUIDE = {
           "sources": [
             {
               "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
-              "line": 126,
-              "end_line": 142
+              "line": 133,
+              "end_line": 150
             },
             {
               "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryStrategyAwardStockListener.java",
@@ -577,13 +620,99 @@ window.LOTTERY_GUIDE = {
           "sources": [
             {
               "path": "docs/architecture.md",
-              "line": 44,
-              "end_line": 48
+              "line": 46,
+              "end_line": 50
             },
             {
               "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml",
               "line": 112,
               "end_line": 120
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "chapter": "recovery",
+      "id": "15-stock-recovery",
+      "title": "事务异常与回补",
+      "summary": "参与与订单异常共用实际事务完成状态：确认可归还，才回补本次预扣。",
+      "facts": [
+        {
+          "title": "异常回补由仓储判断",
+          "body": "TX1回补活动、TX2回补奖品；Spring afterCompletion提供结果。仅事务未开始或确认回滚时执行一次回补；已提交或未知结果不自动加库存。",
+          "why": "异常可能发生在提交后，不能把所有异常等同回滚。",
+          "sources": [
+            {
+              "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StockReservationTransactions.java",
+              "line": 19,
+              "end_line": 57
+            },
+            {
+              "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/UserTakeActivityRepository.java",
+              "line": 97,
+              "end_line": 120
+            },
+            {
+              "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
+              "line": 43,
+              "end_line": 68
+            }
+          ]
+        },
+        {
+          "title": "业务拒绝仍走原入口",
+          "body": "次数耗尽、唯一键冲突和take CAS竞争等以业务码返回，领域或应用原入口归还本线程预扣。仓储异常出口只处理抛出的异常。",
+          "why": "区分返回业务码和抛出异常，避免把一次预扣归还两次。",
+          "sources": [
+            {
+              "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java",
+              "line": 51,
+              "end_line": 64
+            },
+            {
+              "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
+              "line": 156,
+              "end_line": 166
+            }
+          ]
+        },
+        {
+          "title": "回补失败保留根因",
+          "body": "Lua只允许现存Key加1。失败继续向上传播；事务异常后的回补错误作为suppressed附到原异常并记录error。未知结果保留用户、请求、参与或订单日志待对账。",
+          "why": "不吞异常，也不新建一个余量为1的库存Key冒充恢复成功。",
+          "sources": [
+            {
+              "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/utils/RedisUtil.java",
+              "line": 34,
+              "end_line": 64
+            },
+            {
+              "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StockReservationTransactions.java",
+              "line": 30,
+              "end_line": 46
+            }
+          ]
+        },
+        {
+          "title": "进程崩溃窗口仍在",
+          "body": "Redis预扣后JVM直接退出无法执行回补；事务结果未知与回补失败也没有持久预留或自动对账协议。",
+          "why": "本轮改进覆盖可观察到的异常，不构成跨存储恰好一次。",
+          "sources": [
+            {
+              "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java",
+              "line": 42,
+              "end_line": 52
+            },
+            {
+              "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
+              "line": 43,
+              "end_line": 68
+            },
+            {
+              "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StockReservationTransactions.java",
+              "line": 41,
+              "end_line": 46
             }
           ]
         }
@@ -715,8 +844,8 @@ window.LOTTERY_GUIDE = {
         },
         {
           "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java",
-          "line": 74,
-          "end_line": 90
+          "line": 70,
+          "end_line": 87
         }
       ],
       "diagram": "03-participation",
@@ -751,24 +880,29 @@ window.LOTTERY_GUIDE = {
     },
     {
       "id": "s07",
-      "title": "预扣一份活动库存",
+      "title": "先生成 takeId，再原子预扣活动库存",
       "layer": "domain → infrastructure → Redis",
-      "method": "substractionActivityStockByRedis",
+      "method": "IdGenerator.nextId → substractionActivityStockByRedis",
       "inputs": "lottery_activity_stock_count_100001=100（教学值）",
-      "action": "GET确认Key存在且>0，再DECR 1。并发扣成负数则INCR回补并返回D004；Key缺失或操作异常返回D005。",
-      "outputs": "Redis活动剩余100→99；MySQL activity仍为100。",
-      "why": "Redis原子扣减控制可创建的参与机会。运行期不能用滞后数据库值回填。",
-      "next": "生成takeId并调用参与仓储",
+      "action": "先生成Snowflake takeId=T1，尚未持久化；再由单Key Lua检查存在与余量，>0才DECR。真实售罄D004；缺失或Redis异常D005。",
+      "outputs": "T1已生成；Redis活动剩余100→99；MySQL activity仍为100。",
+      "why": "ID生成失败不会遗留活动预扣；Lua避免检查与扣减之间的窗口，售罄不写负数。运行期不回填滞后数据库值。",
+      "next": "携已生成takeId调用参与仓储",
       "sources": [
-        {
-          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityRepository.java",
-          "line": 190,
-          "end_line": 225
-        },
         {
           "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java",
           "line": 42,
-          "end_line": 52
+          "end_line": 49
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityRepository.java",
+          "line": 195,
+          "end_line": 213
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/utils/RedisUtil.java",
+          "line": 23,
+          "end_line": 55
         }
       ],
       "diagram": "03-participation",
@@ -781,27 +915,27 @@ window.LOTTERY_GUIDE = {
       "id": "s08",
       "title": "TX1 扣次数并创建 take",
       "layer": "domain → infrastructure → 用户 MySQL",
-      "method": "IdGenerator.nextId → takeParticipation",
+      "method": "takeParticipation → StockReservationTransactions.execute",
       "inputs": "ActivityBillVO + requestId + Snowflake takeId=T1；用户余次数3",
       "action": "按uId选库再开本地事务；必要时初始化次数行，条件扣left_count，再INSERT take(state=0,request_id)。finally清路由。",
       "outputs": "次数3→2；持久take T1关联用户、活动、策略和requestId。返回PartakeResult。",
-      "why": "次数与take同事务。失败回滚TX1并回补活动Redis；回补错误只记日志，不能宣称补偿必达。",
+      "why": "次数与take同事务。业务拒绝由领域入口回补；异常仅在事务未开始或确认回滚时回补。结果未知记对账日志，回补失败附在原异常后继续抛出。",
       "next": "应用拿到strategyId / takeId → DrawExecutor",
       "sources": [
         {
           "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java",
-          "line": 49,
-          "end_line": 71
+          "line": 51,
+          "end_line": 67
         },
         {
           "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/UserTakeActivityRepository.java",
-          "line": 88,
-          "end_line": 117
+          "line": 96,
+          "end_line": 124
         },
         {
-          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserTakeActivityCount_Mapper.xml",
-          "line": 13,
-          "end_line": 25
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StockReservationTransactions.java",
+          "line": 19,
+          "end_line": 57
         }
       ],
       "diagram": "03-participation",
@@ -848,7 +982,7 @@ window.LOTTERY_GUIDE = {
       "layer": "domain → infrastructure → Redis",
       "method": "StrategyRepository.deductStockByRedis",
       "inputs": "lottery_strategy_award_stock_count_10001_3=5（教学值）",
-      "action": "GET存在且>0后DECR 1；负数回补并判不可售。Key缺失记error并不可售；读取Redis异常向上抛出，保留未完成take。",
+      "action": "单Key Lua原子检查与扣减，存在且>0才DECR；真实售罄返回soldOut。Key缺失或Redis异常记录error并抛IllegalStateException，保留未完成take。",
       "outputs": "奖品Redis 5→4；DrawAwardInfo含奖品详情与发奖配置；MySQL奖品仍为5。",
       "why": "概率命中不等于库存足够，Redis控制实时销售，MySQL库存后续异步结算。",
       "next": "应用层 → AwardOrderImpl.placeOrder",
@@ -856,11 +990,16 @@ window.LOTTERY_GUIDE = {
         {
           "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java",
           "line": 117,
-          "end_line": 145
+          "end_line": 142
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/utils/RedisUtil.java",
+          "line": 23,
+          "end_line": 55
         },
         {
           "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/strategy/service/draw/impl/DrawExecutor.java",
-          "line": 49,
+          "line": 40,
           "end_line": 60
         }
       ],
@@ -907,18 +1046,18 @@ window.LOTTERY_GUIDE = {
       "inputs": "DrawOrderVO{T1,O1,uId,活动,策略,奖品,三个状态}",
       "action": "同一用户库事务：CAS take 0→1，再INSERT中奖订单分表；uuid=String(orderId)。任一业务失败整体回滚。",
       "outputs": "take已消费；O1落库；stock_mq_state=0同时留下待发送责任。",
-      "why": "take消费与订单提交原子完成。Outbox是订单字段，不是另一张表；HTTP链路不直接发Kafka。",
+      "why": "take消费与订单共同提交。业务拒绝由应用回补；SQL异常由仓储按实际事务结果回补奖品，未知结果不加库存。Outbox是订单字段，HTTP不直接发Kafka。",
       "next": "返回InvoiceVO；XXL-Job后续扫描原订单",
       "sources": [
         {
           "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
-          "line": 38,
-          "end_line": 65
+          "line": 42,
+          "end_line": 72
         },
         {
-          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
-          "line": 87,
-          "end_line": 105
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StockReservationTransactions.java",
+          "line": 19,
+          "end_line": 57
         },
         {
           "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml",
@@ -1119,8 +1258,8 @@ window.LOTTERY_GUIDE = {
         },
         {
           "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java",
-          "line": 74,
-          "end_line": 90
+          "line": 70,
+          "end_line": 87
         }
       ],
       "diagram": "03-participation",
@@ -1155,24 +1294,29 @@ window.LOTTERY_GUIDE = {
     },
     {
       "id": "s07",
-      "title": "预扣一份活动库存",
+      "title": "先生成 takeId，再原子预扣活动库存",
       "layer": "domain → infrastructure → Redis",
-      "method": "substractionActivityStockByRedis",
+      "method": "IdGenerator.nextId → substractionActivityStockByRedis",
       "inputs": "lottery_activity_stock_count_100001=100（教学值）",
-      "action": "GET确认Key存在且>0，再DECR 1。并发扣成负数则INCR回补并返回D004；Key缺失或操作异常返回D005。",
-      "outputs": "Redis活动剩余100→99；MySQL activity仍为100。",
-      "why": "Redis原子扣减控制可创建的参与机会。运行期不能用滞后数据库值回填。",
-      "next": "生成takeId并调用参与仓储",
+      "action": "先生成Snowflake takeId=T1，尚未持久化；再由单Key Lua检查存在与余量，>0才DECR。真实售罄D004；缺失或Redis异常D005。",
+      "outputs": "T1已生成；Redis活动剩余100→99；MySQL activity仍为100。",
+      "why": "ID生成失败不会遗留活动预扣；Lua避免检查与扣减之间的窗口，售罄不写负数。运行期不回填滞后数据库值。",
+      "next": "携已生成takeId调用参与仓储",
       "sources": [
-        {
-          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityRepository.java",
-          "line": 190,
-          "end_line": 225
-        },
         {
           "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java",
           "line": 42,
-          "end_line": 52
+          "end_line": 49
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityRepository.java",
+          "line": 195,
+          "end_line": 213
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/utils/RedisUtil.java",
+          "line": 23,
+          "end_line": 55
         }
       ],
       "diagram": "03-participation",
@@ -1185,27 +1329,27 @@ window.LOTTERY_GUIDE = {
       "id": "s08",
       "title": "TX1 扣次数并创建 take",
       "layer": "domain → infrastructure → 用户 MySQL",
-      "method": "IdGenerator.nextId → takeParticipation",
+      "method": "takeParticipation → StockReservationTransactions.execute",
       "inputs": "ActivityBillVO + requestId + Snowflake takeId=T1；用户余次数3",
       "action": "按uId选库再开本地事务；必要时初始化次数行，条件扣left_count，再INSERT take(state=0,request_id)。finally清路由。",
       "outputs": "次数3→2；持久take T1关联用户、活动、策略和requestId。返回PartakeResult。",
-      "why": "次数与take同事务。失败回滚TX1并回补活动Redis；回补错误只记日志，不能宣称补偿必达。",
+      "why": "次数与take同事务。业务拒绝由领域入口回补；异常仅在事务未开始或确认回滚时回补。结果未知记对账日志，回补失败附在原异常后继续抛出。",
       "next": "应用拿到strategyId / takeId → DrawExecutor",
       "sources": [
         {
           "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java",
-          "line": 49,
-          "end_line": 71
+          "line": 51,
+          "end_line": 67
         },
         {
           "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/UserTakeActivityRepository.java",
-          "line": 88,
-          "end_line": 117
+          "line": 96,
+          "end_line": 124
         },
         {
-          "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserTakeActivityCount_Mapper.xml",
-          "line": 13,
-          "end_line": 25
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StockReservationTransactions.java",
+          "line": 19,
+          "end_line": 57
         }
       ],
       "diagram": "03-participation",
@@ -1221,7 +1365,7 @@ window.LOTTERY_GUIDE = {
       "layer": "domain → application",
       "method": "WeightedRandomSelector.select → DrawExecutor.doDrawExec",
       "inputs": "T1与同一策略快照；本次随机命中NO_PRIZE",
-      "action": "返回DrawState.FAIL；命中奖品售罄或Key缺失也走FAIL，不重摇。",
+      "action": "返回DrawState.FAIL；命中奖品真实售罄也走FAIL，不重摇。Key缺失或Redis异常会抛出，保留take，不进入本分支。",
       "outputs": "本例无有效奖品、无奖品Redis预扣。",
       "why": "保留原概率与未中奖语义，不转移售罄奖品的概率。",
       "next": "IActivityPartake.consumeTakeActivity",
@@ -1259,8 +1403,8 @@ window.LOTTERY_GUIDE = {
         },
         {
           "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/UserTakeActivityRepository.java",
-          "line": 120,
-          "end_line": 128
+          "line": 126,
+          "end_line": 135
         },
         {
           "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserTakeActivity_Mapper.xml",
@@ -1345,8 +1489,8 @@ window.LOTTERY_GUIDE = {
         },
         {
           "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
-          "line": 155,
-          "end_line": 189
+          "line": 162,
+          "end_line": 197
         },
         {
           "path": "lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml",
@@ -1461,8 +1605,8 @@ window.LOTTERY_GUIDE = {
         },
         {
           "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java",
-          "line": 218,
-          "end_line": 228
+          "line": 224,
+          "end_line": 235
         }
       ],
       "diagram": "06-stock-settlement",
@@ -1881,6 +2025,10 @@ window.LOTTERY_GUIDE = {
       "id": "lottery-infrastructure_src_main_java_com_anontokyo_lottery_infrastructure_repository_OrderRepository_java",
       "label": "OrderRepository.java"
     },
+    "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StockReservationTransactions.java": {
+      "id": "lottery-infrastructure_src_main_java_com_anontokyo_lottery_infrastructure_repository_StockReservationTransactions_java",
+      "label": "StockReservationTransactions.java"
+    },
     "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java": {
       "id": "lottery-infrastructure_src_main_java_com_anontokyo_lottery_infrastructure_repository_StrategyRepository_java",
       "label": "StrategyRepository.java"
@@ -1888,6 +2036,10 @@ window.LOTTERY_GUIDE = {
     "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/UserTakeActivityRepository.java": {
       "id": "lottery-infrastructure_src_main_java_com_anontokyo_lottery_infrastructure_repository_UserTakeActivityRepository_java",
       "label": "UserTakeActivityRepository.java"
+    },
+    "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/utils/RedisUtil.java": {
+      "id": "lottery-infrastructure_src_main_java_com_anontokyo_lottery_infrastructure_utils_RedisUtil_java",
+      "label": "RedisUtil.java"
     },
     "lottery-interfaces/pom.xml": {
       "id": "lottery-interfaces_pom_xml",

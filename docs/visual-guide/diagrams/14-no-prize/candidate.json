@@ -8,7 +8,7 @@
     "output": "docs/visual-guide/diagrams/14-no-prize/14-no-prize.html",
     "repository": {
       "url": "git@github.com:kaguranananana/lottery.git",
-      "revision": "076af9fc607749c018c1cbec630daef61a99af55",
+      "revision": "1138fd5d27ddc4edfc2ca438fa87daf7ad504d32",
       "link_mode": "local-only"
     },
     "legend": {
@@ -83,8 +83,8 @@
       "sources": [
         {
           "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/UserTakeActivityRepository.java",
-          "line": 120,
-          "end_line": 128,
+          "line": 126,
+          "end_line": 135,
           "label": "UserTakeActivityRepository.java"
         }
       ]
@@ -195,7 +195,7 @@
       "title": "本次流程结束",
       "dot": "cyan",
       "items": [
-        "NO_PRIZE或命中的奖品不可售：不重摇，消费take并返回D001。",
+        "NO_PRIZE或命中的奖品真实售罄：不重摇，消费take并返回D001。",
         "活动库存与次数已消耗。无中奖订单，所以没有本次Outbox、账本、invoice。"
       ]
     },
@@ -205,6 +205,14 @@
       "items": [
         "finally由应用调用Redis Guard，只有原token仍匹配时删除短锁。",
         "同requestId重试：已消费take无订单，回放D001，不再采样。"
+      ]
+    },
+    {
+      "title": "库存异常另行处理",
+      "dot": "rose",
+      "items": [
+        "奖品 Key 缺失或 Redis 执行失败抛出异常，不进入本图的 consumeTake。",
+        "原 take 保持未消费；修复后用原 requestId 恢复。"
       ]
     }
   ]

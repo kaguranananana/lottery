@@ -1,0 +1,77 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "lifecycle",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/08-stock-states/candidate.json",
+    "sha256": "b322311e48a861507caae3e28a518c11264d3485817be879d304f807eef66c90",
+    "bytes": 5427
+  },
+  "artifact": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/08-stock-states/08-stock-states.html",
+    "sha256": "3a54a8c91ce466b79e09b24067c05f0d9ec9d8338cf73befff00ff41b5852990",
+    "bytes": 837460
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/08-stock-states/update-20261101/08-stock-states.finalize.json",
+    "summaryReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/08-stock-states/update-20261101/08-stock-states.finalize-summary.json",
+    "browserCheckReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/08-stock-states/update-20261101/08-stock-states.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 2596,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  },
+  "visualReviewRecommendation": {
+    "action": "inspect-route-readability",
+    "signals": {
+      "resolvedCrossovers": 1
+    },
+    "reason": "Automated gates passed, but crossings or detours still need perceptual review before claiming visual quality.",
+    "affectedRoutes": {
+      "crossings": [
+        {
+          "left": {
+            "id": "sent-to-blocked",
+            "from": "sent",
+            "to": "blocked",
+            "label": "库存分歧",
+            "collectionIndex": 4,
+            "artifactIndex": 5
+          },
+          "right": {
+            "id": "fail-to-done",
+            "from": "fail",
+            "to": "done",
+            "label": "消费结算完成",
+            "collectionIndex": 6,
+            "artifactIndex": 7
+          },
+          "point": [
+            464.79999999999995,
+            186
+          ]
+        }
+      ],
+      "detours": [],
+      "truncated": false
+    },
+    "repair": "Advisory only: this mode places or routes these relationships itself. Report them; do not remove relationships or meaning to reduce crossings."
+  }
+}

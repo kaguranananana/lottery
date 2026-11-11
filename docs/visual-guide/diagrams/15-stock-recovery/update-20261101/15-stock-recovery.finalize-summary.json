@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "workflow",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/15-stock-recovery/candidate.json",
+    "sha256": "abca4fd73b203e339cfe64bbcbcba565101923b34346f549ded193eb83cbb61d",
+    "bytes": 7852
+  },
+  "artifact": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/15-stock-recovery/15-stock-recovery.html",
+    "sha256": "68b4a20e5e313bde459d6f6b4547d4d1be3343b88ea9ee6c01b6b22a146d7ab7",
+    "bytes": 842435
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/15-stock-recovery/update-20261101/15-stock-recovery.finalize.json",
+    "summaryReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/15-stock-recovery/update-20261101/15-stock-recovery.finalize-summary.json",
+    "browserCheckReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/15-stock-recovery/update-20261101/15-stock-recovery.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 15559,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

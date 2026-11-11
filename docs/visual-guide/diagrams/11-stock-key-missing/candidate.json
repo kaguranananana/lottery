@@ -8,7 +8,7 @@
     "output": "docs/visual-guide/diagrams/11-stock-key-missing/11-stock-key-missing.html",
     "repository": {
       "url": "git@github.com:kaguranananana/lottery.git",
-      "revision": "076af9fc607749c018c1cbec630daef61a99af55",
+      "revision": "1138fd5d27ddc4edfc2ca438fa87daf7ad504d32",
       "link_mode": "local-only"
     },
     "legend": {
@@ -48,16 +48,22 @@
       "lane": "activity",
       "col": 0,
       "type": "database",
-      "label": "GET 活动库存",
-      "sublabel": "运行期 Key 丢失",
+      "label": "Lua 预扣活动库存",
+      "sublabel": "Key 缺失 / Redis 异常",
       "width": 180,
       "height": 66,
       "sources": [
         {
           "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityRepository.java",
           "line": 195,
-          "end_line": 204,
+          "end_line": 213,
           "label": "ActivityRepository.java"
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/utils/RedisUtil.java",
+          "line": 23,
+          "end_line": 55,
+          "label": "RedisUtil.java"
         }
       ]
     },
@@ -67,14 +73,14 @@
       "col": 2,
       "type": "backend",
       "label": "记录 error → D005",
-      "sublabel": "不 DECR，不创建 take",
+      "sublabel": "不建新 take / 不扣次数",
       "width": 180,
       "height": 66,
       "sources": [
         {
           "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityRepository.java",
           "line": 198,
-          "end_line": 224,
+          "end_line": 213,
           "label": "ActivityRepository.java"
         }
       ]
@@ -84,7 +90,7 @@
       "lane": "award",
       "col": 0,
       "type": "database",
-      "label": "GET 奖品库存",
+      "label": "Lua 预扣奖品库存",
       "sublabel": "采样已命中奖品",
       "width": 180,
       "height": 66,
@@ -92,26 +98,50 @@
         {
           "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java",
           "line": 118,
-          "end_line": 132,
+          "end_line": 130,
           "label": "StrategyRepository.java"
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/utils/RedisUtil.java",
+          "line": 23,
+          "end_line": 55,
+          "label": "RedisUtil.java"
         }
       ]
     },
     {
-      "id": "soldout",
+      "id": "awarderror",
       "lane": "award",
       "col": 2,
       "type": "backend",
-      "label": "视为不可售",
-      "sublabel": "error 日志；不重摇",
+      "label": "抛出库存状态异常",
+      "sublabel": "Key 缺失 / Redis 异常",
       "width": 180,
       "height": 66,
       "sources": [
         {
           "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java",
-          "line": 122,
-          "end_line": 126,
+          "line": 120,
+          "end_line": 129,
           "label": "StrategyRepository.java"
+        }
+      ]
+    },
+    {
+      "id": "preserve",
+      "lane": "award",
+      "col": 4,
+      "type": "backend",
+      "label": "保留未消费 take",
+      "sublabel": "不建订单 / 不返回 D001",
+      "width": 180,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
+          "line": 129,
+          "end_line": 159,
+          "label": "ActivityProcessImpl.java"
         },
         {
           "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/strategy/service/draw/impl/DrawExecutor.java",
@@ -122,44 +152,44 @@
       ]
     },
     {
-      "id": "losing",
-      "lane": "award",
-      "col": 4,
-      "type": "backend",
-      "label": "消费 take → D001",
-      "sublabel": "无订单，活动/次数已消耗",
-      "width": 180,
-      "height": 66,
-      "sources": [
-        {
-          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
-          "line": 132,
-          "end_line": 150,
-          "label": "ActivityProcessImpl.java"
-        }
-      ]
-    },
-    {
       "id": "manual",
       "lane": "ops",
       "col": 2,
       "type": "external",
-      "label": "人工对账核实",
-      "sublabel": "无运行期自动修复入口",
+      "label": "人工核实并恢复",
+      "sublabel": "不以滞后 MySQL 盲目回填",
       "width": 180,
       "height": 66,
       "sources": [
         {
           "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityRepository.java",
-          "line": 243,
-          "end_line": 253,
+          "line": 227,
+          "end_line": 237,
           "label": "ActivityRepository.java"
         },
         {
           "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java",
           "line": 113,
-          "end_line": 126,
+          "end_line": 130,
           "label": "StrategyRepository.java"
+        }
+      ]
+    },
+    {
+      "id": "resume",
+      "lane": "ops",
+      "col": 4,
+      "type": "backend",
+      "label": "原 requestId 继续",
+      "sublabel": "复用 take / 不重扣次数",
+      "width": 180,
+      "height": 66,
+      "sources": [
+        {
+          "path": "lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java",
+          "line": 98,
+          "end_line": 105,
+          "label": "ActivityProcessImpl.java"
         }
       ]
     }
@@ -174,18 +204,18 @@
       "role": "error"
     },
     {
-      "id": "awardkey-to-soldout",
+      "id": "awardkey-to-awarderror",
       "from": "awardkey",
-      "to": "soldout",
-      "label": "Key 不存在",
+      "to": "awarderror",
+      "label": "缺失或执行失败",
       "variant": "security",
       "role": "error"
     },
     {
-      "id": "soldout-to-losing",
-      "from": "soldout",
-      "to": "losing",
-      "label": "DrawState.FAIL",
+      "id": "awarderror-to-preserve",
+      "from": "awarderror",
+      "to": "preserve",
+      "label": "异常中断抽奖",
       "variant": "default"
     },
     {
@@ -195,12 +225,28 @@
       "label": "日志提示核实",
       "variant": "dashed",
       "role": "branch"
+    },
+    {
+      "id": "preserve-to-resume",
+      "from": "preserve",
+      "to": "resume",
+      "label": "人工恢复后",
+      "variant": "dashed",
+      "role": "branch"
+    },
+    {
+      "id": "manual-to-resume",
+      "from": "manual",
+      "to": "resume",
+      "label": "奖品库存已恢复",
+      "variant": "default"
     }
   ],
   "mainPath": [
     "awardkey",
-    "soldout",
-    "losing"
+    "awarderror",
+    "preserve",
+    "resume"
   ],
   "cards": [
     {
@@ -212,11 +258,19 @@
       ]
     },
     {
-      "title": "Key 缺失与连接异常",
+      "title": "真实售罄与状态错误",
       "dot": "cyan",
       "items": [
-        "奖品Key缺失返回soldOut并落D001；读Redis抛异常则向上抛IllegalStateException。",
-        "后者保留未消费take，客户端用原requestId恢复。不能把所有Redis异常都画成未中奖。"
+        "Lua 对存在且余量<=0的 Key 返回售罄，此时才走未中奖；缺失 Key 明确抛出。",
+        "奖品异常保留 state=0 与原 requestId；活动异常发生在新 take 持久化之前。"
+      ]
+    },
+    {
+      "title": "恢复不等于重新预热",
+      "dot": "rose",
+      "items": [
+        "人工节点表示当前待处理边界，不表示已有运行期自动修复功能。",
+        "回补也只能修改现存 Key，缺失时继续抛出；绝不隐式创建余量为1的新库存。"
       ]
     }
   ]

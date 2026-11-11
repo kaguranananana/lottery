@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "finalize",
+  "status": "pass",
+  "type": "sequence",
+  "quality": "showcase",
+  "specification": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/03-participation/candidate.json",
+    "sha256": "6446f1a152b6e298a502bf8f54e57b121e33a2a8b92c648b870a11d78619ebee",
+    "bytes": 8691
+  },
+  "artifact": {
+    "path": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/03-participation/03-participation.html",
+    "sha256": "1bdf6c4bbef2da6b83b272eb6414b73b946f31a6b6eb65029edd8439d4b4cbf4",
+    "bytes": 846116
+  },
+  "gates": {
+    "validate": "pass",
+    "deliver": "pass",
+    "check": "pass",
+    "browser-check": "pass"
+  },
+  "diagnostics": [],
+  "diagnosticSummary": {
+    "total": 0,
+    "shown": 0,
+    "truncated": false
+  },
+  "evidence": {
+    "receipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/03-participation/update-20261101/03-participation.finalize.json",
+    "summaryReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/03-participation/update-20261101/03-participation.finalize-summary.json",
+    "browserCheckReceipt": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/03-participation/update-20261101/03-participation.browser-check.json"
+  },
+  "visualReview": "not-requested",
+  "durationMs": 15844,
+  "browserCheck": {
+    "requested": true,
+    "ran": true
+  }
+}

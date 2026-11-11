@@ -48,7 +48,7 @@ function stateAt(index) {
 // 构造公开的 Archify 关系深链；相同文件仅改变 fragment 即可聚焦箭头。
 function diagramUrl(id, relation = '') {
   // 图与入口脚本采用同一交付版本，避免预览会话保留修订前的图例或标签。
-  return 'diagrams/' + id + '/' + id + '.html?theme=' + theme + '&v=20261014-final' + (relation ? '#relation=' + encodeURIComponent(relation) : '');
+  return 'diagrams/' + id + '/' + id + '.html?theme=' + theme + '&v=20261101' + (relation ? '#relation=' + encodeURIComponent(relation) : '');
 }
 
 function showDiagram(id, relation = '') {

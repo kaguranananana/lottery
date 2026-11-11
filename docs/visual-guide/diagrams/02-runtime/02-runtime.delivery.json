@@ -1,17 +1,17 @@
 {
   "schemaVersion": 1,
-  "receiptId": "523879ae-9799-41c3-94f2-3a936cae3aa8",
+  "receiptId": "2e956d8c-a044-46a2-b67a-e91136394b1d",
   "status": "current",
   "command": "deliver",
   "type": "architecture",
   "input": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/02-runtime/candidate.json",
   "output": "/Users/anontokyo/Downloads/Project/Learn/xfg/LotteryAll/lottery/docs/visual-guide/diagrams/02-runtime/02-runtime.html",
   "specification": {
-    "sha256": "ddc304d7a98ae98e27ae2c94a4ce2758fbeb9941214c6a8bff3e64719ee122a6",
-    "bytes": 7286
+    "sha256": "67f262fead0d8eaf6081658c1c2de12b3af132a7e83c251b4fd37cbfca5ac28c",
+    "bytes": 7986
   },
   "artifact": {
-    "sha256": "2d3f6224a7c94a981030f456fd09cce5f7c12185accc4e883fff19b89c583958",
-    "bytes": 757574
+    "sha256": "938569dafbcd53f2cabe99c13c5725b40a3f2df260d00897e0a9cb2f1c2fc5e1",
+    "bytes": 841957
   }
 }

@@ -8,7 +8,7 @@
     "output": "docs/visual-guide/diagrams/03-participation/03-participation.html",
     "repository": {
       "url": "git@github.com:kaguranananana/lottery.git",
-      "revision": "076af9fc607749c018c1cbec630daef61a99af55",
+      "revision": "1138fd5d27ddc4edfc2ca438fa87daf7ad504d32",
       "link_mode": "local-only"
     },
     "legend": {
@@ -83,7 +83,7 @@
         {
           "path": "lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java",
           "line": 23,
-          "end_line": 72,
+          "end_line": 68,
           "label": "BaseActivityPartake.java"
         }
       ]
@@ -96,8 +96,8 @@
       "sources": [
         {
           "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/UserTakeActivityRepository.java",
-          "line": 38,
-          "end_line": 118,
+          "line": 42,
+          "end_line": 124,
           "label": "UserTakeActivityRepository.java"
         },
         {
@@ -105,6 +105,12 @@
           "line": 150,
           "end_line": 225,
           "label": "ActivityRepository.java"
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StockReservationTransactions.java",
+          "line": 19,
+          "end_line": 57,
+          "label": "StockReservationTransactions.java"
         }
       ]
     },
@@ -119,6 +125,12 @@
           "line": 150,
           "end_line": 225,
           "label": "ActivityRepository.java"
+        },
+        {
+          "path": "lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/utils/RedisUtil.java",
+          "line": 23,
+          "end_line": 64,
+          "label": "RedisUtil.java"
         }
       ]
     },
@@ -253,7 +265,7 @@
       "from": "partake",
       "to": "repo",
       "y": 768,
-      "label": "07 预扣活动库存",
+      "label": "07 先生成 takeId，再请求活动预扣",
       "variant": "default"
     },
     {
@@ -261,7 +273,7 @@
       "from": "repo",
       "to": "redis",
       "y": 814,
-      "label": "GET 存在且 >0 → DECR 1",
+      "label": "Lua：存在且 >0 才 DECR 1",
       "variant": "security"
     },
     {
@@ -269,7 +281,7 @@
       "from": "partake",
       "to": "repo",
       "y": 860,
-      "label": "08 Snowflake takeId + requestId",
+      "label": "08 携 takeId + requestId 创建参与",
       "variant": "default"
     },
     {
@@ -307,11 +319,12 @@
       ]
     },
     {
-      "title": "TX1 的作用",
+      "title": "TX1 与回补",
       "dot": "amber",
       "items": [
-        "次数扣减和 take 创建在同一用户分库事务内。Redis DECR 在事务外。",
-        "创建失败回补已预扣的活动库存；回补错误仅记日志，不能宣称 Redis/MySQL 全链路原子。"
+        "次数扣减和 take 创建在同一用户分库事务内；Redis 条件预扣在事务外。takeId 在预扣前生成。",
+        "业务拒绝由领域入口回补；异常由仓储按实际事务结果处理，仅未开始或确认回滚才回补。",
+        "回补只改现存 Key；回补失败保留异常，事务结果未知记对账日志，不自动加库存。"
       ]
     }
   ]

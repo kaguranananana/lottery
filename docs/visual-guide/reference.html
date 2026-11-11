@@ -1,15 +1,16 @@
 <!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Lottery · 字段、库存与事务速查</title><link rel="stylesheet" href="guide.css"></head>
 <body class="reference-page">
-<header><p class="view-summary"><strong>活动总库存重构前的历史快照</strong>：本组图与源码摘录包含旧活动库存链路。2026-11-02已移除活动总库存，当前仅限制个人次数和策略奖品库存；当前流程、迁移与验证见 <a href="../activity-stock-removal.md">业务简化记录</a>。</p><a href="index.html">← 回到交互图解</a><h1>把三个标识、三段事务与三列状态分清楚</h1><p>这是图解旁边的速查页。示例数字只用于理解源码，不是运行数据库的读数。</p></header>
+<header><p class="view-summary"><strong>历史快照 · 2026-11-01</strong>：本组图与源码摘录包含旧活动库存链路。2026-11-02 已移除活动总库存，当前仅限制个人次数和策略奖品库存；请以 <a href="../activity-stock-removal.md">当前流程、迁移与验证</a> 为准。</p><a href="index.html">← 回到交互图解</a><h1>把三个标识、三段事务与三列状态分清楚</h1><p>这是图解旁边的速查页。示例数字只用于理解源码，不是运行数据库的读数。</p></header>
 <section id="ids"><h2>三个 ID 串起一次业务</h2>
 <table><thead><tr><th>字段</th><th>谁提供 / 产生</th><th>在哪里保存和传递</th><th>解决什么问题</th></tr></thead><tbody>
 <tr><td><code>requestId</code></td><td>客户端提供非空String，最长64字符。内部全程保留。</td><td>DrawRequest → DrawProcessReq → PartakeReq → user_take_activity.request_id；响应回带。V3实际唯一键是(u_id,activity_id,request_id)，请求号按字节比较。</td><td>同一次逻辑抽奖的重试回到同一take；不是全系统所有用户共享一个request_id唯一键。</td></tr>
-<tr><td><code>takeId</code></td><td>BaseActivityPartake在活动Redis预扣后调用Snowflake。T1是教学代号，实际为Long。</td><td>参与表；PartakeResult → DrawReq.uuid=String(takeId) → AwardOrderReq.takeId → 中奖订单take_id → InvoiceVO。</td><td>证明一份参与机会。state=0未消费，state=1已消费；未中奖也有take。</td></tr>
+<tr><td><code>takeId</code></td><td>BaseActivityPartake在活动Redis预扣前调用Snowflake，ID生成失败不会遗留活动预扣。T1是教学代号，实际为Long。</td><td>参与表；PartakeResult → DrawReq.uuid=String(takeId) → AwardOrderReq.takeId → 中奖订单take_id → InvoiceVO。</td><td>证明一份参与机会。state=0未消费，state=1已消费；未中奖也有take。</td></tr>
 <tr><td><code>orderId</code></td><td>AwardOrderImpl为中奖单独调用Snowflake。O1是教学代号。</td><td>订单order_id与uuid=String(orderId)；库存/发奖两种Kafka key；库存账本唯一键；响应orderId。</td><td>中奖后的结算与发奖责任。库存重复消费沿同一个orderId去重。</td></tr>
 <tr><td><code>userId / uId</code></td><td>客户端userId在应用内部叫uId，值不变。</td><td>请求、take、订单、两个消息VO；仓储/DAO按它路由用户数据库与订单分表。</td><td>找到正确分片。只有orderId仍不足以按当前DAO路由订单。</td></tr>
 <tr><td><code>strategyId / awardId</code></td><td>strategyId来自活动配置；awardId由策略快照加权采样得到。</td><td>take保存策略；订单保存策略和奖品快照；库存VO带两个字段，定位strategy_detail和Redis奖品Key。</td><td>选择概率配置并定位要预扣/结算的奖品库存。</td></tr>
 </tbody></table>
 <p>源码：<a href="sources.html#lottery-application_src_main_java_com_anontokyo_lottery_application_process_draw_impl_ActivityProcessImpl_java-L237">ActivityProcessImpl.java</a>、<a href="sources.html#lottery-domain_src_main_java_com_anontokyo_lottery_domain_award_service_order_impl_AwardOrderImpl_java-L107">AwardOrderImpl.java</a>、<a href="sources.html#docs_sql_V3__draw_request_ownership_sql-L35">V3__draw_request_ownership.sql</a>。</p>
+<p>Snowflake节点显式配置：<code>LOTTERY_WORKER_ID</code>默认0，<code>LOTTERY_DATACENTER_ID</code>默认1，范围均为0..31。同一数据中心内各实例workerId必须不同；不再按IP派生。源码：<a href="sources.html#lottery-domain_src_main_java_com_anontokyo_lottery_domain_support_ids_SnowflakeIdGenerator_java-L19">SnowflakeIdGenerator.java</a>。</p>
 </section>
 <section id="inventory"><h2>同一中奖请求的库存时间线</h2>
 <table><thead><tr><th>时刻</th><th>Redis 活动</th><th>MySQL 活动</th><th>Redis 奖品</th><th>MySQL 奖品</th><th>用户 / 订单事实</th></tr></thead><tbody>
@@ -22,16 +23,19 @@
 <tr><td>活动关闭</td><td>仍为剩余实时值</td><td>当前没有自动收口实现</td><td>按剩余实时值</td><td>已结算后的持久值</td><td>现有生命周期只CAS状态与失效配置缓存；不能宣称关闭时自动回写活动剩余量。</td></tr>
 </tbody></table>
 <p class="callout">配置缓存miss可以回源MySQL；库存Key在运行期丢失不能套用这种模式。MySQL值可能未反映已预扣和未结算的责任，回填可能让库存复活。当前运行期自动对账与恢复程序尚未实现。</p>
+<p>库存预扣使用单Key Lua：存在且余量&gt;0才减1，售罄不写负数。活动Key缺失或Redis异常返回D005；奖品Key缺失或Redis异常抛出，保留原requestId与未消费take，人工恢复后继续。真实售罄才走D001。回补Lua仅允许现存Key加1，缺失继续抛出。源码：<a href="sources.html#lottery-infrastructure_src_main_java_com_anontokyo_lottery_infrastructure_utils_RedisUtil_java-L23">RedisUtil.java</a>、<a href="diagrams/11-stock-key-missing/11-stock-key-missing.html">库存异常图</a>。</p>
 <p>源码：<a href="sources.html#lottery-infrastructure_src_main_java_com_anontokyo_lottery_infrastructure_repository_ActivityRepository_java-L113">ActivityRepository.java</a>、<a href="sources.html#lottery-infrastructure_src_main_java_com_anontokyo_lottery_infrastructure_repository_StrategyRepository_java-L87">StrategyRepository.java</a>、<a href="sources.html#lottery-domain_src_main_java_com_anontokyo_lottery_domain_activity_service_lifecycle_ActivityLifecycleService_java">ActivityLifecycleService.java</a>（完整类可从项目中查看）。</p>
 </section>
 <section id="transactions"><h2>事务到哪里结束</h2>
 <table><thead><tr><th>事务</th><th>库 / 操作</th><th>一起保证</th><th>不在事务内</th></tr></thead><tbody>
-<tr><td>TX1 · 参与</td><td>按uId选同一个用户库；必要时初始化次数，条件次数-1，INSERT take。</td><td>次数与参与记录共同提交 / 回滚。</td><td>之前的Redis活动DECR；失败回补是独立操作。</td></tr>
-<tr><td>TX2 · 中奖订单</td><td>同用户库；CAS take 0→1，INSERT user_strategy_export_000..003。</td><td>消费参与机会与订单/库存Outbox共同提交。</td><td>之前的Redis奖品DECR；以后Kafka发送。</td></tr>
+<tr><td>TX1 · 参与</td><td>按uId选同一个用户库；必要时初始化次数，条件次数-1，INSERT take。</td><td>次数与参与记录共同提交 / 回滚。</td><td>之前的Redis活动Lua预扣；异常回补需确认事务未开始或已回滚。</td></tr>
+<tr><td>TX2 · 中奖订单</td><td>同用户库；CAS take 0→1，INSERT user_strategy_export_000..003。</td><td>消费参与机会与订单/库存Outbox共同提交。</td><td>之前的Redis奖品Lua预扣；异常回补需确认事务结果；以后Kafka发送。</td></tr>
 <tr><td>TX3 · 奖品结算</td><td>全局db00；INSERT award_stock_settlement(order_id唯一) + 条件扣strategy_detail。</td><td>同一个orderId的持久库存只成功扣一次。</td><td>用户分片stock状态；发送invoice；两个topic位点。</td></tr>
 <tr><td>独立状态UPDATE</td><td>用户库的stock/mq CAS、发奖grant CAS；未中奖consumeTake为单条CAS。</td><td>每条SQL原子决定是否推进，终态不被迟到回调覆盖。</td><td>没有包住Redis、两种MySQL库与Kafka的分布式大事务。</td></tr>
 </tbody></table>
 <p>数据库同库事务解决局部原子性；Outbox保存未完成责任；消息重放和唯一账本把局部提交衔接起来。</p>
+<p>TX1/TX2共用<code>StockReservationTransactions</code>观察Spring <code>afterCompletion</code>。抛异常时仅“事务未开始 / 已确认回滚”可归还本次预扣；已提交或结果未知不加库存，保留关联日志待对账。回补失败附在原异常的suppressed中并继续抛出。正常返回业务拒绝仍由领域/应用原入口回补。源码：<a href="sources.html#lottery-infrastructure_src_main_java_com_anontokyo_lottery_infrastructure_repository_StockReservationTransactions_java-L19">StockReservationTransactions.java</a>、<a href="diagrams/15-stock-recovery/15-stock-recovery.html">事务异常与回补图</a>。</p>
+<p>配置缓存失效在事务中登记<code>afterCommit</code>：提交成功才清策略L1/L2或活动Redis缓存，回滚保留旧缓存；无外层事务即时失效。其他实例的Caffeine仍靠TTL过期，清理异常仍记录warn，不能视为强一致。源码：<a href="sources.html#lottery-infrastructure_src_main_java_com_anontokyo_lottery_infrastructure_cache_TwoLevelCacheService_java-L119">TwoLevelCacheService.java</a>。</p>
 </section>
 <section id="states"><h2>三列状态，各自证明一件事</h2>
 <table><thead><tr><th>列</th><th>值</th><th>当前事实与推进条件</th></tr></thead><tbody>
@@ -48,7 +52,7 @@
 <tr><td>MySQL db00</td><td>award_stock_settlement</td><td>orderId、uId、strategyId、awardId、create_time；order_id唯一；与奖品扣减同事务。</td></tr>
 <tr><td>用户库db01/02</td><td>user_take_activity / user_take_activity_count</td><td>参与机会与请求号、state、策略；total_count / left_count。只分库，不加_000后缀。</td></tr>
 <tr><td>用户库db01/02</td><td>user_strategy_export_000..003</td><td>中奖订单、take_id、奖品快照、grant_state、mq_state、stock_mq_state、时间；每库4表。</td></tr>
-<tr><td>Redis 库存</td><td>lottery_activity_stock_count_{activityId}<br>lottery_strategy_award_stock_count_{strategyId}_{awardId}</td><td>运行期实时剩余数量。启动SETNX，抽奖DECR，明确业务失败时回补。</td></tr>
+<tr><td>Redis 库存</td><td>lottery_activity_stock_count_{activityId}<br>lottery_strategy_award_stock_count_{strategyId}_{awardId}</td><td>运行期实时剩余数量。启动SETNX，抽奖用Lua条件扣减；业务拒绝或满足事务判定的异常仅回补现存Key。</td></tr>
 <tr><td>Redis 缓存</td><td>lottery_cache_activity_{activityId}<br>lottery_cache_strategy_snapshot_{strategyId}</td><td>活动单级配置；策略快照L2。快照L1在Caffeine进程内。</td></tr>
 <tr><td>Redis 短标记</td><td>lottery_draw_inflight_{act}_{uId}<br>lottery_strategy_award_stock_mq_dispatching_{orderId}<br>lottery_invoice_mq_processing_{orderId}</td><td>请求token短锁3秒；库存投递去重60秒；发奖处理标记300秒。</td></tr>
 <tr><td>Kafka 库存topic</td><td>lottery_strategy_award_stock</td><td>key=orderId字符串；value=AwardStockSettlementVO序列化字符串：uId、orderId、strategyId、awardId。</td></tr>
@@ -63,7 +67,7 @@
 <li>XXL-Job已经注册三类Handler，实际调度配置仍需部署环境提供；不能把旧“每5秒Scheduled扫描”画成现在的触发计划。</li>
 <li>四种发奖handler均为adapter stub。完成只意味着当前本地模拟逻辑落库；真实券平台、物流与第三方交付未接入。</li>
 <li>活动关闭没有自动回写Redis剩余库存；运行期库存丢失也没有自动对账程序。手工恢复节点是运维边界。</li>
-<li>明确下单业务失败会回补奖品库存；下单直接抛异常未进入这一回补分支。库存回补失败当前只记error，没有保证补偿必达；不画成全面自动恢复。</li>
+<li>业务拒绝由原入口回补；参与/订单SQL异常已由仓储按实际事务结果决定回补，回补失败保留并传播异常。预扣后JVM退出、事务结果未知仍缺持久预留与自动对账协议，不画成全面自动恢复。</li>
 <li>本地Kafka配置acks=1、replicas=1；图中的重放与补偿为源码能力，不宣称生产环境无条件可靠、无限重试或外部效果恰好一次。</li>
 </ul>
 <p>现存边界只用于如实理解代码，本次图解没有修改业务代码、运行配置、SQL或测试。</p>
