@@ -73,6 +73,15 @@ spring:
       missing-topics-fatal: false
 
 lottery:
+  draw:
+    # HTTP 限流共享 Redis 配额，本机并发阈值独立配置。
+    admission:
+      enabled: true
+      global-rate: 100
+      global-burst: 32
+      user-rate: 2
+      user-burst: 3
+      max-concurrent: 24
   ids:
     # 默认值仅供本地单实例；多实例部署为每个实例分配唯一的 0..31 节点号。
     worker-id: ${LOTTERY_WORKER_ID:0}

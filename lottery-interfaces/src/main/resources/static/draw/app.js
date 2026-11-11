@@ -17,7 +17,6 @@ const ui = {
 
 const sessionKey = "lottery.draw.session";
 const session = JSON.parse(sessionStorage.getItem(sessionKey)) ?? {
-    userId: `guest-${newRequestId().slice(0, 8)}`,
     activityId: "",
     pending: {},
 };
@@ -31,13 +30,12 @@ function newRequestId() {
     return Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
-function currentUser() { return ui.user.value.trim(); }
+function currentUser() { return ui.user.value; }
 function contextKey() { return `${ui.activity.value}/${currentUser()}`; }
 function pendingDraw() { return session.pending[contextKey()]; }
 function selectedActivity() { return activities.find(item => String(item.activityId) === ui.activity.value); }
 
 function rememberSelection() {
-    session.userId = currentUser();
     if (ui.activity.value) session.activityId = ui.activity.value;
     sessionStorage.setItem(sessionKey, JSON.stringify(session));
 }
@@ -70,8 +68,7 @@ function renderControls() {
     const loading = activityState === "loading";
     ui.refresh.disabled = drawing || loading;
     ui.activity.disabled = drawing || loading || !ui.activity.value;
-    ui.user.disabled = drawing;
-    ui.draw.disabled = drawing || loading || (!pending && !selectedActivity());
+    ui.draw.disabled = drawing || loading || !currentUser() || (!pending && !selectedActivity());
     ui.drawLabel.textContent = drawing ? "正在抽奖…" : pending ? "恢复抽奖" : "开始抽奖";
 }
 
@@ -118,7 +115,9 @@ async function fetchJson(path, options) {
     const timer = setTimeout(() => timeout.abort(), 12000);
     try {
         const response = await fetch(`./api/v1/${path}`, {...options, cache: "no-store", signal: timeout.signal});
-        if (!response.ok) throw new Error(`${path}: HTTP ${response.status}`);
+        if (!response.ok && !(path === "draw" && [429, 503].includes(response.status))) {
+            throw new Error(`${path}: HTTP ${response.status}`);
+        }
         return await response.json();
     } finally {
         clearTimeout(timer);
@@ -127,6 +126,13 @@ async function fetchJson(path, options) {
 
 async function loadActivities() {
     const previousContext = contextKey();
+    // 身份由服务端提供，刷新后仍按原账户恢复待确认请求。
+    const identity = fetchJson("draw/identity").then(result => {
+        ui.user.value = result.userId;
+    }).catch(error => {
+        console.error("加载抽奖身份失败", error);
+        ui.user.value = "";
+    });
     const preferredId = ui.activity.value || session.activityId;
     activityState = "loading";
     renderControls();
@@ -141,8 +147,13 @@ async function loadActivities() {
         activities = [];
         activityState = "error";
     }
+    await identity;
     renderActivities(preferredId);
-    if (contextKey() !== previousContext) showContextResult();
+    if (!currentUser()) {
+        showResult("error", "当前未登录", "请登录后再参加抽奖。");
+    } else if (contextKey() !== previousContext) {
+        showContextResult();
+    }
 }
 
 function spinWheel() {
@@ -181,6 +192,12 @@ function revealResult(result, draw, key) {
             delete session.pending[key];
             showResult("error", "无法参加抽奖", "请检查用户 ID 和所选活动。");
             break;
+        case "L001":
+        case "L002":
+        case "L003":
+        case "L004":
+            showResult("pending", "暂未受理抽奖", result.info);
+            break;
         case "D006":
             showResult("pending", "这轮抽奖还在处理", "稍后点击「恢复抽奖」，继续查看本轮结果。");
             break;
@@ -204,11 +221,6 @@ async function submitDraw(event) {
     event.preventDefault();
     if (ui.draw.disabled) return;
     const userId = currentUser();
-    if (!userId) {
-        ui.user.setCustomValidity("请输入用户 ID。");
-        ui.user.reportValidity();
-        return;
-    }
 
     const key = contextKey();
     const activity = selectedActivity();
@@ -255,14 +267,6 @@ ui.activity.addEventListener("change", () => {
     renderControls();
     showContextResult();
 });
-ui.user.addEventListener("input", () => {
-    ui.user.setCustomValidity("");
-    renderActivities();
-    rememberSelection();
-    showContextResult();
-});
-
-ui.user.value = session.userId;
 renderActivities(session.activityId);
 showContextResult();
 loadActivities();
