@@ -30,6 +30,17 @@ import org.junit.*;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
+import org.springframework.context.annotation.Bean;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+
+import javax.servlet.Filter;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletRequestWrapper;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.kafka.config.KafkaListenerEndpointRegistry;
@@ -47,13 +58,16 @@ import java.util.function.BooleanSupplier;
 
 import static org.junit.Assert.*;
 
-/** 真实 HTTP → Redis 预扣 → 分片事务 → Outbox → Kafka → 账本 → 本地模拟发奖，不使用中间件 Mock。 */
+/** 真实 HTTP → Redis 预扣 → 单库事务 → Outbox → Kafka → 账本 → 本地模拟发奖，不使用中间件 Mock。 */
 @RunWith(SpringRunner.class)
 @ActiveProfiles("mq-e2e")
-@SpringBootTest(classes = LotteryApplication.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@SpringBootTest(classes = {LotteryApplication.class, FinalBusinessE2eManualIT.TestIdentity.class},
+        webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT,
+        properties = {"server.address=127.0.0.1", "lottery.draw.admission.global-rate=10000",
+                "lottery.draw.admission.global-burst=1000", "lottery.draw.admission.user-burst=60"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class FinalBusinessE2eManualIT {
-    // 策略号沿用参与基线的 INT 约束；测试活动号也在相同范围内独立递增。
+    // 测试活动号独立递增，避免重复运行时命中旧 Redis 库存键。
     private static final AtomicLong IDS = new AtomicLong(600000000L + System.currentTimeMillis() % 100000000L);
     @Autowired private IActivityDeploy deploy;
     @Autowired private IActivityDao activityDao;
@@ -92,8 +106,7 @@ public class FinalBusinessE2eManualIT {
         assertEquals("奖品库存缺失是系统错误，不能消费为未中奖", "0001", failed.getCode());
         assertEquals(1, countTakes(user, id));
         assertEquals(2, leftCount(user, id));
-        assertEquals(0, value("SELECT state FROM " + "lottery"
-                + ".draw_participation WHERE u_id=? AND activity_id=?", user, id));
+        assertEquals(0, value("SELECT state FROM lottery.draw_participation WHERE u_id=? AND activity_id=?", user, id));
         // 测试已知初始库存且没有在途中奖订单，恢复后原请求继续同一参与。
         redis.opsForValue().set(awardKey(id), "10");
         assertWin(draw(user, id, "missing-award"));
@@ -224,7 +237,7 @@ public class FinalBusinessE2eManualIT {
             job.awardStockSettlementOutboxJobHandler();
             awaitComplete(user, first.getOrderId());
             assertEquals(1, value("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE order_id=?", first.getOrderId()));
-            assertEquals(1, value("SELECT COUNT(*) FROM " + "lottery.draw_order" + " WHERE order_id=?", first.getOrderId()));
+            assertEquals(1, value("SELECT COUNT(*) FROM lottery.draw_order WHERE order_id=?", first.getOrderId()));
         }
         assertEquals(22, value("SELECT award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id=?", id));
         assertEquals("22", redis.opsForValue().get(awardKey(id)));
@@ -331,7 +344,7 @@ public class FinalBusinessE2eManualIT {
         assertEquals(Constants.ResponseCode.NO_UPDATE.getCode(), draw(user, id, "fourth").getCode());
         assertEquals(3, countTakes(user, id));
         assertEquals(0, leftCount(user, id));
-        assertEquals(1, value("SELECT COUNT(*) FROM " + "lottery.draw_order" + " WHERE u_id=? AND activity_id=?", user, id));
+        assertEquals(1, value("SELECT COUNT(*) FROM lottery.draw_order WHERE u_id=? AND activity_id=?", user, id));
         assertNoActivityStock(id);
         job.awardStockSettlementOutboxJobHandler();
         awaitComplete(user, first.getOrderId());
@@ -353,9 +366,8 @@ public class FinalBusinessE2eManualIT {
         assertEquals(losing.getTakeId(), draw(user, id, "no-prize").getTakeId());
         assertEquals(1, countTakes(user, id));
         assertEquals(2, leftCount(user, id));
-        assertEquals(1, value("SELECT state FROM " + "lottery"
-                + ".draw_participation WHERE u_id=? AND activity_id=?", user, id));
-        assertEquals(0, value("SELECT COUNT(*) FROM " + "lottery.draw_order" + " WHERE u_id=? AND activity_id=?", user, id));
+        assertEquals(1, value("SELECT state FROM lottery.draw_participation WHERE u_id=? AND activity_id=?", user, id));
+        assertEquals(0, value("SELECT COUNT(*) FROM lottery.draw_order WHERE u_id=? AND activity_id=?", user, id));
         assertEquals("10", redis.opsForValue().get(awardKey(id)));
         assertNoActivityStock(id);
     }
@@ -576,7 +588,7 @@ public class FinalBusinessE2eManualIT {
         assertEquals(Integer.valueOf(4), order(user, result.getOrderId()).getStockSettlementEventStatus());
         // 人工确认并修复全局库存，再在正确用户分片按订单 CAS 释放原 Outbox。
         update("UPDATE lottery.draw_config_prize SET award_surplus_count=10 WHERE draw_config_id=?", id);
-        update("UPDATE " + "lottery.draw_order" + " SET stock_settlement_event_status=0 WHERE u_id=? AND order_id=? AND stock_settlement_event_status=4", user, result.getOrderId());
+        update("UPDATE lottery.draw_order SET stock_settlement_event_status=0 WHERE u_id=? AND order_id=? AND stock_settlement_event_status=4", user, result.getOrderId());
         job.awardStockSettlementOutboxJobHandler();
         awaitComplete(user, result.getOrderId());
         assertEquals(1, value("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE order_id=?", result.getOrderId()));
@@ -705,12 +717,65 @@ public class FinalBusinessE2eManualIT {
         return activity.getActivityId();
     }
 
+    @Test
+    public void admissionOutageHasNoWritesAndOriginalRequestRecovers() throws Exception {
+        long id = createStarted(10, 3);
+        String user = "limit" + IDS.incrementAndGet();
+        try {
+            // 专用 Redis 停机时请求必须在 TX1 前失败，次数行和参与都不存在。
+            MqMiddlewareE2eManualIT.compose("stop", "redis");
+            ResponseEntity<DrawResponse> rejected = drawResponse(user, id, "retry-after-outage");
+            assertEquals(HttpStatus.SERVICE_UNAVAILABLE, rejected.getStatusCode());
+            assertEquals("L004", rejected.getBody().getCode());
+            assertEquals("retry-after-outage", rejected.getBody().getRequestId());
+            assertEquals(0, countTakes(user, id));
+            assertEquals(0, value("SELECT COUNT(*) FROM lottery.user_activity_quota WHERE u_id=? AND activity_id=?", user, id));
+        } finally {
+            MqMiddlewareE2eManualIT.compose("up", "-d", "--wait", "redis");
+        }
+        assertEquals("10", redis.opsForValue().get(awardKey(id)));
+        DrawResponse first = draw(user, id, "retry-after-outage");
+        assertWin(first);
+        assertEquals(first.getOrderId(), draw(user, id, "retry-after-outage").getOrderId());
+        assertEquals(1, countTakes(user, id));
+        assertEquals(2, leftCount(user, id));
+        assertEquals("9", redis.opsForValue().get(awardKey(id)));
+        job.awardStockSettlementOutboxJobHandler();
+        awaitComplete(user, first.getOrderId());
+    }
+
     private DrawResponse draw(String user, long id, String requestId) {
+        return drawResponse(user, id, requestId).getBody();
+    }
+
+    private ResponseEntity<DrawResponse> drawResponse(String user, long id, String requestId) {
         DrawRequest request = new DrawRequest();
         request.setUserId(user);
         request.setActivityId(id);
         request.setRequestId(requestId);
-        return http.postForObject("/api/v1/draw", request, DrawResponse.class);
+        HttpHeaders headers = new HttpHeaders();
+        headers.set("X-Test-Principal", user);
+        return http.postForEntity("/api/v1/draw", new HttpEntity<>(request, headers), DrawResponse.class);
+    }
+
+    @TestConfiguration
+    public static class TestIdentity {
+        @Bean
+        FilterRegistrationBean<Filter> testIdentityFilter() {
+            // 只在隔离测试容器的 loopback HTTP 端口装配测试身份。
+            FilterRegistrationBean<Filter> registration = new FilterRegistrationBean<>();
+            registration.setFilter((request, response, chain) -> {
+                HttpServletRequest original = (HttpServletRequest) request;
+                chain.doFilter(new HttpServletRequestWrapper(original) {
+                    @Override public java.security.Principal getUserPrincipal() {
+                        String user = original.getHeader("X-Test-Principal");
+                        return user == null ? null : () -> user;
+                    }
+                }, response);
+            });
+            registration.addUrlPatterns("/api/v1/draw");
+            return registration;
+        }
     }
 
     private void assertWin(DrawResponse result) {
@@ -735,11 +800,11 @@ public class FinalBusinessE2eManualIT {
     }
 
     private long countTakes(String user, long id) throws Exception {
-        return value("SELECT COUNT(*) FROM " + "lottery" + ".draw_participation WHERE u_id=? AND activity_id=?", user, id);
+        return value("SELECT COUNT(*) FROM lottery.draw_participation WHERE u_id=? AND activity_id=?", user, id);
     }
 
     private long leftCount(String user, long id) throws Exception {
-        return value("SELECT left_count FROM " + "lottery" + ".user_activity_quota WHERE u_id=? AND activity_id=?", user, id);
+        return value("SELECT left_count FROM lottery.user_activity_quota WHERE u_id=? AND activity_id=?", user, id);
     }
 
     private void assertNoActivityStock(long id) {
