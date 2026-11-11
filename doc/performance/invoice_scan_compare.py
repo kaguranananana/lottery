@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""在相同八表数据上交替比较补偿索引访问路径；不改业务数据或生产 SQL。"""
+"""在同一订单表数据上交替比较补偿索引访问路径；不改业务数据或生产 SQL。"""
 import argparse
 from pathlib import Path
 import re
@@ -15,9 +15,9 @@ def compare(directory: Path, repeats: int) -> dict:
     verify()
     directory.mkdir(parents=True, exist_ok=False)
     mapper = ET.parse(ROOT / 'lottery-interfaces/src/main/resources/mybatis/mapper/DrawOrder_Mapper.xml').getroot()
-    # 谓词和投影直接读取当前生产 Mapper，只替换分片表和批次上限。
+    # 谓词和投影直接读取当前生产 Mapper，只替换表限定名和批次上限。
     query = ' '.join(''.join(mapper.find("select[@id='scanFulfillmentEventStatus']").itertext()).split()).replace('#{limit}', '100')
-    tables = [f'lottery_{db:02d}.draw_order_{tb:03d}' for db in (1, 2) for tb in range(4)]
+    tables = ['lottery.draw_order']
     count_sql = ' UNION ALL '.join(f"SELECT '{table}',COUNT(*) FROM {table}" for table in tables) + ';'
     # 状态分布与行数一起核对，不能仅凭 COUNT 相同宣称消息事实未变化。
     state_sql = ' UNION ALL '.join(f"SELECT '{table}',stock_settlement_event_status,fulfillment_event_status,award_fulfillment_status,COUNT(*)"
@@ -28,10 +28,10 @@ def compare(directory: Path, repeats: int) -> dict:
     host_before = sample()
     write(directory / 'host-before.json', host_before)
     indexes = sql("SELECT table_schema,table_name,column_name FROM information_schema.statistics"
-                  " WHERE table_schema IN ('lottery_01','lottery_02') AND index_name='idx_award_fulfillment_status'"
+                  " WHERE table_schema = 'lottery' AND index_name='idx_fulfillment_retry'"
                   " ORDER BY table_schema,table_name,seq_in_index;")
-    # 本实验只排除一个明确索引，必须先证明八表均为所测单列定义。
-    assert indexes.splitlines() == [table.replace('.', '\t') + '\taward_fulfillment_status' for table in tables], indexes
+    # 本实验只排除一个明确索引，必须先核对所测单列索引。
+    assert indexes.splitlines() == [table.replace('.', '\t') + '\t' + column for table in tables for column in ('fulfillment_retry_at','order_id')], indexes
     write(directory / 'initial-data.json', {'orderRowsByShard': before.strip(), 'orderStates': before_states.strip(), 'indexes': indexes.strip(),
         'parameters': sql('SELECT VERSION(),@@innodb_flush_log_at_trx_commit,@@sync_binlog,@@innodb_buffer_pool_size;').strip()})
     runs = []
@@ -44,7 +44,7 @@ def compare(directory: Path, repeats: int) -> dict:
                 target = table
                 if variant == 'withoutIndex':
                     # 仅诊断查询忽略本次新索引，恢复原访问路径；数据和原条件完全相同。
-                    target += ' IGNORE INDEX (idx_award_fulfillment_status)'
+                    target += ' IGNORE INDEX (idx_fulfillment_retry)'
                 statement = query.replace('FROM draw_order', f'FROM {target}')
                 stem = f'{repeat + 1}-{table.replace(".", "-")}-{variant}'
                 (directory / f'{stem}.sql').write_text(statement + ';\n')
@@ -69,7 +69,7 @@ def compare(directory: Path, repeats: int) -> dict:
         'afterOrderRowsByShard': after.strip(), 'afterOrderStates': after_states.strip(), 'runs': runs,
         'hostSwapMiB': {key: (host_after['pages'][field] - host_before['pages'][field]) * host_after['pageBytes'] / 1048576
                         for key, field in (('in', 'Swapins'), ('out', 'Swapouts'))},
-        'scope': '同数据生产补偿谓词的索引访问路径，八表顺序执行的根节点耗时合计'}
+        'scope': '同数据生产补偿谓词的索引访问路径，单表根节点耗时'}
     write(directory / 'comparison.json', result)
     assert result['dataUnchanged'], '比较期间数据量改变，不能认证同数据对照'
     return result

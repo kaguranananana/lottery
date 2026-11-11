@@ -83,6 +83,7 @@ public class DrawRequestOwnershipManualIT {
         ReflectionTestUtils.setField(takes, "userActivityQuotaDao", countDao);
         ReflectionTestUtils.setField(orders, "drawParticipationDao", takeDao);
         ReflectionTestUtils.setField(orders, "drawOrderDao", orderDao);
+        ReflectionTestUtils.setField(orders, "events", mock(org.springframework.context.ApplicationEventPublisher.class));
         for (Object repository : Arrays.asList(takes, orders)) {
             ReflectionTestUtils.setField(repository, "transactionTemplate", transaction);
         }
@@ -135,7 +136,7 @@ public class DrawRequestOwnershipManualIT {
         for (int i = 0; i < 8; i++) {
             user = prefix + i;
             bill.setuId(user);
-            String requestId = "A" + ids.incrementAndGet();
+            String requestId = "A";
             DrawProcessResult a = request(requestId);
             assertEquals(Constants.ResponseCode.SUCCESS.getCode(), a.getCode());
             assertNull(takes.queryUnfinishedParticipation(100001L, user));
@@ -312,8 +313,8 @@ public class DrawRequestOwnershipManualIT {
         return count("SELECT COUNT(*) FROM " + table + " WHERE u_id=?");
     }
 
-    private int leftCount() throws Exception { return count("SELECT left_count FROM " + "lottery" + ".user_activity_quota WHERE u_id=?"); }
-    private int takeCount() throws Exception { return count("SELECT COUNT(*) FROM " + "lottery" + ".draw_participation WHERE u_id=?"); }
+    private int leftCount() throws Exception { return count("SELECT left_count FROM lottery.user_activity_quota WHERE u_id=?"); }
+    private int takeCount() throws Exception { return count("SELECT COUNT(*) FROM lottery.draw_participation WHERE u_id=?"); }
     private int count(String sql) throws Exception {
         try (Connection connection = connect(); PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, user);

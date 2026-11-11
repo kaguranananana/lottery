@@ -1,16 +1,14 @@
 # Lottery 实际性能压测复现
 
-当前 `environment.py init` 从 [完整 Schema](../../docs/sql/lottery-schema.sql) 创建空库。旧压测库按 [V5 升级说明](../../docs/draw-schema-refactor.md) 处理。历史报告里的旧表名、压测结果和 `prepare_outbox_before.sh` 所用 worker 版本请在对应历史版本复现。
-
-> 历史结果对应 2026-10 的实现。本次只同步工具与业务语义并验证编译/语法，未重新执行 JMeter 容量实验；不能把旧数字作为取消活动总库存后的性能结论。
+当前单库压测结果见 [单库与入口限流报告](../../docs/single-db-load-test.md)。历史报告使用当时的代码和数据，复现旧实验时检出对应历史版本。旧版持久化结构和迁移顺序见 [V6 迁移](../../docs/single-database.md)。
 
 后续定向优化、当前字段修复及压测驱动数据耗尽修复见 [优化报告](optimization-report.md) 和 [本轮证据/复现步骤](results/20261012-optimization/README.md)。本文的首次测量数字和 NULL 字段描述对应原始测试版本，原始结果未覆盖。
 
 2026-10-13 的补偿索引同数据/反向实验及更高持续负载见 [持续容量与扫描证据](results/20261013-capacity-scan/README.md)。新空环境 init 已包含 `20261013_invoice_compensation_index.sql`；已有实例保留数据、核实身份后显式执行迁移，不能重新 init。`invoice_scan_compare.py <新目录> --repeats 6` 在应用停止且义务排空后交替比较索引路径，记录实际执行树、计数/状态及换页端点；不把 SQL 局部收益当整体吞吐倍数。
 
-后续会话缓存对照、驱动事务回归修复及持续容量边界见 [JDBC 与容量复核](results/20261013-jdbc-session/README.md)。三个业务库 URL 使用 `useLocalSessionState=true`；Connector/J 已修复至8.0.29，会话状态须经 JDBC API 管理。不要仅复制参数到旧8.0.28驱动；真实回滚失败及最小修复见 [驱动修复记录](results/20261013-jdbc-session/driver-fix.md)。
+后续会话缓存对照、驱动事务回归修复及持续容量边界见 [JDBC 与容量复核](results/20261013-jdbc-session/README.md)。当前单库 JDBC URL 使用 `useLocalSessionState=true`；Connector/J 已修复至8.0.29，会话状态须经 JDBC API 管理。不要仅复制参数到旧8.0.28驱动；真实回滚失败及最小修复见 [驱动修复记录](results/20261013-jdbc-session/driver-fix.md)。
 
-测试启动器只额外装配本机控制面，`POST /api/v1/draw`、活动创建/启动、路由、库存、事务、Kafka、Outbox 和本地模拟发奖均执行仓库的生产实现。未接入真实第三方奖品渠道；XXL handler 由专用线程按一秒固定延迟调用，未验证 admin 调度、HA 或多实例。
+测试启动器只额外装配本机控制面，`POST /api/v1/draw`、活动创建/启动、库存、事务、Kafka、Outbox 和本地模拟发奖均执行仓库的生产实现。未接入真实第三方奖品渠道；最终版本运行实际 Spring 调度和提交后实时投递，压测启动器只提供合成认证和采集。中间版本采用一秒调度模拟，证据独立保留。
 
 ## 压测前只读资源与 SQL 诊断
 
@@ -23,11 +21,11 @@ python3 doc/performance/preflight.py doc/performance/results/my-run/preflight-2
 python3 doc/performance/mysql_diagnosis.py doc/performance/results/my-run/mysql
 ```
 
-预检默认约 60 秒、5 秒间隔，保存实际页大小、vm_stat 原文、Swap 增量、CPU/内存与容器归属/限制。SQL 工具提取生产 Mapper，保存八表 EXPLAIN/三次 ANALYZE、精确初始数量、持久化参数及 MySQL 核对；它不替代 Redis/Kafka/HTTP 审计。环境持续受不可控制的换页或共享负载干扰时，保留结果并停止容量与收益认证，不修改稳定性阈值。
+预检默认约 60 秒、5 秒间隔，保存实际页大小、vm_stat 原文、Swap 增量、CPU/内存与容器归属/限制。SQL 工具提取生产 Mapper，保存单表 EXPLAIN/三次 ANALYZE、精确初始数量、持久化参数及 MySQL 核对；它不替代 Redis/Kafka/HTTP 审计。环境持续受不可控制的换页或共享负载干扰时，保留结果并停止容量与收益认证，不修改稳定性阈值。
 
 ## 环境与首次准备
 
-需要 Docker Compose、JDK 17（运行现有 Java 8 目标字节码）、Maven、Python 3 和 JMeter 5.6.3。绘图额外需要 matplotlib。机器资源与软件版本以每次测试会话的 `environment.json` 为准。应用/JMeter 在宿主机，中间件在独立 Docker；MySQL 13329、Redis 17379、Kafka 29092，应用 18090，执行器 29999。端口均与现存 E2E 栈分开。
+需要 Docker Compose、JDK 17（运行现有 Java 8 目标字节码）、Maven、Python 3 和 JMeter 5.6.3。绘图额外需要 matplotlib。机器资源与软件版本以每次测试会话的 `environment.json` 为准。应用/JMeter 在宿主机，中间件在独立 Docker；MySQL 13339、Redis 17479、Kafka 29192，应用 18190。端口均与现存 E2E 栈分开。
 
 ```bash
 # 从仓库根目录执行；init 拒绝已有 schema，不自动覆盖历史结果。
@@ -40,7 +38,7 @@ mkdir -p doc/performance/results/my-run
 bash doc/performance/start.sh doc/performance/results/my-run > doc/performance/results/my-run/application.log 2>&1
 ```
 
-每次新建活动先调用真实创建服务，再执行 PASS→DOING（事务内 SETNX 预热），不直接修改状态为运行中。每轮默认预置10万用户，按实际路由策略进入唯一正确分库，并记录八分片分布；每用户10次机会，每次基准请求使用新用户、新 requestId。活动无总库存，五种模拟券每种100万库存、20%概率，100%中奖以覆盖较重的订单与异步主链路。预置用户并未绕过生产每次 `initializeCount` SQL。
+每次新建活动先调用真实创建服务，再执行 PASS→DOING（事务内 SETNX 预热），不直接修改状态为运行中。每轮默认预置10万用户，写入单一额度表；每用户10次机会，每次基准请求使用新用户、新 requestId。活动无总库存，五种模拟券每种100万库存、20%概率，100%中奖以覆盖较重的订单与异步主链路。已预置用户仍执行真实的额度查询、条件扣减与参与写入。
 
 ## 实际运行
 
@@ -53,7 +51,11 @@ python3 doc/performance/run.py --session my-run --name c50-confirm --id 720050 -
 # 根据异常、资源和积压决定是否继续100/200，禁止带着上轮积压开始下一轮。
 # 固定到达速率与无等待阶梯分开；每个目标速率另建活动。
 python3 doc/performance/run.py --session my-run --name rate60 --id 720060 --threads 30 --duration 320 --warmup 20 --target-rps 60 --jmeter /path/to/jmeter
+# 使用原请求号的并发恢复场景需在限流关闭进程运行。
 python3 doc/performance/semantics.py --session my-run
+# 同用户与真实 MySQL 慢 SQL 场景。使用不同活动号。
+python3 doc/performance/run.py --session my-run --name hotspot --id 720070 --threads 12 --target-rps 60 --users 10000 --quota 1000 --single-user
+python3 doc/performance/run.py --session my-run --name slow --id 720080 --threads 72 --ramp 1 --target-rps 350 --users 40000 --slow-ms 300
 # 奖品库存竞争：总共50份奖品；售罄命中仍为D001并消耗个人次数，不重新抽样。
 python3 doc/performance/run.py --session my-run --name finiteAward --id 728002 --threads 30 --duration 15 --warmup 0 --stock 100000 --award-stock 10 --users 100000 --jmeter /path/to/jmeter
 python3 doc/performance/analyze.py doc/performance/results/my-run/c10 doc/performance/results/my-run/c30 doc/performance/results/my-run/c50-confirm
@@ -63,13 +65,15 @@ python3 doc/performance/analyze.py doc/performance/results/my-run/c10 doc/perfor
 
 `0000`为同步下单成功，`D001`为完成的未中奖抽奖，`D006/D007`分别为处理中/原请求未完成，活动售罄码 D004 已删除。系统异常另计，HTTP 200 不等于业务成功。正常基准只允许0000/D001；幂等成功回放只算一个新操作。奖品售罄后的未中奖RPS不能替代成功下单容量。`--stock` 现在只表示每种奖品的默认总量，`--award-stock` 仍可指定奖品总量；二者都不限制活动参与总数。
 
+限流开关对照使用同一隔离中间件、同一 JMX 和新活动。停止已记录 PID 的压测应用后，用 `start.sh <新日志目录> --lottery.draw.admission.enabled=false` 启动对照，测试完成可用同样步骤切回默认。压测启动器绑定 loopback，在测试进程内将合成账户映射到 Servlet Principal。测试头只在该启动器生效。统计保留全局 L001、用户 L002、本机 L003 及 Redis 故障 L004。
+
 ## 原始证据与采样
 
 每轮保存参数、真实命令、JTL（业务码/request/take/order）、初始化值、3秒级 JVM/GC/Hikari/Tomcat/宿主进程/Docker采样、约9秒级 MySQL/Redis/Kafka/异步采样、SQL digest 前后值、停止入口后的积压、2秒级排空探针、全量参与/订单/账本ID和对账结果。采样本身会产生少量开销。个别容器/SQL采集耗时会拉长周期，原始 `collectionMs` 可核实实际间隔。
 
 审计逐项检查用户与请求身份、take与order关联、次数消耗、各奖品库存与账本、全局重复订单、未消费参与、BLOCKED、库存/发奖最终状态、Kafka八分区位点和Lag。数据库时间戳精度为秒，HTTP→异步完成延迟报告一秒宽的上下界；没有伪造毫秒精度。
 
-2026-11-02 工具已同步单库存语义：参与数与个人次数核对，中奖订单与各奖品 Redis/MySQL 库存及账本核对，不再读取活动库存列或 Key。奖品总量/剩余量当前均为 Integer 并真实持久化；历史 NULL 总量和双库存压测只保留在原始结果，不回填或改写旧证据。当前分析器面向新会话，不承诺直接重算旧版格式的逐请求数据。
+2026-11-02 工具已同步单库存语义：参与数与个人次数核对，中奖订单与各奖品 Redis/MySQL 库存及账本核对，不再读取活动库存列或 Key。奖品总量/剩余量当前均为 Integer 并真实持久化；历史 NULL 总量和双库存压测只保留在原始结果，不回填或改写旧证据。当前分析器面向单库新会话。
 
 ## 停止与安全清理
 
@@ -81,7 +85,7 @@ python3 doc/performance/environment.py stop
 python3 doc/performance/environment.py clean
 ```
 
-清理仅操作 `lottery-perf`，不会停止 `lottery-mq-e2e` 或其它实例。生成的结果目录不自动删除。再次复现使用新的 session 目录，并在专用栈清空后初始化。生产业务代码、数据库、Redis、Kafka和Git历史保持原样。
+清理仅操作 `lottery-single-perf`，不会停止 `lottery-mq-e2e` 或其它实例。生成的结果目录不自动删除。再次复现使用新的 session 目录，并在专用栈清空后初始化。生产业务代码、数据库、Redis、Kafka和Git历史保持原样。
 
 ## 汇总与曲线
 

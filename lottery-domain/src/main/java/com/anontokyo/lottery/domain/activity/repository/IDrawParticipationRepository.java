@@ -25,7 +25,7 @@ public interface IDrawParticipationRepository {
     DrawParticipationVO queryParticipationByRequestId(Long activityId, String uId, String requestId);
 
     /**
-     * 参与活动落库：扣减用户剩余次数 + 创建参与记录在同一个路由内的事务中完成。
+     * 参与活动落库：扣减用户剩余次数 + 创建参与记录在同一个本地事务中完成。
      * @return SUCCESS / NO_UPDATE(无剩余次数) / INDEX_DUP(take 或 request 冲突)
      */
     Constants.ResponseCode takeParticipation(ActivityBillVO bill, java.util.Date participatedAt, Long takeId,

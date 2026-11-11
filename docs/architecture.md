@@ -9,7 +9,7 @@
 ```text
               HTTP
                │
-        LotteryController          (interfaces —— 参数校验/DTO 转换)
+        LotteryController          (interfaces —— 身份、参数、限流与 DTO)
                │
         ActivityProcessImpl        (application —— use case 编排 / MQ 触发)
      ┌─────┴──────────┐
@@ -18,18 +18,17 @@ ActivityPartakeImpl   DrawExecutor ── AwardOrderImpl   (domain —— 业务
        Repository 接口（domain 定义）
                │
   ActivityRepository / DrawConfigRepository / DrawParticipationRepository /
-  OrderRepository                       (infrastructure —— MyBatis+Redis+路由+事务)
+  OrderRepository                       (infrastructure —— MyBatis+Redis+本地事务)
 ```
 
 分层职责：
 
 * **interfaces**：HTTP adapter。不做业务规则。
-* **application**：use case 编排（draw 幂等回放、Kafka 收发、XXL-Job 任务）。
+* **application**：use case 编排（draw 幂等回放、Kafka 收发、Spring 定时任务）。
 * **domain**：参与资格检查、状态机转换矩阵、加权随机抽样、订单创建语义、发奖抽象。
-* **infrastructure**：MyBatis、Redis（库存/锁/缓存）、dbRouter 路由细节、本地事务边界。
+* **infrastructure**：MyBatis、Redis（库存/锁/缓存）、本地事务边界。
 
-依赖方向治理成果：`cn.bugstack.*`（dbRouterForGem）只出现在 `lottery-infrastructure`；
-`TransactionTemplate` 与手动 `doRouter/clear` 的模板代码全部下沉 repository。
+MyBatis 与 `TransactionTemplate` 使用同一个 Hikari 数据源，事务在对应仓储内管理。
 
 
 ## 当前业务约束与事务主链路
@@ -38,17 +37,18 @@ ActivityPartakeImpl   DrawExecutor ── AwardOrderImpl   (domain —— 业务
 
 ```mermaid
 flowchart TD
-    R[请求号幂等检查与未完成参与归属] --> A[校验活动状态和时间]
-    A --> T1[TX1 用户分片：条件扣个人次数 + 创建 take]
+    H[认证、Semaphore、Redis 全局和用户令牌桶] --> R[请求号幂等检查与未完成参与归属]
+    R --> A[校验活动状态和时间]
+    A --> T1[TX1：条件扣个人次数 + 创建 take]
     T1 --> D[加权随机抽奖]
     D -->|NO_PRIZE| N[消费 take，消耗一次机会]
     D -->|命中奖品| S[Redis 奖品库存原子预扣]
     S -->|真实售罄| N
     S -->|缺 Key 或故障| E[显式报错，保留原 take 供同请求恢复]
-    S -->|成功| T2[TX2 用户分片：消费 take + 订单 + Outbox INIT]
-    T2 --> J[XXL-Job 扫描 Outbox]
+    S -->|成功| T2[TX2：消费 take + 订单 + Outbox INIT]
+    T2 --> J[提交后实时投递，Spring 定时补偿]
     J --> K[Kafka 至少一次投递]
-    K --> T3[TX3 全局库：唯一结算账本 + 条件扣奖品库存]
+    K --> T3[TX3：唯一结算账本 + 条件扣奖品库存]
     T3 --> I[发奖消息与本地模拟发奖]
 ```
 
@@ -56,12 +56,12 @@ TX1 不访问 Redis 库存；次数扣减与参与插入一起回滚，唯一键
 
 启动在活动行锁内检查 PASS 和有效时间，再锁共享策略行。新奖池只用 MySQL `award_surplus_count` SETNX，已有 Key 保留实时余量；已被 DOING/CLOSE 活动引用的奖池只检查现存 Key，缺失则拒绝启动，避免关闭后的在途结算或第二个活动把奖品复活。CLOSE 不能证明奖池从未使用，若在首次启动前关闭过唯一引用活动且 Redis 无 Key，也需人工确认奖池后初始化。任何预热异常使活动保持 PASS。
 
-[数据库初始化与 V5 升级](draw-schema-refactor.md) 提供当前表结构及历史版本迁移顺序；三个事务、Kafka/Outbox/账本、消息 CAS 和用户路由均保持独立职责。
+[数据库初始化与 V6 升级](single-database.md) 提供当前表结构及历史数据迁移顺序。
 
 ## 2. 组件存在理由（自检清单）
 
 ### Redis 为什么存在？
-策略奖品库存原子预扣、抽奖并发防重入锁、DrawConfigSnapshot L2、活动配置缓存。
+接口令牌桶、策略奖品库存原子预扣、抽奖并发防重入锁、DrawConfigSnapshot L2 和活动配置缓存。
 Redis 不承担任何“最终是否处理过”的事实判定：DONE 类 guard 已删除，幂等事实在 MySQL 唯一约束里。
 
 库存检查与条件扣减在单 Key Lua 中完成，售罄不写负数；缺失 Key 明确报错，奖品缺失不会被消费成未中奖。回补只修改现存 Key，异常不吞掉。订单 SQL 异常仅在事务未开始或确认回滚时归还奖品预扣，提交结果未知保留日志待对账，不能凭异常无条件加库存。
@@ -72,24 +72,18 @@ Redis 不承担任何“最终是否处理过”的事实判定：DONE 类 guard
 
 ### Outbox 为什么存在？
 避免 “DB 提交成功 → JVM crash → 消息永远没有发出去”。订单写入与 `stock_settlement_event_status=0`
-在同一事务落库，之后由 XXL-Job 扫描 `IN(0,2)` 及超时 10 分钟的 SENT 补偿投递。
+在同一事务落库，提交后立即尝试发送，Spring 调度按独立重试时间补偿失败、漏发及消费超时订单。
 库存条件扣减分歧进入独立 BLOCKED=4 等待对账，发送 FAIL=2 继续自动重试；对账后按订单显式 CAS 4→0 恢复原 Outbox。
 发送与消费事件以 SQL 条件更新推进状态，迟到发送回调不能覆盖 COMPLETE；发奖发送成功统一为 SENT，消费确认 award_fulfillment_status 后才收口 COMPLETE。详见[消息状态修复说明](kafka-mq-state-cas.md)。
 
 ### settlement ledger 为什么存在？
 保证 Kafka duplicate delivery / consumer crash 后的重复消费不会让同一个 orderId 扣两次库存。
 `INSERT award_stock_settlement(UNIQUE order_id) + UPDATE draw_config_prize ... surplus>0`
-是同一个本地事务（两表同在全局库 db00），duplicate-key 即已结算。
+是同一个本地事务，账本唯一键冲突表示已结算。
 
-### XXL-Job 为什么存在？
-活动状态推进、Outbox 扫描、发奖补偿都需要可靠且有分片能力的调度，
-而不是依赖每个应用实例自己的 `@Scheduled`（多实例重复扫全量分库）。调度点：
+### Spring 定时调度
 
-| Job | 参数 | 职责 |
-| --- | --- | --- |
-| lotteryActivityStateJobHandler | — | READY→RUNNING（检查开始时间，活动与策略行锁内先预热奖品，再 CAS）；RUNNING 过期→CLOSED |
-| awardStockSettlementOutboxJobHandler | `"1"` 或 `"1,2"` | 库存 Outbox 分片扫描投递 |
-| lotteryOrderMQStateJobHandler | dbIdx 列表 | 发奖消息补偿重发（scan 带 LIMIT=100） |
+三个固定延迟任务独立执行活动状态推进、库存重试与发奖重试。订单提交后的发送由有界 Outbox 工作池完成。重试规则、V7 部署及 BLOCKED 对账见 [订单 Outbox](outbox-delivery.md)。
 
 ### Caffeine 为什么存在？
 DrawConfigSnapshot 是每次抽奖必需、活动运行期基本不变的热点读：
@@ -98,10 +92,8 @@ Caffeine L1(60s, max 10000) + Redis L2(600s+jitter120s)。
 其余实体不再有 L1（activity 只留 Redis 单级；award 信息并入快照；ruleTree 已删除）。
 配置事务的缓存失效延迟到 afterCommit，回滚不删除；其它实例 L1 与在途加载仍遵循上述最终一致边界。
 
-### 分库分表为什么存在？
-`draw_participation`、`user_activity_quota`、`draw_order` 都是 user-centric 高增长数据，
-按 `uId` Hash 路由到 2 库（lottery_01/02）；订单表再分 4 张表（_000.._003）。
-参与次数表 `UNIQUE(u_id,activity_id)` 保证同一用户在同一活动的次数语义。
+### MySQL 数据如何组织？
+`draw_participation`、`user_activity_quota`、`draw_order` 各自使用单表。参与次数表 `UNIQUE(u_id,activity_id)` 保证同一用户在同一活动的次数语义。
 
 ## 3. 抽奖概率模型
 
@@ -129,24 +121,12 @@ migration 注释提供归并语句（默认不自动执行 DROP/UPDATE）。
 | 单元测试（CI 门禁） | WeightedRandomSelectorTest（微精度概率、NO_PRIZE、越界拒绝、边界采样）；RedisActivityDrawProcessGuardTest（锁 token/Lua 释放）；DrawRequestIdempotencyTest（编排层幂等：全流程一次/回放已消费 take/复用未完成 take/异常时释放锁） | 无需外部环境 |
 | 手工集成测试（ManualIT） | StockSettlementIdempotencyManualIT（场景 B 并发预扣不超卖、C/D 同一 orderId 二次结算被 UNIQUE 拦截）；DrawExecManualIT 等 legacy 场景 | 本机 MySQL+Redis，`mvn test -Dtest='*ManualIT'` |
 
-运行要求：MySQL（全局库 lottery 13306、分片库 lottery_01/02）、Redis localhost:6379、可选 Kafka localhost:9092；
-新库执行完整 Schema，历史库先核对前置结构再执行 V5。详见[部署说明](draw-schema-refactor.md)。
+运行要求：MySQL（lottery，端口 13306）、Redis localhost:6379、可选 Kafka localhost:9092；
+新库执行完整 Schema，历史库先核对 V5 前置结构再执行 V6。详见 [部署说明](single-database.md)。
 
-## 6. dbRouterForGem 使用记录与已知限制（本次未重写该组件）
+## 6. 部署与请求归属
 
-1. **Hash 路由算法**：`idx = (size - 1) & (hash ^ hash >>> 16)`，`size = dbCount×tbCount = 8`。
-   隐含前提——size 必须为 2 的幂，否则掩码会造成分布倾斜；当前 2库×4表=8 满足。
-2. **SQL 替换正则** `(from|into|update)\s+(\w{1,})`：
-   * 只对声明了 `@DBRouterStrategy(splitTable=true)` 的 DAO 生效（仅 `draw_order`）；
-   * JOIN 右表、子查询内别名前的第二张分表不会被替换 ⇒ 当前 SQL 全部单表访问，无 JOIN 需求；
-   * 订单相关查询始终携带 `u_id` 条件，确保在正确分片上执行。
-3. **ThreadLocal 清理**：所有手动 `doRouter` 的调用路径都以 try/finally `clear()` 收尾
-   （现集中在 DrawParticipationRepository.takeParticipation/consumeTake、OrderRepository.saveDrawOrderWithTakeLock/scanByShard）。
-4. **限制不是 bug 但要知道**：不支持跨分片聚合查询、不支持分布式自增主键以外的全局二级索引；
-   这正是本系统把“需要全量扫描”的数据（outbox/补偿）设计为按 shard 显式遍历的原因。
-5. 定位：用于理解路由原理的轻量自研组件，**不是**生产级 ShardingSphere 替代品；本次重构不重写该 repo。
-
-抽奖请求归属、未完成请求恢复和两库约束迁移见 [抽奖幂等接口说明](draw-request-idempotency.md)。
+[单库部署](single-database.md) 记录历史分片数据合并与切换步骤。[抽奖幂等接口](draw-request-idempotency.md) 记录请求归属和未完成请求恢复。
 
 最终一轮的活动创建、分页、预热恢复、库存分歧及真实 HTTP 主链路证据见[最终正确性与 E2E 报告](final-correctness-e2e.md)。
 

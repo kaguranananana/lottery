@@ -27,7 +27,7 @@
 
 ## 事实来源与部署前提
 
-MySQL 保存参与记录、订单与库存结算事实；Redis 锁用于并发控制，不能证明业务已完成。全局库为 lottery，用户分片库为 lottery_01/02；订单表每库四张，参与与次数表仅分库。路由与迁移边界见[数据库规范](./backend/database-guidelines.md)。
+MySQL 保存参与记录、订单与库存结算事实；Redis 锁用于并发控制，不能证明业务已完成。单一 MySQL 库中的八张表承载这些事实，HTTP 入口先校验身份并限流。表结构与迁移边界见[数据库规范](./backend/database-guidelines.md)。
 
 [application.yml](../../lottery-interfaces/src/main/resources/application.yml) 的本地配置为 HTTP 8080、MySQL 13306、Redis 6379、Kafka 9092；XXL-Job admin 为 7397，executor 为 9999。运行前核对连接配置与执行器日志目录。初始化 Trellis 不启动服务、不执行 SQL，也不改变运行配置。
 

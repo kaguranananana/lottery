@@ -2,7 +2,7 @@ package com.anontokyo.lottery.test.manual;
 
 import com.anontokyo.lottery.LotteryApplication;
 import com.anontokyo.lottery.application.mq.producer.KafkaProducer;
-import com.anontokyo.lottery.application.worker.LotteryXxlJob;
+import com.anontokyo.lottery.application.worker.LotteryScheduledTasks;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
@@ -67,7 +67,7 @@ public class MqMiddlewareE2eManualIT {
     @Autowired private IDrawOrderDao orderDao;
     @Autowired private IOrderRepository orders;
     @Autowired private IDrawConfigRepository strategies;
-    @Autowired private LotteryXxlJob job;
+    @Autowired private LotteryScheduledTasks job;
     @Autowired private KafkaProducer producer;
     @Autowired private KafkaListenerEndpointRegistry listeners;
     @Autowired private StringRedisTemplate redis;
@@ -128,13 +128,11 @@ public class MqMiddlewareE2eManualIT {
         for (int i = 0; i < 8; i++) {
             rows.add(createOrder("e2e" + IDS.incrementAndGet(), 0, 0));
         }
-        // 真实单表扫描、Redis dispatch marker、Kafka、结算事务、发奖消费者连续执行。
-        job.awardStockSettlementOutboxJobHandler();
+        // 真实单表租约、Kafka、结算事务、发奖消费者连续执行。
+        job.recoverStock();
         for (DrawOrder row : rows) {
             awaitCompleted(row);
             assertEquals(1, ledgerCount(row));
-            await("发送回调清理 dispatch marker", () -> !redis.hasKey(Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_MQ_DISPATCHING(row.getOrderId())));
-            assertFalse(redis.hasKey(Constants.RedisKey.KEY_LOTTERY_AWARD_FULFILLMENT_PROCESSING(row.getOrderId())));
         }
         assertEquals(92, dbStock());
         assertEquals("92", redis.opsForValue().get(Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_COUNT(drawConfigId, "C")));
@@ -146,18 +144,16 @@ public class MqMiddlewareE2eManualIT {
         DrawOrder row = createOrder(null, 0, 0);
         Gate stock = callbacks.hold(STOCK_TOPIC, row.getOrderId());
         Gate invoice = callbacks.hold(INVOICE_TOPIC, row.getOrderId());
-        job.awardStockSettlementOutboxJobHandler();
+        job.recoverStock();
         Attempt stockSend = stock.attempt(0);
         Attempt invoiceSend = invoice.attempt(0);
         // Broker 已确认消息，两条真实消费者均已完成，但调度任务的发送通知仍未执行。
         awaitCompleted(row);
-        assertTrue(redis.hasKey(Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_MQ_DISPATCHING(row.getOrderId())));
         Date completedAt = query(row).getUpdateTime();
         stockSend.success();
         invoiceSend.success();
         assertCompleted(row);
         assertEquals(completedAt, query(row).getUpdateTime());
-        await("dispatch marker 清理", () -> !redis.hasKey(Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_MQ_DISPATCHING(row.getOrderId())));
         awaitCommitted();
     }
 
@@ -166,7 +162,7 @@ public class MqMiddlewareE2eManualIT {
         DrawOrder row = createOrder(null, 0, 0);
         Gate stock = callbacks.hold(STOCK_TOPIC, row.getOrderId());
         Gate invoice = callbacks.hold(INVOICE_TOPIC, row.getOrderId());
-        job.awardStockSettlementOutboxJobHandler();
+        job.recoverStock();
         Attempt stockSend = stock.attempt(0);
         Attempt invoiceSend = invoice.attempt(0);
         awaitCompleted(row);
@@ -182,27 +178,28 @@ public class MqMiddlewareE2eManualIT {
     }
 
     @Test
-    public void realRedisExpiryAndOutOfOrderRetryCallbacksRemainSafe() throws Exception {
+    public void expiredDatabaseLeaseAndOutOfOrderRetryCallbacksRemainSafe() throws Exception {
         topicContainer(STOCK_TOPIC).stop();
         DrawOrder row = createOrder(null, 0, 0);
         Gate gate = callbacks.hold(STOCK_TOPIC, row.getOrderId());
-        job.awardStockSettlementOutboxJobHandler();
+        job.recoverStock();
         gate.attempt(0).failure();
-        assertEquals(Integer.valueOf(2), query(row).getStockSettlementEventStatus());
-        // 首次 FAIL 必须被生产补偿扫描重新投递。
-        job.awardStockSettlementOutboxJobHandler();
+        await("发送失败持久化", () -> query(row).getStockSettlementEventStatus() == 2);
+        // 退避期内的扫描不会重发，推进数据库时钟后使用生产扫描恢复。
+        job.recoverStock();
+        assertEquals(1, gate.attempts.size());
+        age(row);
+        job.recoverStock();
         gate.attempt(1);
         for (int index = 2; index < 4; index++) {
-            // 真实 Redis marker 过期模拟异步回调长于锁窗口，允许后续 worker 再次投递。
-            String marker = Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_MQ_DISPATCHING(row.getOrderId());
-            redis.expire(marker, 1, TimeUnit.SECONDS);
-            await("Redis dispatch marker 过期", () -> !redis.hasKey(marker));
-            job.awardStockSettlementOutboxJobHandler();
+            // 模拟租约到期，仍保留旧回调句柄以验证代数 CAS。
+            age(row);
+            job.recoverStock();
             gate.attempt(index);
         }
         // 最新成功先到，旧失败后到；恢复真实消费后，最旧的成功通知最后到。
         gate.attempt(3).success();
-        assertEquals(Integer.valueOf(3), query(row).getStockSettlementEventStatus());
+        await("最新代数 SENT", () -> query(row).getStockSettlementEventStatus() == 3);
         gate.attempt(2).failure();
         assertEquals(Integer.valueOf(3), query(row).getStockSettlementEventStatus());
         topicContainer(STOCK_TOPIC).start();
@@ -219,7 +216,7 @@ public class MqMiddlewareE2eManualIT {
         DrawOrder row = createOrder(null, 3, 0);
         age(row);
         // 不改生产超时阈值，直接将隔离 fixture 的数据库时间设置为已过期。
-        job.awardStockSettlementOutboxJobHandler();
+        job.recoverStock();
         awaitCompleted(row);
         assertEquals(1, ledgerCount(row));
         assertEquals(99, dbStock());
@@ -233,9 +230,13 @@ public class MqMiddlewareE2eManualIT {
             // 库存已结算、发奖未完成的恢复窗口，用真实库存 Repository 建立事实。
             assertTrue(strategies.settleAwardStock(stock(row)));
             orders.updateStockSettlementEventStatus(row.getuId(), row.getOrderId(), 1);
+            if (state == 1) {
+                // 历史误写 COMPLETE 的待发奖订单使用 V7 回填约定。
+                sql("UPDATE lottery.draw_order SET fulfillment_event_status=3 WHERE order_id=?", row.getOrderId());
+            }
             age(row);
             Gate gate = callbacks.hold(INVOICE_TOPIC, row.getOrderId());
-            job.lotteryOrderMQStateJobHandler();
+            job.recoverFulfillment();
             Attempt sent = gate.attempt(0);
             awaitCompleted(row);
             // 发奖已完成后才执行补偿发送成功回调，终态必须保持。
@@ -250,7 +251,7 @@ public class MqMiddlewareE2eManualIT {
     @Test
     public void duplicateBrokerMessagesDoNotRepeatInventoryOrGrant() throws Exception {
         DrawOrder row = createOrder(null, 0, 0);
-        job.awardStockSettlementOutboxJobHandler();
+        job.recoverStock();
         awaitCompleted(row);
         Date grantedAt = query(row).getFulfilledAt();
         AwardFulfillmentEvent invoice = orders.queryFulfillmentEventByOrderId(row.getuId(), row.getOrderId());
@@ -275,7 +276,7 @@ public class MqMiddlewareE2eManualIT {
         int acceptedSends = callbacks.realSends.size();
         try {
             compose("stop", "kafka");
-            job.awardStockSettlementOutboxJobHandler();
+            job.recoverStock();
             // Kafka 确实不可用，真实 Future 超时经生产失败回调落 FAIL。
             await("真实 broker 停机后的 FAIL", () -> query(row).getStockSettlementEventStatus() == 2);
             assertEquals(acceptedSends + 1, callbacks.realSends.size());
@@ -284,12 +285,12 @@ public class MqMiddlewareE2eManualIT {
             // KafkaTemplate 的 Future 用 KafkaProducerException 包装原始 broker 超时，检查完整 cause 链。
             assertTrue(rejected.getCause() instanceof org.springframework.kafka.core.KafkaProducerException);
             assertTrue(rejected.getCause().getCause() instanceof org.apache.kafka.common.errors.TimeoutException);
-            await("真实发送失败清理 marker", () -> !redis.hasKey(Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_MQ_DISPATCHING(row.getOrderId())));
         } finally {
             // 用真实容器健康检查等待 broker 恢复，不将恢复前的连接失败当成补偿结果。
             compose("up", "-d", "--wait", "kafka");
         }
-        job.awardStockSettlementOutboxJobHandler();
+        age(row);
+        job.recoverStock();
         await("恢复后补偿发送成功", () -> query(row).getStockSettlementEventStatus() == 3);
         topicContainer(STOCK_TOPIC).start();
         awaitCompleted(row);
@@ -304,7 +305,7 @@ public class MqMiddlewareE2eManualIT {
         Gate gate = callbacks.hold(STOCK_TOPIC, row.getOrderId());
         // 真实 Redis 已预扣且用户订单存在，但数据库库存损坏为零。
         sql("UPDATE lottery.draw_config_prize SET award_surplus_count=0 WHERE draw_config_id=?", drawConfigId);
-        job.awardStockSettlementOutboxJobHandler();
+        job.recoverStock();
         Attempt sent = gate.attempt(0);
         await("库存消费返回明确失败状态", () -> query(row).getStockSettlementEventStatus() == 2 || query(row).getStockSettlementEventStatus() == 4);
         assertEquals("库存业务分歧必须待对账，不能进入自动重试 FAIL", Integer.valueOf(4), query(row).getStockSettlementEventStatus());
@@ -312,14 +313,14 @@ public class MqMiddlewareE2eManualIT {
         assertEquals(0, dbStock());
         // 发送成功迟于库存分歧，不能解除 BLOCKED。
         sent.success();
-        for (int i = 0; i < 3; i++) job.awardStockSettlementOutboxJobHandler();
+        for (int i = 0; i < 3; i++) job.recoverStock();
         assertEquals(1, gate.attempts.size());
         assertEquals(Integer.valueOf(0), query(row).getAwardFulfillmentStatus());
         awaitCommitted();
         // 只修复 fixture 的错误库存，显式按订单释放原有 Outbox 后继续原业务链。
         sql("UPDATE lottery.draw_config_prize SET award_surplus_count=100 WHERE draw_config_id=?", drawConfigId);
-        sql("UPDATE " + "lottery.draw_order" + " SET stock_settlement_event_status=0 WHERE order_id=? AND stock_settlement_event_status=4", row.getOrderId());
-        job.awardStockSettlementOutboxJobHandler();
+        sql("UPDATE " + "lottery.draw_order" + " SET stock_settlement_event_status=0,stock_retry_at=NOW(3),stock_attempt=stock_attempt+1 WHERE order_id=? AND stock_settlement_event_status=4", row.getOrderId());
+        job.recoverStock();
         awaitCompleted(row);
         gate.attempt(1).success();
         assertEquals(1, ledgerCount(row));
@@ -341,7 +342,7 @@ public class MqMiddlewareE2eManualIT {
         assertEquals("测试容器操作失败：" + command, 0, process.exitValue());
     }
 
-    private DrawOrder createOrder(String user, int stockState, int invoiceState) {
+    private DrawOrder createOrder(String user, int stockState, int invoiceState) throws SQLException {
         long id = IDS.incrementAndGet();
         DrawOrder row = new DrawOrder();
         row.setuId(user == null ? "e2e" + id : user);
@@ -356,9 +357,10 @@ public class MqMiddlewareE2eManualIT {
         row.setAwardContent("本地模拟发奖");
         row.setStockSettlementEventStatus(stockState);
         row.setFulfillmentEventStatus(invoiceState);
-        // 真实 Redis 库存预扣，订单由生产 DAO 路由写入，之后完全走生产异步链路。
+        // 真实 Redis 库存预扣，订单由生产 DAO 写入，之后完全走生产异步链路。
         assertTrue(strategies.deductStockByRedis(drawConfigId, "C").isSuccess());
         orderDao.insert(row);
+        age(row);
         return row;
     }
 
@@ -381,8 +383,8 @@ public class MqMiddlewareE2eManualIT {
     }
 
     private void age(DrawOrder row) throws SQLException {
-        sql("UPDATE " + "lottery.draw_order"
-                + " SET update_time=DATE_SUB(NOW(),INTERVAL 11 MINUTE) WHERE order_id=?", row.getOrderId());
+        sql("UPDATE lottery.draw_order SET stock_retry_at=IF(stock_retry_at IS NULL,NULL,NOW(3)),"
+                + " fulfillment_retry_at=IF(fulfillment_retry_at IS NULL,NULL,NOW(3)) WHERE order_id=?", row.getOrderId());
     }
 
     private int ledgerCount(DrawOrder row) throws SQLException {

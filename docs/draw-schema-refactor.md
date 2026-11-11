@@ -1,5 +1,7 @@
 # 抽奖配置、订单与数据库升级
 
+> 本文记录 V5 历史结构。当前版本见 [V6 单库迁移](single-database.md)。
+
 ## 命名和数据审计
 
 | 原名称 | 当前名称 | 业务用途 |
@@ -36,7 +38,7 @@ HTTP 请求和响应字段、Kafka topic/group/key 与 JSON 字段 `strategyId`�
 
 ## 执行顺序
 
-1. **新库**执行 [lottery-schema.sql](sql/lottery-schema.sql)。脚本创建三个库、17 张表，无历史迁移依赖。可选执行 [lottery-demo-seed.sql](sql/lottery-demo-seed.sql)，再通过活动生命周期任务预热奖池并开启活动。
+1. **新库**执行 [lottery-schema.sql](sql/lottery-v5-schema.sql)。脚本创建三个库、17 张表，无历史迁移依赖。可选执行 [lottery-demo-seed.sql](sql/lottery-demo-seed.sql)，再通过活动生命周期任务预热奖池并开启活动。
 2. **已有库**停旧版 HTTP 写入、消费者和 XXL-Job 任务。备份三个库并验证可恢复性，核对 SQL 脚本、视图、触发器及下游查询的引用。升级要求八张订单表已具备库存 Outbox 和 `take_id`，账本已建，参与表具备 V3 请求约束，活动表已移除 V4 的两列。只补尚未执行的历史迁移。运行库中一套已符合前置结构，另一套还需补 V2、V3、V4，库存 Outbox 已存在。
 3. 在备份副本演练 [V5__draw_config_and_order.sql](sql/V5__draw_config_and_order.sql)，再通过 MySQL 客户端执行一次。遇到订单号为空或分片内重复时，先按报出的物理表核对历史数据。MySQL DDL 会分步提交，执行错误须停发版、依据备份和已完成步骤恢复。仅前置或订单号检查失败，且确认没有业务表变更时，清理 `lottery.migrate_draw_config_and_order` 临时过程再执行。已部分执行的库先按备份恢复。
 4. 用新版应用检查 17 张表、八分片回放、积压补偿与库存余额，再恢复流量。回退应用时须同时恢复旧结构和数据。真实库存 Key 与 Kafka 积压应随原有部署流程维护。

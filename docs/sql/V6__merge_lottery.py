@@ -6,6 +6,7 @@ from pathlib import Path
 
 BASE = Path(__file__).resolve().parent
 SHARDS = ('lottery_01', 'lottery_02')
+OUTBOX_COLUMNS = {'stock_retry_at', 'stock_attempt', 'fulfillment_retry_at', 'fulfillment_attempt', 'stock_settled_at'}
 GLOBAL = ('activity', 'award', 'draw_config', 'draw_config_prize', 'award_stock_settlement')
 
 
@@ -18,7 +19,8 @@ def migration(target):
     statements = []
     for table, definition in re.findall(r'CREATE TABLE `(\w+)` \(\n(.*?)\n\) ENGINE=', ddl, re.S):
         columns = ', '.join(f'`{name}`' for name, spec in re.findall(r'^  `(\w+)` (.*)', definition, re.M)
-                            if 'GENERATED ALWAYS' not in spec and (name != 'id' or table in GLOBAL))
+                            if 'GENERATED ALWAYS' not in spec and name not in OUTBOX_COLUMNS
+                            and (name != 'id' or table in GLOBAL))
         if table in GLOBAL:
             sources = [f'lottery.{table}']
         elif table == 'draw_order':
@@ -27,6 +29,7 @@ def migration(target):
             sources = [f'{schema}.{table}' for schema in SHARDS]
         for source in sources:
             statements.append(f'  INSERT INTO `{table}` ({columns}) SELECT {columns} FROM {source} ORDER BY id;')
+    backfill = (BASE / 'V7__outbox_retry.sql').read_text().split('-- BEGIN OUTBOX BACKFILL\n')[1]
     return ddl + '''
 -- 源库必须已停写。业务 ID、时间、Outbox 状态和账本原样复制。
 SET SESSION sql_mode = 'STRICT_ALL_TABLES,NO_ENGINE_SUBSTITUTION';
@@ -54,7 +57,7 @@ BEGIN
          OR NOT (BINARY o.award_id <=> BINARY s.award_id)) THEN
     SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'V6 settlement/order ownership conflict';
   END IF;
-  COMMIT;
+''' + backfill + '''  COMMIT;
 END//
 DELIMITER ;
 CALL merge_v5();

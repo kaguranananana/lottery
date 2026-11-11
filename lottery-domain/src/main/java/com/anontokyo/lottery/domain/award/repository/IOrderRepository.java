@@ -33,15 +33,18 @@ public interface IOrderRepository {
     /** 库存条件扣减失败：INIT/FAIL/SENT 转 BLOCKED 等待对账；持久化失败抛出，COMPLETE 不回退。 */
     void markStockSettlementFailed(String uId, Long orderId);
 
-    /**
-     * 扫描待补偿的发奖MQ订单。
-     */
-    List<AwardFulfillmentEvent> scanFulfillmentEventStatus(int limit);
+    enum OutboxKind { STOCK, FULFILLMENT }
 
-    /**
-     * Scan award stock settlement outbox.
-     */
-    List<AwardStockSettlementVO> scanStockSettlementEventStatus(int limit);
+    /** 读取到期候选，投递前仍需在数据库领取本次发送。 */
+    List<DrawOrderVO> scanOutbox(OutboxKind kind, int limit);
+
+    /** CAS 推进投递代数，并设置可恢复的发送租期。 */
+    boolean claimOutbox(OutboxKind kind, long orderId, int attempt, boolean immediate, int leaseSeconds);
+
+    /** 只允许当前代数的回调更新下次重试时间。 */
+    void finishOutbox(OutboxKind kind, long orderId, int attempt, boolean sent, int delaySeconds);
+
+    DrawOrderVO findOrder(String uId, Long orderId);
 
     /**
      * 查询订单是否已经完成发奖。
@@ -59,7 +62,7 @@ public interface IOrderRepository {
     DrawOrderVO queryOrderByTakeId(String uId, Long takeId);
 
     /**
-     * 保存中奖订单并锁定对应参与记录（按 uId 路由 + 本地事务由 infrastructure 承担）。
+     * 保存中奖订单并锁定对应参与记录（本地事务由 infrastructure 承担）。
      * @return SUCCESS / NO_UPDATE(锁定失败) / INDEX_DUP(订单重复)
      */
     Constants.ResponseCode saveDrawOrderWithTakeLock(DrawOrderVO drawOrder);

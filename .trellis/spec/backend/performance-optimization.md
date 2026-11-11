@@ -26,7 +26,7 @@ JMeter 预处理器的普通异常不会自动停止后续 HTTP；用户耗尽�
 补偿空扫描：原 stock 状态索引命中所有已结算历史，LIMIT 不限制零候选时底层读取量；grant 前导键排除已发奖历史。存在 FAIL、超时 INIT/SENT 或旧 COMPLETE 未发奖时仍返回原候选集合，真实 award_fulfillment_status=2 也在未完成范围内，不能把 `!=1` 改成 `=0`；库存未结算、BLOCKED、已发奖及 NULL 原排除语义不变。
 
 ## 6. 验证断言
-PerformanceSqlManualIT 运行于明确指定 13329 的专属 schema，验证锁、首次/耗尽/并发/幂等、原子账本与字段创建。MqCallbackStateTest 证明扫描投递不预读且仍推进 SENT；FulfillmentEventStatusCasManualIT 用真实 Mapper 验证迟到通知和重投。HTTP 正确性再核对两库八表、库存、take、order、ledger 和 Kafka 位点。Mock 结果不能替代真实链路。
+PerformanceSqlManualIT 运行于明确指定 13339 的专属 schema，验证锁、首次/耗尽/并发/幂等、原子账本与字段创建。MqCallbackStateTest 证明扫描投递不预读且仍推进 SENT；FulfillmentEventStatusCasManualIT 用真实 Mapper 验证迟到通知和重投。HTTP 正确性再核对单表数据、库存、take、order、ledger 和 Kafka 位点。Mock 结果不能替代真实链路。
 
 InvoiceCompensationIndexManualIT 在同一专用端口自建 schema，使用生产 Mapper/BoundSql 和迁移定义，验证五千已完成订单空扫描原读取≥5000、新索引读取0；混合补偿候选集合不变、底层读取≤10，表行数不变。断言实际读取量与访问键，不写不稳定的毫秒门槛。真实八表对照保留全部执行树、交替顺序、初始计数/状态及原始换页端点；阶段/SQL digest、同负载全链路审计与反向读路径实验分别报告。
 

@@ -26,11 +26,11 @@ def verify(container):
             raise RuntimeError(result.stderr)
         return result.stdout.strip()
 
-    def definitions():
+    def definitions(*schemas):
         dump = subprocess.check_output(
             ['docker', 'exec', container, 'mysqldump', '-h127.0.0.1', '-uroot', '--default-character-set=utf8mb4',
              '--no-data', '--skip-comments', '--skip-add-drop-table', '--skip-set-charset',
-             '--no-tablespaces', '--databases', *SCHEMAS], text=True, timeout=30)
+             '--no-tablespaces', '--databases', *(schemas or SCHEMAS)], text=True, timeout=30)
         # 历史数据的自增位置依旧保留，只比较结构定义。
         return re.sub(r' AUTO_INCREMENT=\d+', '', dump)
 
@@ -131,16 +131,33 @@ def verify(container):
         INSERT INTO lottery_02.draw_order_002(id,u_id,activity_id,order_id,take_id,draw_config_id)
             VALUES (1,'v',7,201,21,7);
     """)
+    sql("INSERT INTO lottery_02.draw_participation (u_id,take_id,activity_id,state,draw_config_id,request_id)"
+        " VALUES ('u',30,7,1,7,'A');")
+    merge('lottery_single_request_conflict', 'uk_user_activity_request')
+    assert sql('SELECT COUNT(*) FROM lottery_single_request_conflict.draw_participation;') == '0'
+    sql('DELETE FROM lottery_02.draw_participation WHERE take_id=30;')
+    sql('UPDATE lottery_02.draw_order_002 SET activity_id=8 WHERE order_id=201;')
+    merge('lottery_single_ownership_conflict', 'order/participation ownership conflict')
+    assert sql('SELECT COUNT(*) FROM lottery_single_ownership_conflict.draw_order;') == '0'
+    sql('UPDATE lottery_02.draw_order_002 SET activity_id=7 WHERE order_id=201;')
+
     report = merge('lottery_single')
     assert report == '2\n0', report
+    fresh_v6 = source('docs/sql/lottery-schema.sql')
+    sql(fresh_v6.replace('CREATE DATABASE lottery ', 'CREATE DATABASE lottery_clean_fixture ')
+                .replace('USE lottery;', 'USE lottery_clean_fixture;'))
+    assert definitions('lottery_single').replace('lottery_single', 'lottery_clean_fixture') == definitions('lottery_clean_fixture')
     assert sql('SELECT COUNT(*) FROM information_schema.tables WHERE table_schema="lottery_single";') == '8'
     assert sql('SELECT COUNT(*),COUNT(DISTINCT id) FROM lottery_single.draw_order;') == '4\t4'
     assert sql('SELECT COUNT(*),SUM(left_count) FROM lottery_single.user_activity_quota;') == '2\t7'
     assert sql('SELECT COUNT(*) FROM lottery_single.draw_order o JOIN lottery_single.draw_participation p'
                ' USING(take_id) WHERE o.u_id=p.u_id;') == '2'
-    assert sql('SELECT legacy_uuid,fulfilled_at FROM lottery_single.draw_order WHERE order_id=77;') == (
+    assert sql('SELECT legacy_uuid,CAST(fulfilled_at AS DATETIME) FROM lottery_single.draw_order WHERE order_id=77;') == (
         'earlier-id\t2026-11-01 00:00:00')
     assert sql('SELECT COUNT(*) FROM lottery_single.award_stock_settlement WHERE order_id=77;') == '1'
+    assert sql('SELECT fulfillment_retry_at IS NULL, fulfillment_event_status'
+               ' FROM lottery_single.draw_order WHERE order_id=77;') == '1\t1'
+    assert sql('SELECT fulfillment_retry_at IS NOT NULL FROM lottery_single.draw_order WHERE order_id=78;') == '1'
     assert sql('SELECT COUNT(*) FROM lottery_01.draw_order_001;') == '2'
     sql("INSERT INTO lottery_single.draw_order (order_id,take_id) VALUES(900,21);", 'uk_take_id')
     print('V5 历史升级、V6 单库八表、主键重编号、关联与状态保留、跨片冲突事务回滚通过。')

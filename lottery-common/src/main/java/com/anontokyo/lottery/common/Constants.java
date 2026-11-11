@@ -324,27 +324,6 @@ public class Constants {
         }
 
 
-        // DrawConfig-award stock MQ processing key
-        private static final String LOTTERY_STRATEGY_AWARD_STOCK_MQ_PROCESSING = "lottery_strategy_award_stock_mq_processing_";
-
-        public static String KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_MQ_PROCESSING(Long orderId) {
-            return LOTTERY_STRATEGY_AWARD_STOCK_MQ_PROCESSING + orderId;
-        }
-
-        // DrawConfig-award stock MQ dispatch marker
-        private static final String LOTTERY_STRATEGY_AWARD_STOCK_MQ_DISPATCHING = "lottery_strategy_award_stock_mq_dispatching_";
-
-        public static String KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_MQ_DISPATCHING(Long orderId) {
-            return LOTTERY_STRATEGY_AWARD_STOCK_MQ_DISPATCHING + orderId;
-        }
-
-        // Invoice MQ processing key
-        private static final String LOTTERY_INVOICE_MQ_PROCESSING = "lottery_invoice_mq_processing_";
-
-        public static String KEY_LOTTERY_AWARD_FULFILLMENT_PROCESSING(Long orderId) {
-            return LOTTERY_INVOICE_MQ_PROCESSING + orderId;
-        }
-
         // User-activity draw inflight key
         private static final String LOTTERY_DRAW_IN_FLIGHT = "lottery_draw_inflight_";
 

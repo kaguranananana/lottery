@@ -25,14 +25,14 @@ public abstract class AbstractAwardFulfillmentHandler implements AwardFulfillmen
     public AwardFulfillmentResult fulfill(AwardFulfillmentEvent order) {
         // TODO: 真实第三方渠道接入时，把 orderId 作为 idempotencyKey 调用外部接口，
         //  成功后再执行下方本地标记；当前为 adapter stub，模拟不同发奖渠道。
-        logger.info("fulfill award via {} uId:{} orderId:{} awardId:{} awardContent:{}",
+        logger.debug("fulfill award via {} uId:{} orderId:{} awardId:{} awardContent:{}",
                 getClass().getSimpleName(), order.getuId(), order.getOrderId(), order.getAwardId(),
                 order.getAwardContent());
 
         boolean first = orderRepository.markUserAwardGranted(
                 order.getuId(), order.getOrderId(), order.getAwardId());
         if (!first) {
-            logger.info("award already granted (idempotent skip) uId:{} orderId:{}", order.getuId(),
+            logger.debug("award already granted (idempotent skip) uId:{} orderId:{}", order.getuId(),
                     order.getOrderId());
         }
         return new AwardFulfillmentResult(order.getuId(), Constants.AwardState.SUCCESS,

@@ -53,6 +53,24 @@ public class PerfTiming {
         return result;
     }
 
+    public static Map<String, Object> scheduling() {
+        long calls = 0;
+        long nanos = 0;
+        long errors = 0;
+        for (Map.Entry<String, Timing> entry : VALUES.entrySet()) {
+            if (entry.getKey().startsWith("stage/LotteryScheduledTasks.")) {
+                calls += entry.getValue().calls.sum();
+                nanos += entry.getValue().nanos.sum();
+                errors += entry.getValue().errors.sum();
+            }
+        }
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("jobCalls", calls);
+        result.put("jobNanos", nanos);
+        result.put("jobFailure", errors == 0 ? null : "scheduled task errors: " + errors);
+        return result;
+    }
+
     @Bean public SqlTiming perfSqlTiming() { return new SqlTiming(); }
     @Bean public StageTiming perfStageTiming() { return new StageTiming(); }
 
@@ -64,13 +82,13 @@ public class PerfTiming {
     public static class SqlTiming implements Interceptor {
         @Override public Object intercept(Invocation invocation) throws Throwable {
             MappedStatement statement = (MappedStatement) invocation.getArgs()[0];
-            // 路由键和线程角色保留分库差异，后台线程与 HTTP SQL 分别汇总。
+            // 按线程角色分别汇总后台和 HTTP SQL。
             String thread = Thread.currentThread().getName();
             String role = ROLE.get();
             // 异步发送回调运行在生产者网络线程，单独计量其数据库状态写入。
             if (role == null) role = thread.startsWith("http") ? "http"
                     : thread.startsWith("kafka-producer-network-thread") ? "producer-callback" : "async";
-            // 读取实际事务连接的 catalog，避免嵌套路由清理后将分库误记为全局库。
+            // 以事务连接的 catalog 记录实际使用的库。
             String schema = ((Executor) invocation.getTarget()).getTransaction().getConnection().getCatalog();
             String key = "sql/" + role + "/" + schema + "/" + statement.getId();
             long start = System.nanoTime();
@@ -91,11 +109,20 @@ public class PerfTiming {
     /** 业务阶段为包含式计时，不能把嵌套方法耗时直接相加。 */
     @Aspect
     public static class StageTiming {
+        @Around("execution(* com.anontokyo.lottery.application.mq.producer.OutboxDispatcher.afterOrderCommit(..))")
+        public Object holdAfterCommit(ProceedingJoinPoint call) throws Throwable {
+            // 仅故障演练进程使用，在事务已提交、入队之前暂停，供外部终止进程。
+            if (Boolean.getBoolean("lottery.perf.hold-after-commit")) {
+                new java.util.concurrent.CountDownLatch(1).await();
+            }
+            return call.proceed();
+        }
+
         @Around("execution(* com.anontokyo.lottery.infrastructure.repository.DrawParticipationRepository.takeParticipation(..)) || "
                 + "execution(* com.anontokyo.lottery.infrastructure.repository.OrderRepository.saveDrawOrderWithTakeLock(..)) || "
                 + "execution(* com.anontokyo.lottery.infrastructure.repository.DrawConfigRepository.settleAwardStock(..)) || "
-                + "execution(* com.anontokyo.lottery.infrastructure.repository.OrderRepository.scan*ByShard(..)) || "
-                + "execution(* com.anontokyo.lottery.application.worker.LotteryXxlJob.*JobHandler(..)) || "
+                + "execution(* com.anontokyo.lottery.infrastructure.repository.OrderRepository.scan*(..)) || "
+                + "execution(* com.anontokyo.lottery.application.worker.LotteryScheduledTasks.*(..)) || "
                 + "execution(* com.anontokyo.lottery.application.mq.producer.KafkaProducer.send*(..)) || "
                 + "execution(* com.anontokyo.lottery.application.mq.consumer.*.onMessage(..))")
         public Object time(ProceedingJoinPoint call) throws Throwable {
@@ -118,7 +145,7 @@ public class PerfTiming {
                     @Override public void nack(long sleep) { original.nack(sleep); }
                     @Override public void nack(int index, long sleep) { original.nack(index, sleep); }
                 };
-            } else if (call.getSignature().getName().endsWith("JobHandler")) {
+            } else if (call.getSignature().getDeclaringTypeName().endsWith("LotteryScheduledTasks")) {
                 // 扫描和该任务线程上的逐条投递 SQL 使用同一个任务阶段标签。
                 ROLE.set("job/" + call.getSignature().getName());
             }

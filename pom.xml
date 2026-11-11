@@ -57,12 +57,6 @@
                 <version>3.8</version>
             </dependency>
 
-            <!-- XXL-JOB核心依赖 -->
-            <dependency>
-                <groupId>com.xuxueli</groupId>
-                <artifactId>xxl-job-core</artifactId>
-                <version>2.3.0</version>
-            </dependency>
 
         </dependencies>
     </dependencyManagement>

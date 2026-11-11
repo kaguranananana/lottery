@@ -17,7 +17,9 @@ CREATE TABLE `activity` (
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
   PRIMARY KEY (`id`),
-  UNIQUE KEY `unique_activity_id` (`activity_id`)
+  UNIQUE KEY `unique_activity_id` (`activity_id`),
+  KEY `idx_activity_start` (`state`,`begin_date_time`,`id`),
+  KEY `idx_activity_end` (`state`,`end_date_time`,`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='活动配置';
 
 CREATE TABLE `award` (
@@ -108,7 +110,7 @@ CREATE TABLE `draw_order` (
   `draw_config_id` bigint DEFAULT NULL COMMENT '抽奖配置ID',
   `grant_type` tinyint DEFAULT NULL COMMENT '下单时的历史发放方式快照',
   `scheduled_at` datetime DEFAULT NULL COMMENT '下单时的计划发奖时间',
-  `fulfilled_at` datetime DEFAULT NULL COMMENT '实际发奖完成时间',
+  `fulfilled_at` datetime(3) DEFAULT NULL COMMENT '实际发奖完成时间',
   `award_fulfillment_status` tinyint DEFAULT NULL COMMENT '实际发奖：0待发放、1已发放、2失败',
   `award_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '发奖ID',
   `award_type` tinyint DEFAULT NULL COMMENT '奖品类型（1:文字描述、2:兑换码、3:优惠券、4:实物奖品）',
@@ -117,12 +119,18 @@ CREATE TABLE `draw_order` (
   `legacy_uuid` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '历史防重标识',
   `fulfillment_event_status` tinyint DEFAULT NULL COMMENT '发奖事件：0待投递、1消费完成、2投递失败、3已投递',
   `stock_settlement_event_status` tinyint NOT NULL DEFAULT '1' COMMENT '库存结算事件：0待投递、1结算完成、2投递失败、3已投递、4待对账',
-  `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+  `stock_retry_at` datetime(3) DEFAULT NULL COMMENT '库存消息下一次可投递时间',
+  `stock_attempt` int NOT NULL DEFAULT 0 COMMENT '库存投递次数和回调代数',
+  `fulfillment_retry_at` datetime(3) DEFAULT NULL COMMENT '发奖消息下一次可投递时间',
+  `fulfillment_attempt` int NOT NULL DEFAULT 0 COMMENT '发奖投递次数和回调代数',
+  `stock_settled_at` datetime(3) DEFAULT NULL COMMENT '库存完成状态写入时间',
+  `create_time` datetime(3) DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_order_id` (`order_id`),
   UNIQUE KEY `uk_legacy_uuid` (`legacy_uuid`) USING BTREE,
-  KEY `idx_stock_event_create_time` (`stock_settlement_event_status`,`create_time`),
   UNIQUE KEY `uk_take_id` (`take_id`),
-  KEY `idx_award_fulfillment_status` (`award_fulfillment_status`)
+  KEY `idx_award_fulfillment_status` (`award_fulfillment_status`),
+  KEY `idx_stock_retry` (`stock_retry_at`,`order_id`),
+  KEY `idx_fulfillment_retry` (`fulfillment_retry_at`,`order_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='用户抽奖订单';
