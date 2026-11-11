@@ -46,7 +46,7 @@ mvn test -Dtest='*ManualIT' -Dsurefire.failIfNoSpecifiedTests=false
 
 新增 DrawRequestOwnershipManualIT 使用专用空 MySQL 实例，按 [抽奖幂等接口说明](../../../docs/draw-request-idempotency.md) 的单独命令运行并传入 lottery.it.mysql；不能把它混同为默认业务实例上的全环境 ManualIT。该测试执行生产 Mapper、路由切面、Repository 和事务，真实数据库约束测试与 Redis/抽样 Mock 的边界须同时报告。
 
-消息状态测试：MqCallbackStateTest 进入默认 mvn test 门禁；MqStateCasManualIT 须传入专用空 MySQL URL，测试自行建删 lottery_mq_cas_it，不装配分片插件。真实 Mapper/Repository CAS、并发和超时 SQL 已与 Kafka/Redis Mock 边界区分，见[消息修复说明](../../../docs/kafka-mq-state-cas.md)。
+消息状态测试：MqCallbackStateTest 进入默认 mvn test 门禁；FulfillmentEventStatusCasManualIT 须传入专用空 MySQL URL，测试自行建删 lottery_mq_cas_it，不装配分片插件。真实 Mapper/Repository CAS、并发和超时 SQL 已与 Kafka/Redis Mock 边界区分，见[消息修复说明](../../../docs/kafka-mq-state-cas.md)。
 
 MqMiddlewareE2eManualIT 在独立 Docker compose 中运行真实 MySQL 8、Redis、Kafka 与生产 Spring 组件，覆盖两库八分表、库存账本事务、实际 Kafka ack、迟到通知、重复消息与真实 broker 停机恢复。测试仅通过生产者装饰器延后 Future 通知，不使用中间件 Mock；注入失败与真实 broker 失败必须分开报告。会重建测试端口 13309 的三个 fixture schema，运行步骤与已确认的停止宽限期要求见[端到端验证记录](../../../docs/kafka-middleware-e2e.md)。
 

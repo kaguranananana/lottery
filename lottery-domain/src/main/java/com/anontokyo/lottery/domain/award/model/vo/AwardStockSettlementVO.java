@@ -1,5 +1,7 @@
 package com.anontokyo.lottery.domain.award.model.vo;
 
+import com.alibaba.fastjson.annotation.JSONField;
+
 /**
  * Award stock settlement message.
  */
@@ -7,7 +9,7 @@ public class AwardStockSettlementVO {
 
     private String uId;
     private Long orderId;
-    private Long strategyId;
+    private Long drawConfigId;
     private String awardId;
 
     public String getuId() {
@@ -26,12 +28,15 @@ public class AwardStockSettlementVO {
         this.orderId = orderId;
     }
 
-    public Long getStrategyId() {
-        return strategyId;
+    // 已投递的 Kafka 消息仍用 strategyId 标识抽奖配置。
+    @JSONField(name = "strategyId")
+    public Long getDrawConfigId() {
+        return drawConfigId;
     }
 
-    public void setStrategyId(Long strategyId) {
-        this.strategyId = strategyId;
+    @JSONField(name = "strategyId")
+    public void setDrawConfigId(Long drawConfigId) {
+        this.drawConfigId = drawConfigId;
     }
 
     public String getAwardId() {
@@ -47,7 +52,7 @@ public class AwardStockSettlementVO {
         return "AwardStockSettlementVO{" +
                 "uId='" + uId + '\'' +
                 ", orderId=" + orderId +
-                ", strategyId=" + strategyId +
+                ", drawConfigId=" + drawConfigId +
                 ", awardId='" + awardId + '\'' +
                 '}';
     }

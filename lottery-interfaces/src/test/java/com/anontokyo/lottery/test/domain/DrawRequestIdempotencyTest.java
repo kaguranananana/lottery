@@ -5,18 +5,19 @@ import com.anontokyo.lottery.application.process.draw.req.DrawProcessReq;
 import com.anontokyo.lottery.application.process.draw.res.DrawProcessResult;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.activity.model.res.PartakeResult;
-import com.anontokyo.lottery.domain.activity.model.vo.UserTakeActivityVO;
+import com.anontokyo.lottery.domain.activity.model.vo.DrawParticipationVO;
 import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
-import com.anontokyo.lottery.domain.activity.repository.IUserTakeActivityRepository;
+import com.anontokyo.lottery.domain.activity.repository.IDrawParticipationRepository;
 import com.anontokyo.lottery.domain.activity.service.partake.IActivityPartake;
-import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
+import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
+import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
 import com.anontokyo.lottery.domain.award.service.order.IAwardOrder;
 import com.anontokyo.lottery.domain.support.lock.IActivityDrawProcessGuard;
-import com.anontokyo.lottery.domain.strategy.model.req.DrawReq;
-import com.anontokyo.lottery.domain.strategy.model.res.DrawResult;
-import com.anontokyo.lottery.domain.strategy.model.vo.DrawAwardInfo;
-import com.anontokyo.lottery.domain.strategy.service.draw.IDrawExec;
+import com.anontokyo.lottery.domain.draw.model.req.DrawReq;
+import com.anontokyo.lottery.domain.draw.model.res.DrawResult;
+import com.anontokyo.lottery.domain.draw.model.vo.DrawAwardInfo;
+import com.anontokyo.lottery.domain.draw.service.draw.IDrawExec;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
@@ -41,7 +42,7 @@ import static org.mockito.Mockito.when;
 public class DrawRequestIdempotencyTest {
 
     private IActivityDrawProcessGuard guard;
-    private IUserTakeActivityRepository userTakeActivityRepository;
+    private IDrawParticipationRepository drawParticipationRepository;
     private IActivityPartake activityPartake;
     private IDrawExec drawExec;
     private IAwardOrder awardOrder;
@@ -52,7 +53,7 @@ public class DrawRequestIdempotencyTest {
     @Before
     public void setUp() {
         guard = mock(IActivityDrawProcessGuard.class);
-        userTakeActivityRepository = mock(IUserTakeActivityRepository.class);
+        drawParticipationRepository = mock(IDrawParticipationRepository.class);
         activityPartake = mock(IActivityPartake.class);
         drawExec = mock(IDrawExec.class);
         awardOrder = mock(IAwardOrder.class);
@@ -60,7 +61,7 @@ public class DrawRequestIdempotencyTest {
 
         process = new ActivityProcessImpl();
         ReflectionTestUtils.setField(process, "activityDrawProcessGuard", guard);
-        ReflectionTestUtils.setField(process, "userTakeActivityRepository", userTakeActivityRepository);
+        ReflectionTestUtils.setField(process, "drawParticipationRepository", drawParticipationRepository);
         ReflectionTestUtils.setField(process, "orderRepository", orderRepository);
         ReflectionTestUtils.setField(process, "activityPartake", activityPartake);
         ReflectionTestUtils.setField(process, "awardOrder", awardOrder);
@@ -72,11 +73,11 @@ public class DrawRequestIdempotencyTest {
 
     @Test
     public void firstRequestRunsFullPipeline() {
-        when(userTakeActivityRepository.queryTakeActivityByRequestId(100001L, "u1", "req-1")).thenReturn(null);
+        when(drawParticipationRepository.queryParticipationByRequestId(100001L, "u1", "req-1")).thenReturn(null);
         when(activityPartake.doPartake(any())).thenReturn(partakeResult());
         when(drawExec.doDrawExec(any(DrawReq.class))).thenReturn(winResult());
 
-        InvoiceVO invoice = new InvoiceVO();
+        AwardFulfillmentEvent invoice = new AwardFulfillmentEvent();
         invoice.setOrderId(999L);
         AwardOrderResultHolder holder = new AwardOrderResultHolder(invoice);
         when(awardOrder.placeOrder(any())).thenAnswer(inv -> holder.result);
@@ -94,13 +95,13 @@ public class DrawRequestIdempotencyTest {
     @Test
     public void retryWithSameRequestIdReplaysConsumedTakeWithoutSideEffects() {
         // 已消费的 take + 已存在的订单：第二次请求必须直接回放
-        UserTakeActivityVO consumed = new UserTakeActivityVO();
+        DrawParticipationVO consumed = new DrawParticipationVO();
         consumed.setRequestId("req-1");
         consumed.setTakeId(777L);
         consumed.setState(Constants.TaskState.USED.getCode());
-        when(userTakeActivityRepository.queryTakeActivityByRequestId(100001L, "u1", "req-1")).thenReturn(consumed);
+        when(drawParticipationRepository.queryParticipationByRequestId(100001L, "u1", "req-1")).thenReturn(consumed);
 
-        InvoiceVO order = new InvoiceVO();
+        DrawOrderVO order = new DrawOrderVO();
         order.setOrderId(999L);
         order.setAwardId("3");
         order.setAwardType(3);
@@ -122,12 +123,12 @@ public class DrawRequestIdempotencyTest {
     @Test
     public void interruptedTakeIsReusedNotDuplicated() {
         // 上次中断遗留的未消费 take：复用继续抽奖，不允许新建 take / 再次消耗次数
-        UserTakeActivityVO unfinished = new UserTakeActivityVO();
+        DrawParticipationVO unfinished = new DrawParticipationVO();
         unfinished.setRequestId("req-1");
         unfinished.setTakeId(777L);
-        unfinished.setStrategyId(10001L);
+        unfinished.setDrawConfigId(10001L);
         unfinished.setState(Constants.TaskState.NO_USED.getCode());
-        when(userTakeActivityRepository.queryTakeActivityByRequestId(100001L, "u1", "req-1")).thenReturn(unfinished);
+        when(drawParticipationRepository.queryParticipationByRequestId(100001L, "u1", "req-1")).thenReturn(unfinished);
         when(drawExec.doDrawExec(any(DrawReq.class))).thenReturn(
                 new DrawResult("u1", 10001L, Constants.DrawState.FAIL.getCode()));
 
@@ -142,12 +143,12 @@ public class DrawRequestIdempotencyTest {
         verify(activityPartake).consumeTakeActivity(eq("u1"), eq(100001L), eq(777L));
         ArgumentCaptor<DrawReq> captor = ArgumentCaptor.forClass(DrawReq.class);
         verify(drawExec).doDrawExec(captor.capture());
-        assertEquals(String.valueOf(777L), captor.getValue().getUuid());
+        assertEquals(Long.valueOf(10001L), captor.getValue().getDrawConfigId());
     }
 
     @Test
     public void guardIsAlwaysReleasedWithOwnerToken() {
-        when(userTakeActivityRepository.queryTakeActivityByRequestId(anyLong(), anyString(), anyString()))
+        when(drawParticipationRepository.queryParticipationByRequestId(anyLong(), anyString(), anyString()))
                 .thenReturn(null);
         when(activityPartake.doPartake(any()))
                 .thenThrow(new RuntimeException("boom"));
@@ -164,7 +165,7 @@ public class DrawRequestIdempotencyTest {
 
     @Test
     public void queryFailureStopsBeforeAnySideEffects() {
-        when(userTakeActivityRepository.queryTakeActivityByRequestId(100001L, "u1", "req-1"))
+        when(drawParticipationRepository.queryParticipationByRequestId(100001L, "u1", "req-1"))
                 .thenThrow(new IllegalStateException("query failed"));
         try {
             process.doDrawProcess(new DrawProcessReq("u1", 100001L, "req-1"));
@@ -192,21 +193,21 @@ public class DrawRequestIdempotencyTest {
 
     @Test
     public void losingCasConflictReplaysConcurrentWinningOrder() {
-        UserTakeActivityVO take = new UserTakeActivityVO();
+        DrawParticipationVO take = new DrawParticipationVO();
         take.setRequestId("req-1");
         take.setTakeId(777L);
-        take.setStrategyId(10001L);
+        take.setDrawConfigId(10001L);
         take.setState(Constants.TaskState.NO_USED.getCode());
-        UserTakeActivityVO completed = new UserTakeActivityVO();
+        DrawParticipationVO completed = new DrawParticipationVO();
         completed.setRequestId("req-1");
         completed.setTakeId(777L);
         completed.setState(Constants.TaskState.USED.getCode());
-        when(userTakeActivityRepository.queryTakeActivityByRequestId(100001L, "u1", "req-1"))
+        when(drawParticipationRepository.queryParticipationByRequestId(100001L, "u1", "req-1"))
                 .thenReturn(take, completed);
         when(drawExec.doDrawExec(any())).thenReturn(new DrawResult("u1", 10001L, Constants.DrawState.FAIL.getCode()));
         when(activityPartake.consumeTakeActivity("u1", 100001L, 777L))
                 .thenReturn(com.anontokyo.lottery.common.Result.buildResult(Constants.ResponseCode.NO_UPDATE));
-        InvoiceVO invoice = new InvoiceVO();
+        DrawOrderVO invoice = new DrawOrderVO();
         invoice.setOrderId(999L);
         when(orderRepository.queryOrderByTakeId("u1", 777L)).thenReturn(invoice);
         DrawProcessResult result = process.doDrawProcess(new DrawProcessReq("u1", 100001L, "req-1"));
@@ -217,7 +218,7 @@ public class DrawRequestIdempotencyTest {
     private PartakeResult partakeResult() {
         PartakeResult partakeResult = new PartakeResult(Constants.ResponseCode.SUCCESS.getCode(),
                 Constants.ResponseCode.SUCCESS.getInfo());
-        partakeResult.setStrategyId(10001L);
+        partakeResult.setDrawConfigId(10001L);
         partakeResult.setTakeId(777L);
         return partakeResult;
     }
@@ -237,7 +238,7 @@ public class DrawRequestIdempotencyTest {
     private static class AwardOrderResultHolder {
         private final com.anontokyo.lottery.domain.award.model.res.AwardOrderResult result;
 
-        private AwardOrderResultHolder(InvoiceVO invoice) {
+        private AwardOrderResultHolder(AwardFulfillmentEvent invoice) {
             this.result = new com.anontokyo.lottery.domain.award.model.res.AwardOrderResult(
                     Constants.ResponseCode.SUCCESS.getCode(),
                     Constants.ResponseCode.SUCCESS.getInfo(),

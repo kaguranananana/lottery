@@ -9,7 +9,7 @@ import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
 import com.anontokyo.lottery.infrastructure.cache.CacheConfigProperties;
 import com.anontokyo.lottery.infrastructure.cache.TwoLevelCacheService;
 import com.anontokyo.lottery.infrastructure.dao.*;
-import com.anontokyo.lottery.infrastructure.po.StrategyDetail;
+import com.anontokyo.lottery.infrastructure.po.DrawConfigPrize;
 import com.anontokyo.lottery.infrastructure.po.*;
 import com.anontokyo.lottery.infrastructure.utils.RedisUtil;
 import org.slf4j.Logger;
@@ -44,10 +44,10 @@ public class ActivityRepository implements IActivityRepository {
     private IAwardDao awardDao;
 
     @Resource
-    private IStrategyDao strategyDao;
+    private IDrawConfigDao drawConfigDao;
 
     @Resource
-    private IStrategyDetailDao strategyDetailDao;
+    private IDrawConfigPrizeDao drawConfigPrizeDao;
 
     @Resource
     private RedisUtil redisUtil;
@@ -80,28 +80,28 @@ public class ActivityRepository implements IActivityRepository {
     }
 
     @Override
-    public void addStrategy(StrategyVO strategy) {
-        Strategy req = new Strategy();
-        BeanUtils.copyProperties(strategy, req);
-        strategyDao.insert(req);
-        twoLevelCacheService.evictStrategySnapshotCache(
-                Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_SNAPSHOT(strategy.getStrategyId()));
+    public void addDrawConfig(DrawConfigVO drawConfig) {
+        DrawConfig req = new DrawConfig();
+        BeanUtils.copyProperties(drawConfig, req);
+        drawConfigDao.insert(req);
+        twoLevelCacheService.evictDrawConfigSnapshotCache(
+                Constants.RedisKey.KEY_LOTTERY_CACHE_DRAW_CONFIG_SNAPSHOT(drawConfig.getDrawConfigId()));
     }
 
     @Override
-    public void addStrategyDetailList(List<StrategyDetailVO> strategyDetailList) {
-        List<StrategyDetail> req = new ArrayList<>();
-        Set<Long> strategyIds = new HashSet<>();
-        for (StrategyDetailVO strategyDetailVO : strategyDetailList) {
-            StrategyDetail strategyDetail = new StrategyDetail();
-            BeanUtils.copyProperties(strategyDetailVO, strategyDetail);
-            req.add(strategyDetail);
-            strategyIds.add(strategyDetailVO.getStrategyId());
+    public void addDrawConfigPrizeList(List<DrawConfigPrizeVO> drawConfigPrizeList) {
+        List<DrawConfigPrize> req = new ArrayList<>();
+        Set<Long> drawConfigIds = new HashSet<>();
+        for (DrawConfigPrizeVO drawConfigPrizeVO : drawConfigPrizeList) {
+            DrawConfigPrize drawConfigPrize = new DrawConfigPrize();
+            BeanUtils.copyProperties(drawConfigPrizeVO, drawConfigPrize);
+            req.add(drawConfigPrize);
+            drawConfigIds.add(drawConfigPrizeVO.getDrawConfigId());
         }
-        strategyDetailDao.insertList(req);
-        for (Long strategyId : strategyIds) {
-            twoLevelCacheService.evictStrategySnapshotCache(
-                    Constants.RedisKey.KEY_LOTTERY_CACHE_STRATEGY_SNAPSHOT(strategyId));
+        drawConfigPrizeDao.insertList(req);
+        for (Long drawConfigId : drawConfigIds) {
+            twoLevelCacheService.evictDrawConfigSnapshotCache(
+                    Constants.RedisKey.KEY_LOTTERY_CACHE_DRAW_CONFIG_SNAPSHOT(drawConfigId));
         }
 
     }
@@ -155,11 +155,11 @@ public class ActivityRepository implements IActivityRepository {
         ActivityBillVO activityBillVO = new ActivityBillVO();
         activityBillVO.setuId(req.getuId());
         activityBillVO.setActivityId(req.getActivityId());
-        activityBillVO.setActivityName(activity.getActivityName());
+
         activityBillVO.setBeginDateTime(activity.getBeginDateTime());
         activityBillVO.setEndDateTime(activity.getEndDateTime());
         activityBillVO.setTakeCount(activity.getTakeCount());
-        activityBillVO.setStrategyId(activity.getStrategyId());
+        activityBillVO.setDrawConfigId(activity.getDrawConfigId());
         activityBillVO.setState(activity.getState());
         return activityBillVO;
     }
@@ -196,29 +196,29 @@ public class ActivityRepository implements IActivityRepository {
     }
 
     private int warmupAwardStock(Activity activity) {
-        if (activity.getStrategyId() == null) {
+        if (activity.getDrawConfigId() == null) {
             throw new IllegalStateException("活动未关联策略，activityId=" + activity.getActivityId());
         }
         // 活动行锁只约束同一活动；策略行锁使共享奖池的多个启动者串行检查和预热。
-        if (strategyDao.queryStrategyForUpdate(activity.getStrategyId()) == null) {
-            throw new IllegalStateException("活动策略不存在，strategyId=" + activity.getStrategyId());
+        if (drawConfigDao.queryDrawConfigForUpdate(activity.getDrawConfigId()) == null) {
+            throw new IllegalStateException("活动策略不存在，drawConfigId=" + activity.getDrawConfigId());
         }
         // DOING 奖池不能重建；CLOSE 后也可能有尚未结算的订单，缺失 Key 仍需对账。
-        boolean poolInUse = activityDao.countPublishedActivitiesByStrategy(activity.getStrategyId()) > 0;
-        List<StrategyDetail> details = strategyDetailDao.queryStrategyDetailList(activity.getStrategyId());
+        boolean poolInUse = activityDao.countPublishedActivitiesByDrawConfig(activity.getDrawConfigId()) > 0;
+        List<DrawConfigPrize> details = drawConfigPrizeDao.queryDrawConfigPrizeList(activity.getDrawConfigId());
         if (details.isEmpty()) {
-            throw new IllegalStateException("活动策略没有奖品，strategyId=" + activity.getStrategyId());
+            throw new IllegalStateException("活动策略没有奖品，drawConfigId=" + activity.getDrawConfigId());
         }
         // 只初始化奖品 Key；任何配置错误或 Redis 故障都会阻止活动进入 DOING。
         int warmedKeys = 0;
-        for (StrategyDetail detail : details) {
+        for (DrawConfigPrize detail : details) {
             if (detail.getAwardId() == null || detail.getAwardId().trim().isEmpty()
                     || detail.getAwardSurplusCount() == null || detail.getAwardSurplusCount() < 0) {
-                throw new IllegalStateException("策略奖品或剩余库存配置错误，strategyId="
-                        + activity.getStrategyId() + " awardId=" + detail.getAwardId());
+                throw new IllegalStateException("配置奖品或剩余库存配置错误，drawConfigId="
+                        + activity.getDrawConfigId() + " awardId=" + detail.getAwardId());
             }
-            String key = Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT(
-                    activity.getStrategyId(), detail.getAwardId());
+            String key = Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_COUNT(
+                    activity.getDrawConfigId(), detail.getAwardId());
             if (poolInUse) {
                 // 只读取，不以 SETNX 修复缺失 Key，避免第二个活动启动时复活共享库存。
                 if (redisUtil.get(key) == null) {
@@ -231,8 +231,8 @@ public class ActivityRepository implements IActivityRepository {
                 warmedKeys += warmupKey(key, detail.getAwardSurplusCount());
             }
         }
-        logger.info("award stock warmup finished activityId:{} strategyId:{} keysWarmup:{}",
-                activity.getActivityId(), activity.getStrategyId(), warmedKeys);
+        logger.info("award stock warmup finished activityId:{} drawConfigId:{} keysWarmup:{}",
+                activity.getActivityId(), activity.getDrawConfigId(), warmedKeys);
         return warmedKeys;
     }
 

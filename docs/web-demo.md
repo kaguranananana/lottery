@@ -16,6 +16,8 @@ bash doc/performance/build.sh
 bash doc/performance/start.sh /tmp/lottery-web-demo
 ```
 
+已用旧表结构初始化的演示库请先按 [升级说明](draw-schema-refactor.md) 处理。首次初始化会直接装配两个分库和八张订单表。
+
 应用启动后，在另一个终端创建一场活动。每位游客有 8 次机会；五种模拟券的总中奖概率为 70%。命令会调用现有的活动创建与启动服务，在活动进入运行状态前预热 Redis 奖品库存。
 
 ```bash

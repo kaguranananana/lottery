@@ -1,12 +1,12 @@
 package com.anontokyo.lottery.domain.award.service.order.impl;
 
 import com.anontokyo.lottery.common.Constants;
-import com.anontokyo.lottery.domain.activity.repository.IUserTakeActivityRepository;
+import com.anontokyo.lottery.domain.activity.repository.IDrawParticipationRepository;
 import com.anontokyo.lottery.domain.award.model.req.AwardOrderReq;
 import com.anontokyo.lottery.domain.award.model.res.AwardOrderResult;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
-import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
+import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
 import com.anontokyo.lottery.domain.award.service.order.IAwardOrder;
 import com.anontokyo.lottery.domain.support.ids.IdGenerator;
@@ -27,7 +27,7 @@ public class AwardOrderImpl implements IAwardOrder {
     private final Logger logger = LoggerFactory.getLogger(AwardOrderImpl.class);
 
     @Resource
-    private IUserTakeActivityRepository userTakeActivityRepository;
+    private IDrawParticipationRepository drawParticipationRepository;
 
     @Resource
     private IOrderRepository orderRepository;
@@ -59,13 +59,13 @@ public class AwardOrderImpl implements IAwardOrder {
     }
 
     @Override
-    public void updateInvoiceMqState(String uId, Long orderId, Integer mqState) {
-        orderRepository.updateInvoiceMqState(uId, orderId, mqState);
+    public void updateFulfillmentEventStatus(String uId, Long orderId, Integer fulfillmentEventStatus) {
+        orderRepository.updateFulfillmentEventStatus(uId, orderId, fulfillmentEventStatus);
     }
 
     @Override
-    public void updateStockMqState(String uId, Long orderId, Integer stockMqState) {
-        orderRepository.updateStockMqState(uId, orderId, stockMqState);
+    public void updateStockSettlementEventStatus(String uId, Long orderId, Integer stockSettlementEventStatus) {
+        orderRepository.updateStockSettlementEventStatus(uId, orderId, stockSettlementEventStatus);
     }
 
     @Override
@@ -75,23 +75,23 @@ public class AwardOrderImpl implements IAwardOrder {
     }
 
     @Override
-    public List<InvoiceVO> scanInvoiceMqState(int dbCount, int tbCount, int limit) {
-        return orderRepository.scanInvoiceMqStateByShard(dbCount, tbCount, limit);
+    public List<AwardFulfillmentEvent> scanFulfillmentEventStatus(int dbCount, int tbCount, int limit) {
+        return orderRepository.scanFulfillmentEventStatusByShard(dbCount, tbCount, limit);
     }
 
     @Override
-    public List<AwardStockSettlementVO> scanAwardStockMqState(int dbCount, int tbCount, int limit) {
-        return orderRepository.scanAwardStockMqStateByShard(dbCount, tbCount, limit);
+    public List<AwardStockSettlementVO> scanStockSettlementEventStatus(int dbCount, int tbCount, int limit) {
+        return orderRepository.scanStockSettlementEventStatusByShard(dbCount, tbCount, limit);
     }
 
     @Override
-    public InvoiceVO queryInvoiceByOrderId(String uId, Long orderId) {
-        return orderRepository.queryInvoiceByOrderId(uId, orderId);
+    public AwardFulfillmentEvent queryFulfillmentEventByOrderId(String uId, Long orderId) {
+        return orderRepository.queryFulfillmentEventByOrderId(uId, orderId);
     }
 
     @Override
-    public boolean isStockMqCompleted(String uId, Long orderId) {
-        return orderRepository.isStockMqCompleted(uId, orderId);
+    public boolean isStockSettlementComplete(String uId, Long orderId) {
+        return orderRepository.isStockSettlementComplete(uId, orderId);
     }
 
     @Override
@@ -110,37 +110,36 @@ public class AwardOrderImpl implements IAwardOrder {
         drawOrderVO.setTakeId(awardOrderReq.getTakeId());
         drawOrderVO.setActivityId(awardOrderReq.getActivityId());
         drawOrderVO.setOrderId(idGenerator.nextId());
-        drawOrderVO.setStrategyId(awardOrderReq.getStrategyId());
-        drawOrderVO.setStrategyMode(awardOrderReq.getStrategyMode());
+        drawOrderVO.setDrawConfigId(awardOrderReq.getDrawConfigId());
         drawOrderVO.setGrantType(awardOrderReq.getGrantType());
-        drawOrderVO.setGrantDate(awardOrderReq.getGrantDate());
-        drawOrderVO.setGrantState(Constants.GrantState.INIT.getCode());
+        drawOrderVO.setScheduledAt(awardOrderReq.getScheduledAt());
+        drawOrderVO.setAwardFulfillmentStatus(Constants.AwardFulfillmentStatus.INIT.getCode());
         drawOrderVO.setAwardId(awardOrderReq.getAwardId());
         drawOrderVO.setAwardType(awardOrderReq.getAwardType());
         drawOrderVO.setAwardName(awardOrderReq.getAwardName());
         drawOrderVO.setAwardContent(awardOrderReq.getAwardContent());
-        drawOrderVO.setMqState(Constants.MQState.INIT.getCode());
-        drawOrderVO.setStockMqState(Constants.MQState.INIT.getCode());
+        drawOrderVO.setFulfillmentEventStatus(Constants.FulfillmentEventStatus.INIT.getCode());
+        drawOrderVO.setStockSettlementEventStatus(Constants.StockSettlementEventStatus.INIT.getCode());
         return drawOrderVO;
     }
 
-    private InvoiceVO buildInvoice(DrawOrderVO drawOrderVO) {
-        InvoiceVO invoiceVO = new InvoiceVO();
-        invoiceVO.setuId(drawOrderVO.getuId());
-        invoiceVO.setOrderId(drawOrderVO.getOrderId());
-        invoiceVO.setTakeId(drawOrderVO.getTakeId());
-        invoiceVO.setAwardId(drawOrderVO.getAwardId());
-        invoiceVO.setAwardType(drawOrderVO.getAwardType());
-        invoiceVO.setAwardName(drawOrderVO.getAwardName());
-        invoiceVO.setAwardContent(drawOrderVO.getAwardContent());
-        return invoiceVO;
+    private AwardFulfillmentEvent buildInvoice(DrawOrderVO drawOrderVO) {
+        AwardFulfillmentEvent fulfillmentEvent = new AwardFulfillmentEvent();
+        fulfillmentEvent.setuId(drawOrderVO.getuId());
+        fulfillmentEvent.setOrderId(drawOrderVO.getOrderId());
+        fulfillmentEvent.setTakeId(drawOrderVO.getTakeId());
+        fulfillmentEvent.setAwardId(drawOrderVO.getAwardId());
+        fulfillmentEvent.setAwardType(drawOrderVO.getAwardType());
+        fulfillmentEvent.setAwardName(drawOrderVO.getAwardName());
+        fulfillmentEvent.setAwardContent(drawOrderVO.getAwardContent());
+        return fulfillmentEvent;
     }
 
     private AwardStockSettlementVO buildAwardStockSettlement(DrawOrderVO drawOrderVO) {
         AwardStockSettlementVO settlementVO = new AwardStockSettlementVO();
         settlementVO.setuId(drawOrderVO.getuId());
         settlementVO.setOrderId(drawOrderVO.getOrderId());
-        settlementVO.setStrategyId(drawOrderVO.getStrategyId());
+        settlementVO.setDrawConfigId(drawOrderVO.getDrawConfigId());
         settlementVO.setAwardId(drawOrderVO.getAwardId());
         return settlementVO;
     }

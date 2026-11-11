@@ -2,9 +2,9 @@
 
 ## 跟踪一个字段的完整路径
 
-用当前 requestId 的路径作参考：[DrawRequest.java](../../../lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/dto/DrawRequest.java) 的请求约束 → [LotteryController.java](../../../lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/LotteryController.java) 的 DTO 转换 → [DrawProcessReq.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/req/DrawProcessReq.java) → [ActivityProcessImpl.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java) → [PartakeReq.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/model/req/PartakeReq.java) → [UserTakeActivityRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/UserTakeActivityRepository.java) → [UserTakeActivity_Mapper.xml](../../../lottery-interfaces/src/main/resources/mybatis/mapper/UserTakeActivity_Mapper.xml) → 实际数据库列与唯一约束。
+用当前 requestId 的路径作参考：[DrawRequest.java](../../../lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/dto/DrawRequest.java) 的请求约束 → [LotteryController.java](../../../lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/LotteryController.java) 的 DTO 转换 → [DrawProcessReq.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/req/DrawProcessReq.java) → [ActivityProcessImpl.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java) → [PartakeReq.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/model/req/PartakeReq.java) → [DrawParticipationRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/DrawParticipationRepository.java) → [DrawParticipation_Mapper.xml](../../../lottery-interfaces/src/main/resources/mybatis/mapper/DrawParticipation_Mapper.xml) → 实际数据库列与唯一约束。
 
-新增字段沿这条实际链路检查传递和查询，不能只改请求对象或只加数据库列。订单消息的路径对应 DrawOrderVO、UserStrategyExport、Mapper、InvoiceVO/AwardStockSettlementVO、Kafka 序列化与消费者；例如 takeId 回放还依赖订单 SELECT 与 toInvoice 映射。
+新增字段沿这条实际链路检查传递和查询，不能只改请求对象或只加数据库列。订单消息的路径对应 DrawOrderVO、DrawOrder、Mapper、AwardFulfillmentEvent/AwardStockSettlementVO、Kafka 序列化与消费者；takeId 回放依赖订单 SELECT 与 DrawOrderVO 快照映射。
 
 ## 分清业务事实
 
@@ -13,11 +13,11 @@
 | requestId | 同一抽奖请求的 take 查询与唯一语义 | 仅有 Redis 锁就能永久幂等 |
 | takeId / take state | 一次参与与是否已消费 | 未中奖也创建了订单 |
 | orderId | 订单、库存账本与发奖消息关联 | Kafka send 成功即发奖成功 |
-| stock_mq_state | 库存消息推进状态，SENT 超时 10 分钟可恢复 | 发送成功等同结算完成 |
-| mq_state | 发奖消费状态，新 COMPLETE 要求 grant_state=1 | 历史 mq_state=1 必然已实际发奖 |
-| grant_state | 当前本地发奖状态 | 模拟渠道 CAS 等同真实外部恰好一次 |
+| stock_settlement_event_status | 库存消息推进状态，SENT 超时 10 分钟可恢复 | 发送成功等同结算完成 |
+| fulfillment_event_status | 发奖消费状态，新 COMPLETE 要求 award_fulfillment_status=1 | 历史 fulfillment_event_status=1 必然已实际发奖 |
+| award_fulfillment_status | 当前本地发奖状态 | 模拟渠道 CAS 等同真实外部恰好一次 |
 
-依据 [OrderRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java)、[LotteryStrategyAwardStockListener.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryStrategyAwardStockListener.java)、[LotteryXxlJob.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryXxlJob.java) 与 [UserStrategyExport_Mapper.xml](../../../lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml)。详细偏差见[应用规范](../backend/application-guidelines.md)。
+依据 [OrderRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java)、[StockSettlementListener.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/StockSettlementListener.java)、[LotteryXxlJob.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryXxlJob.java) 与 [DrawOrder_Mapper.xml](../../../lottery-interfaces/src/main/resources/mybatis/mapper/DrawOrder_Mapper.xml)。详细偏差见[应用规范](../backend/application-guidelines.md)。
 
 ## 确认真正的提交边界
 

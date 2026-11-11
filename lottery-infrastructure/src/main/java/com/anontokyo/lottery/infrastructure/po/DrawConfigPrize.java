@@ -1,0 +1,100 @@
+package com.anontokyo.lottery.infrastructure.po;
+
+import java.math.BigDecimal;
+
+/**
+ * @description:
+ * @author：anontokyo
+ * @date: 2026/1/12
+ */
+public class DrawConfigPrize {
+
+    // 自增ID
+    private String id;
+
+    // 抽奖配置ID
+    private Long drawConfigId;
+
+    // 奖品ID
+    private String awardId;
+
+
+    // 奖品总库存与数据库 INT、创建 VO 保持同一类型，避免 BeanUtils 跳过属性复制。
+    private Integer awardCount;
+
+    // 奖品剩余数量
+    private Integer awardSurplusCount;
+
+    // 中奖概率
+    private BigDecimal awardRate;
+
+    // 创建时间
+    private String createTime;
+
+    // 修改时间
+    private String updateTime;
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public Long getDrawConfigId() {
+        return drawConfigId;
+    }
+
+    public void setDrawConfigId(Long drawConfigId) {
+        this.drawConfigId = drawConfigId;
+    }
+
+    public String getAwardId() {
+        return awardId;
+    }
+
+    public void setAwardId(String awardId) {
+        this.awardId = awardId;
+    }
+
+    public Integer getAwardCount() {
+        return awardCount;
+    }
+
+    public void setAwardCount(Integer awardCount) {
+        this.awardCount = awardCount;
+    }
+
+    public Integer getAwardSurplusCount() {
+        return awardSurplusCount;
+    }
+
+    public void setAwardSurplusCount(Integer awardSurplusCount) {
+        this.awardSurplusCount = awardSurplusCount;
+    }
+
+    public BigDecimal getAwardRate() {
+        return awardRate;
+    }
+
+    public void setAwardRate(BigDecimal awardRate) {
+        this.awardRate = awardRate;
+    }
+
+    public String getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(String createTime) {
+        this.createTime = createTime;
+    }
+
+    public String getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(String updateTime) {
+        this.updateTime = updateTime;
+    }
+}

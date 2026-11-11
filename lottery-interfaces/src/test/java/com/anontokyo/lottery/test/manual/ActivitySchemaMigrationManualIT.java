@@ -27,7 +27,7 @@ public class ActivitySchemaMigrationManualIT {
             assertEquals(4, number(statement, "SELECT COUNT(*) FROM activity"));
             assertEquals(4, number(statement, "SELECT COUNT(*) FROM activity WHERE state=4"));
             assertEquals(0, stockColumns(statement));
-            long strategy = number(statement, "SELECT strategy_id FROM activity WHERE activity_id=100001");
+            long drawConfig = number(statement, "SELECT strategy_id FROM activity WHERE activity_id=100001");
             long quota = number(statement, "SELECT take_count FROM activity WHERE activity_id=100001");
             long prizeRemaining = number(statement, "SELECT SUM(award_surplus_count) FROM strategy_detail");
             long prizeTotal = number(statement, "SELECT SUM(award_count) FROM strategy_detail");
@@ -37,7 +37,7 @@ public class ActivitySchemaMigrationManualIT {
             ScriptUtils.executeSqlScript(connection, new FileSystemResource("../docs/sql/V4__remove_activity_stock.sql"));
             assertEquals(0, stockColumns(statement));
             assertEquals(4, number(statement, "SELECT COUNT(*) FROM activity"));
-            assertEquals(strategy, number(statement, "SELECT strategy_id FROM activity WHERE activity_id=100001"));
+            assertEquals(drawConfig, number(statement, "SELECT strategy_id FROM activity WHERE activity_id=100001"));
             assertEquals(quota, number(statement, "SELECT take_count FROM activity WHERE activity_id=100001"));
             assertEquals(prizeRemaining, number(statement, "SELECT SUM(award_surplus_count) FROM strategy_detail"));
             assertEquals(prizeTotal, number(statement, "SELECT SUM(award_count) FROM strategy_detail"));

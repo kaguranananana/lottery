@@ -1,7 +1,7 @@
 package com.anontokyo.lottery.domain.award.model.res;
 
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
-import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
+import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 
 /**
  * 奖品订单落单结果。
@@ -10,7 +10,7 @@ public class AwardOrderResult {
 
     private String code;
     private String info;
-    private InvoiceVO invoiceVO;
+    private AwardFulfillmentEvent fulfillmentEvent;
     private AwardStockSettlementVO awardStockSettlementVO;
 
     public AwardOrderResult() {
@@ -21,17 +21,17 @@ public class AwardOrderResult {
         this.info = info;
     }
 
-    public AwardOrderResult(String code, String info, InvoiceVO invoiceVO) {
+    public AwardOrderResult(String code, String info, AwardFulfillmentEvent fulfillmentEvent) {
         this.code = code;
         this.info = info;
-        this.invoiceVO = invoiceVO;
+        this.fulfillmentEvent = fulfillmentEvent;
     }
 
-    public AwardOrderResult(String code, String info, InvoiceVO invoiceVO,
+    public AwardOrderResult(String code, String info, AwardFulfillmentEvent fulfillmentEvent,
             AwardStockSettlementVO awardStockSettlementVO) {
         this.code = code;
         this.info = info;
-        this.invoiceVO = invoiceVO;
+        this.fulfillmentEvent = fulfillmentEvent;
         this.awardStockSettlementVO = awardStockSettlementVO;
     }
 
@@ -51,12 +51,12 @@ public class AwardOrderResult {
         this.info = info;
     }
 
-    public InvoiceVO getInvoiceVO() {
-        return invoiceVO;
+    public AwardFulfillmentEvent getAwardFulfillmentEvent() {
+        return fulfillmentEvent;
     }
 
-    public void setInvoiceVO(InvoiceVO invoiceVO) {
-        this.invoiceVO = invoiceVO;
+    public void setAwardFulfillmentEvent(AwardFulfillmentEvent fulfillmentEvent) {
+        this.fulfillmentEvent = fulfillmentEvent;
     }
 
     public AwardStockSettlementVO getAwardStockSettlementVO() {

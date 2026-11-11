@@ -1,12 +1,12 @@
 package com.anontokyo.lottery.test.domain;
 
-import com.anontokyo.lottery.domain.strategy.model.aggregates.StrategyRich;
-import com.anontokyo.lottery.domain.strategy.model.snapshot.StrategySnapshot;
-import com.anontokyo.lottery.domain.strategy.model.vo.AwardBriefVO;
-import com.anontokyo.lottery.domain.strategy.model.vo.StrategyBriefVO;
-import com.anontokyo.lottery.domain.strategy.model.vo.StrategyDetailBriefVO;
-import com.anontokyo.lottery.domain.strategy.service.draw.WeightedRandomSelector;
-import com.anontokyo.lottery.domain.strategy.service.snapshot.StrategySnapshotFactory;
+import com.anontokyo.lottery.domain.draw.model.aggregates.DrawConfigAggregate;
+import com.anontokyo.lottery.domain.draw.model.snapshot.DrawConfigSnapshot;
+import com.anontokyo.lottery.domain.draw.model.vo.AwardBriefVO;
+import com.anontokyo.lottery.domain.draw.model.vo.DrawConfigBriefVO;
+import com.anontokyo.lottery.domain.draw.model.vo.DrawConfigPrizeBriefVO;
+import com.anontokyo.lottery.domain.draw.service.draw.WeightedRandomSelector;
+import com.anontokyo.lottery.domain.draw.service.snapshot.DrawConfigSnapshotFactory;
 import org.junit.Test;
 
 import java.math.BigDecimal;
@@ -27,24 +27,24 @@ import static org.junit.Assert.fail;
  */
 public class WeightedRandomSelectorTest {
 
-    private final StrategySnapshotFactory factory = new StrategySnapshotFactory();
+    private final DrawConfigSnapshotFactory factory = new DrawConfigSnapshotFactory();
 
-    private StrategyRich rich(BigDecimal... rates) {
-        StrategyBriefVO strategy = new StrategyBriefVO();
-        strategy.setStrategyId(10001L);
-        List<StrategyDetailBriefVO> details = new ArrayList<>(rates.length);
+    private DrawConfigAggregate rich(BigDecimal... rates) {
+        DrawConfigBriefVO drawConfig = new DrawConfigBriefVO();
+        drawConfig.setDrawConfigId(10001L);
+        List<DrawConfigPrizeBriefVO> details = new ArrayList<>(rates.length);
         int awardNo = 1;
         for (BigDecimal rate : rates) {
-            StrategyDetailBriefVO detail = new StrategyDetailBriefVO();
-            detail.setStrategyId(10001L);
+            DrawConfigPrizeBriefVO detail = new DrawConfigPrizeBriefVO();
+            detail.setDrawConfigId(10001L);
             detail.setAwardId(String.valueOf(awardNo++));
             detail.setAwardRate(rate);
             details.add(detail);
         }
-        return new StrategyRich(10001L, strategy, details);
+        return new DrawConfigAggregate(10001L, drawConfig, details);
     }
 
-    private final StrategySnapshotFactory.AwardInfoResolver resolver = awardId -> {
+    private final DrawConfigSnapshotFactory.AwardInfoResolver resolver = awardId -> {
         AwardBriefVO vo = new AwardBriefVO();
         vo.setAwardId(awardId);
         return vo;
@@ -53,7 +53,7 @@ public class WeightedRandomSelectorTest {
     @Test
     public void build_keepsMicroPrecisionWeights() {
         // 0.01% + 0.1% + 1% + 10% = 11.11%，其余 88.89% 为 NO_PRIZE
-        StrategySnapshot snapshot = factory.build(
+        DrawConfigSnapshot snapshot = factory.build(
                 rich(new BigDecimal("0.0001"), new BigDecimal("0.001"),
                         new BigDecimal("0.01"), new BigDecimal("0.1")),
                 resolver);
@@ -70,7 +70,7 @@ public class WeightedRandomSelectorTest {
 
     @Test
     public void select_hitsCorrectBoundaries() {
-        StrategySnapshot snapshot = factory.build(rich(new BigDecimal("0.5")), resolver);
+        DrawConfigSnapshot snapshot = factory.build(rich(new BigDecimal("0.5")), resolver);
         // total = 500_000，NO_PRIZE = 500_000
 
         assertEquals("1", WeightedRandomSelector.selectAt(snapshot, 1L));
@@ -82,7 +82,7 @@ public class WeightedRandomSelectorTest {
     @Test
     public void sampleDistributionStaysWithinBounds() {
         // 30 个样本全部落在合法区间即可；分布统计不做精度断言（非本测试目的）
-        StrategySnapshot snapshot = factory.build(
+        DrawConfigSnapshot snapshot = factory.build(
                 rich(new BigDecimal("0.001"), new BigDecimal("0.05"), new BigDecimal("0.949")), resolver);
         for (long r = 1; r <= 1_000_000; r += 9973) {
             String awardId = WeightedRandomSelector.selectAt(snapshot, r);
@@ -92,7 +92,7 @@ public class WeightedRandomSelectorTest {
 
     @Test
     public void zeroProbabilityAwardNeverSelected() {
-        StrategySnapshot snapshot = factory.build(rich(BigDecimal.ZERO, new BigDecimal("0.4")), resolver);
+        DrawConfigSnapshot snapshot = factory.build(rich(BigDecimal.ZERO, new BigDecimal("0.4")), resolver);
         assertEquals(2, snapshot.getCumulativeWeights().length); // award2 + NO_PRIZE
         assertEquals("2", snapshot.getAwardIds()[0]);
         assertNull(snapshot.getAwardIds()[1]);
@@ -121,7 +121,7 @@ public class WeightedRandomSelectorTest {
     @Test
     public void randomDrawNeverThrowsAndRespectsNullForFullNoPrize() {
         // 全 0 概率：只能未中奖
-        StrategySnapshot snapshot = factory.build(rich(BigDecimal.ZERO, BigDecimal.ZERO), resolver);
+        DrawConfigSnapshot snapshot = factory.build(rich(BigDecimal.ZERO, BigDecimal.ZERO), resolver);
         for (int i = 0; i < 1000; i++) {
             assertNull(WeightedRandomSelector.select(snapshot));
         }

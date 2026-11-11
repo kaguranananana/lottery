@@ -1,7 +1,7 @@
 package com.anontokyo.lottery.application.process.draw.res;
 
 import com.anontokyo.lottery.common.Result;
-import com.anontokyo.lottery.domain.strategy.model.vo.DrawAwardInfo;
+import com.anontokyo.lottery.domain.draw.model.vo.DrawAwardInfo;
 
 /**
  * @description: 活动抽奖结果

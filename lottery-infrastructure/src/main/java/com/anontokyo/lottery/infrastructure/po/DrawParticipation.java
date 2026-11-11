@@ -1,0 +1,101 @@
+package com.anontokyo.lottery.infrastructure.po;
+
+import java.util.Date;
+
+/**
+ * User take-activity order.
+ */
+public class DrawParticipation {
+
+    private Long id;
+    private String uId;
+    private Long takeId;
+    private Long activityId;
+    private Date participatedAt;
+    private Date createTime;
+    private Date updateTime;
+    private Long drawConfigId;
+    private Integer state;
+    /** 请求幂等号（UNIQUE 兜底） */
+    private String requestId;
+
+    public String getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getuId() {
+        return uId;
+    }
+
+    public void setuId(String uId) {
+        this.uId = uId;
+    }
+
+    public Long getTakeId() {
+        return takeId;
+    }
+
+    public void setTakeId(Long takeId) {
+        this.takeId = takeId;
+    }
+
+    public Long getActivityId() {
+        return activityId;
+    }
+
+    public void setActivityId(Long activityId) {
+        this.activityId = activityId;
+    }
+
+    public Date getParticipatedAt() {
+        return participatedAt;
+    }
+
+    public void setParticipatedAt(Date participatedAt) {
+        this.participatedAt = participatedAt;
+    }
+
+    public Date getCreateTime() {
+        return createTime;
+    }
+
+    public void setCreateTime(Date createTime) {
+        this.createTime = createTime;
+    }
+
+    public Date getUpdateTime() {
+        return updateTime;
+    }
+
+    public void setUpdateTime(Date updateTime) {
+        this.updateTime = updateTime;
+    }
+
+    public Long getDrawConfigId() {
+        return drawConfigId;
+    }
+
+    public void setDrawConfigId(Long drawConfigId) {
+        this.drawConfigId = drawConfigId;
+    }
+
+    public Integer getState() {
+        return state;
+    }
+
+    public void setState(Integer state) {
+        this.state = state;
+    }
+}

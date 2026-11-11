@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *  B. 库存并发：100 并发抢 10 个库存 ⇒ Redis 成功扣减 ≤10、DB settlement 次数 ≤10、无负库存
  *  C. MQ duplicate：同一 orderId 的 settleAwardStock 调两次 ⇒ stock 只扣一次
  *  D. consumer crash 模拟：settle 后再消费 ⇒ 第二次被 UNIQUE(order_id) 拦截
- *  G. Outbox 重发前置条件：stock_mq_state=0/2 能被扫描出来（由 XXL-Job 参数驱动）
+ *  G. Outbox 重发前置条件：stock_settlement_event_status=0/2 能被扫描出来（由 XXL-Job 参数驱动）
  *
  * 说明：本骨架直接对 Repository 行为做集成验证（等价于消费者内部的事务逻辑），
  * 不启动 Kafka；MQ 投递本身由生产环境手动 ack 场景验证或后续 Testcontainers 化。
@@ -67,13 +67,13 @@ public class StockSettlementIdempotencyManualIT {
 
     /**
      * 场景 C/D：同一 orderId 连续结算两次。
-     * 第二次必须命中 award_stock_settlement.uk_order_id，strategy_detail 只扣减一次。
+     * 第二次必须命中 award_stock_settlement.uk_order_id，draw_config_prize 只扣减一次。
      */
     @Test
     public void sameOrderIdSettledTwiceDeductsOnlyOnce() throws Exception {
         long orderId = System.currentTimeMillis();
-        // 预置一个剩余 5 的明细（也可改用已有 strategy 数据）
-        // arrangeStrategyDetail(10001L, "C", 5);
+        // 预置一个剩余 5 的明细（也可改用已有 drawConfig 数据）
+        // arrangeDrawConfigPrize(10001L, "C", 5);
 
         int first = executeSettlementSql(orderId, 10001L, "C");   // 应用内实际走 repository 同一事务
         int second = executeSettlementSql(orderId, 10001L, "C");
@@ -127,15 +127,15 @@ public class StockSettlementIdempotencyManualIT {
 
     // ------------------------ helper SQL ------------------------
 
-    /** 与 StrategyRepository.settleAwardStock 相同的本地事务的裸 SQL 版本（便于独立运行） */
-    private int executeSettlementSql(long orderId, long strategyId, String awardId) throws Exception {
+    /** 与 DrawConfigRepository.settleAwardStock 相同的本地事务的裸 SQL 版本（便于独立运行） */
+    private int executeSettlementSql(long orderId, long drawConfigId, String awardId) throws Exception {
         connection.setAutoCommit(false);
         try {
             PreparedStatement insert = connection.prepareStatement(
-                    "INSERT INTO award_stock_settlement (order_id, u_id, strategy_id, award_id, create_time)" +
+                    "INSERT INTO award_stock_settlement (order_id, u_id, draw_config_id, award_id, create_time)" +
                             " VALUES (?, 'it-user', ?, ?, NOW())");
             insert.setLong(1, orderId);
-            insert.setLong(2, strategyId);
+            insert.setLong(2, drawConfigId);
             insert.setString(3, awardId);
             try {
                 insert.executeUpdate();
@@ -145,14 +145,14 @@ public class StockSettlementIdempotencyManualIT {
             }
 
             PreparedStatement deduct = connection.prepareStatement(
-                    "UPDATE strategy_detail SET award_surplus_count = award_surplus_count - 1" +
-                            " WHERE strategy_id = ? AND award_id = ? AND award_surplus_count > 0");
-            deduct.setLong(1, strategyId);
+                    "UPDATE draw_config_prize SET award_surplus_count = award_surplus_count - 1" +
+                            " WHERE draw_config_id = ? AND award_id = ? AND award_surplus_count > 0");
+            deduct.setLong(1, drawConfigId);
             deduct.setString(2, awardId);
             int updated = deduct.executeUpdate();
             if (updated == 0) {
                 connection.rollback();
-                throw new IllegalStateException("stock gap for strategy:" + strategyId + " award:" + awardId);
+                throw new IllegalStateException("stock gap for drawConfig:" + drawConfigId + " award:" + awardId);
             }
             connection.commit();
             return 1;
@@ -161,10 +161,10 @@ public class StockSettlementIdempotencyManualIT {
         }
     }
 
-    private int querySurplusCount(long strategyId, String awardId) throws Exception {
+    private int querySurplusCount(long drawConfigId, String awardId) throws Exception {
         PreparedStatement ps = connection.prepareStatement(
-                "SELECT award_surplus_count FROM strategy_detail WHERE strategy_id = ? AND award_id = ?");
-        ps.setLong(1, strategyId);
+                "SELECT award_surplus_count FROM draw_config_prize WHERE draw_config_id = ? AND award_id = ?");
+        ps.setLong(1, drawConfigId);
         ps.setString(2, awardId);
         ResultSet rs = ps.executeQuery();
         rs.next();

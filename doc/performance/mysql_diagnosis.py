@@ -12,7 +12,7 @@ from run import mysql_metrics, write
 def summarize_plans(directory: Path) -> dict:
     """从本次 MySQL 8 执行树提取实际行数和服务端耗时，原始计划保持原样。"""
     summary = {}
-    for name in ('scanInvoiceMqState', 'scanAwardStockMqState'):
+    for name in ('scanFulfillmentEventStatus', 'scanStockSettlementEventStatus'):
         runs = []
         for repeat in (1, 2, 3):
             tables = []
@@ -37,13 +37,13 @@ def diagnose(directory: Path) -> dict:
     # 身份校验复用既有工具；本脚本没有启动、迁移、删除或重置入口。
     verify()
     directory.mkdir(parents=True, exist_ok=False)
-    mapper = ET.parse(ROOT / 'lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml').getroot()
+    mapper = ET.parse(ROOT / 'lottery-interfaces/src/main/resources/mybatis/mapper/DrawOrder_Mapper.xml').getroot()
     queries = {}
-    for name, limit in (('scanInvoiceMqState', 100), ('scanAwardStockMqState', 200)):
+    for name, limit in (('scanFulfillmentEventStatus', 100), ('scanStockSettlementEventStatus', 200)):
         # 直接提取生产 Mapper 的 SQL，避免手工复制导致诊断条件与业务不一致。
         element = mapper.find(f"select[@id='{name}']")
         queries[name] = ' '.join(''.join(element.itertext()).split()).replace('#{limit}', str(limit))
-    tables = [f'lottery_{db:02d}.user_strategy_export_{table:03d}'
+    tables = [f'lottery_{db:02d}.draw_order_{table:03d}'
               for db in (1, 2) for table in range(4)]
     write(directory / 'metrics-before.json', {'mysql': mysql_metrics(),
         'lockWaits': sql('SELECT * FROM performance_schema.data_lock_waits;')})
@@ -54,12 +54,12 @@ def diagnose(directory: Path) -> dict:
         'takeAndQuotaRows': sql(' UNION ALL '.join(
             f"SELECT '{schema}.{table}',COUNT(*) FROM {schema}.{table}"
             for schema in ('lottery_01', 'lottery_02')
-            for table in ('user_take_activity', 'user_take_activity_count')) + ';').strip(),
+            for table in ('draw_participation', 'user_activity_quota')) + ';').strip(),
         'globalRows': sql(' UNION ALL '.join(
             f"SELECT '{table}',COUNT(*) FROM lottery.{table}"
-            for table in ('activity', 'strategy_detail', 'award_stock_settlement')) + ';').strip(),
+            for table in ('activity', 'draw_config_prize', 'award_stock_settlement')) + ';').strip(),
         'orderStates': sql(' UNION ALL '.join(
-            f"SELECT '{table}',stock_mq_state,mq_state,grant_state,COUNT(*) FROM {table} GROUP BY stock_mq_state,mq_state,grant_state"
+            f"SELECT '{table}',stock_settlement_event_status,fulfillment_event_status,award_fulfillment_status,COUNT(*) FROM {table} GROUP BY stock_settlement_event_status,fulfillment_event_status,award_fulfillment_status"
             for table in tables) + ';').strip(),
         'tableSizes': sql("SELECT table_schema,table_name,table_rows,data_length,index_length FROM information_schema.tables WHERE table_schema IN ('lottery','lottery_01','lottery_02') ORDER BY table_schema,table_name;").strip(),
         'parameters': sql('SELECT VERSION(),@@innodb_flush_log_at_trx_commit,@@sync_binlog,@@transaction_isolation,@@innodb_buffer_pool_size;').strip(),
@@ -69,7 +69,7 @@ def diagnose(directory: Path) -> dict:
     for table in tables:
         for name, query in queries.items():
             # 物理表来自既定两库四表；保留实际执行 SQL 及计划供重新运行核对。
-            statement = query.replace('FROM user_strategy_export', f'FROM {table}')
+            statement = query.replace('FROM draw_order', f'FROM {table}')
             stem = table.replace('.', '-') + '-' + name
             (directory / (stem + '.sql')).write_text(statement + ';\n')
             (directory / (stem + '-explain.tsv')).write_text(sql('EXPLAIN ' + statement + ';'))
@@ -78,17 +78,17 @@ def diagnose(directory: Path) -> dict:
                 (directory / (stem + f'-analyze-{repeat}.txt')).write_text(sql('EXPLAIN ANALYZE ' + statement + ';'))
     summarize_plans(directory)
     union = ' UNION ALL '.join(f'SELECT * FROM {table}' for table in tables)
-    takes = ' UNION ALL '.join(f'SELECT u_id,activity_id,take_id,state FROM lottery_{db:02d}.user_take_activity' for db in (1, 2))
+    takes = ' UNION ALL '.join(f'SELECT u_id,activity_id,take_id,state FROM lottery_{db:02d}.draw_participation' for db in (1, 2))
     # 这里只核对 MySQL 持久化事实；Redis 与 Kafka 未启动，不宣称完整业务审计通过。
     audit = {
         'scope': '全部现存 lottery/lottery_01/lottery_02 MySQL 数据；不含 Redis/Kafka 审计',
-        'orders': sql(f'SELECT COUNT(*),COUNT(DISTINCT order_id),COUNT(DISTINCT take_id),SUM(stock_mq_state<>1),SUM(mq_state<>1 OR grant_state<>1),SUM(stock_mq_state=4) FROM ({union}) o;').strip(),
+        'orders': sql(f'SELECT COUNT(*),COUNT(DISTINCT order_id),COUNT(DISTINCT take_id),SUM(stock_settlement_event_status<>1),SUM(fulfillment_event_status<>1 OR award_fulfillment_status<>1),SUM(stock_settlement_event_status=4) FROM ({union}) o;').strip(),
         'takes': sql(f'SELECT COUNT(*),SUM(state=0),COUNT(*)-COUNT(DISTINCT take_id) FROM ({takes}) t;').strip(),
         'ledger': sql('SELECT COUNT(*),COUNT(DISTINCT order_id) FROM lottery.award_stock_settlement;').strip(),
-        'ledgerMismatch': sql(f'SELECT COUNT(*) FROM ({union}) o LEFT JOIN lottery.award_stock_settlement l ON o.order_id=l.order_id WHERE l.order_id IS NULL OR o.u_id<>l.u_id OR o.award_id<>l.award_id OR o.strategy_id<>l.strategy_id;').strip(),
+        'ledgerMismatch': sql(f'SELECT COUNT(*) FROM ({union}) o LEFT JOIN lottery.award_stock_settlement l ON o.order_id=l.order_id WHERE l.order_id IS NULL OR o.u_id<>l.u_id OR o.award_id<>l.award_id OR o.draw_config_id<>l.draw_config_id;').strip(),
         'takeMismatch': sql(f'SELECT COUNT(*) FROM ({union}) o LEFT JOIN ({takes}) t ON o.take_id=t.take_id WHERE t.take_id IS NULL OR o.u_id<>t.u_id OR o.activity_id<>t.activity_id OR t.state<>1;').strip(),
-        'negativeStock': sql('SELECT COUNT(*) FROM lottery.strategy_detail WHERE award_surplus_count<0;').strip(),
-        'quota': sql(' UNION ALL '.join(f'SELECT {db},SUM(total_count-left_count),SUM(left_count<0) FROM lottery_{db:02d}.user_take_activity_count' for db in (1, 2)) + ';').strip(),
+        'negativeStock': sql('SELECT COUNT(*) FROM lottery.draw_config_prize WHERE award_surplus_count<0;').strip(),
+        'quota': sql(' UNION ALL '.join(f'SELECT {db},SUM(total_count-left_count),SUM(left_count<0) FROM lottery_{db:02d}.user_activity_quota' for db in (1, 2)) + ';').strip(),
         'ordersUnchangedDuringDiagnosis': sql(counts + ';').strip() == data['orderRowsByShard'],
     }
     write(directory / 'mysql-audit.json', audit)

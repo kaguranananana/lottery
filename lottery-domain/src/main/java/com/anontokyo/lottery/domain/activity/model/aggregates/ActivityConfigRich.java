@@ -2,7 +2,7 @@ package com.anontokyo.lottery.domain.activity.model.aggregates;
 
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
 import com.anontokyo.lottery.domain.activity.model.vo.AwardVO;
-import com.anontokyo.lottery.domain.activity.model.vo.StrategyVO;
+import com.anontokyo.lottery.domain.activity.model.vo.DrawConfigVO;
 
 import java.util.List;
 
@@ -16,8 +16,8 @@ public class ActivityConfigRich {
     /** 活动信息 */
     private ActivityVO activity;
 
-    /** 策略信息(含策略明细) */
-    private StrategyVO strategy;
+    /** 策略信息(含抽奖配置奖品) */
+    private DrawConfigVO drawConfig;
 
     /** 奖品列表 */
     private List<AwardVO> awardList;
@@ -25,9 +25,9 @@ public class ActivityConfigRich {
     public ActivityConfigRich() {
     }
 
-    public ActivityConfigRich(ActivityVO activity, StrategyVO strategy, List<AwardVO> awardList) {
+    public ActivityConfigRich(ActivityVO activity, DrawConfigVO drawConfig, List<AwardVO> awardList) {
         this.activity = activity;
-        this.strategy = strategy;
+        this.drawConfig = drawConfig;
         this.awardList = awardList;
     }
 
@@ -39,12 +39,12 @@ public class ActivityConfigRich {
         this.activity = activity;
     }
 
-    public StrategyVO getStrategy() {
-        return strategy;
+    public DrawConfigVO getDrawConfig() {
+        return drawConfig;
     }
 
-    public void setStrategy(StrategyVO strategy) {
-        this.strategy = strategy;
+    public void setDrawConfig(DrawConfigVO drawConfig) {
+        this.drawConfig = drawConfig;
     }
 
     public List<AwardVO> getAwardList() {

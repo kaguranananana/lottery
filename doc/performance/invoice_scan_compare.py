@@ -14,24 +14,24 @@ def compare(directory: Path, repeats: int) -> dict:
     # 复用专用实例身份校验，新目录确保历史证据不覆盖。
     verify()
     directory.mkdir(parents=True, exist_ok=False)
-    mapper = ET.parse(ROOT / 'lottery-interfaces/src/main/resources/mybatis/mapper/UserStrategyExport_Mapper.xml').getroot()
+    mapper = ET.parse(ROOT / 'lottery-interfaces/src/main/resources/mybatis/mapper/DrawOrder_Mapper.xml').getroot()
     # 谓词和投影直接读取当前生产 Mapper，只替换分片表和批次上限。
-    query = ' '.join(''.join(mapper.find("select[@id='scanInvoiceMqState']").itertext()).split()).replace('#{limit}', '100')
-    tables = [f'lottery_{db:02d}.user_strategy_export_{tb:03d}' for db in (1, 2) for tb in range(4)]
+    query = ' '.join(''.join(mapper.find("select[@id='scanFulfillmentEventStatus']").itertext()).split()).replace('#{limit}', '100')
+    tables = [f'lottery_{db:02d}.draw_order_{tb:03d}' for db in (1, 2) for tb in range(4)]
     count_sql = ' UNION ALL '.join(f"SELECT '{table}',COUNT(*) FROM {table}" for table in tables) + ';'
     # 状态分布与行数一起核对，不能仅凭 COUNT 相同宣称消息事实未变化。
-    state_sql = ' UNION ALL '.join(f"SELECT '{table}',stock_mq_state,mq_state,grant_state,COUNT(*)"
-                                  f" FROM {table} GROUP BY stock_mq_state,mq_state,grant_state" for table in tables) + ';'
+    state_sql = ' UNION ALL '.join(f"SELECT '{table}',stock_settlement_event_status,fulfillment_event_status,award_fulfillment_status,COUNT(*)"
+                                  f" FROM {table} GROUP BY stock_settlement_event_status,fulfillment_event_status,award_fulfillment_status" for table in tables) + ';'
     before = sql(count_sql)
     before_states = sql(state_sql)
     # 保存局部实验的原始换页端点；采样位于对照循环外，不影响某一路径的执行计时。
     host_before = sample()
     write(directory / 'host-before.json', host_before)
     indexes = sql("SELECT table_schema,table_name,column_name FROM information_schema.statistics"
-                  " WHERE table_schema IN ('lottery_01','lottery_02') AND index_name='idx_invoice_grant_state'"
+                  " WHERE table_schema IN ('lottery_01','lottery_02') AND index_name='idx_award_fulfillment_status'"
                   " ORDER BY table_schema,table_name,seq_in_index;")
     # 本实验只排除一个明确索引，必须先证明八表均为所测单列定义。
-    assert indexes.splitlines() == [table.replace('.', '\t') + '\tgrant_state' for table in tables], indexes
+    assert indexes.splitlines() == [table.replace('.', '\t') + '\taward_fulfillment_status' for table in tables], indexes
     write(directory / 'initial-data.json', {'orderRowsByShard': before.strip(), 'orderStates': before_states.strip(), 'indexes': indexes.strip(),
         'parameters': sql('SELECT VERSION(),@@innodb_flush_log_at_trx_commit,@@sync_binlog,@@innodb_buffer_pool_size;').strip()})
     runs = []
@@ -44,8 +44,8 @@ def compare(directory: Path, repeats: int) -> dict:
                 target = table
                 if variant == 'withoutIndex':
                     # 仅诊断查询忽略本次新索引，恢复原访问路径；数据和原条件完全相同。
-                    target += ' IGNORE INDEX (idx_invoice_grant_state)'
-                statement = query.replace('FROM user_strategy_export', f'FROM {target}')
+                    target += ' IGNORE INDEX (idx_award_fulfillment_status)'
+                statement = query.replace('FROM draw_order', f'FROM {target}')
                 stem = f'{repeat + 1}-{table.replace(".", "-")}-{variant}'
                 (directory / f'{stem}.sql').write_text(statement + ';\n')
                 raw = sql('EXPLAIN ANALYZE ' + statement + ';')

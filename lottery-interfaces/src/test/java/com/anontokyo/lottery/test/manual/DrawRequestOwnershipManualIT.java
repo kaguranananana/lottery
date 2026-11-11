@@ -12,19 +12,19 @@ import com.anontokyo.lottery.application.process.draw.req.DrawProcessReq;
 import com.anontokyo.lottery.application.process.draw.res.DrawProcessResult;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
-import com.anontokyo.lottery.domain.activity.model.vo.UserTakeActivityVO;
+import com.anontokyo.lottery.domain.activity.model.vo.DrawParticipationVO;
 import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
-import com.anontokyo.lottery.domain.strategy.repository.IStrategyRepository;
+import com.anontokyo.lottery.domain.draw.repository.IDrawConfigRepository;
 import com.anontokyo.lottery.domain.activity.service.partake.impl.ActivityPartakeImpl;
 import com.anontokyo.lottery.domain.award.service.order.impl.AwardOrderImpl;
-import com.anontokyo.lottery.domain.strategy.model.res.DrawResult;
-import com.anontokyo.lottery.domain.strategy.model.vo.DrawAwardInfo;
-import com.anontokyo.lottery.domain.strategy.service.draw.IDrawExec;
+import com.anontokyo.lottery.domain.draw.model.res.DrawResult;
+import com.anontokyo.lottery.domain.draw.model.vo.DrawAwardInfo;
+import com.anontokyo.lottery.domain.draw.service.draw.IDrawExec;
 import com.anontokyo.lottery.domain.support.ids.IdGenerator;
 import com.anontokyo.lottery.domain.support.lock.IActivityDrawProcessGuard;
 import com.anontokyo.lottery.infrastructure.dao.*;
 import com.anontokyo.lottery.infrastructure.repository.OrderRepository;
-import com.anontokyo.lottery.infrastructure.repository.UserTakeActivityRepository;
+import com.anontokyo.lottery.infrastructure.repository.DrawParticipationRepository;
 import org.junit.*;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.SqlSessionTemplate;
@@ -35,7 +35,6 @@ import org.springframework.jdbc.datasource.DataSourceTransactionManager;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.sql.*;
 import java.util.*;
@@ -56,9 +55,9 @@ public class DrawRequestOwnershipManualIT {
     private static String mysqlUrl;
     private static final AtomicLong ids = new AtomicLong(System.currentTimeMillis());
     private static IDBRouterStrategy router;
-    private static UserTakeActivityRepository takes;
+    private static DrawParticipationRepository takes;
     private static OrderRepository orders;
-    private IStrategyRepository stockReservations;
+    private IDrawConfigRepository stockReservations;
     private ActivityProcessImpl process;
     private IDrawExec draw;
     private String user;
@@ -68,30 +67,11 @@ public class DrawRequestOwnershipManualIT {
     public static void database() throws Exception {
         mysqlUrl = System.getProperty("lottery.it.mysql");
         assertNotNull("请显式传入专用空 MySQL 实例 URL（末尾 /，不含数据库）", mysqlUrl);
-        // 使用基线建表，不导入业务种子，不启动 Kafka 或 XXL-Job。
-        String baseline = new String(Files.readAllBytes(Paths.get("../doc/sql/lottery_01.sql")), StandardCharsets.UTF_8);
-        try (Connection connection = connect(); Statement statement = connection.createStatement()) {
-            statement.execute("CREATE DATABASE IF NOT EXISTS lottery");
-            for (String schema : Arrays.asList("lottery_01", "lottery_02")) {
-                statement.execute("CREATE DATABASE IF NOT EXISTS " + schema);
-                statement.execute("USE " + schema);
-                Matcher matcher = Pattern.compile("CREATE TABLE `(user_take_activity(?:_count)?|user_strategy_export_00[0-3])` \\(.*?;", Pattern.DOTALL).matcher(baseline);
-                while (matcher.find()) {
-                    statement.execute(matcher.group().replace("CREATE TABLE", "CREATE TABLE IF NOT EXISTS"));
-                }
-                // 既有 Outbox 迁移的前置字段，本测试不调用其结算链路。
-                for (int table = 0; table < 4; table++) {
-                    String name = String.format("user_strategy_export_%03d", table);
-                    try (ResultSet columns = connection.getMetaData().getColumns(schema, null, name, "stock_mq_state")) {
-                        if (!columns.next()) {
-                            statement.execute("ALTER TABLE " + name + " ADD stock_mq_state TINYINT DEFAULT 0");
-                        }
-                    }
-                }
-            }
+        // 从当前完整 Schema 初始化，测试运行在显式指定的空 MySQL 实例。
+        try (Connection connection = connect()) {
+            org.springframework.jdbc.datasource.init.ScriptUtils.executeSqlScript(connection,
+                    new org.springframework.core.io.FileSystemResource("../docs/sql/lottery-schema.sql"));
         }
-        // 直接执行交付迁移，证明实际两库与八张订单表都能升级。
-        executeMigration();
         DBRouterConfig config = new DBRouterConfig(2, 4, "uId");
         router = new DBRouterStrategyHashCode(config);
         DynamicDataSource datasource = new DynamicDataSource();
@@ -113,16 +93,16 @@ public class DrawRequestOwnershipManualIT {
         factory.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:mybatis/mapper/*_Mapper.xml"));
         SqlSessionTemplate session = new SqlSessionTemplate(factory.getObject());
         DBRouterJoinPoint aspect = new DBRouterJoinPoint(config, router);
-        IUserTakeActivityDao takeDao = routed(IUserTakeActivityDao.class, session.getMapper(IUserTakeActivityDao.class), aspect);
-        IUserTakeActivityCountDao countDao = routed(IUserTakeActivityCountDao.class, session.getMapper(IUserTakeActivityCountDao.class), aspect);
-        IUserStrategyExportDao orderDao = routed(IUserStrategyExportDao.class, session.getMapper(IUserStrategyExportDao.class), aspect);
+        IDrawParticipationDao takeDao = routed(IDrawParticipationDao.class, session.getMapper(IDrawParticipationDao.class), aspect);
+        IUserActivityQuotaDao countDao = routed(IUserActivityQuotaDao.class, session.getMapper(IUserActivityQuotaDao.class), aspect);
+        IDrawOrderDao orderDao = routed(IDrawOrderDao.class, session.getMapper(IDrawOrderDao.class), aspect);
         TransactionTemplate transaction = new TransactionTemplate(new DataSourceTransactionManager(datasource));
-        takes = new UserTakeActivityRepository();
+        takes = new DrawParticipationRepository();
         orders = new OrderRepository();
-        ReflectionTestUtils.setField(takes, "userTakeActivityDao", takeDao);
-        ReflectionTestUtils.setField(takes, "userTakeActivityCountDao", countDao);
-        ReflectionTestUtils.setField(orders, "userTakeActivityDao", takeDao);
-        ReflectionTestUtils.setField(orders, "userStrategyExportDao", orderDao);
+        ReflectionTestUtils.setField(takes, "drawParticipationDao", takeDao);
+        ReflectionTestUtils.setField(takes, "userActivityQuotaDao", countDao);
+        ReflectionTestUtils.setField(orders, "drawParticipationDao", takeDao);
+        ReflectionTestUtils.setField(orders, "drawOrderDao", orderDao);
         for (Object repository : Arrays.asList(takes, orders)) {
             ReflectionTestUtils.setField(repository, "dbRouter", router);
             ReflectionTestUtils.setField(repository, "transactionTemplate", transaction);
@@ -135,20 +115,20 @@ public class DrawRequestOwnershipManualIT {
         bill = new ActivityBillVO();
         bill.setuId(user);
         bill.setActivityId(100001L);
-        bill.setActivityName("幂等测试");
-        bill.setStrategyId(10001L);
+
+        bill.setDrawConfigId(10001L);
         bill.setTakeCount(10);
         bill.setState(Constants.ActivityState.DOING.getCode());
         bill.setBeginDateTime(new java.util.Date(0));
         bill.setEndDateTime(new java.util.Date(Long.MAX_VALUE));
         IActivityRepository activities = mock(IActivityRepository.class);
         // SQL 专项只模拟奖品预扣与回补，用户事务和路由保持真实。
-        stockReservations = mock(IStrategyRepository.class);
-        ReflectionTestUtils.setField(orders, "strategyRepository", stockReservations);
+        stockReservations = mock(IDrawConfigRepository.class);
+        ReflectionTestUtils.setField(orders, "drawConfigRepository", stockReservations);
         when(activities.queryActivityBill(any())).thenReturn(bill);
         IdGenerator generator = ids::incrementAndGet;
         ActivityPartakeImpl partake = new ActivityPartakeImpl();
-        ReflectionTestUtils.setField(partake, "userTakeActivityRepository", takes);
+        ReflectionTestUtils.setField(partake, "drawParticipationRepository", takes);
         ReflectionTestUtils.setField(partake, "activityRepository", activities);
         ReflectionTestUtils.setField(partake, "idGenerator", generator);
         AwardOrderImpl awardOrder = new AwardOrderImpl();
@@ -162,7 +142,7 @@ public class DrawRequestOwnershipManualIT {
         when(guard.tryClaim(anyLong(), anyString(), anyString())).thenReturn(true);
         process = new ActivityProcessImpl();
         ReflectionTestUtils.setField(process, "activityDrawProcessGuard", guard);
-        ReflectionTestUtils.setField(process, "userTakeActivityRepository", takes);
+        ReflectionTestUtils.setField(process, "drawParticipationRepository", takes);
         ReflectionTestUtils.setField(process, "orderRepository", orders);
         ReflectionTestUtils.setField(process, "activityPartake", partake);
         ReflectionTestUtils.setField(process, "awardOrder", awardOrder);
@@ -184,7 +164,7 @@ public class DrawRequestOwnershipManualIT {
             String requestId = "A" + ids.incrementAndGet();
             DrawProcessResult a = request(requestId);
             assertEquals(Constants.ResponseCode.SUCCESS.getCode(), a.getCode());
-            assertNull(takes.queryNoConsumedTakeActivityOrder(100001L, user));
+            assertNull(takes.queryUnfinishedParticipation(100001L, user));
             DrawProcessResult replay = request(requestId);
             assertEquals(a.getTakeId(), replay.getTakeId());
             assertEquals(a.getOrderId(), replay.getOrderId());
@@ -206,7 +186,7 @@ public class DrawRequestOwnershipManualIT {
         when(draw.doDrawExec(any())).thenThrow(new IllegalStateException("after take"));
         try { request("A"); fail("必须暴露抽奖异常"); }
         catch (IllegalStateException expected) { assertEquals("after take", expected.getMessage()); }
-        UserTakeActivityVO original = takes.queryTakeActivityByRequestId(100001L, user, "A");
+        DrawParticipationVO original = takes.queryParticipationByRequestId(100001L, user, "A");
         assertEquals("A", original.getRequestId());
         assertEquals(9, leftCount());
         DrawProcessResult blocked = request("B");
@@ -245,7 +225,7 @@ public class DrawRequestOwnershipManualIT {
         assertEquals(7, Collections.frequency(results, Constants.ResponseCode.INDEX_DUP));
         assertEquals(9, leftCount());
         assertEquals(1, takeCount());
-        assertNotNull(takes.queryNoConsumedTakeActivityOrder(100001L, user).getRequestId());
+        assertNotNull(takes.queryUnfinishedParticipation(100001L, user).getRequestId());
     }
 
     @Test
@@ -276,26 +256,26 @@ public class DrawRequestOwnershipManualIT {
                 takes.takeParticipation(bill, new java.util.Date(), ids.incrementAndGet(), "A"));
         String schema = schema();
         try (Connection connection = connect(); Statement statement = connection.createStatement()) {
-            statement.execute("ALTER TABLE " + schema + ".user_take_activity RENAME COLUMN request_id TO unavailable_request_id");
+            statement.execute("ALTER TABLE " + schema + ".draw_participation RENAME COLUMN request_id TO unavailable_request_id");
             try {
                 request("A");
                 fail("真实 SQL 查询错误必须中断");
             } catch (org.springframework.dao.DataAccessException expected) {
                 assertTrue(expected.getMessage().contains("request_id"));
             } finally {
-                statement.execute("ALTER TABLE " + schema + ".user_take_activity RENAME COLUMN unavailable_request_id TO request_id");
+                statement.execute("ALTER TABLE " + schema + ".draw_participation RENAME COLUMN unavailable_request_id TO request_id");
             }
         }
         assertEquals(9, leftCount());
         assertEquals(1, takeCount());
-        assertEquals(Constants.TaskState.NO_USED.getCode(), takes.queryTakeActivityByRequestId(100001L, user, "A").getState());
+        assertEquals(Constants.TaskState.NO_USED.getCode(), takes.queryParticipationByRequestId(100001L, user, "A").getState());
     }
 
     @Test
     public void orderInsertSqlFailureRollsBackConsumptionAndAResumes() throws Exception {
         router.doRouter(user);
         String table = "lottery_" + DBContextHolder.getDBKey()
-                + ".user_strategy_export_" + DBContextHolder.getTBKey();
+                + ".draw_order_" + DBContextHolder.getTBKey();
         router.clear();
         try (Connection connection = connect(); Statement statement = connection.createStatement()) {
             // 在订单事务已执行 take CAS 后制造真实 INSERT 错误，验证整个事务回滚。
@@ -309,10 +289,10 @@ public class DrawRequestOwnershipManualIT {
                 statement.execute("ALTER TABLE " + table + " RENAME COLUMN unavailable_award_content TO award_content");
             }
         }
-        UserTakeActivityVO unfinished = takes.queryTakeActivityByRequestId(100001L, user, "A");
+        DrawParticipationVO unfinished = takes.queryParticipationByRequestId(100001L, user, "A");
         assertEquals(Constants.TaskState.NO_USED.getCode(), unfinished.getState());
         // 已确认回滚只回补本次预扣一次；真实 Redis 行为另由 HTTP E2E 验证。
-        verify(stockReservations).recoverStrategyAwardStockByRedis(10001L, "3");
+        verify(stockReservations).recoverDrawConfigPrizeStockByRedis(10001L, "3");
         assertEquals(9, leftCount());
         assertEquals(0, orderCount());
         DrawProcessResult resumed = request("A");
@@ -366,13 +346,13 @@ public class DrawRequestOwnershipManualIT {
     private int orderCount() throws Exception {
         router.doRouter(user);
         String table = "lottery_" + DBContextHolder.getDBKey()
-                + ".user_strategy_export_" + DBContextHolder.getTBKey();
+                + ".draw_order_" + DBContextHolder.getTBKey();
         router.clear();
         return count("SELECT COUNT(*) FROM " + table + " WHERE u_id=?");
     }
 
-    private int leftCount() throws Exception { return count("SELECT left_count FROM " + schema() + ".user_take_activity_count WHERE u_id=?"); }
-    private int takeCount() throws Exception { return count("SELECT COUNT(*) FROM " + schema() + ".user_take_activity WHERE u_id=?"); }
+    private int leftCount() throws Exception { return count("SELECT left_count FROM " + schema() + ".user_activity_quota WHERE u_id=?"); }
+    private int takeCount() throws Exception { return count("SELECT COUNT(*) FROM " + schema() + ".draw_participation WHERE u_id=?"); }
     private int count(String sql) throws Exception {
         try (Connection connection = connect(); PreparedStatement statement = connection.prepareStatement(sql)) {
             statement.setString(1, user);
@@ -408,19 +388,4 @@ public class DrawRequestOwnershipManualIT {
         } finally { pool.shutdownNow(); }
     }
 
-    private static void executeMigration() throws Exception {
-        String delimiter = ";";
-        StringBuilder sql = new StringBuilder();
-        try (Connection connection = connect(); Statement statement = connection.createStatement()) {
-            for (String line : Files.readAllLines(Paths.get("../docs/sql/V3__draw_request_ownership.sql"), StandardCharsets.UTF_8)) {
-                if (line.startsWith("--") || line.trim().isEmpty()) { continue; }
-                if (line.startsWith("DELIMITER ")) { delimiter = line.substring(10); continue; }
-                sql.append(line).append('\n');
-                if (line.trim().endsWith(delimiter)) {
-                    statement.execute(sql.toString().trim().substring(0, sql.toString().trim().length() - delimiter.length()));
-                    sql.setLength(0);
-                }
-            }
-        }
-    }
 }

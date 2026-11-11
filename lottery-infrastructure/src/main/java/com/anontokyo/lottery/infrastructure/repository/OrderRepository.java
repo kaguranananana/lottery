@@ -4,20 +4,19 @@ import com.anontokyo.lottery.common.Constants;
 import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
-import com.anontokyo.lottery.domain.strategy.repository.IStrategyRepository;
+import com.anontokyo.lottery.domain.draw.repository.IDrawConfigRepository;
+import org.springframework.beans.BeanUtils;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.support.TransactionTemplate;
 import javax.annotation.Resource;
-import com.anontokyo.lottery.infrastructure.dao.IUserTakeActivityDao;
-import com.anontokyo.lottery.infrastructure.po.UserTakeActivity;
-import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
-import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
+import com.anontokyo.lottery.infrastructure.dao.IDrawParticipationDao;
+import com.anontokyo.lottery.infrastructure.po.DrawParticipation;
+import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
-import com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao;
-import com.anontokyo.lottery.infrastructure.po.UserStrategyExport;
+import com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao;
+import com.anontokyo.lottery.infrastructure.po.DrawOrder;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -25,10 +24,10 @@ import java.util.List;
 public class OrderRepository implements IOrderRepository {
 
     @Resource
-    private IUserStrategyExportDao userStrategyExportDao;
+    private IDrawOrderDao drawOrderDao;
 
     @Resource
-    private IUserTakeActivityDao userTakeActivityDao;
+    private IDrawParticipationDao drawParticipationDao;
 
     @Resource
     private IDBRouterStrategy dbRouter;
@@ -37,18 +36,18 @@ public class OrderRepository implements IOrderRepository {
     private TransactionTemplate transactionTemplate;
 
     @Resource
-    private IStrategyRepository strategyRepository;
+    private IDrawConfigRepository drawConfigRepository;
 
     @Override
     public Constants.ResponseCode saveDrawOrderWithTakeLock(DrawOrderVO drawOrder) {
         try {
             dbRouter.doRouter(drawOrder.getuId());
             return StockReservationTransactions.execute(transactionTemplate, status -> {
-                UserTakeActivity lockReq = new UserTakeActivity();
+                DrawParticipation lockReq = new DrawParticipation();
                 lockReq.setuId(drawOrder.getuId());
                 lockReq.setActivityId(drawOrder.getActivityId());
                 lockReq.setTakeId(drawOrder.getTakeId());
-                int lockCount = userTakeActivityDao.lockTakeActivity(lockReq);
+                int lockCount = drawParticipationDao.consumeParticipation(lockReq);
                 if (lockCount == 0) {
                     status.setRollbackOnly();
                     return Constants.ResponseCode.NO_UPDATE;
@@ -62,8 +61,8 @@ public class OrderRepository implements IOrderRepository {
                 }
 
                 return Constants.ResponseCode.SUCCESS;
-            }, () -> strategyRepository.recoverStrategyAwardStockByRedis(
-                    drawOrder.getStrategyId(), drawOrder.getAwardId()),
+            }, () -> drawConfigRepository.recoverDrawConfigPrizeStockByRedis(
+                    drawOrder.getDrawConfigId(), drawOrder.getAwardId()),
                     "award uId=" + drawOrder.getuId() + " takeId=" + drawOrder.getTakeId()
                             + " orderId=" + drawOrder.getOrderId());
         } finally {
@@ -83,114 +82,112 @@ public class OrderRepository implements IOrderRepository {
 
     @Override
     public boolean markUserAwardGranted(String uId, Long orderId, String awardId) {
-        UserStrategyExport userStrategyExport = new UserStrategyExport();
-        userStrategyExport.setuId(uId);
-        userStrategyExport.setOrderId(orderId);
-        userStrategyExport.setAwardId(awardId);
-        userStrategyExport.setGrantState(Constants.GrantState.COMPLETE.getCode());
-        return userStrategyExportDao.markUserAwardGranted(userStrategyExport) > 0;
+        DrawOrder drawOrderRow = new DrawOrder();
+        drawOrderRow.setuId(uId);
+        drawOrderRow.setOrderId(orderId);
+        drawOrderRow.setAwardId(awardId);
+        drawOrderRow.setAwardFulfillmentStatus(Constants.AwardFulfillmentStatus.COMPLETE.getCode());
+        return drawOrderDao.markUserAwardGranted(drawOrderRow) > 0;
     }
 
     private void insertDrawOrder(DrawOrderVO drawOrder) {
-        UserStrategyExport userStrategyExport = new UserStrategyExport();
-        userStrategyExport.setuId(drawOrder.getuId());
-        userStrategyExport.setActivityId(drawOrder.getActivityId());
-        userStrategyExport.setOrderId(drawOrder.getOrderId());
-        userStrategyExport.setTakeId(drawOrder.getTakeId());
-        userStrategyExport.setStrategyId(drawOrder.getStrategyId());
-        userStrategyExport.setStrategyMode(drawOrder.getStrategyMode());
-        userStrategyExport.setGrantType(drawOrder.getGrantType());
-        userStrategyExport.setGrantDate(drawOrder.getGrantDate());
-        userStrategyExport.setGrantState(drawOrder.getGrantState());
-        userStrategyExport.setAwardId(drawOrder.getAwardId());
-        userStrategyExport.setAwardType(drawOrder.getAwardType());
-        userStrategyExport.setAwardName(drawOrder.getAwardName());
-        userStrategyExport.setAwardContent(drawOrder.getAwardContent());
-        userStrategyExport.setUuid(String.valueOf(drawOrder.getOrderId()));
-        userStrategyExport.setMqState(drawOrder.getMqState());
-        userStrategyExport.setStockMqState(drawOrder.getStockMqState());
-        userStrategyExportDao.insert(userStrategyExport);
+        DrawOrder drawOrderRow = new DrawOrder();
+        drawOrderRow.setuId(drawOrder.getuId());
+        drawOrderRow.setActivityId(drawOrder.getActivityId());
+        drawOrderRow.setOrderId(drawOrder.getOrderId());
+        drawOrderRow.setTakeId(drawOrder.getTakeId());
+        drawOrderRow.setDrawConfigId(drawOrder.getDrawConfigId());
+        drawOrderRow.setGrantType(drawOrder.getGrantType());
+        drawOrderRow.setScheduledAt(drawOrder.getScheduledAt());
+        drawOrderRow.setAwardFulfillmentStatus(drawOrder.getAwardFulfillmentStatus());
+        drawOrderRow.setAwardId(drawOrder.getAwardId());
+        drawOrderRow.setAwardType(drawOrder.getAwardType());
+        drawOrderRow.setAwardName(drawOrder.getAwardName());
+        drawOrderRow.setAwardContent(drawOrder.getAwardContent());
+        drawOrderRow.setFulfillmentEventStatus(drawOrder.getFulfillmentEventStatus());
+        drawOrderRow.setStockSettlementEventStatus(drawOrder.getStockSettlementEventStatus());
+        drawOrderDao.insert(drawOrderRow);
     }
 
     @Override
-    public void updateInvoiceMqState(String uId, Long orderId, Integer mqState) {
-        UserStrategyExport userStrategyExport = new UserStrategyExport();
-        userStrategyExport.setuId(uId);
-        userStrategyExport.setOrderId(orderId);
-        userStrategyExport.setMqState(mqState);
-        userStrategyExportDao.updateInvoiceMqState(userStrategyExport);
+    public void updateFulfillmentEventStatus(String uId, Long orderId, Integer fulfillmentEventStatus) {
+        DrawOrder drawOrderRow = new DrawOrder();
+        drawOrderRow.setuId(uId);
+        drawOrderRow.setOrderId(orderId);
+        drawOrderRow.setFulfillmentEventStatus(fulfillmentEventStatus);
+        drawOrderDao.updateFulfillmentEventStatus(drawOrderRow);
     }
 
     @Override
-    public void updateStockMqState(String uId, Long orderId, Integer stockMqState) {
-        UserStrategyExport userStrategyExport = new UserStrategyExport();
-        userStrategyExport.setuId(uId);
-        userStrategyExport.setOrderId(orderId);
-        userStrategyExport.setStockMqState(stockMqState);
-        userStrategyExportDao.updateStockMqState(userStrategyExport);
+    public void updateStockSettlementEventStatus(String uId, Long orderId, Integer stockSettlementEventStatus) {
+        DrawOrder drawOrderRow = new DrawOrder();
+        drawOrderRow.setuId(uId);
+        drawOrderRow.setOrderId(orderId);
+        drawOrderRow.setStockSettlementEventStatus(stockSettlementEventStatus);
+        drawOrderDao.updateStockSettlementEventStatus(drawOrderRow);
     }
 
     @Override
     public void markStockSettlementFailed(String uId, Long orderId) {
         // 用户标识提供分库分表路由键。
-        UserStrategyExport userStrategyExport = new UserStrategyExport();
-        userStrategyExport.setuId(uId);
+        DrawOrder drawOrderRow = new DrawOrder();
+        drawOrderRow.setuId(uId);
         // 按订单限定本次结算失败的更新范围。
-        userStrategyExport.setOrderId(orderId);
+        drawOrderRow.setOrderId(orderId);
         // 只有持久化成功才允许消费者 ACK，数据库异常原样传播。
-        if (userStrategyExportDao.markStockSettlementFailed(userStrategyExport) > 0) {
+        if (drawOrderDao.markStockSettlementFailed(drawOrderRow) > 0) {
             return;
         }
         // 零行可能是并发结算成功或重复 BLOCKED；必须回读事实而非默认成功。
-        UserStrategyExport current = queryOrder(uId, orderId);
-        if (current == null || (!Constants.MQState.COMPLETE.getCode().equals(current.getStockMqState())
-                && !Constants.MQState.BLOCKED.getCode().equals(current.getStockMqState()))) {
+        DrawOrder current = queryOrder(uId, orderId);
+        if (current == null || (!Constants.StockSettlementEventStatus.COMPLETE.getCode().equals(current.getStockSettlementEventStatus())
+                && !Constants.StockSettlementEventStatus.BLOCKED.getCode().equals(current.getStockSettlementEventStatus()))) {
             throw new IllegalStateException("库存分歧未持久化，uId=" + uId + " orderId=" + orderId);
         }
     }
 
     @Override
-    public List<InvoiceVO> scanInvoiceMqState(int limit) {
-        List<UserStrategyExport> userStrategyExportList = userStrategyExportDao.scanInvoiceMqState(limit);
-        List<InvoiceVO> invoiceVOList = new ArrayList<>(userStrategyExportList.size());
-        for (UserStrategyExport userStrategyExport : userStrategyExportList) {
-            invoiceVOList.add(toInvoice(userStrategyExport));
+    public List<AwardFulfillmentEvent> scanFulfillmentEventStatus(int limit) {
+        List<DrawOrder> drawOrderRowList = drawOrderDao.scanFulfillmentEventStatus(limit);
+        List<AwardFulfillmentEvent> fulfillmentEventList = new ArrayList<>(drawOrderRowList.size());
+        for (DrawOrder drawOrderRow : drawOrderRowList) {
+            fulfillmentEventList.add(toFulfillmentEvent(drawOrderRow));
         }
-        return invoiceVOList;
+        return fulfillmentEventList;
     }
 
     @Override
-    public List<AwardStockSettlementVO> scanAwardStockMqState(int limit) {
-        List<UserStrategyExport> userStrategyExportList = userStrategyExportDao.scanAwardStockMqState(limit);
-        List<AwardStockSettlementVO> settlementVOList = new ArrayList<>(userStrategyExportList.size());
-        for (UserStrategyExport userStrategyExport : userStrategyExportList) {
+    public List<AwardStockSettlementVO> scanStockSettlementEventStatus(int limit) {
+        List<DrawOrder> drawOrderRowList = drawOrderDao.scanStockSettlementEventStatus(limit);
+        List<AwardStockSettlementVO> settlementVOList = new ArrayList<>(drawOrderRowList.size());
+        for (DrawOrder drawOrderRow : drawOrderRowList) {
             AwardStockSettlementVO settlementVO = new AwardStockSettlementVO();
-            settlementVO.setuId(userStrategyExport.getuId());
-            settlementVO.setOrderId(userStrategyExport.getOrderId());
-            settlementVO.setStrategyId(userStrategyExport.getStrategyId());
-            settlementVO.setAwardId(userStrategyExport.getAwardId());
+            settlementVO.setuId(drawOrderRow.getuId());
+            settlementVO.setOrderId(drawOrderRow.getOrderId());
+            settlementVO.setDrawConfigId(drawOrderRow.getDrawConfigId());
+            settlementVO.setAwardId(drawOrderRow.getAwardId());
             settlementVOList.add(settlementVO);
         }
         return settlementVOList;
     }
 
     @Override
-    public List<InvoiceVO> scanInvoiceMqStateByShard(int dbIdx, int tbIdx, int limit) {
+    public List<AwardFulfillmentEvent> scanFulfillmentEventStatusByShard(int dbIdx, int tbIdx, int limit) {
         try {
             dbRouter.setDBKey(dbIdx);
             dbRouter.setTBKey(tbIdx);
-            return scanInvoiceMqState(limit);
+            return scanFulfillmentEventStatus(limit);
         } finally {
             dbRouter.clear();
         }
     }
 
     @Override
-    public List<AwardStockSettlementVO> scanAwardStockMqStateByShard(int dbIdx, int tbIdx, int limit) {
+    public List<AwardStockSettlementVO> scanStockSettlementEventStatusByShard(int dbIdx, int tbIdx, int limit) {
         try {
             dbRouter.setDBKey(dbIdx);
             dbRouter.setTBKey(tbIdx);
-            return scanAwardStockMqState(limit);
+            return scanStockSettlementEventStatus(limit);
         } finally {
             dbRouter.clear();
         }
@@ -198,54 +195,60 @@ public class OrderRepository implements IOrderRepository {
 
     @Override
     public boolean isAwardCompleted(String uId, Long orderId) {
-        UserStrategyExport userStrategyExport = queryOrder(uId, orderId);
-        return userStrategyExport != null
-                && Constants.GrantState.COMPLETE.getCode().equals(userStrategyExport.getGrantState());
+        DrawOrder drawOrderRow = queryOrder(uId, orderId);
+        return drawOrderRow != null
+                && Constants.AwardFulfillmentStatus.COMPLETE.getCode().equals(drawOrderRow.getAwardFulfillmentStatus());
     }
 
     @Override
-    public InvoiceVO queryInvoiceByOrderId(String uId, Long orderId) {
-        UserStrategyExport userStrategyExport = queryOrder(uId, orderId);
-        if (userStrategyExport == null) {
+    public AwardFulfillmentEvent queryFulfillmentEventByOrderId(String uId, Long orderId) {
+        DrawOrder drawOrderRow = queryOrder(uId, orderId);
+        if (drawOrderRow == null) {
             return null;
         }
-        return toInvoice(userStrategyExport);
+        return toFulfillmentEvent(drawOrderRow);
     }
 
     @Override
-    public InvoiceVO queryOrderByTakeId(String uId, Long takeId) {
-        UserStrategyExport req = new UserStrategyExport();
+    public DrawOrderVO queryOrderByTakeId(String uId, Long takeId) {
+        DrawOrder req = new DrawOrder();
         req.setuId(uId);
         req.setTakeId(takeId);
-        UserStrategyExport order = userStrategyExportDao.queryUserStrategyExportByTakeId(req);
-        return order == null ? null : toInvoice(order);
+        DrawOrder drawOrderRow = drawOrderDao.queryDrawOrderByTakeId(req);
+        if (drawOrderRow == null) {
+            return null;
+        }
+        // 结果回放读取订单快照，同时保留计划时间和实际发放时间。
+        DrawOrderVO order = new DrawOrderVO();
+        BeanUtils.copyProperties(drawOrderRow, order);
+        return order;
     }
 
     @Override
-    public boolean isStockMqCompleted(String uId, Long orderId) {
-        UserStrategyExport userStrategyExport = queryOrder(uId, orderId);
-        return userStrategyExport != null
-                && Constants.MQState.COMPLETE.getCode().equals(userStrategyExport.getStockMqState());
+    public boolean isStockSettlementComplete(String uId, Long orderId) {
+        DrawOrder drawOrderRow = queryOrder(uId, orderId);
+        return drawOrderRow != null
+                && Constants.StockSettlementEventStatus.COMPLETE.getCode().equals(drawOrderRow.getStockSettlementEventStatus());
     }
 
-    private UserStrategyExport queryOrder(String uId, Long orderId) {
-        UserStrategyExport req = new UserStrategyExport();
+    private DrawOrder queryOrder(String uId, Long orderId) {
+        DrawOrder req = new DrawOrder();
         req.setuId(uId);
-        req.setUuid(String.valueOf(orderId));
-        return userStrategyExportDao.queryUserStrategyExportByUuid(req);
+        req.setOrderId(orderId);
+        return drawOrderDao.queryDrawOrderByOrderId(req);
     }
 
-    private InvoiceVO toInvoice(UserStrategyExport userStrategyExport) {
-        InvoiceVO invoiceVO = new InvoiceVO();
-        invoiceVO.setuId(userStrategyExport.getuId());
-        invoiceVO.setOrderId(userStrategyExport.getOrderId());
-        invoiceVO.setTakeId(userStrategyExport.getTakeId());
-        invoiceVO.setGrantType(userStrategyExport.getGrantType());
-        invoiceVO.setGrantDate(userStrategyExport.getGrantDate());
-        invoiceVO.setAwardId(userStrategyExport.getAwardId());
-        invoiceVO.setAwardType(userStrategyExport.getAwardType());
-        invoiceVO.setAwardName(userStrategyExport.getAwardName());
-        invoiceVO.setAwardContent(userStrategyExport.getAwardContent());
-        return invoiceVO;
+    private AwardFulfillmentEvent toFulfillmentEvent(DrawOrder drawOrderRow) {
+        AwardFulfillmentEvent fulfillmentEvent = new AwardFulfillmentEvent();
+        fulfillmentEvent.setuId(drawOrderRow.getuId());
+        fulfillmentEvent.setOrderId(drawOrderRow.getOrderId());
+        fulfillmentEvent.setTakeId(drawOrderRow.getTakeId());
+        fulfillmentEvent.setGrantType(drawOrderRow.getGrantType());
+        fulfillmentEvent.setScheduledAt(drawOrderRow.getScheduledAt());
+        fulfillmentEvent.setAwardId(drawOrderRow.getAwardId());
+        fulfillmentEvent.setAwardType(drawOrderRow.getAwardType());
+        fulfillmentEvent.setAwardName(drawOrderRow.getAwardName());
+        fulfillmentEvent.setAwardContent(drawOrderRow.getAwardContent());
+        return fulfillmentEvent;
     }
 }

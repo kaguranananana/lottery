@@ -8,20 +8,20 @@ import com.anontokyo.lottery.common.Result;
 import com.anontokyo.lottery.domain.activity.model.req.PartakeReq;
 import com.anontokyo.lottery.domain.activity.model.res.PartakeResult;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
-import com.anontokyo.lottery.domain.activity.model.vo.UserTakeActivityVO;
+import com.anontokyo.lottery.domain.activity.model.vo.DrawParticipationVO;
 import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
-import com.anontokyo.lottery.domain.activity.repository.IUserTakeActivityRepository;
+import com.anontokyo.lottery.domain.activity.repository.IDrawParticipationRepository;
 import com.anontokyo.lottery.domain.activity.service.partake.IActivityPartake;
 import com.anontokyo.lottery.domain.award.model.req.AwardOrderReq;
 import com.anontokyo.lottery.domain.award.model.res.AwardOrderResult;
-import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
+import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
 import com.anontokyo.lottery.domain.award.service.order.IAwardOrder;
 import com.anontokyo.lottery.domain.support.lock.IActivityDrawProcessGuard;
-import com.anontokyo.lottery.domain.strategy.model.req.DrawReq;
-import com.anontokyo.lottery.domain.strategy.model.res.DrawResult;
-import com.anontokyo.lottery.domain.strategy.model.vo.DrawAwardInfo;
-import com.anontokyo.lottery.domain.strategy.service.draw.IDrawExec;
+import com.anontokyo.lottery.domain.draw.model.req.DrawReq;
+import com.anontokyo.lottery.domain.draw.model.res.DrawResult;
+import com.anontokyo.lottery.domain.draw.model.vo.DrawAwardInfo;
+import com.anontokyo.lottery.domain.draw.service.draw.IDrawExec;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,7 +51,7 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
     private IActivityRepository activityRepository;
 
     @Resource
-    private IUserTakeActivityRepository userTakeActivityRepository;
+    private IDrawParticipationRepository drawParticipationRepository;
 
     @Resource
     private IOrderRepository orderRepository;
@@ -80,14 +80,14 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
         long settleCostMs = 0L;
         try {
             // requestId 幂等快速路径：同 requestId 的重试永远回到同一个 take / order
-            UserTakeActivityVO existingTake = findTakeByRequestId(req);
+            DrawParticipationVO existingTake = findTakeByRequestId(req);
             // 精确查询的记录必须有明确归属和有效状态，异常数据不能进入新建分支。
             if (existingTake != null && (!req.getRequestId().equals(existingTake.getRequestId())
                     || (!Constants.TaskState.USED.getCode().equals(existingTake.getState())
                     && !Constants.TaskState.NO_USED.getCode().equals(existingTake.getState())))) {
                 throw new IllegalStateException("Invalid take ownership/state: " + existingTake.getTakeId());
             }
-            Long strategyId;
+            Long drawConfigId;
             Long takeId;
             if (existingTake != null
                     && Constants.TaskState.USED.getCode().equals(existingTake.getState())) {
@@ -98,7 +98,7 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
             if (existingTake != null
                     && Constants.TaskState.NO_USED.getCode().equals(existingTake.getState())) {
                 // 上次请求中断遗留的未消费 take：复用，不再新建参与记录、不重复消耗次数
-                strategyId = existingTake.getStrategyId();
+                drawConfigId = existingTake.getDrawConfigId();
                 takeId = existingTake.getTakeId();
                 logger.info("draw reuses unfinished take by requestId uId:{} activityId:{} requestId:{} takeId:{}",
                         req.getuId(), req.getActivityId(), req.getRequestId(), takeId);
@@ -112,7 +112,7 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
                     // 锁过期时同请求可能已由另一个线程完成；唯一冲突后只回放已提交结果。
                     if (Constants.ResponseCode.INDEX_DUP.getCode().equals(partakeResult.getCode())
                             || Constants.ResponseCode.NO_UPDATE.getCode().equals(partakeResult.getCode())) {
-                        UserTakeActivityVO completed = findTakeByRequestId(req);
+                        DrawParticipationVO completed = findTakeByRequestId(req);
                         if (completed != null && Constants.TaskState.USED.getCode().equals(completed.getState())) {
                             return replayConsumedTake(req, completed);
                         }
@@ -122,12 +122,12 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
                     logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, drawCostMs, settleCostMs);
                     return result;
                 }
-                strategyId = partakeResult.getStrategyId();
+                drawConfigId = partakeResult.getDrawConfigId();
                 takeId = partakeResult.getTakeId();
             }
 
             long stageStart = System.nanoTime();
-            DrawResult drawResult = drawExec.doDrawExec(new DrawReq(req.getuId(), strategyId, String.valueOf(takeId)));
+            DrawResult drawResult = drawExec.doDrawExec(new DrawReq(req.getuId(), drawConfigId));
             drawCostMs = elapsedMillis(stageStart);
             if (Constants.DrawState.FAIL.getCode().equals(drawResult.getDrawState())) {
                 stageStart = System.nanoTime();
@@ -153,10 +153,10 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
             DrawAwardInfo drawAwardInfo = drawResult.getDrawAwardInfo();
 
             stageStart = System.nanoTime();
-            AwardOrderResult orderResult = awardOrder.placeOrder(buildAwardOrderReq(req, strategyId, takeId, drawAwardInfo));
+            AwardOrderResult orderResult = awardOrder.placeOrder(buildAwardOrderReq(req, drawConfigId, takeId, drawAwardInfo));
             settleCostMs = elapsedMillis(stageStart);
             if (!Constants.ResponseCode.SUCCESS.getCode().equals(orderResult.getCode())) {
-                drawExec.recoverDrawAwardStock(strategyId, drawAwardInfo.getAwardId());
+                drawExec.recoverDrawAwardStock(drawConfigId, drawAwardInfo.getAwardId());
                 // 下单竞争失败已回补本线程预扣库存，回放取得消费权的线程提交的结果。
                 if (Constants.ResponseCode.NO_UPDATE.getCode().equals(orderResult.getCode())) {
                     return replayAfterConsumptionConflict(req);
@@ -169,8 +169,8 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
             DrawProcessResult result = new DrawProcessResult(Constants.ResponseCode.SUCCESS.getCode(),
                     Constants.ResponseCode.SUCCESS.getInfo(), drawAwardInfo);
             result.setTakeId(takeId);
-            if (orderResult.getInvoiceVO() != null) {
-                result.setOrderId(orderResult.getInvoiceVO().getOrderId());
+            if (orderResult.getAwardFulfillmentEvent() != null) {
+                result.setOrderId(orderResult.getAwardFulfillmentEvent().getOrderId());
             }
             logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, drawCostMs,
                     settleCostMs);
@@ -180,10 +180,10 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
         }
     }
 
-    private UserTakeActivityVO findTakeByRequestId(DrawProcessReq req) {
+    private DrawParticipationVO findTakeByRequestId(DrawProcessReq req) {
         try {
             // 查询失败不是记录不存在，禁止继续扣减次数或创建参与记录。
-            return userTakeActivityRepository.queryTakeActivityByRequestId(
+            return drawParticipationRepository.queryParticipationByRequestId(
                     req.getActivityId(), req.getuId(), req.getRequestId());
         } catch (RuntimeException e) {
             logger.error("query take by requestId failed uId:{} activityId:{} requestId:{}",
@@ -194,7 +194,7 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
 
     private DrawProcessResult replayAfterConsumptionConflict(DrawProcessReq req) {
         // CAS 在另一个事务提交后返回零更新，随后查询已提交的持久事实。
-        UserTakeActivityVO completed = findTakeByRequestId(req);
+        DrawParticipationVO completed = findTakeByRequestId(req);
         if (completed == null || !Constants.TaskState.USED.getCode().equals(completed.getState())) {
             throw new IllegalStateException("Consumption conflict without completed take: " + req.getRequestId());
         }
@@ -205,11 +205,11 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
      * 同 requestId 重试时回放已消费 take 的最终结果：
      * 有订单 → 返回原中奖信息；无订单 → 该 take 抽奖未中。
      */
-    private DrawProcessResult replayConsumedTake(DrawProcessReq req, UserTakeActivityVO take) {
+    private DrawProcessResult replayConsumedTake(DrawProcessReq req, DrawParticipationVO take) {
         logger.info("replay consumed take for idempotent retry uId:{} activityId:{} requestId:{} takeId:{}",
                 req.getuId(), req.getActivityId(), req.getRequestId(), take.getTakeId());
 
-        InvoiceVO order = orderRepository.queryOrderByTakeId(req.getuId(), take.getTakeId());
+        DrawOrderVO order = orderRepository.queryOrderByTakeId(req.getuId(), take.getTakeId());
         if (order == null) {
             DrawProcessResult result = new DrawProcessResult(Constants.ResponseCode.LOSING_DRAW.getCode(),
                     Constants.ResponseCode.LOSING_DRAW.getInfo());
@@ -220,7 +220,8 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
         DrawAwardInfo awardInfo = new DrawAwardInfo(order.getAwardId(), order.getAwardType(),
                 order.getAwardName(), order.getAwardContent());
         awardInfo.setGrantType(order.getGrantType());
-        awardInfo.setGrantDate(order.getGrantDate());
+        awardInfo.setScheduledAt(order.getScheduledAt());
+        awardInfo.setFulfilledAt(order.getFulfilledAt());
 
         DrawProcessResult result = new DrawProcessResult(Constants.ResponseCode.SUCCESS.getCode(),
                 Constants.ResponseCode.SUCCESS.getInfo(), awardInfo);
@@ -234,16 +235,15 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
         return activityRepository.queryRunningActivityList();
     }
 
-    private AwardOrderReq buildAwardOrderReq(DrawProcessReq req, Long strategyId, Long takeId,
+    private AwardOrderReq buildAwardOrderReq(DrawProcessReq req, Long drawConfigId, Long takeId,
             DrawAwardInfo drawAwardInfo) {
         AwardOrderReq awardOrderReq = new AwardOrderReq();
         awardOrderReq.setuId(req.getuId());
         awardOrderReq.setTakeId(takeId);
         awardOrderReq.setActivityId(req.getActivityId());
-        awardOrderReq.setStrategyId(strategyId);
-        awardOrderReq.setStrategyMode(drawAwardInfo.getStrategyMode());
+        awardOrderReq.setDrawConfigId(drawConfigId);
         awardOrderReq.setGrantType(drawAwardInfo.getGrantType());
-        awardOrderReq.setGrantDate(drawAwardInfo.getGrantDate());
+        awardOrderReq.setScheduledAt(drawAwardInfo.getScheduledAt());
         awardOrderReq.setAwardId(drawAwardInfo.getAwardId());
         awardOrderReq.setAwardType(drawAwardInfo.getAwardType());
         awardOrderReq.setAwardName(drawAwardInfo.getAwardName());

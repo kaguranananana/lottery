@@ -41,11 +41,11 @@ public class ActivityVO {
 
 
     /** 活动所属抽奖策略，创建时由同一配置聚合绑定。 */
-    private Long strategyId;
+    private Long drawConfigId;
 
-    public Long getStrategyId() { return strategyId; }
+    public Long getDrawConfigId() { return drawConfigId; }
 
-    public void setStrategyId(Long strategyId) { this.strategyId = strategyId; }
+    public void setDrawConfigId(Long drawConfigId) { this.drawConfigId = drawConfigId; }
 
     /**
      * 每人可参与次数

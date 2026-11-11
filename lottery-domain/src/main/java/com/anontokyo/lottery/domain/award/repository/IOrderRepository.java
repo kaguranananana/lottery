@@ -3,7 +3,7 @@ package com.anontokyo.lottery.domain.award.repository;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
-import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
+import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 
 import java.util.List;
 
@@ -15,7 +15,7 @@ import java.util.List;
 public interface IOrderRepository {
 
     /**
-     * CAS 标记发奖完成（grant_state -> SUCCESS，且仅当未完成时生效）。
+     * CAS 标记发奖完成（award_fulfillment_status -> SUCCESS，且仅当未完成时生效）。
      * @return true 表示本次调用完成了首次标记；false 表示订单此前已完成（幂等短路）
      */
     boolean markUserAwardGranted(String uId, Long orderId, String awardId);
@@ -23,12 +23,12 @@ public interface IOrderRepository {
     /**
      * 条件推进发奖 MQ 状态：发送回调写 SENT/FAIL，消费确认发奖后写 COMPLETE。
      */
-    void updateInvoiceMqState(String uId, Long orderId, Integer mqState);
+    void updateFulfillmentEventStatus(String uId, Long orderId, Integer fulfillmentEventStatus);
 
     /**
      * 条件推进库存 MQ 状态：发送失败不覆盖 SENT，所有发送回调不覆盖 COMPLETE。
      */
-    void updateStockMqState(String uId, Long orderId, Integer stockMqState);
+    void updateStockSettlementEventStatus(String uId, Long orderId, Integer stockSettlementEventStatus);
 
     /** 库存条件扣减失败：INIT/FAIL/SENT 转 BLOCKED 等待对账；持久化失败抛出，COMPLETE 不回退。 */
     void markStockSettlementFailed(String uId, Long orderId);
@@ -36,16 +36,16 @@ public interface IOrderRepository {
     /**
      * 扫描待补偿的发奖MQ订单。
      */
-    List<InvoiceVO> scanInvoiceMqState(int limit);
+    List<AwardFulfillmentEvent> scanFulfillmentEventStatus(int limit);
 
-    List<InvoiceVO> scanInvoiceMqStateByShard(int dbIdx, int tbIdx, int limit);
+    List<AwardFulfillmentEvent> scanFulfillmentEventStatusByShard(int dbIdx, int tbIdx, int limit);
 
-    List<AwardStockSettlementVO> scanAwardStockMqStateByShard(int dbIdx, int tbIdx, int limit);
+    List<AwardStockSettlementVO> scanStockSettlementEventStatusByShard(int dbIdx, int tbIdx, int limit);
 
     /**
      * Scan award stock settlement outbox.
      */
-    List<AwardStockSettlementVO> scanAwardStockMqState(int limit);
+    List<AwardStockSettlementVO> scanStockSettlementEventStatus(int limit);
 
     /**
      * 查询订单是否已经完成发奖。
@@ -55,12 +55,12 @@ public interface IOrderRepository {
     /**
      * Query invoice payload by order id.
      */
-    InvoiceVO queryInvoiceByOrderId(String uId, Long orderId);
+    AwardFulfillmentEvent queryFulfillmentEventByOrderId(String uId, Long orderId);
 
     /**
      * 按 take 关联查询中奖订单，用于 requestId 幂等回放；无订单返回 null。
      */
-    InvoiceVO queryOrderByTakeId(String uId, Long takeId);
+    DrawOrderVO queryOrderByTakeId(String uId, Long takeId);
 
     /**
      * 保存中奖订单并锁定对应参与记录（按 uId 路由 + 本地事务由 infrastructure 承担）。
@@ -77,6 +77,6 @@ public interface IOrderRepository {
     /**
      * Whether stock settlement is already complete.
      */
-    boolean isStockMqCompleted(String uId, Long orderId);
+    boolean isStockSettlementComplete(String uId, Long orderId);
 
 }

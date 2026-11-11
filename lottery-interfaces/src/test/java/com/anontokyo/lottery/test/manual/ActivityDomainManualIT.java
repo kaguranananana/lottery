@@ -7,8 +7,8 @@ import com.anontokyo.lottery.domain.activity.model.req.PartakeReq;
 import com.anontokyo.lottery.domain.activity.model.res.PartakeResult;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
 import com.anontokyo.lottery.domain.activity.model.vo.AwardVO;
-import com.anontokyo.lottery.domain.activity.model.vo.StrategyDetailVO;
-import com.anontokyo.lottery.domain.activity.model.vo.StrategyVO;
+import com.anontokyo.lottery.domain.activity.model.vo.DrawConfigPrizeVO;
+import com.anontokyo.lottery.domain.activity.model.vo.DrawConfigVO;
 import com.anontokyo.lottery.domain.activity.service.deploy.IActivityDeploy;
 import com.anontokyo.lottery.domain.activity.service.partake.IActivityPartake;
 import com.alibaba.fastjson.JSON;
@@ -62,62 +62,55 @@ public class ActivityDomainManualIT {
         activity.setState(Constants.ActivityState.EDIT.getCode());
         activity.setCreator("xiaofuge");
 
-        StrategyVO strategy = new StrategyVO();
-        strategy.setStrategyId(10002L);
-        strategy.setStrategyDesc("抽奖策略");
-        strategy.setStrategyMode(Constants.StrategyMode.SINGLE.getCode());
-        strategy.setGrantType(1);
-        strategy.setGrantDate(new Date());
-        strategy.setExtInfo("");
+        DrawConfigVO drawConfig = new DrawConfigVO();
+        drawConfig.setDrawConfigId(10002L);
+        drawConfig.setDrawConfigDesc("抽奖策略");
+        drawConfig.setGrantType(1);
+        drawConfig.setScheduledAt(new Date());
 
-        StrategyDetailVO strategyDetail_01 = new StrategyDetailVO();
-        strategyDetail_01.setStrategyId(strategy.getStrategyId());
-        strategyDetail_01.setAwardId("101");
-        strategyDetail_01.setAwardName("一等奖");
-        strategyDetail_01.setAwardCount(10);
-        strategyDetail_01.setAwardSurplusCount(10);
-        strategyDetail_01.setAwardRate(new BigDecimal("0.05"));
+        DrawConfigPrizeVO drawConfigPrize_01 = new DrawConfigPrizeVO();
+        drawConfigPrize_01.setDrawConfigId(drawConfig.getDrawConfigId());
+        drawConfigPrize_01.setAwardId("101");
+        drawConfigPrize_01.setAwardCount(10);
+        drawConfigPrize_01.setAwardSurplusCount(10);
+        drawConfigPrize_01.setAwardRate(new BigDecimal("0.05"));
 
-        StrategyDetailVO strategyDetail_02 = new StrategyDetailVO();
-        strategyDetail_02.setStrategyId(strategy.getStrategyId());
-        strategyDetail_02.setAwardId("102");
-        strategyDetail_02.setAwardName("二等奖");
-        strategyDetail_02.setAwardCount(20);
-        strategyDetail_02.setAwardSurplusCount(20);
-        strategyDetail_02.setAwardRate(new BigDecimal("0.15"));
+        DrawConfigPrizeVO drawConfigPrize_02 = new DrawConfigPrizeVO();
+        drawConfigPrize_02.setDrawConfigId(drawConfig.getDrawConfigId());
+        drawConfigPrize_02.setAwardId("102");
+        drawConfigPrize_02.setAwardCount(20);
+        drawConfigPrize_02.setAwardSurplusCount(20);
+        drawConfigPrize_02.setAwardRate(new BigDecimal("0.15"));
 
-        StrategyDetailVO strategyDetail_03 = new StrategyDetailVO();
-        strategyDetail_03.setStrategyId(strategy.getStrategyId());
-        strategyDetail_03.setAwardId("103");
-        strategyDetail_03.setAwardName("三等奖");
-        strategyDetail_03.setAwardCount(50);
-        strategyDetail_03.setAwardSurplusCount(50);
-        strategyDetail_03.setAwardRate(new BigDecimal("0.20"));
+        DrawConfigPrizeVO drawConfigPrize_03 = new DrawConfigPrizeVO();
+        drawConfigPrize_03.setDrawConfigId(drawConfig.getDrawConfigId());
+        drawConfigPrize_03.setAwardId("103");
+        drawConfigPrize_03.setAwardCount(50);
+        drawConfigPrize_03.setAwardSurplusCount(50);
+        drawConfigPrize_03.setAwardRate(new BigDecimal("0.20"));
 
-        StrategyDetailVO strategyDetail_04 = new StrategyDetailVO();
-        strategyDetail_04.setStrategyId(strategy.getStrategyId());
-        strategyDetail_04.setAwardId("104");
-        strategyDetail_04.setAwardName("四等奖");
-        strategyDetail_04.setAwardCount(100);
-        strategyDetail_04.setAwardSurplusCount(100);
-        strategyDetail_04.setAwardRate(new BigDecimal("0.25"));
+        DrawConfigPrizeVO drawConfigPrize_04 = new DrawConfigPrizeVO();
+        drawConfigPrize_04.setDrawConfigId(drawConfig.getDrawConfigId());
+        drawConfigPrize_04.setAwardId("104");
+        drawConfigPrize_04.setAwardCount(100);
+        drawConfigPrize_04.setAwardSurplusCount(100);
+        drawConfigPrize_04.setAwardRate(new BigDecimal("0.25"));
 
-        StrategyDetailVO strategyDetail_05 = new StrategyDetailVO();
-        strategyDetail_05.setStrategyId(strategy.getStrategyId());
-        strategyDetail_05.setAwardId("104");
-        strategyDetail_05.setAwardName("五等奖");
-        strategyDetail_05.setAwardCount(500);
-        strategyDetail_05.setAwardSurplusCount(500);
-        strategyDetail_05.setAwardRate(new BigDecimal("0.35"));
+        DrawConfigPrizeVO drawConfigPrize_05 = new DrawConfigPrizeVO();
+        drawConfigPrize_05.setDrawConfigId(drawConfig.getDrawConfigId());
+        drawConfigPrize_05.setAwardId("104");
+        drawConfigPrize_05.setAwardCount(500);
+        drawConfigPrize_05.setAwardSurplusCount(500);
+        drawConfigPrize_05.setAwardRate(new BigDecimal("0.35"));
 
-        List<StrategyDetailVO> strategyDetailList = new ArrayList<>();
-        strategyDetailList.add(strategyDetail_01);
-        strategyDetailList.add(strategyDetail_02);
-        strategyDetailList.add(strategyDetail_03);
-        strategyDetailList.add(strategyDetail_04);
-        strategyDetailList.add(strategyDetail_05);
+        List<DrawConfigPrizeVO> drawConfigPrizeList = new ArrayList<>();
+        drawConfigPrizeList.add(drawConfigPrize_01);
+        drawConfigPrizeList.add(drawConfigPrize_02);
+        drawConfigPrizeList.add(drawConfigPrize_03);
+        drawConfigPrizeList.add(drawConfigPrize_04);
+        drawConfigPrizeList.add(drawConfigPrize_05);
 
-        strategy.setStrategyDetailList(strategyDetailList);
+        drawConfig.setDrawConfigPrizeList(drawConfigPrizeList);
 
         AwardVO award_01 = new AwardVO();
         award_01.setAwardId("101");
@@ -156,7 +149,7 @@ public class ActivityDomainManualIT {
         awardList.add(award_04);
         awardList.add(award_05);
 
-        activityConfigRich = new ActivityConfigRich(activity, strategy, awardList);
+        activityConfigRich = new ActivityConfigRich(activity, drawConfig, awardList);
     }
 
     @Test

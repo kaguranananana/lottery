@@ -1,0 +1,154 @@
+package com.anontokyo.lottery.domain.award.model.vo;
+
+import com.alibaba.fastjson.annotation.JSONField;
+
+import java.util.Date;
+
+/**
+ * @description:
+ * @author：anontokyo
+ * @date: 2026/1/29
+ */
+public class AwardFulfillmentEvent {
+
+    /** 用户ID */
+    private String uId;
+
+    /** 抽奖单号 ID */
+    private Long orderId;
+
+    /** 奖品ID */
+    private String awardId;
+
+    /**
+     * 奖品类型（1:文字描述、2:兑换码、3:优惠券、4:实物奖品）
+     */
+    private Integer awardType;
+
+    /** 奖品名称 */
+    private String awardName;
+
+    /** 奖品内容「描述、奖品码、sku」 */
+    private String awardContent;
+
+    /** 四级送货地址（只有实物类商品需要地址） */
+    private ShippingAddress shippingAddress;
+
+    /** 扩展信息，用于一些个性商品发放所需要的透传字段内容 */
+    private String extInfo;
+
+    /** 关联的用户参与记录ID（幂等回放） */
+    private Long takeId;
+
+    /** 发放方式（1:即时、2:定时、3:人工），回放时透出 */
+    private Integer grantType;
+
+    /** 计划发放时间，回放时透出 */
+    private Date scheduledAt;
+
+    public Long getTakeId() {
+        return takeId;
+    }
+
+    public void setTakeId(Long takeId) {
+        this.takeId = takeId;
+    }
+
+    public Integer getGrantType() {
+        return grantType;
+    }
+
+    public void setGrantType(Integer grantType) {
+        this.grantType = grantType;
+    }
+
+    // Kafka 中已存在 grantDate 字段，仍按原协议读写计划时间。
+    @JSONField(name = "grantDate")
+    public Date getScheduledAt() {
+        return scheduledAt;
+    }
+
+    @JSONField(name = "grantDate")
+    public void setScheduledAt(Date scheduledAt) {
+        this.scheduledAt = scheduledAt;
+    }
+
+    public String getAwardContent() {
+        return awardContent;
+    }
+
+    public void setAwardContent(String awardContent) {
+        this.awardContent = awardContent;
+    }
+
+    public String getuId() {
+        return uId;
+    }
+
+    public void setuId(String uId) {
+        this.uId = uId;
+    }
+
+    public ShippingAddress getShippingAddress() {
+        return shippingAddress;
+    }
+
+    public void setShippingAddress(ShippingAddress shippingAddress) {
+        this.shippingAddress = shippingAddress;
+    }
+
+    public Long getOrderId() {
+        return orderId;
+    }
+
+    public void setOrderId(Long orderId) {
+        this.orderId = orderId;
+    }
+
+    public String getExtInfo() {
+        return extInfo;
+    }
+
+    public void setExtInfo(String extInfo) {
+        this.extInfo = extInfo;
+    }
+
+    public Integer getAwardType() {
+        return awardType;
+    }
+
+    public void setAwardType(Integer awardType) {
+        this.awardType = awardType;
+    }
+
+    public String getAwardName() {
+        return awardName;
+    }
+
+    public void setAwardName(String awardName) {
+        this.awardName = awardName;
+    }
+
+    public String getAwardId() {
+        return awardId;
+    }
+
+    public void setAwardId(String awardId) {
+        this.awardId = awardId;
+    }
+
+
+    @Override
+    public String toString() {
+        return "AwardFulfillmentEvent{" +
+                "awardContent='" + awardContent + '\'' +
+                ", uId='" + uId + '\'' +
+                ", orderId=" + orderId +
+                ", awardId='" + awardId + '\'' +
+                ", awardType=" + awardType +
+                ", awardName='" + awardName + '\'' +
+                ", shippingAddress=" + shippingAddress +
+                ", extInfo='" + extInfo + '\'' +
+                '}';
+    }
+}

@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.anontokyo.lottery.infrastructure.dao.IDrawConfigDao">
+    <insert id="insert" parameterType="com.anontokyo.lottery.infrastructure.po.DrawConfig">
+        INSERT INTO draw_config(draw_config_id, draw_config_desc, grant_type,
+                             scheduled_at, create_time, update_time)
+        VALUES(#{drawConfigId}, #{drawConfigDesc}, #{grantType},
+               #{scheduledAt}, NOW(), NOW())
+    </insert>
+
+
+    <select id="queryDrawConfig" parameterType="java.lang.Long" resultType="com.anontokyo.lottery.infrastructure.po.DrawConfig">
+        SELECT
+            id, draw_config_id, draw_config_desc, grant_type,
+            scheduled_at, create_time, update_time
+        FROM draw_config
+        WHERE draw_config_id = #{drawConfigId}
+    </select>
+    <!-- 全局库本地事务内锁定策略行，共享该策略的启动者不得同时重建奖池。 -->
+    <select id="queryDrawConfigForUpdate" resultType="com.anontokyo.lottery.infrastructure.po.DrawConfig">
+        SELECT draw_config_id FROM draw_config WHERE draw_config_id = #{drawConfigId} FOR UPDATE
+    </select>
+</mapper>

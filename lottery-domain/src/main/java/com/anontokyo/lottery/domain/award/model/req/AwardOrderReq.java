@@ -10,10 +10,9 @@ public class AwardOrderReq {
     private String uId;
     private Long takeId;
     private Long activityId;
-    private Long strategyId;
-    private Integer strategyMode;
+    private Long drawConfigId;
     private Integer grantType;
-    private Date grantDate;
+    private Date scheduledAt;
     private String awardId;
     private Integer awardType;
     private String awardName;
@@ -43,20 +42,12 @@ public class AwardOrderReq {
         this.activityId = activityId;
     }
 
-    public Long getStrategyId() {
-        return strategyId;
+    public Long getDrawConfigId() {
+        return drawConfigId;
     }
 
-    public void setStrategyId(Long strategyId) {
-        this.strategyId = strategyId;
-    }
-
-    public Integer getStrategyMode() {
-        return strategyMode;
-    }
-
-    public void setStrategyMode(Integer strategyMode) {
-        this.strategyMode = strategyMode;
+    public void setDrawConfigId(Long drawConfigId) {
+        this.drawConfigId = drawConfigId;
     }
 
     public Integer getGrantType() {
@@ -67,12 +58,12 @@ public class AwardOrderReq {
         this.grantType = grantType;
     }
 
-    public Date getGrantDate() {
-        return grantDate;
+    public Date getScheduledAt() {
+        return scheduledAt;
     }
 
-    public void setGrantDate(Date grantDate) {
-        this.grantDate = grantDate;
+    public void setScheduledAt(Date scheduledAt) {
+        this.scheduledAt = scheduledAt;
     }
 
     public String getAwardId() {

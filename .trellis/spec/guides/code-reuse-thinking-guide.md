@@ -8,10 +8,10 @@
 | --- | --- |
 | 业务返回码、Redis key | [Constants.java](../../../lottery-common/src/main/java/com/anontokyo/lottery/common/Constants.java) / [Result.java](../../../lottery-common/src/main/java/com/anontokyo/lottery/common/Result.java) |
 | 订单与参与 ID | [IdGenerator.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/support/ids/IdGenerator.java) / [SnowflakeIdGenerator.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/support/ids/SnowflakeIdGenerator.java) |
-| 策略抽样 | [StrategySnapshotFactory.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/strategy/service/snapshot/StrategySnapshotFactory.java) / [WeightedRandomSelector.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/strategy/service/draw/WeightedRandomSelector.java) |
+| 策略抽样 | [DrawConfigSnapshotFactory.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/draw/service/snapshot/DrawConfigSnapshotFactory.java) / [WeightedRandomSelector.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/draw/service/draw/WeightedRandomSelector.java) |
 | 活动状态转换 | [ActivityLifecycleService.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/lifecycle/ActivityLifecycleService.java) |
 | 抽奖并发控制 | [IActivityDrawProcessGuard.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/support/lock/IActivityDrawProcessGuard.java) / [RedisActivityDrawProcessGuard.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/lock/RedisActivityDrawProcessGuard.java) |
-| 库存结算幂等 | [IStrategyRepository.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/strategy/repository/IStrategyRepository.java) 的 settleAwardStock |
+| 库存结算幂等 | [IDrawConfigRepository.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/draw/repository/IDrawConfigRepository.java) 的 settleAwardStock |
 | 发奖类型扩展 | [AwardFulfillmentHandler.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/award/service/fulfillment/AwardFulfillmentHandler.java) 与消费者注册表 |
 | 补偿与调度 | [LotteryXxlJob.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryXxlJob.java) 与 Repository 的显式分片扫描 |
 

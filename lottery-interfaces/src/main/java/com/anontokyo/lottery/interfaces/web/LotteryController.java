@@ -5,7 +5,7 @@ import com.anontokyo.lottery.application.process.draw.req.DrawProcessReq;
 import com.anontokyo.lottery.application.process.draw.res.DrawProcessResult;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.common.Result;
-import com.anontokyo.lottery.domain.strategy.model.vo.DrawAwardInfo;
+import com.anontokyo.lottery.domain.draw.model.vo.DrawAwardInfo;
 import com.anontokyo.lottery.interfaces.web.dto.DrawRequest;
 import com.anontokyo.lottery.interfaces.web.dto.DrawResponse;
 import org.slf4j.Logger;
@@ -90,7 +90,10 @@ public class LotteryController {
             award.setAwardName(awardInfo.getAwardName());
             award.setAwardContent(awardInfo.getAwardContent());
             award.setGrantType(awardInfo.getGrantType());
-            award.setGrantDate(awardInfo.getGrantDate() == null ? null : awardInfo.getGrantDate().toString());
+            // HTTP 的历史 grantDate 字段在结果回放时优先提供实际完成时间。
+            java.util.Date grantDate = awardInfo.getFulfilledAt() == null
+                    ? awardInfo.getScheduledAt() : awardInfo.getFulfilledAt();
+            award.setGrantDate(grantDate == null ? null : grantDate.toString());
             response.setAward(award);
         }
         return response;

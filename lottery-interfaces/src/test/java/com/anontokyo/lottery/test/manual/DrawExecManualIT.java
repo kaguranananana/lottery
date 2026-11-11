@@ -1,8 +1,8 @@
 package com.anontokyo.lottery.test.manual;
 
-import com.anontokyo.lottery.domain.strategy.model.req.DrawReq;
-import com.anontokyo.lottery.domain.strategy.model.res.DrawResult;
-import com.anontokyo.lottery.domain.strategy.service.draw.IDrawExec;
+import com.anontokyo.lottery.domain.draw.model.req.DrawReq;
+import com.anontokyo.lottery.domain.draw.model.res.DrawResult;
+import com.anontokyo.lottery.domain.draw.service.draw.IDrawExec;
 import com.alibaba.fastjson.JSON;
 import org.junit.Test;
 import org.junit.runner.RunWith;

@@ -13,7 +13,7 @@
 `docs/refactor-audit.md` 记录了逐文件审计结论，最重要的三个缺陷：
 
 **① 同一个订单可能扣两次数据库库存（严重）**
-消费者先 `UPDATE strategy_detail SET surplus-1 WHERE surplus>0` 再更新状态、再写 Redis DONE 标记。
+消费者先 `UPDATE draw_config_prize SET surplus-1 WHERE surplus>0` 再更新状态、再写 Redis DONE 标记。
 任何一步之间 crash，Kafka redelivery 后 `surplus-1` 会再执行一次——它是累加式更新，没有任何账本约束“这个 orderId 已经扣过”。三层 Redis Guard（DONE/PROCESSING/DISPATCHING）看起来很可靠，其实每一层都是缓存语义：TTL 过期、值丢失后全部失效。
 
 **② 历史活动库存同步链路会漂移（已移除）**
@@ -36,7 +36,7 @@
 | 两套概率算法 + DrawConfig map | 统一为快照整数权重 + 二分采样；高精度、显式 NO_PRIZE、售罄不改概率 |
 | ShortCode / RandomNumeric / IdContext | 只有测试 demo 用。保留 Snowflake 直注 |
 | 活动总库存及历史 Partake 库存 MQ | 无全场名额需求，MySQL 活动余量缺完整结算；移除两列、Key 和参与预扣/回补 |
-| DONE Redis guard、no-stock Set、award/ruleTree 实体级 Caffeine | 事实来源移到 DB 后 guard 失去意义；实体全量 L1 是为了展示“二级缓存”，现在只有 StrategySnapshot 值得 |
+| DONE Redis guard、no-stock Set、award/ruleTree 实体级 Caffeine | 事实来源移到 DB 后 guard 失去意义；实体全量 L1 是为了展示“二级缓存”，现在只有 DrawConfigSnapshot 值得 |
 
 留下的全部有明确职责：Redis（原子扣减+锁）、Kafka（慢操作剥离+重试）、Outbox（消息丢失）、Ledger（重复消费）、XXL-Job（集中调度分片补偿）、Caffeine（快照热点读）、分库分表（user-centric 数据路由）。
 
@@ -54,7 +54,7 @@ TX1 是“条件扣个人次数 + 创建 take”，TX2 是“消费 take + 中�
 ### 4.2 请求幂等（重复点击 ≠ 幂等）
 重构前只有防重。现在 API 必带 `requestId`：
 
-* 快路径：查 `user_take_activity.request_id`（UNIQUE 兜底）。
+* 快路径：查 `draw_participation.request_id`（UNIQUE 兜底）。
   已消费 → 用 take 关联列查出订单，回放原来的中奖结果或未中奖结果；
   未消费 → 复用该 takeId 继续抽奖，绝不新建记录、不再扣次数。
 * 慢路径（新请求）：先从 DB 核对同用户活动未完成记录；B 遇到 A 返回 D007 与 pendingRequestId=A，不能取得 A 的 take。确认没有未完成记录才参与+下单；请求唯一键与未完成唯一键共同兜底并发。具体客户端恢复及可执行迁移见 [接口说明](draw-request-idempotency.md)。
@@ -68,8 +68,8 @@ TX1 是“条件扣个人次数 + 创建 take”，TX2 是“消费 take + 中�
 BEGIN;
 INSERT INTO award_stock_settlement(order_id, ...) ...;   -- UNIQUE(order_id)
 -- duplicate key? → COMMIT 提前结束：该订单早已结算，直接 SUCCESS
-UPDATE strategy_detail SET award_surplus_count = award_surplus_count - 1
-WHERE strategy_id=? AND award_id=? AND award_surplus_count > 0;
+UPDATE draw_config_prize SET award_surplus_count = award_surplus_count - 1
+WHERE draw_config_id=? AND award_id=? AND award_surplus_count > 0;
 COMMIT;
 ```
 
@@ -78,13 +78,13 @@ crash 发生在任何一步之后，redelivery 都会撞上唯一键——**同�
 PROCESSING Redis 锁保留为并发优化，但文档里明确它不是事实来源。
 
 ### 4.4 Outbox 可靠投递
-订单创建与 `stock_mq_state=INIT` 在同一事务；调度任务扫 `IN(0,2)` 及超时 10 分钟的 SENT，发送成功条件推进 SENT；
+订单创建与 `stock_settlement_event_status=INIT` 在同一事务；调度任务扫 `IN(0,2)` 及超时 10 分钟的 SENT，发送成功条件推进 SENT；
 发送失败仅 INIT 转 FAIL，迟到失败不覆盖 SENT/COMPLETE，FAIL 下轮重投。crash 在“发送成功落 SENT 前”最多导致一次重复投递——由 4.3 的账本消化。
-`(stock_mq_state, create_time)` 联合索引支撑扫描查询，invoice 补偿 scan 加了 LIMIT 防全表拖库。
+`(stock_settlement_event_status, create_time)` 联合索引支撑扫描查询，invoice 补偿 scan 加了 LIMIT 防全表拖库。
 
 ### 4.5 发奖幂等
 处理器层只留一层 `AwardFulfillmentHandler`（优惠券/兑换码/实物/虚拟的差异是真实业务差异），
-每个 handler 以 `orderId` 作为发奖幂等键；本地以 `grant_state != 1` CAS 标记兜底，
+每个 handler 以 `orderId` 作为发奖幂等键；本地以 `award_fulfillment_status != 1` CAS 标记兜底，
 重复投递安全。README 明确当前 handler 是 adapter stub，避免假装完成了第三方接入。
 
 ## 5. 为什么 DDD 分层保留但没有仪式感

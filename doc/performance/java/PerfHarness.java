@@ -118,31 +118,29 @@ public class PerfHarness {
         activity.setTakeCount(quota);
         activity.setState(4);
         activity.setCreator("performance");
-        StrategyVO strategy = new StrategyVO();
-        strategy.setStrategyId(id);
-        strategy.setStrategyMode(1);
-        strategy.setGrantType(1);
-        List<StrategyDetailVO> details = new ArrayList<>();
+        DrawConfigVO drawConfig = new DrawConfigVO();
+        drawConfig.setDrawConfigId(id);
+        drawConfig.setGrantType(1);
+        List<DrawConfigPrizeVO> details = new ArrayList<>();
         List<AwardVO> awards = new ArrayList<>();
         // stock 仅作为每种奖品的默认总量；活动只有个人次数限制，没有总库存。
         // 五种等概率模拟券，压测默认总概率 100%；演示可留出未中奖概率。
         for (int i = 0; i < 5; i++) {
-            StrategyDetailVO detail = new StrategyDetailVO();
+            DrawConfigPrizeVO detail = new DrawConfigPrizeVO();
             detail.setAwardId("p" + id + "_" + i);
-            detail.setAwardName("模拟券" + i);
             detail.setAwardCount(awardStock < 0 ? stock : awardStock);
             detail.setAwardRate(awardRate);
             details.add(detail);
             AwardVO award = new AwardVO();
             award.setAwardId(detail.getAwardId());
-            award.setAwardName(detail.getAwardName());
+            award.setAwardName("模拟券" + i);
             award.setAwardType(3);
             award.setAwardContent("项目现有本地模拟发奖");
             awards.add(award);
         }
-        strategy.setStrategyDetailList(details);
+        drawConfig.setDrawConfigPrizeList(details);
         // 创建聚合时生产服务绑定策略并初始化剩余库存，禁止直接把数据库设为运行态。
-        context.getBean(IActivityDeploy.class).createActivity(new ActivityConfigReq(id, new ActivityConfigRich(activity, strategy, awards)));
+        context.getBean(IActivityDeploy.class).createActivity(new ActivityConfigReq(id, new ActivityConfigRich(activity, drawConfig, awards)));
         // PASS->DOING 在生产行锁事务内预热 Redis，再提交运行状态。
         if (!context.getBean(ActivityLifecycleService.class).transition(id, Constants.ActivityState.PASS, Constants.ActivityState.DOING)) {
             throw new IllegalStateException("专用活动启动失败 " + id);
@@ -163,7 +161,7 @@ public class PerfHarness {
                     router.clear();
                     PreparedStatement insert = inserts.get(db);
                     if (insert == null) {
-                        insert = connection.prepareStatement("INSERT INTO lottery_" + db + ".user_take_activity_count(u_id,activity_id,total_count,left_count) VALUES (?,?,?,?)");
+                        insert = connection.prepareStatement("INSERT INTO lottery_" + db + ".user_activity_quota(u_id,activity_id,total_count,left_count) VALUES (?,?,?,?)");
                         inserts.put(db, insert);
                     }
                     insert.setString(1, user); insert.setLong(2, id); insert.setInt(3, quota); insert.setInt(4, quota);
@@ -190,19 +188,19 @@ public class PerfHarness {
     }
 
     @PostMapping("/__perf/replay")
-    public void replay(@RequestParam("strategy") long strategy, @RequestParam("user") String user,
+    public void replay(@RequestParam("drawConfig") long drawConfig, @RequestParam("user") String user,
             @RequestParam("order") long order, @RequestParam("award") String award) throws Exception {
         com.anontokyo.lottery.domain.award.service.order.IAwardOrder orders = context.getBean(com.anontokyo.lottery.domain.award.service.order.IAwardOrder.class);
-        com.anontokyo.lottery.domain.award.model.vo.InvoiceVO invoice = orders.queryInvoiceByOrderId(user, order);
+        com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent invoice = orders.queryFulfillmentEventByOrderId(user, order);
         // 只重投已有订单；测试控制面不创建订单，也不修改库存或完成状态。
         if (invoice == null) throw new IllegalArgumentException("重投订单不存在 " + order);
         com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO stock = new com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO();
-        stock.setuId(user); stock.setOrderId(order); stock.setStrategyId(strategy); stock.setAwardId(award);
+        stock.setuId(user); stock.setOrderId(order); stock.setDrawConfigId(drawConfig); stock.setAwardId(award);
         com.anontokyo.lottery.application.mq.producer.KafkaProducer producer = context.getBean(com.anontokyo.lottery.application.mq.producer.KafkaProducer.class);
         // 两次实际 broker 确认后返回，消费者仍由真实 Kafka 异步驱动。
         for (int i = 0; i < 2; i++) {
-            producer.sendStrategyAwardStock(stock).get(5, TimeUnit.SECONDS);
-            producer.sendLotteryInvoice(invoice).get(5, TimeUnit.SECONDS);
+            producer.sendStockSettlement(stock).get(5, TimeUnit.SECONDS);
+            producer.sendAwardFulfillment(invoice).get(5, TimeUnit.SECONDS);
         }
     }
 

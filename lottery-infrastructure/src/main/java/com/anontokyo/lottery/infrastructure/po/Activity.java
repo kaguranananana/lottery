@@ -29,9 +29,9 @@ public class Activity {
 
 
     /**
-     * 策略ID
+     * 抽奖配置ID
      */
-    private Long strategyId;
+    private Long drawConfigId;
 
     // 每人可参与次数
     private Integer takeCount;
@@ -139,12 +139,12 @@ public class Activity {
         this.updateTime = updateTime;
     }
 
-    public Long getStrategyId() {
-        return strategyId;
+    public Long getDrawConfigId() {
+        return drawConfigId;
     }
 
-    public void setStrategyId(Long strategyId) {
-        this.strategyId = strategyId;
+    public void setDrawConfigId(Long drawConfigId) {
+        this.drawConfigId = drawConfigId;
     }
 
 }

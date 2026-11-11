@@ -21,7 +21,7 @@
 1. [LotteryController.java](../../lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/LotteryController.java) 校验请求，将 userId 转为内部 uId，调用抽奖用例。
 2. [ActivityProcessImpl.java](../../lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java) 获取用户与活动维度的短锁，按 requestId 查询参与记录；已消费则回放，未消费则继续原 take。
 3. [BaseActivityPartake.java](../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/partake/BaseActivityPartake.java) 校验活动状态与时间，编排 TX1：用户分片内条件扣减个人次数与创建参与记录。活动不再有总库存。
-4. [DrawExecutor.java](../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/strategy/service/draw/impl/DrawExecutor.java) 读取策略快照并加权采样。未中奖消费 take；中奖预扣奖品 Redis 库存并创建订单。
+4. [DrawExecutor.java](../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/draw/service/draw/impl/DrawExecutor.java) 读取策略快照并加权采样。未中奖消费 take；中奖预扣奖品 Redis 库存并创建订单。
 5. [OrderRepository.java](../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java) 在用户分片事务内消费 take 并插入订单，订单包含库存 Outbox 状态；同步响应不等待 Kafka 结算或第三方发奖。
 6. [LotteryXxlJob.java](../../lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryXxlJob.java) 扫描 Outbox，库存消费者通过全局库账本结算后发送发奖消息，发奖消费者按奖品类型选择处理器。
 

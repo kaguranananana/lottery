@@ -13,4 +13,5 @@ classes=[str(root/m/'target/classes') for m in modules]
 cp=(root/'lottery-interfaces/target/perf-classpath.txt').read_text().strip()
 (root/'doc/performance/.classpath').write_text(':'.join(classes)+':'+cp)
 PY
+mkdir -p doc/performance/.classes
 javac -encoding UTF-8 -source 8 -target 8 -cp "$(cat doc/performance/.classpath)" -d doc/performance/.classes doc/performance/java/PerfHarness.java doc/performance/java/PerfTiming.java
