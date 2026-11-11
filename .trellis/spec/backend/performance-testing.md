@@ -2,7 +2,7 @@
 
 ## 1. 范围与触发
 
-新增/修改性能脚本时阅读。实现位于doc/performance；直接执行生产HTTP、Redis、MySQL路由/事务、Outbox与Kafka组件，不把Mock或历史JMX作为实测证据。报告见[性能报告](../../../doc/performance/report.md)。
+新增/修改性能脚本时阅读。实现位于doc/performance；直接执行生产HTTP、Redis、MySQL 本地事务、Outbox与Kafka组件，不把Mock或历史JMX作为实测证据。报告见[最终实测](../../../docs/single-db-load-test.md)。
 
 ## 2. 命令与接口
 
@@ -16,7 +16,7 @@
 
 MySQL/Redis/Kafka专用端口13339/17479/29192；应用18190绑定127.0.0.1。init只接受空schema，创建完整单库 DDL；清理须核实Docker项目/service/端口。通过生产活动创建与PASS→DOING初始化Redis，不直接写DOING或回填运行期库存。用户预置在单表，每次新操作用新requestId。
 
-XXL handler由一秒固定延迟触发，消费者真实运行；该方式不证明admin调度。本地模拟发奖不证明外部副作用。RPS按完成时间计算，业务码与HTTP状态分开，异步时间戳只有秒精度。原始JTL、参数、执行JMX、指标和ID关联必须保留。
+当前启动器使用真实 Spring 调度、提交后实时投递和 Kafka 消费者。历史一秒扫描数据仅作为对照。到达与完成速率分别计算，业务码和 HTTP 状态分开，库存时延保留 INSERT 与 HTTP 返回推导出的上下界。保存原始 JTL、参数、执行 JMX、指标及逐 ID 关联。
 
 预检保存 vm_stat 原文并从输出读取页大小，计算连续 Swap-in/out 增量；保存背景实例限制与端口，不记录环境变量凭据。mysql_diagnosis 的耗时来自 MySQL 8 执行树根节点，最深层索引迭代器行数不是 SQL digest 的 rows_examined；逐表重复的耗时不得换算为完整链路收益。MySQL 核对明确不包含 Redis/Kafka。
 

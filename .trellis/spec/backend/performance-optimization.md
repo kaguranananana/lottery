@@ -1,5 +1,7 @@
 # 独立性能优化契约
 
+本文记录 2026-10-12～13 的 V5 以前实验。当前单库补偿使用独立重试时间索引与投递代数，现行流程及执行计划见 [订单 Outbox](../../../docs/outbox-delivery.md) 和 [实测报告](../../../docs/single-db-load-test.md)。
+
 ## 1. 范围与触发
 改动参与次数 SQL、库存条件索引、库存 Outbox 投递、发奖补偿索引、JDBC 会话参数或对应诊断工具时阅读。2026-10-12～13 实测见 [optimization-report.md](../../../doc/performance/optimization-report.md)。
 

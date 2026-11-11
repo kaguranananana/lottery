@@ -1,0 +1,1639 @@
+{
+  "environment": {
+    "host": "hw.ncpu: 10\nhw.memsize: 17179869184",
+    "docker": {
+      "cpus": 10,
+      "memoryBytes": 8217059328,
+      "version": "29.3.1",
+      "architecture": "aarch64"
+    },
+    "containers": [
+      {
+        "name": "lottery-single-perf-kafka-1",
+        "image": "wurstmeister/kafka:2.13-2.8.1",
+        "state": {
+          "Status": "running",
+          "ExitCode": 0,
+          "OOMKilled": false
+        },
+        "project": "lottery-single-perf",
+        "service": "kafka",
+        "resources": {
+          "NanoCpus": 2000000000,
+          "CpuQuota": 0,
+          "CpuPeriod": 0,
+          "CpusetCpus": "",
+          "Memory": 1073741824,
+          "MemorySwap": 2147483648,
+          "MemoryReservation": 0
+        },
+        "ports": {
+          "9092/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "29192"
+            }
+          ]
+        },
+        "mounts": [
+          {
+            "type": "volume",
+            "destination": "/kafka",
+            "volumeName": "a7ba57e33ec3ce74feca615c7400bba63041af3d1f7872acee5c76fe9045936f"
+          }
+        ]
+      },
+      {
+        "name": "lottery-single-perf-mysql-1",
+        "image": "mysql:8.0.46",
+        "state": {
+          "Status": "running",
+          "ExitCode": 0,
+          "OOMKilled": false
+        },
+        "project": "lottery-single-perf",
+        "service": "mysql",
+        "resources": {
+          "NanoCpus": 2000000000,
+          "CpuQuota": 0,
+          "CpuPeriod": 0,
+          "CpusetCpus": "",
+          "Memory": 2147483648,
+          "MemorySwap": 4294967296,
+          "MemoryReservation": 0
+        },
+        "ports": {
+          "3306/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "13339"
+            }
+          ]
+        },
+        "mounts": [
+          {
+            "type": "volume",
+            "destination": "/var/lib/mysql",
+            "volumeName": "459874488d856a401f19b19bfce21d06411e472845eafc94fa3a10b8f506ea4f"
+          }
+        ]
+      },
+      {
+        "name": "lottery-single-perf-redis-1",
+        "image": "redis:7.2.16",
+        "state": {
+          "Status": "running",
+          "ExitCode": 0,
+          "OOMKilled": false
+        },
+        "project": "lottery-single-perf",
+        "service": "redis",
+        "resources": {
+          "NanoCpus": 1000000000,
+          "CpuQuota": 0,
+          "CpuPeriod": 0,
+          "CpusetCpus": "",
+          "Memory": 268435456,
+          "MemorySwap": 536870912,
+          "MemoryReservation": 0
+        },
+        "ports": {
+          "6379/tcp": [
+            {
+              "HostIp": "127.0.0.1",
+              "HostPort": "17479"
+            }
+          ]
+        },
+        "mounts": [
+          {
+            "type": "volume",
+            "destination": "/data",
+            "volumeName": "48747122480bcbf2a3c7163bb068de32693430dbd51a600054a83d3987d1c66f"
+          }
+        ]
+      },
+      {
+        "name": "lottery-single-perf-zookeeper-1",
+        "image": "zookeeper:3.8.7",
+        "state": {
+          "Status": "running",
+          "ExitCode": 0,
+          "OOMKilled": false
+        },
+        "project": "lottery-single-perf",
+        "service": "zookeeper",
+        "resources": {
+          "NanoCpus": 500000000,
+          "CpuQuota": 0,
+          "CpuPeriod": 0,
+          "CpusetCpus": "",
+          "Memory": 402653184,
+          "MemorySwap": 805306368,
+          "MemoryReservation": 0
+        },
+        "ports": {},
+        "mounts": [
+          {
+            "type": "volume",
+            "destination": "/logs",
+            "volumeName": "355b72c76c9e4b6d80718c991cf40405ed6cb4ee519a901324c30c2126158a70"
+          },
+          {
+            "type": "volume",
+            "destination": "/data",
+            "volumeName": "243a95212ce2c2cf3df46df454d2650ec57f5d17457a8c135c36cc62419641a7"
+          },
+          {
+            "type": "volume",
+            "destination": "/datalog",
+            "volumeName": "5b1af76e2fa8ffdef5a471f7c9b488fa793fd72429aefc7e7ba9d3a9e6a940ea"
+          }
+        ]
+      }
+    ],
+    "mysqlParameters": "8.0.46\t1\t1\tREPEATABLE-READ\t134217728",
+    "jmeter": "5.6.3",
+    "javaBuild": "8",
+    "javaLoad": "17",
+    "timezone": "Asia/Shanghai"
+  },
+  "verification": {
+    "unit": 52,
+    "integration": 77,
+    "targetedRerun": 32,
+    "v6v7Migration": "V5 历史升级、V6 单库八表、主键重编号、关联与状态保留、跨片冲突事务回滚通过。",
+    "isolatedV7Upgrade": "Isolated benchmark schema, preserved orders: 159917",
+    "finalTuningE2e": 41
+  },
+  "faults": {
+    "committedBeforeCrash": "2120545454084194304\t0\t0",
+    "processExit": -9,
+    "recoveredSecondsAfterRestart": 2.662,
+    "terminal": [
+      "1",
+      "1",
+      "1",
+      "1"
+    ],
+    "replayOrderId": 2120545454084194304,
+    "ledger": 1,
+    "quotaLeft": 2,
+    "nativeLifecycleStates": [
+      4,
+      5,
+      7
+    ],
+    "kafkaLag": {
+      "lottery-perf-stock": [
+        165918,
+        0,
+        8
+      ],
+      "lottery-perf-invoice": [
+        165147,
+        0,
+        8
+      ]
+    }
+  },
+  "stages": {
+    "normal40": {
+      "label": "正常 40",
+      "parameters": {
+        "session": "20261112-outbox-final",
+        "name": "normal40",
+        "id": 825140,
+        "threads": 20,
+        "duration": 30,
+        "warmup": 8,
+        "stock": 1000000,
+        "award_stock": -1,
+        "users": 4000,
+        "target_rps": 40.0,
+        "ramp": 5,
+        "quota": 10,
+        "single_user": false,
+        "slow_ms": 0,
+        "drain_timeout": 300
+      },
+      "windowSeconds": 21.801,
+      "offeredRps": 39.99816522177882,
+      "httpThroughputRps": 40.04403467730838,
+      "admittedRps": 40.04403467730838,
+      "drawCompletionRps": 40.04403467730838,
+      "http": {
+        "200": 873
+      },
+      "business": {
+        "0000": 873
+      },
+      "measured": 873,
+      "httpErrorRate": 0.0,
+      "unexpectedErrorRate": 0.0,
+      "p50": 15,
+      "p95": 26,
+      "p99": 34,
+      "completedP99": 34,
+      "mysqlCpuMean": 31.865,
+      "mysqlConnectionsMax": 22,
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 3,
+          "maxWaiting": 0,
+          "acquireMeanMs": 0.0007316627034936894,
+          "timeouts": 0
+        }
+      },
+      "mysqlDelta": {
+        "Aborted_connects": 0,
+        "Connections": 55,
+        "Innodb_buffer_pool_read_requests": 582851,
+        "Innodb_buffer_pool_reads": 2549,
+        "Innodb_row_lock_time": 1244,
+        "Innodb_row_lock_waits": 1063,
+        "Innodb_rows_deleted": 0,
+        "Innodb_rows_inserted": 3585,
+        "Innodb_rows_read": 3216156,
+        "Innodb_rows_updated": 10752,
+        "Questions": 31233,
+        "Slow_queries": 16,
+        "Threads_connected": 9,
+        "Threads_running": 0
+      },
+      "slowQueries": 10,
+      "redisAdmissionMeanMs": 1.4516536794979078,
+      "admission": {
+        "admitted": 1195,
+        "globalRejected": 0,
+        "userRejected": 0,
+        "concurrentRejected": 0,
+        "redisCalls": 1195,
+        "redisNanos": 1734726147,
+        "redisErrors": 0
+      },
+      "kafkaPeakLag": {
+        "lottery-perf-stock": 1,
+        "lottery-perf-invoice": 1
+      },
+      "stockPendingAtHttpEnd": 0,
+      "grantPendingAtHttpEnd": 0,
+      "kafkaAtHttpEnd": {
+        "lottery-perf-stock": [
+          200080,
+          0,
+          8
+        ],
+        "lottery-perf-invoice": [
+          199309,
+          0,
+          8
+        ]
+      },
+      "asyncP95UpperMs": 967,
+      "drainSeconds": 0.2535989284515381,
+      "auditedTakes": 1195,
+      "auditedOrders": 1195,
+      "settledOrders": 1195,
+      "finalPending": {
+        "orders": 1195,
+        "stockPending": 0,
+        "grantPending": 0,
+        "blocked": 0,
+        "stockDue": 0,
+        "fulfillmentDue": 0
+      },
+      "finalKafkaOffsetsAndLag": {
+        "lottery-perf-stock": [
+          200080,
+          0,
+          8
+        ],
+        "lottery-perf-invoice": [
+          199309,
+          0,
+          8
+        ]
+      },
+      "audit": "PASS",
+      "stockLatencyBoundsMs": {
+        "0.5": [
+          7,
+          11
+        ],
+        "0.95": [
+          14,
+          20
+        ],
+        "0.99": [
+          21,
+          29
+        ]
+      },
+      "settlementRps": 39.99816522177882,
+      "fulfillmentRps": 39.99816522177882,
+      "outbox": {
+        "scans": 8,
+        "candidates": 0,
+        "scanNanos": 11124208,
+        "retries": 0,
+        "rejected": 0,
+        "recoveryThrottled": 0,
+        "sendFailures": 0
+      },
+      "sampledRedisDelta": {
+        "total_error_replies": 0,
+        "rejected_connections": 0
+      },
+      "stockDueAtStop": 0,
+      "fulfillmentDueAtStop": 0
+    },
+    "step80": {
+      "label": "升压 80",
+      "parameters": {
+        "session": "20261112-outbox-final",
+        "name": "step80",
+        "id": 825180,
+        "threads": 32,
+        "duration": 40,
+        "warmup": 10,
+        "stock": 1000000,
+        "award_stock": -1,
+        "users": 6500,
+        "target_rps": 80.0,
+        "ramp": 5,
+        "quota": 10,
+        "single_user": false,
+        "slow_ms": 0,
+        "drain_timeout": 300
+      },
+      "windowSeconds": 29.854,
+      "offeredRps": 79.95578481945468,
+      "httpThroughputRps": 80.02277751725062,
+      "admittedRps": 80.02277751725062,
+      "drawCompletionRps": 80.02277751725062,
+      "http": {
+        "200": 2389
+      },
+      "business": {
+        "0000": 2389
+      },
+      "measured": 2389,
+      "httpErrorRate": 0.0,
+      "unexpectedErrorRate": 0.0,
+      "p50": 20,
+      "p95": 32,
+      "p99": 53,
+      "completedP99": 53,
+      "mysqlCpuMean": 69.749,
+      "mysqlConnectionsMax": 28,
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 5,
+          "maxWaiting": 0,
+          "acquireMeanMs": 0.004945739192314535,
+          "timeouts": 0
+        }
+      },
+      "mysqlDelta": {
+        "Aborted_connects": 0,
+        "Connections": 60,
+        "Innodb_buffer_pool_read_requests": 1453535,
+        "Innodb_buffer_pool_reads": 1392,
+        "Innodb_row_lock_time": 5585,
+        "Innodb_row_lock_waits": 3141,
+        "Innodb_rows_deleted": 0,
+        "Innodb_rows_inserted": 9576,
+        "Innodb_rows_read": 3481582,
+        "Innodb_rows_updated": 28701,
+        "Questions": 83172,
+        "Slow_queries": 17,
+        "Threads_connected": 6,
+        "Threads_running": 0
+      },
+      "slowQueries": 10,
+      "redisAdmissionMeanMs": 1.1091551873433583,
+      "admission": {
+        "admitted": 3192,
+        "globalRejected": 0,
+        "userRejected": 0,
+        "concurrentRejected": 0,
+        "redisCalls": 3192,
+        "redisNanos": 3540423358,
+        "redisErrors": 0
+      },
+      "kafkaPeakLag": {
+        "lottery-perf-stock": 2,
+        "lottery-perf-invoice": 1
+      },
+      "stockPendingAtHttpEnd": 0,
+      "grantPendingAtHttpEnd": 0,
+      "kafkaAtHttpEnd": {
+        "lottery-perf-stock": [
+          203272,
+          0,
+          8
+        ],
+        "lottery-perf-invoice": [
+          202501,
+          0,
+          8
+        ]
+      },
+      "asyncP95UpperMs": 968,
+      "drainSeconds": 0.2763960361480713,
+      "auditedTakes": 3192,
+      "auditedOrders": 3192,
+      "settledOrders": 3192,
+      "finalPending": {
+        "orders": 3192,
+        "stockPending": 0,
+        "grantPending": 0,
+        "blocked": 0,
+        "stockDue": 0,
+        "fulfillmentDue": 0
+      },
+      "finalKafkaOffsetsAndLag": {
+        "lottery-perf-stock": [
+          203272,
+          0,
+          8
+        ],
+        "lottery-perf-invoice": [
+          202501,
+          0,
+          8
+        ]
+      },
+      "audit": "PASS",
+      "stockLatencyBoundsMs": {
+        "0.5": [
+          11,
+          16
+        ],
+        "0.95": [
+          23,
+          32
+        ],
+        "0.99": [
+          80,
+          95
+        ]
+      },
+      "settlementRps": 80.02277751725062,
+      "fulfillmentRps": 80.02277751725062,
+      "outbox": {
+        "scans": 10,
+        "candidates": 0,
+        "scanNanos": 14605626,
+        "retries": 0,
+        "rejected": 0,
+        "recoveryThrottled": 0,
+        "sendFailures": 0
+      },
+      "sampledRedisDelta": {
+        "total_error_replies": 0,
+        "rejected_connections": 0
+      },
+      "stockDueAtStop": 0,
+      "fulfillmentDueAtStop": 0
+    },
+    "step150": {
+      "label": "150 · 开",
+      "parameters": {
+        "session": "20261112-outbox-final",
+        "name": "step150",
+        "id": 825150,
+        "threads": 48,
+        "duration": 35,
+        "warmup": 10,
+        "stock": 1000000,
+        "award_stock": -1,
+        "users": 9000,
+        "target_rps": 150.0,
+        "ramp": 5,
+        "quota": 10,
+        "single_user": false,
+        "slow_ms": 0,
+        "drain_timeout": 300
+      },
+      "windowSeconds": 24.467,
+      "offeredRps": 149.916213675563,
+      "httpThroughputRps": 150.07969918665958,
+      "admittedRps": 100.09400416888055,
+      "drawCompletionRps": 100.09400416888055,
+      "http": {
+        "200": 2449,
+        "429": 1223
+      },
+      "business": {
+        "0000": 2449,
+        "L001": 1223
+      },
+      "measured": 3672,
+      "httpErrorRate": 0.33306100217864926,
+      "unexpectedErrorRate": 0.0,
+      "p50": 19,
+      "p95": 38,
+      "p99": 53,
+      "completedP99": 56,
+      "mysqlCpuMean": 97.01375,
+      "mysqlConnectionsMax": 28,
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 9,
+          "maxWaiting": 0,
+          "acquireMeanMs": 0.0009152815406018891,
+          "timeouts": 0
+        }
+      },
+      "mysqlDelta": {
+        "Aborted_connects": 0,
+        "Connections": 49,
+        "Innodb_buffer_pool_read_requests": 1573629,
+        "Innodb_buffer_pool_reads": 2513,
+        "Innodb_row_lock_time": 9034,
+        "Innodb_row_lock_waits": 3543,
+        "Innodb_rows_deleted": 0,
+        "Innodb_rows_inserted": 10401,
+        "Innodb_rows_read": 3345160,
+        "Innodb_rows_updated": 31139,
+        "Questions": 90299,
+        "Slow_queries": 11,
+        "Threads_connected": 0,
+        "Threads_running": 0
+      },
+      "slowQueries": 1,
+      "redisAdmissionMeanMs": 1.08264748716464,
+      "admission": {
+        "admitted": 3467,
+        "globalRejected": 1714,
+        "userRejected": 0,
+        "concurrentRejected": 0,
+        "redisCalls": 5181,
+        "redisNanos": 5609196631,
+        "redisErrors": 0
+      },
+      "kafkaPeakLag": {
+        "lottery-perf-stock": 5,
+        "lottery-perf-invoice": 3
+      },
+      "stockPendingAtHttpEnd": 0,
+      "grantPendingAtHttpEnd": 0,
+      "kafkaAtHttpEnd": {
+        "lottery-perf-stock": [
+          206739,
+          0,
+          8
+        ],
+        "lottery-perf-invoice": [
+          205968,
+          0,
+          8
+        ]
+      },
+      "asyncP95UpperMs": 982,
+      "drainSeconds": 0.28284692764282227,
+      "auditedTakes": 3467,
+      "auditedOrders": 3467,
+      "settledOrders": 3467,
+      "finalPending": {
+        "orders": 3467,
+        "stockPending": 0,
+        "grantPending": 0,
+        "blocked": 0,
+        "stockDue": 0,
+        "fulfillmentDue": 0
+      },
+      "finalKafkaOffsetsAndLag": {
+        "lottery-perf-stock": [
+          206739,
+          0,
+          8
+        ],
+        "lottery-perf-invoice": [
+          205968,
+          0,
+          8
+        ]
+      },
+      "audit": "PASS",
+      "stockLatencyBoundsMs": {
+        "0.5": [
+          13,
+          19
+        ],
+        "0.95": [
+          46,
+          57
+        ],
+        "0.99": [
+          85,
+          98
+        ]
+      },
+      "settlementRps": 100.13487554665468,
+      "fulfillmentRps": 100.17574692442882,
+      "outbox": {
+        "scans": 8,
+        "candidates": 0,
+        "scanNanos": 11192751,
+        "retries": 0,
+        "rejected": 0,
+        "recoveryThrottled": 0,
+        "sendFailures": 0
+      },
+      "sampledRedisDelta": {
+        "total_error_replies": 0,
+        "rejected_connections": 0
+      },
+      "stockDueAtStop": 0,
+      "fulfillmentDueAtStop": 0
+    },
+    "burst350": {
+      "label": "350 突发 · 开",
+      "parameters": {
+        "session": "20261112-outbox-final",
+        "name": "burst350",
+        "id": 825350,
+        "threads": 72,
+        "duration": 30,
+        "warmup": 8,
+        "stock": 1000000,
+        "award_stock": -1,
+        "users": 18000,
+        "target_rps": 350.0,
+        "ramp": 1,
+        "quota": 10,
+        "single_user": false,
+        "slow_ms": 0,
+        "drain_timeout": 300
+      },
+      "windowSeconds": 21.528,
+      "offeredRps": 349.7305834262356,
+      "httpThroughputRps": 349.82348569305094,
+      "admittedRps": 99.96283909327389,
+      "drawCompletionRps": 99.96283909327389,
+      "http": {
+        "429": 5379,
+        "200": 2152
+      },
+      "business": {
+        "L001": 5298,
+        "0000": 2152,
+        "L003": 81
+      },
+      "measured": 7531,
+      "httpErrorRate": 0.7142477758597796,
+      "unexpectedErrorRate": 0.0,
+      "p50": 2,
+      "p95": 39,
+      "p99": 64,
+      "completedP99": 197,
+      "mysqlCpuMean": 108.0475,
+      "mysqlConnectionsMax": 41,
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 12,
+          "maxWaiting": 0,
+          "acquireMeanMs": 0.011130259945425821,
+          "timeouts": 0
+        }
+      },
+      "mysqlDelta": {
+        "Aborted_connects": 0,
+        "Connections": 58,
+        "Innodb_buffer_pool_read_requests": 1257043,
+        "Innodb_buffer_pool_reads": 1669,
+        "Innodb_row_lock_time": 10457,
+        "Innodb_row_lock_waits": 2989,
+        "Innodb_rows_deleted": 0,
+        "Innodb_rows_inserted": 8934,
+        "Innodb_rows_read": 3401444,
+        "Innodb_rows_updated": 26528,
+        "Questions": 77617,
+        "Slow_queries": 247,
+        "Threads_connected": 12,
+        "Threads_running": 0
+      },
+      "slowQueries": 238,
+      "redisAdmissionMeanMs": 1.5589430950505052,
+      "admission": {
+        "admitted": 2978,
+        "globalRejected": 6922,
+        "userRejected": 0,
+        "concurrentRejected": 458,
+        "redisCalls": 9900,
+        "redisNanos": 15433536641,
+        "redisErrors": 0
+      },
+      "kafkaPeakLag": {
+        "lottery-perf-stock": 4,
+        "lottery-perf-invoice": 3
+      },
+      "stockPendingAtHttpEnd": 0,
+      "grantPendingAtHttpEnd": 0,
+      "kafkaAtHttpEnd": {
+        "lottery-perf-stock": [
+          209717,
+          0,
+          8
+        ],
+        "lottery-perf-invoice": [
+          208946,
+          0,
+          8
+        ]
+      },
+      "asyncP95UpperMs": 1006,
+      "drainSeconds": 0.2561061382293701,
+      "auditedTakes": 2978,
+      "auditedOrders": 2978,
+      "settledOrders": 2978,
+      "finalPending": {
+        "orders": 2978,
+        "stockPending": 0,
+        "grantPending": 0,
+        "blocked": 0,
+        "stockDue": 0,
+        "fulfillmentDue": 0
+      },
+      "finalKafkaOffsetsAndLag": {
+        "lottery-perf-stock": [
+          209717,
+          0,
+          8
+        ],
+        "lottery-perf-invoice": [
+          208946,
+          0,
+          8
+        ]
+      },
+      "audit": "PASS",
+      "stockLatencyBoundsMs": {
+        "0.5": [
+          18,
+          25
+        ],
+        "0.95": [
+          232,
+          244
+        ],
+        "0.99": [
+          484,
+          498
+        ]
+      },
+      "settlementRps": 102.47120029728725,
+      "fulfillmentRps": 102.79635823114084,
+      "outbox": {
+        "scans": 8,
+        "candidates": 67,
+        "scanNanos": 20409417,
+        "retries": 0,
+        "rejected": 61,
+        "recoveryThrottled": 1,
+        "sendFailures": 0
+      },
+      "sampledRedisDelta": {
+        "total_error_replies": 0,
+        "rejected_connections": 0
+      },
+      "stockDueAtStop": 0,
+      "fulfillmentDueAtStop": 0
+    },
+    "user60": {
+      "label": "单用户 60",
+      "parameters": {
+        "session": "20261112-outbox-final",
+        "name": "user60",
+        "id": 825160,
+        "threads": 12,
+        "duration": 28,
+        "warmup": 7,
+        "stock": 1000000,
+        "award_stock": -1,
+        "users": 4000,
+        "target_rps": 60.0,
+        "ramp": 5,
+        "quota": 100,
+        "single_user": true,
+        "slow_ms": 0,
+        "drain_timeout": 300
+      },
+      "windowSeconds": 20.536,
+      "offeredRps": 59.992208804051415,
+      "httpThroughputRps": 59.992208804051415,
+      "admittedRps": 2.045188936501753,
+      "drawCompletionRps": 2.045188936501753,
+      "http": {
+        "429": 1190,
+        "200": 42
+      },
+      "business": {
+        "L002": 1190,
+        "0000": 42
+      },
+      "measured": 1232,
+      "httpErrorRate": 0.9659090909090909,
+      "unexpectedErrorRate": 0.0,
+      "p50": 2,
+      "p95": 17,
+      "p99": 145,
+      "completedP99": 358,
+      "mysqlCpuMean": 2.8814285714285712,
+      "mysqlConnectionsMax": 40,
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 0,
+          "maxWaiting": 0,
+          "acquireMeanMs": 0.47890295358649787,
+          "timeouts": 0
+        }
+      },
+      "mysqlDelta": {
+        "Aborted_connects": 0,
+        "Connections": 42,
+        "Innodb_buffer_pool_read_requests": 81046,
+        "Innodb_buffer_pool_reads": 1263,
+        "Innodb_row_lock_time": 45,
+        "Innodb_row_lock_waits": 45,
+        "Innodb_rows_deleted": 0,
+        "Innodb_rows_inserted": 168,
+        "Innodb_rows_read": 3170903,
+        "Innodb_rows_updated": 502,
+        "Questions": 1588,
+        "Slow_queries": 7,
+        "Threads_connected": 0,
+        "Threads_running": 0
+      },
+      "slowQueries": 5,
+      "redisAdmissionMeanMs": 7.366468263888889,
+      "admission": {
+        "admitted": 58,
+        "globalRejected": 0,
+        "userRejected": 1598,
+        "concurrentRejected": 0,
+        "redisCalls": 1656,
+        "redisNanos": 12198871445,
+        "redisErrors": 0
+      },
+      "kafkaPeakLag": {
+        "lottery-perf-stock": 0,
+        "lottery-perf-invoice": 0
+      },
+      "stockPendingAtHttpEnd": 0,
+      "grantPendingAtHttpEnd": 0,
+      "kafkaAtHttpEnd": {
+        "lottery-perf-stock": [
+          209773,
+          0,
+          8
+        ],
+        "lottery-perf-invoice": [
+          209002,
+          0,
+          8
+        ]
+      },
+      "asyncP95UpperMs": 767,
+      "drainSeconds": 0.21210193634033203,
+      "auditedTakes": 56,
+      "auditedOrders": 56,
+      "settledOrders": 56,
+      "finalPending": {
+        "orders": 56,
+        "stockPending": 0,
+        "grantPending": 0,
+        "blocked": 0,
+        "stockDue": 0,
+        "fulfillmentDue": 0
+      },
+      "finalKafkaOffsetsAndLag": {
+        "lottery-perf-stock": [
+          209773,
+          0,
+          8
+        ],
+        "lottery-perf-invoice": [
+          209002,
+          0,
+          8
+        ]
+      },
+      "audit": "PASS",
+      "stockLatencyBoundsMs": {
+        "0.5": [
+          6,
+          10
+        ],
+        "0.95": [
+          27,
+          95
+        ],
+        "0.99": [
+          86,
+          119
+        ]
+      },
+      "settlementRps": 1.9964939618231397,
+      "fulfillmentRps": 1.9964939618231397,
+      "outbox": {
+        "scans": 8,
+        "candidates": 0,
+        "scanNanos": 27033334,
+        "retries": 0,
+        "rejected": 0,
+        "recoveryThrottled": 0,
+        "sendFailures": 0
+      },
+      "sampledRedisDelta": {
+        "total_error_replies": 0,
+        "rejected_connections": 0
+      },
+      "stockDueAtStop": 0,
+      "fulfillmentDueAtStop": 0
+    },
+    "slow350": {
+      "label": "慢 SQL · 开",
+      "parameters": {
+        "session": "20261112-outbox-final",
+        "name": "slow350",
+        "id": 825351,
+        "threads": 72,
+        "duration": 30,
+        "warmup": 8,
+        "stock": 1000000,
+        "award_stock": -1,
+        "users": 18000,
+        "target_rps": 350.0,
+        "ramp": 1,
+        "quota": 10,
+        "single_user": false,
+        "slow_ms": 300,
+        "drain_timeout": 300
+      },
+      "windowSeconds": 21.961,
+      "offeredRps": 345.111789080643,
+      "httpThroughputRps": 346.1135649560585,
+      "admittedRps": 71.94572196165932,
+      "drawCompletionRps": 71.94572196165932,
+      "http": {
+        "200": 1580,
+        "429": 6021
+      },
+      "business": {
+        "0000": 1580,
+        "L003": 6021
+      },
+      "measured": 7601,
+      "httpErrorRate": 0.7921326141297198,
+      "unexpectedErrorRate": 0.0,
+      "p50": 1,
+      "p95": 326,
+      "p99": 371,
+      "completedP99": 672,
+      "mysqlCpuMean": 54.12625,
+      "mysqlConnectionsMax": 48,
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 28,
+          "maxWaiting": 0,
+          "acquireMeanMs": 0.004559501494503268,
+          "timeouts": 0
+        }
+      },
+      "mysqlDelta": {
+        "Aborted_connects": 0,
+        "Connections": 57,
+        "Innodb_buffer_pool_read_requests": 945412,
+        "Innodb_buffer_pool_reads": 1947,
+        "Innodb_row_lock_time": 4919,
+        "Innodb_row_lock_waits": 2177,
+        "Innodb_rows_deleted": 0,
+        "Innodb_rows_inserted": 6336,
+        "Innodb_rows_read": 3441393,
+        "Innodb_rows_updated": 18938,
+        "Questions": 55099,
+        "Slow_queries": 2166,
+        "Threads_connected": 8,
+        "Threads_running": 0
+      },
+      "slowQueries": 2157,
+      "redisAdmissionMeanMs": 1.3464544635416666,
+      "admission": {
+        "admitted": 2112,
+        "globalRejected": 0,
+        "userRejected": 0,
+        "concurrentRejected": 8284,
+        "redisCalls": 2112,
+        "redisNanos": 2843711827,
+        "redisErrors": 0
+      },
+      "kafkaPeakLag": {
+        "lottery-perf-stock": 4,
+        "lottery-perf-invoice": 3
+      },
+      "stockPendingAtHttpEnd": 0,
+      "grantPendingAtHttpEnd": 0,
+      "kafkaAtHttpEnd": {
+        "lottery-perf-stock": [
+          211885,
+          0,
+          8
+        ],
+        "lottery-perf-invoice": [
+          211114,
+          0,
+          8
+        ]
+      },
+      "asyncP95UpperMs": 985,
+      "drainSeconds": 0.2934880256652832,
+      "auditedTakes": 2112,
+      "auditedOrders": 2112,
+      "settledOrders": 2112,
+      "finalPending": {
+        "orders": 2112,
+        "stockPending": 0,
+        "grantPending": 0,
+        "blocked": 0,
+        "stockDue": 0,
+        "fulfillmentDue": 0
+      },
+      "finalKafkaOffsetsAndLag": {
+        "lottery-perf-stock": [
+          211885,
+          0,
+          8
+        ],
+        "lottery-perf-invoice": [
+          211114,
+          0,
+          8
+        ]
+      },
+      "audit": "PASS",
+      "stockLatencyBoundsMs": {
+        "0.5": [
+          10,
+          17
+        ],
+        "0.95": [
+          79,
+          109
+        ],
+        "0.99": [
+          203,
+          242
+        ]
+      },
+      "settlementRps": 72.31000409817405,
+      "fulfillmentRps": 72.31000409817405,
+      "outbox": {
+        "scans": 8,
+        "candidates": 0,
+        "scanNanos": 21438291,
+        "retries": 0,
+        "rejected": 0,
+        "recoveryThrottled": 0,
+        "sendFailures": 0
+      },
+      "sampledRedisDelta": {
+        "total_error_replies": 0,
+        "rejected_connections": 0
+      },
+      "stockDueAtStop": 0,
+      "fulfillmentDueAtStop": 0
+    },
+    "step150-off": {
+      "label": "150 · 关（短测）",
+      "parameters": {
+        "session": "20261112-outbox-final",
+        "name": "step150-off",
+        "id": 826150,
+        "threads": 48,
+        "duration": 35,
+        "warmup": 10,
+        "stock": 1000000,
+        "award_stock": -1,
+        "users": 9000,
+        "target_rps": 150.0,
+        "ramp": 5,
+        "quota": 10,
+        "single_user": false,
+        "slow_ms": 0,
+        "drain_timeout": 300
+      },
+      "windowSeconds": 24.913,
+      "offeredRps": 149.88158792598242,
+      "httpThroughputRps": 150.84494039256612,
+      "admittedRps": 150.84494039256612,
+      "drawCompletionRps": 150.84494039256612,
+      "http": {
+        "200": 3758
+      },
+      "business": {
+        "0000": 3758
+      },
+      "measured": 3758,
+      "httpErrorRate": 0.0,
+      "unexpectedErrorRate": 0.0,
+      "p50": 52,
+      "p95": 366,
+      "p99": 490,
+      "completedP99": 490,
+      "mysqlCpuMean": 151.4775,
+      "mysqlConnectionsMax": 49,
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 48,
+          "maxWaiting": 6,
+          "acquireMeanMs": 0.42964473243213047,
+          "timeouts": 0
+        }
+      },
+      "mysqlDelta": {
+        "Aborted_connects": 0,
+        "Connections": 266,
+        "Innodb_buffer_pool_read_requests": 2555125,
+        "Innodb_buffer_pool_reads": 2329,
+        "Innodb_row_lock_time": 14988,
+        "Innodb_row_lock_waits": 4291,
+        "Innodb_rows_deleted": 0,
+        "Innodb_rows_inserted": 15726,
+        "Innodb_rows_read": 21712230,
+        "Innodb_rows_updated": 45352,
+        "Questions": 137081,
+        "Slow_queries": 1636,
+        "Threads_connected": 36,
+        "Threads_running": 0
+      },
+      "slowQueries": 1595,
+      "redisAdmissionMeanMs": null,
+      "admission": {
+        "admitted": 5242,
+        "globalRejected": 0,
+        "userRejected": 0,
+        "concurrentRejected": 0,
+        "redisCalls": 0,
+        "redisNanos": 0,
+        "redisErrors": 0
+      },
+      "kafkaPeakLag": {
+        "lottery-perf-stock": 843,
+        "lottery-perf-invoice": 12
+      },
+      "stockPendingAtHttpEnd": 1414,
+      "grantPendingAtHttpEnd": 1593,
+      "kafkaAtHttpEnd": {
+        "lottery-perf-stock": [
+          215733,
+          48,
+          8
+        ],
+        "lottery-perf-invoice": [
+          214784,
+          3,
+          8
+        ]
+      },
+      "asyncP95UpperMs": 144646,
+      "drainSeconds": 149.53232097625732,
+      "auditedTakes": 5242,
+      "auditedOrders": 5242,
+      "settledOrders": 5242,
+      "finalPending": {
+        "orders": 5242,
+        "stockPending": 0,
+        "grantPending": 0,
+        "blocked": 0,
+        "stockDue": 0,
+        "fulfillmentDue": 0
+      },
+      "finalKafkaOffsetsAndLag": {
+        "lottery-perf-stock": [
+          217127,
+          0,
+          8
+        ],
+        "lottery-perf-invoice": [
+          216356,
+          0,
+          8
+        ]
+      },
+      "audit": "PASS",
+      "stockLatencyBoundsMs": {
+        "0.5": [
+          5248,
+          5264
+        ],
+        "0.95": [
+          144110,
+          144141
+        ],
+        "0.99": [
+          153563,
+          153615
+        ]
+      },
+      "settlementRps": 124.2323285031911,
+      "fulfillmentRps": 121.78380765062417,
+      "outbox": {
+        "scans": 72,
+        "candidates": 1778,
+        "scanNanos": 222073209,
+        "retries": 0,
+        "rejected": 1626,
+        "recoveryThrottled": 1,
+        "sendFailures": 0
+      },
+      "sampledRedisDelta": {
+        "total_error_replies": 0,
+        "rejected_connections": 0
+      },
+      "stockDueAtStop": 1346,
+      "fulfillmentDueAtStop": 176
+    },
+    "sustained120": {
+      "label": "持续 120 · 关",
+      "parameters": {
+        "session": "20261112-outbox-final",
+        "name": "sustained120",
+        "id": 827120,
+        "threads": 40,
+        "duration": 210,
+        "warmup": 15,
+        "stock": 1000000,
+        "award_stock": -1,
+        "users": 32000,
+        "target_rps": 120.0,
+        "ramp": 5,
+        "quota": 10,
+        "single_user": false,
+        "slow_ms": 0,
+        "drain_timeout": 300
+      },
+      "windowSeconds": 194.984,
+      "offeredRps": 119.98933245804784,
+      "httpThroughputRps": 120.00984696180198,
+      "admittedRps": 120.00984696180198,
+      "drawCompletionRps": 120.00984696180198,
+      "http": {
+        "200": 23400
+      },
+      "business": {
+        "0000": 23400
+      },
+      "measured": 23400,
+      "httpErrorRate": 0.0,
+      "unexpectedErrorRate": 0.0,
+      "p50": 18,
+      "p95": 91,
+      "p99": 301,
+      "completedP99": 301,
+      "mysqlCpuMean": 91.65142857142857,
+      "mysqlConnectionsMax": 49,
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 31,
+          "maxWaiting": 0,
+          "acquireMeanMs": 0.007493174165486683,
+          "timeouts": 0
+        }
+      },
+      "mysqlDelta": {
+        "Aborted_connects": 0,
+        "Connections": 179,
+        "Innodb_buffer_pool_read_requests": 10693294,
+        "Innodb_buffer_pool_reads": 4156,
+        "Innodb_row_lock_time": 65290,
+        "Innodb_row_lock_waits": 24920,
+        "Innodb_rows_deleted": 0,
+        "Innodb_rows_inserted": 75603,
+        "Innodb_rows_read": 8367620,
+        "Innodb_rows_updated": 225105,
+        "Questions": 655767,
+        "Slow_queries": 1385,
+        "Threads_connected": 0,
+        "Threads_running": 0
+      },
+      "slowQueries": 1352,
+      "redisAdmissionMeanMs": null,
+      "admission": {
+        "admitted": 25201,
+        "globalRejected": 0,
+        "userRejected": 0,
+        "concurrentRejected": 0,
+        "redisCalls": 0,
+        "redisNanos": 0,
+        "redisErrors": 0
+      },
+      "kafkaPeakLag": {
+        "lottery-perf-stock": 102,
+        "lottery-perf-invoice": 5
+      },
+      "stockPendingAtHttpEnd": 0,
+      "grantPendingAtHttpEnd": 0,
+      "kafkaAtHttpEnd": {
+        "lottery-perf-stock": [
+          242328,
+          0,
+          8
+        ],
+        "lottery-perf-invoice": [
+          241557,
+          0,
+          8
+        ]
+      },
+      "asyncP95UpperMs": 1763,
+      "drainSeconds": 0.4179878234863281,
+      "auditedTakes": 25201,
+      "auditedOrders": 25201,
+      "settledOrders": 25201,
+      "finalPending": {
+        "orders": 25201,
+        "stockPending": 0,
+        "grantPending": 0,
+        "blocked": 0,
+        "stockDue": 0,
+        "fulfillmentDue": 0
+      },
+      "finalKafkaOffsetsAndLag": {
+        "lottery-perf-stock": [
+          242328,
+          0,
+          8
+        ],
+        "lottery-perf-invoice": [
+          241557,
+          0,
+          8
+        ]
+      },
+      "audit": "PASS",
+      "stability": {
+        "stable": true,
+        "checks": {
+          "至少180秒测量": true,
+          "达到目标到达速率95%": true,
+          "HTTP与系统错误率低于0.1%": true,
+          "HTTP P99低于1秒": true,
+          "积压峰值不超过10秒请求量": true,
+          "首尾平均积压增长不超过1秒请求量": true,
+          "异步P95保守上界低于10秒": true,
+          "入口结束后15秒内收敛": true,
+          "业务审计通过": true
+        },
+        "measuredRps": 120.00984696180198,
+        "targetRps": 120.0,
+        "backlogPeak": 353,
+        "backlogMeanGrowth": 71,
+        "firstMeanBacklog": 7,
+        "lastMeanBacklog": 78
+      },
+      "stockLatencyBoundsMs": {
+        "0.5": [
+          12,
+          18
+        ],
+        "0.95": [
+          1206,
+          1238
+        ],
+        "0.99": [
+          8854,
+          8916
+        ]
+      },
+      "settlementRps": 119.9842038321093,
+      "fulfillmentRps": 119.97907520617076,
+      "outbox": {
+        "scans": 52,
+        "candidates": 384,
+        "scanNanos": 105168998,
+        "retries": 0,
+        "rejected": 384,
+        "recoveryThrottled": 0,
+        "sendFailures": 0
+      },
+      "sampledRedisDelta": {
+        "total_error_replies": 0,
+        "rejected_connections": 0
+      },
+      "stockDueAtStop": 0,
+      "fulfillmentDueAtStop": 0
+    }
+  },
+  "priorSingleDb": {
+    "normal40": {
+      "p95StockLowerMs": 855,
+      "matchedOrders": 881,
+      "fullChainAsyncP95UpperMs": 1916,
+      "stockPendingAtStop": 0,
+      "kafkaPeakLag": {
+        "lottery-perf-stock": 0,
+        "lottery-perf-invoice": 0
+      },
+      "drawRps": 40.04545454545455,
+      "p99Ms": 120,
+      "drainSeconds": 0.16414189338684082
+    },
+    "step80": {
+      "p95StockLowerMs": 880,
+      "matchedOrders": 2399,
+      "fullChainAsyncP95UpperMs": 1945,
+      "stockPendingAtStop": 0,
+      "kafkaPeakLag": {
+        "lottery-perf-stock": 0,
+        "lottery-perf-invoice": 8
+      },
+      "drawRps": 79.96666666666667,
+      "p99Ms": 173,
+      "drainSeconds": 0.17417597770690918
+    },
+    "step150": {
+      "p95StockLowerMs": 828,
+      "matchedOrders": 2492,
+      "fullChainAsyncP95UpperMs": 1908,
+      "stockPendingAtStop": 0,
+      "kafkaPeakLag": {
+        "lottery-perf-stock": 75,
+        "lottery-perf-invoice": 0
+      },
+      "drawRps": 99.68,
+      "p99Ms": 64,
+      "drainSeconds": 0.211669921875
+    },
+    "step150-off": {
+      "p95StockLowerMs": 915,
+      "matchedOrders": 3738,
+      "fullChainAsyncP95UpperMs": 2035,
+      "stockPendingAtStop": 0,
+      "kafkaPeakLag": {
+        "lottery-perf-stock": 29,
+        "lottery-perf-invoice": 17
+      },
+      "drawRps": 149.52,
+      "p99Ms": 35,
+      "drainSeconds": 0.18601608276367188
+    },
+    "burst350-final": {
+      "p95StockLowerMs": 881,
+      "matchedOrders": 2184,
+      "fullChainAsyncP95UpperMs": 1968,
+      "stockPendingAtStop": 0,
+      "kafkaPeakLag": {
+        "lottery-perf-stock": 90,
+        "lottery-perf-invoice": 8
+      },
+      "drawRps": 100.33997978498577,
+      "p99Ms": 39,
+      "drainSeconds": 0.1961350440979004
+    },
+    "sustained150": {
+      "p95StockLowerMs": 18813,
+      "matchedOrders": 44975,
+      "fullChainAsyncP95UpperMs": 20687,
+      "stockPendingAtStop": 2699,
+      "kafkaPeakLag": {
+        "lottery-perf-stock": 218,
+        "lottery-perf-invoice": 130
+      },
+      "drawRps": 150.0041690986409,
+      "p99Ms": 332,
+      "drainSeconds": 19.693619966506958
+    },
+    "sustained120": {
+      "p95StockLowerMs": 2524,
+      "matchedOrders": 23264,
+      "fullChainAsyncP95UpperMs": 4769,
+      "stockPendingAtStop": 394,
+      "kafkaPeakLag": {
+        "lottery-perf-stock": 139,
+        "lottery-perf-invoice": 86
+      },
+      "drawRps": 119.3025641025641,
+      "p99Ms": 179,
+      "drainSeconds": 4.826527833938599
+    }
+  },
+  "priorV5": {
+    "newDrawRps": 149.08,
+    "p99Ms": 751,
+    "ordersTotal": 5229,
+    "asyncP95UpperMs": 20040,
+    "drainSeconds": 13.2272047996521
+  },
+  "beforeRecoveryTuning": {
+    "burst350": {
+      "stockLatencyBoundsMs": {
+        "0.5": [
+          20,
+          27
+        ],
+        "0.95": [
+          331,
+          343
+        ],
+        "0.99": [
+          10090,
+          10097
+        ]
+      },
+      "outbox": {
+        "scans": 10,
+        "candidates": 462,
+        "scanNanos": 25660416,
+        "retries": 0,
+        "rejected": 348,
+        "sendFailures": 0
+      },
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 14,
+          "maxWaiting": 0,
+          "acquireMeanMs": 0.008981084088380227,
+          "timeouts": 0
+        }
+      },
+      "mysqlCpuMean": 101.88571428571429,
+      "peakSampledKafkaLag": {
+        "lottery-perf-stock": 7,
+        "lottery-perf-invoice": 3
+      },
+      "drainSeconds": 4.571204900741577
+    },
+    "step150-off": {
+      "stockLatencyBoundsMs": {
+        "0.5": [
+          527,
+          540
+        ],
+        "0.95": [
+          2523,
+          2537
+        ],
+        "0.99": [
+          31769,
+          31775
+        ]
+      },
+      "outbox": {
+        "scans": 15,
+        "candidates": 1039,
+        "scanNanos": 42017624,
+        "retries": 0,
+        "rejected": 705,
+        "sendFailures": 0
+      },
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 15,
+          "maxWaiting": 0,
+          "acquireMeanMs": 0.0007771961505931836,
+          "timeouts": 0
+        }
+      },
+      "mysqlCpuMean": 145.73250000000002,
+      "peakSampledKafkaLag": {
+        "lottery-perf-stock": 194,
+        "lottery-perf-invoice": 12
+      },
+      "drainSeconds": 17.41237187385559
+    }
+  },
+  "finalAudit": {
+    "takes": 236728,
+    "ledger": 236328,
+    "orders": 236328,
+    "tables": 8,
+    "quotaSpent": 236728,
+    "stockSpent": 236328,
+    "wrongLedger": 0,
+    "negativeQuota": 0,
+    "negativeStock": 0,
+    "duplicateOrders": 0,
+    "unfinishedTakes": 0,
+    "unsettledOrders": 0,
+    "orderWithoutTake": 0,
+    "duplicateTakesWithOrders": 0,
+    "redisStockKeys": 190,
+    "redisStockEqualsMysql": true,
+    "finalOrders": 43443,
+    "finalLedger": 43443
+  }
+}
