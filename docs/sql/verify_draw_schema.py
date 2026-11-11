@@ -14,7 +14,8 @@ def source(path):
 
 
 def verify(container):
-    client = ['docker', 'exec', '-i', container, 'mysql', '-uroot',
+    # Docker 初始化期间的临时 mysqld 仅监听 socket，TCP 就绪才开始执行 Schema。
+    client = ['docker', 'exec', '-i', container, 'mysql', '-h127.0.0.1', '-uroot',
               '--default-character-set=utf8mb4', '--batch', '--skip-column-names']
 
     def sql(script, expected_error=None):
@@ -27,7 +28,7 @@ def verify(container):
 
     def definitions():
         dump = subprocess.check_output(
-            ['docker', 'exec', container, 'mysqldump', '-uroot', '--default-character-set=utf8mb4',
+            ['docker', 'exec', container, 'mysqldump', '-h127.0.0.1', '-uroot', '--default-character-set=utf8mb4',
              '--no-data', '--skip-comments', '--skip-add-drop-table', '--skip-set-charset',
              '--no-tablespaces', '--databases', *SCHEMAS], text=True, timeout=30)
         # 历史数据的自增位置依旧保留，只比较结构定义。
