@@ -3,7 +3,7 @@ package com.anontokyo.lottery.domain.award.service.order;
 import com.anontokyo.lottery.domain.award.model.req.AwardOrderReq;
 import com.anontokyo.lottery.domain.award.model.res.AwardOrderResult;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
-import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
+import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 
 import java.util.List;
 
@@ -20,12 +20,12 @@ public interface IAwardOrder {
     /**
      * 条件推进发奖 MQ 状态：发送回调写 SENT/FAIL，消费确认发奖后写 COMPLETE。
      */
-    void updateInvoiceMqState(String uId, Long orderId, Integer mqState);
+    void updateFulfillmentEventStatus(String uId, Long orderId, Integer fulfillmentEventStatus);
 
     /**
      * 条件推进库存 MQ 状态：发送失败不覆盖 SENT，所有发送回调不覆盖 COMPLETE。
      */
-    void updateStockMqState(String uId, Long orderId, Integer stockMqState);
+    void updateStockSettlementEventStatus(String uId, Long orderId, Integer stockSettlementEventStatus);
 
     /** 库存条件扣减失败：INIT/FAIL/SENT 转 BLOCKED 等待对账；持久化失败抛出，COMPLETE 不回退。 */
     void markStockSettlementFailed(String uId, Long orderId);
@@ -33,12 +33,12 @@ public interface IAwardOrder {
     /**
      * 扫描待补偿的发奖MQ订单。
      */
-    List<InvoiceVO> scanInvoiceMqState(int dbCount, int tbCount, int limit);
+    List<AwardFulfillmentEvent> scanFulfillmentEventStatus(int dbCount, int tbCount, int limit);
 
     /**
      * Scan award stock settlement outbox.
      */
-    List<AwardStockSettlementVO> scanAwardStockMqState(int dbCount, int tbCount, int limit);
+    List<AwardStockSettlementVO> scanStockSettlementEventStatus(int dbCount, int tbCount, int limit);
 
     /** 分库元信息（供调度任务按分片遍历） */
     int shardingDbCount();
@@ -49,10 +49,10 @@ public interface IAwardOrder {
     /**
      * Query invoice payload by order id.
      */
-    InvoiceVO queryInvoiceByOrderId(String uId, Long orderId);
+    AwardFulfillmentEvent queryFulfillmentEventByOrderId(String uId, Long orderId);
 
     /**
      * Whether stock settlement is already complete.
      */
-    boolean isStockMqCompleted(String uId, Long orderId);
+    boolean isStockSettlementComplete(String uId, Long orderId);
 }

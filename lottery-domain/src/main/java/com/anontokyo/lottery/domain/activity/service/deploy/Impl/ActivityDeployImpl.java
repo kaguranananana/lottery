@@ -6,8 +6,8 @@ import com.anontokyo.lottery.domain.activity.model.req.ActivityConfigReq;
 import com.anontokyo.lottery.domain.activity.model.req.ActivityInfoLimitPageReq;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
 import com.anontokyo.lottery.domain.activity.model.vo.AwardVO;
-import com.anontokyo.lottery.domain.activity.model.vo.StrategyDetailVO;
-import com.anontokyo.lottery.domain.activity.model.vo.StrategyVO;
+import com.anontokyo.lottery.domain.activity.model.vo.DrawConfigPrizeVO;
+import com.anontokyo.lottery.domain.activity.model.vo.DrawConfigVO;
 import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
 import com.anontokyo.lottery.domain.activity.service.deploy.IActivityDeploy;
 import com.alibaba.fastjson.JSON;
@@ -42,14 +42,14 @@ public class ActivityDeployImpl implements IActivityDeploy {
         try {
             // 添加活动配置
             ActivityVO activity = activityConfigRich.getActivity();
-            // 活动、策略和策略明细来自同一个新建配置，避免活动关联空策略。
-            StrategyVO strategy = activityConfigRich.getStrategy();
+            // 活动、策略和抽奖配置奖品来自同一个新建配置，避免活动关联空策略。
+            DrawConfigVO drawConfig = activityConfigRich.getDrawConfig();
             // 聚合中的策略号是创建活动关联的唯一来源。
-            activity.setStrategyId(strategy.getStrategyId());
+            activity.setDrawConfigId(drawConfig.getDrawConfigId());
             // 新建策略的明细必须属于该策略，初始剩余库存等于配置库存。
-            for (StrategyDetailVO detail : strategy.getStrategyDetailList()) {
+            for (DrawConfigPrizeVO detail : drawConfig.getDrawConfigPrizeList()) {
                 // 将明细关联到本次创建的策略，避免插入不可达的奖品配置。
-                detail.setStrategyId(strategy.getStrategyId());
+                detail.setDrawConfigId(drawConfig.getDrawConfigId());
                 // 新建库存没有预扣或结算历史，剩余量从配置总量初始化。
                 detail.setAwardSurplusCount(detail.getAwardCount());
             }
@@ -59,12 +59,12 @@ public class ActivityDeployImpl implements IActivityDeploy {
             List<AwardVO> awardList = activityConfigRich.getAwardList();
             activityRepository.addAward(awardList);
 
-            // 添加策略配置
-            activityRepository.addStrategy(strategy);
+            // 添加抽奖配置
+            activityRepository.addDrawConfig(drawConfig);
 
-            // 添加策略明细配置
-            List<StrategyDetailVO> strategyDetailList = strategy.getStrategyDetailList();
-            activityRepository.addStrategyDetailList(strategyDetailList);
+            // 添加抽奖配置奖品配置
+            List<DrawConfigPrizeVO> drawConfigPrizeList = drawConfig.getDrawConfigPrizeList();
+            activityRepository.addDrawConfigPrizeList(drawConfigPrizeList);
 
             logger.info("创建活动配置完成，activityId：{}", req.getActivityId());
         } catch (DuplicateKeyException e) {

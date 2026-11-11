@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.anontokyo.lottery.infrastructure.dao.IDrawConfigPrizeDao">
+    <insert id="insertList" parameterType="java.util.List">
+        INSERT INTO draw_config_prize(draw_config_id, award_id, award_count, award_surplus_count,
+        award_rate, create_time, update_time)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.drawConfigId},
+            #{item.awardId},
+            #{item.awardCount},
+            #{item.awardSurplusCount},
+            #{item.awardRate},
+            NOW(),
+            NOW()
+            )
+        </foreach>
+    </insert>
+
+    <select id="queryDrawConfigPrizeList" parameterType="java.lang.Long" resultType="com.anontokyo.lottery.infrastructure.po.DrawConfigPrize">
+        SELECT id, draw_config_id, award_id, award_count, award_rate, award_surplus_count, create_time, update_time
+        FROM draw_config_prize
+        WHERE draw_config_id = #{drawConfigId}
+    </select>
+
+    <select id="queryDrawConfigPrize" parameterType="com.anontokyo.lottery.infrastructure.po.DrawConfigPrize"
+            resultType="com.anontokyo.lottery.infrastructure.po.DrawConfigPrize">
+        SELECT id, draw_config_id, award_id, award_count, award_rate, award_surplus_count, create_time, update_time
+        FROM draw_config_prize
+        WHERE draw_config_id = #{drawConfigId}
+          AND award_id = #{awardId}
+        LIMIT 1
+    </select>
+
+    <select id="querySoldOutPrizeIds" parameterType="java.lang.Long" resultType="java.lang.String">
+        SELECT award_id
+        FROM draw_config_prize
+        WHERE draw_config_id = #{drawConfigId} AND award_surplus_count = 0
+    </select>
+
+    <update id="deductStock" parameterType="com.anontokyo.lottery.infrastructure.po.DrawConfigPrize">
+        UPDATE draw_config_prize
+        SET award_surplus_count = award_surplus_count - 1
+        WHERE draw_config_id = #{drawConfigId}
+          AND award_id = #{awardId}
+          AND award_surplus_count > 0
+    </update>
+
+</mapper>

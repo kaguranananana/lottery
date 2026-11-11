@@ -56,14 +56,14 @@ flowchart TD
 2. 通过短时并发锁、请求号及参与记录，判断是新请求、结果回放还是未完成请求恢复。
 3. 校验活动状态和时间；TX1 在同一用户分片事务中条件扣减个人次数并创建参与记录。
 4. 读取策略快照进行加权随机抽样；命中奖品后预扣其 Redis 库存。未中奖或命中已售罄奖品时消费参与记录，仍消耗一次个人机会。
-5. TX2 在同一用户分片事务中消费参与记录、创建中奖订单并写入 `stock_mq_state=INIT`。
+5. TX2 在同一用户分片事务中消费参与记录、创建中奖订单并写入 `stock_settlement_event_status=INIT`。
 6. XXL-Job 扫描 Outbox 并发送 Kafka；TX3 在全局库事务中插入唯一账本、条件扣减 MySQL 奖品库存，再发送发奖消息。三个事务独立提交。
 
 ## 关键技术设计
 
 ### 1. 库存一致性：Redis 预扣与 MySQL 结算
 
-- **Redis** 按 `strategyId + awardId` 原子预扣奖品库存，避免每次中奖直接竞争 MySQL 库存行；活动自身不维护库存。
+- **Redis** 按 `drawConfigId + awardId` 原子预扣奖品库存，避免每次中奖直接竞争 MySQL 库存行；活动自身不维护库存。
 - **MySQL** 保留持久化记录，奖品库存采用 `surplus > 0` 条件更新，阻止并发结算导致负库存。
 - 活动启动持有活动行锁及共享策略行锁；只用 MySQL 奖品剩余量 SETNX 预热，成功后才 CAS 到 DOING。第二个活动引用相同策略时共享已有奖池，保留实时余额。
 - 奖品库存 Key 缺失时明确报错，保留原未消费 take 与 requestId；只有真实售罄才视为未中奖。已运行或关闭的共享奖池缺 Key 时阻止新活动启动，须先对账，不能用滞后 MySQL 值回填。
@@ -165,8 +165,7 @@ mvn clean package
 ### 数据初始化与应用启动
 
 1. 准备独立的 MySQL 测试实例，创建 `lottery`、`lottery_01` 和 `lottery_02` 三个数据库。
-2. 参考 `doc/sql/` 中的基线结构、库存 Outbox 和补偿索引脚本，以及 `docs/sql/V2__architecture_simplification.sql`、`docs/sql/V3__draw_request_ownership.sql` 完成建表及迁移。**部分基线脚本包含 `DROP TABLE` 和历史测试数据，只能在独立测试库操作；V2 包含需要按物理表处理的说明性 SQL，不能将其当作一键完整迁移。**
-   新建库的 `activity` 已无库存列，不执行 V4；旧库升级须停旧版应用与任务后执行 [V4__remove_activity_stock.sql](docs/sql/V4__remove_activity_stock.sql)，再启动新版。V4 只删除活动两列，不改用户分片、订单或结算账本；不自动执行。顺序与新旧场景详见 [迁移说明](docs/activity-stock-removal.md)。
+2. 空实例执行 [完整 Schema](docs/sql/lottery-schema.sql)，可选加载 [演示数据](docs/sql/lottery-demo-seed.sql)。已有库按 [升级说明](docs/draw-schema-refactor.md) 核对 V5 前置结构并先在备份副本演练。
 3. 根据本地环境配置 `lottery-interfaces/src/main/resources/application.yml`，包括 MySQL、Redis、Kafka 和 XXL-Job 地址及凭据；默认配置的 MySQL 端口为 `13306`、Redis 为 `6379`、Kafka 为 `9092`。
 4. 启动所需中间件与应用；活动应按正常状态流转完成库存预热，不能仅将数据库状态改为运行中来跳过预热。
 
@@ -208,7 +207,8 @@ lottery-domain            资格校验、策略抽样、活动与订单业务规
 lottery-infrastructure    MyBatis / Redis / Repository / 缓存与路由实现
 lottery-common            统一结果、枚举与公共常量
 
-doc/sql                   数据库基线及索引脚本
+docs/sql                  当前完整 Schema、演示数据与升级脚本
+doc/sql                   历史基线、种子及索引迁移
 doc/performance           压测工具、报告与验证证据
 docs                      架构、幂等、一致性与 E2E 设计文档
 ```

@@ -1,20 +1,20 @@
 package com.anontokyo.lottery.test.mq;
 
 import com.alibaba.fastjson.JSON;
-import com.anontokyo.lottery.application.mq.consumer.LotteryInvoiceListener;
-import com.anontokyo.lottery.application.mq.consumer.LotteryStrategyAwardStockListener;
+import com.anontokyo.lottery.application.mq.consumer.AwardFulfillmentListener;
+import com.anontokyo.lottery.application.mq.consumer.StockSettlementListener;
 import com.anontokyo.lottery.application.mq.producer.KafkaProducer;
 import com.anontokyo.lottery.application.worker.LotteryXxlJob;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
-import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
+import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
 import com.anontokyo.lottery.domain.award.service.fulfillment.AwardFulfillmentHandler;
 import com.anontokyo.lottery.domain.award.service.fulfillment.AwardFulfillmentResult;
 import com.anontokyo.lottery.domain.award.service.order.IAwardOrder;
-import com.anontokyo.lottery.domain.strategy.repository.IStrategyRepository;
-import com.anontokyo.lottery.domain.support.lock.IInvoiceMqProcessGuard;
-import com.anontokyo.lottery.domain.support.lock.IStrategyAwardStockMqGuard;
+import com.anontokyo.lottery.domain.draw.repository.IDrawConfigRepository;
+import com.anontokyo.lottery.domain.support.lock.IAwardFulfillmentGuard;
+import com.anontokyo.lottery.domain.support.lock.IStockSettlementGuard;
 import com.xxl.job.core.context.XxlJobContext;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.After;
@@ -26,13 +26,15 @@ import org.springframework.util.concurrent.SettableListenableFuture;
 
 import java.util.Collections;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 /** 应用层接线测试：只验证回调、消费收口与 ack 顺序，不能代替数据库 CAS 验证。 */
 public class MqCallbackStateTest {
-    private final InvoiceVO invoice = invoice();
+    private final AwardFulfillmentEvent invoice = invoice();
     private final IOrderRepository repository = mock(IOrderRepository.class);
     private final Acknowledgment ack = mock(Acknowledgment.class);
 
@@ -43,14 +45,29 @@ public class MqCallbackStateTest {
     }
 
     @Test
+    public void legacyKafkaFieldsRoundTripWithNewJavaNames() {
+        // 旧 Broker 中的原字段可读，新生产者继续写相同字段。
+        AwardStockSettlementVO stock = JSON.parseObject(
+                "{\"orderId\":7,\"strategyId\":42}", AwardStockSettlementVO.class);
+        assertEquals(Long.valueOf(42L), stock.getDrawConfigId());
+        assertTrue(JSON.parseObject(JSON.toJSONString(stock))
+                .containsKey("strategyId"));
+        AwardFulfillmentEvent award = JSON.parseObject(
+                "{\"orderId\":7,\"grantDate\":1893456000000}", AwardFulfillmentEvent.class);
+        assertEquals(1893456000000L, award.getScheduledAt().getTime());
+        assertTrue(JSON.parseObject(JSON.toJSONString(award))
+                .containsKey("grantDate"));
+    }
+
+    @Test
     public void compensationSuccessMeansSent() {
         IAwardOrder order = mock(IAwardOrder.class);
         KafkaProducer producer = mock(KafkaProducer.class);
         SettableListenableFuture<SendResult<String, Object>> future = new SettableListenableFuture<>();
         when(order.shardingDbCount()).thenReturn(1);
         when(order.shardingTableCount()).thenReturn(1);
-        when(order.scanInvoiceMqState(1, 0, 100)).thenReturn(Collections.singletonList(invoice));
-        when(producer.sendLotteryInvoice(invoice)).thenReturn(future);
+        when(order.scanFulfillmentEventStatus(1, 0, 100)).thenReturn(Collections.singletonList(invoice));
+        when(producer.sendAwardFulfillment(invoice)).thenReturn(future);
         LotteryXxlJob job = new LotteryXxlJob();
         ReflectionTestUtils.setField(job, "awardOrder", order);
         ReflectionTestUtils.setField(job, "kafkaProducer", producer);
@@ -59,63 +76,63 @@ public class MqCallbackStateTest {
         job.lotteryOrderMQStateJobHandler();
         // 发送成功只证明到达 Kafka，不能直接标记消费完成。
         future.set(null);
-        verify(order).updateInvoiceMqState("mq-test", 1L, Constants.MQState.SENT.getCode());
-        verify(order, never()).updateInvoiceMqState(anyString(), anyLong(), eq(Constants.MQState.COMPLETE.getCode()));
+        verify(order).updateFulfillmentEventStatus("mq-test", 1L, Constants.FulfillmentEventStatus.SENT.getCode());
+        verify(order, never()).updateFulfillmentEventStatus(anyString(), anyLong(), eq(Constants.FulfillmentEventStatus.COMPLETE.getCode()));
     }
 
     @Test
     public void stockOutboxDispatchUsesScanWithoutPerOrderRead() {
         IAwardOrder order = mock(IAwardOrder.class);
         KafkaProducer producer = mock(KafkaProducer.class);
-        IStrategyAwardStockMqGuard guard = mock(IStrategyAwardStockMqGuard.class);
+        IStockSettlementGuard guard = mock(IStockSettlementGuard.class);
         AwardStockSettlementVO candidate = new AwardStockSettlementVO();
         candidate.setuId("mq-test"); candidate.setOrderId(1L);
         SettableListenableFuture<SendResult<String, Object>> future = new SettableListenableFuture<>();
         when(order.shardingDbCount()).thenReturn(1);
         when(order.shardingTableCount()).thenReturn(1);
-        when(order.scanAwardStockMqState(1, 0, 200)).thenReturn(Collections.singletonList(candidate));
+        when(order.scanStockSettlementEventStatus(1, 0, 200)).thenReturn(Collections.singletonList(candidate));
         when(guard.tryClaimDispatch(1L)).thenReturn(true);
-        when(producer.sendStrategyAwardStock(candidate)).thenReturn(future);
+        when(producer.sendStockSettlement(candidate)).thenReturn(future);
         LotteryXxlJob job = new LotteryXxlJob();
         ReflectionTestUtils.setField(job, "awardOrder", order);
         ReflectionTestUtils.setField(job, "kafkaProducer", producer);
-        ReflectionTestUtils.setField(job, "strategyAwardStockMqGuard", guard);
+        ReflectionTestUtils.setField(job, "stockSettlementGuard", guard);
         ReflectionTestUtils.setField(job, "stockSettlementDispatchBatchSize", 200);
         XxlJobContext.setXxlJobContext(new XxlJobContext(1, "1", null, 0, 1));
         job.awardStockSettlementOutboxJobHandler();
         // 扫描已过滤 COMPLETE；逐条预读不能防止消费在读后完成，状态保护仍由回调 CAS 承担。
-        verify(order, never()).isStockMqCompleted(anyString(), anyLong());
+        verify(order, never()).isStockSettlementComplete(anyString(), anyLong());
         verify(guard).tryClaimDispatch(1L);
-        verify(producer).sendStrategyAwardStock(candidate);
+        verify(producer).sendStockSettlement(candidate);
         // Future 完成前不得宣布已发送；成功通知仍只推进 SENT，并释放原有 marker。
-        verify(order, never()).updateStockMqState(anyString(), anyLong(), anyInt());
+        verify(order, never()).updateStockSettlementEventStatus(anyString(), anyLong(), anyInt());
         future.set(null);
-        verify(order).updateStockMqState("mq-test", 1L, Constants.MQState.SENT.getCode());
+        verify(order).updateStockSettlementEventStatus("mq-test", 1L, Constants.StockSettlementEventStatus.SENT.getCode());
         verify(guard).clearDispatchMarker(1L);
     }
 
     @Test
     public void invoiceConsumerClosesMqBeforeAck() {
-        IInvoiceMqProcessGuard guard = mock(IInvoiceMqProcessGuard.class);
+        IAwardFulfillmentGuard guard = mock(IAwardFulfillmentGuard.class);
         AwardFulfillmentHandler handler = mock(AwardFulfillmentHandler.class);
         when(guard.tryClaimProcessing(1L)).thenReturn(true);
         when(handler.supportType()).thenReturn(3);
         // 消费者反序列化成新的 VO，按字段匹配调用。
-        when(handler.fulfill(any(InvoiceVO.class))).thenReturn(new AwardFulfillmentResult("mq-test", Constants.AwardState.SUCCESS, "成功", true));
-        LotteryInvoiceListener listener = listener(guard, handler);
+        when(handler.fulfill(any(AwardFulfillmentEvent.class))).thenReturn(new AwardFulfillmentResult("mq-test", Constants.AwardState.SUCCESS, "成功", true));
+        AwardFulfillmentListener listener = listener(guard, handler);
         listener.onMessage(record(), ack, "lottery_invoice");
         org.mockito.InOrder sequence = inOrder(repository, ack);
-        sequence.verify(repository).updateInvoiceMqState("mq-test", 1L, Constants.MQState.COMPLETE.getCode());
+        sequence.verify(repository).updateFulfillmentEventStatus("mq-test", 1L, Constants.FulfillmentEventStatus.COMPLETE.getCode());
         sequence.verify(ack).acknowledge();
     }
 
     @Test
     public void duplicateGrantedInvoiceRepairsMqAndAcknowledges() {
         when(repository.isAwardCompleted("mq-test", 1L)).thenReturn(true);
-        IInvoiceMqProcessGuard guard = mock(IInvoiceMqProcessGuard.class);
-        LotteryInvoiceListener listener = listener(guard, mock(AwardFulfillmentHandler.class));
+        IAwardFulfillmentGuard guard = mock(IAwardFulfillmentGuard.class);
+        AwardFulfillmentListener listener = listener(guard, mock(AwardFulfillmentHandler.class));
         listener.onMessage(record(), ack, "lottery_invoice");
-        verify(repository).updateInvoiceMqState("mq-test", 1L, Constants.MQState.COMPLETE.getCode());
+        verify(repository).updateFulfillmentEventStatus("mq-test", 1L, Constants.FulfillmentEventStatus.COMPLETE.getCode());
         verify(guard, never()).tryClaimProcessing(anyLong());
         verify(ack).acknowledge();
     }
@@ -123,8 +140,8 @@ public class MqCallbackStateTest {
     @Test
     public void mqCloseSqlErrorMustPreventAck() {
         when(repository.isAwardCompleted("mq-test", 1L)).thenReturn(true);
-        doThrow(new IllegalStateException("数据库不可用")).when(repository).updateInvoiceMqState(anyString(), anyLong(), anyInt());
-        LotteryInvoiceListener listener = listener(mock(IInvoiceMqProcessGuard.class), mock(AwardFulfillmentHandler.class));
+        doThrow(new IllegalStateException("数据库不可用")).when(repository).updateFulfillmentEventStatus(anyString(), anyLong(), anyInt());
+        AwardFulfillmentListener listener = listener(mock(IAwardFulfillmentGuard.class), mock(AwardFulfillmentHandler.class));
         assertThrows(IllegalStateException.class, () -> listener.onMessage(record(), ack, "lottery_invoice"));
         verify(ack, never()).acknowledge();
     }
@@ -133,21 +150,21 @@ public class MqCallbackStateTest {
     public void otherConsumerCompletedInvoiceAlsoClosesMqBeforeAck() {
         // 第一次查询未完成，但拿锁失败后查到另一个消费者已完成。
         when(repository.isAwardCompleted("mq-test", 1L)).thenReturn(false, true);
-        LotteryInvoiceListener listener = listener(mock(IInvoiceMqProcessGuard.class), mock(AwardFulfillmentHandler.class));
+        AwardFulfillmentListener listener = listener(mock(IAwardFulfillmentGuard.class), mock(AwardFulfillmentHandler.class));
         listener.onMessage(record(), ack, "lottery_invoice");
-        verify(repository).updateInvoiceMqState("mq-test", 1L, Constants.MQState.COMPLETE.getCode());
+        verify(repository).updateFulfillmentEventStatus("mq-test", 1L, Constants.FulfillmentEventStatus.COMPLETE.getCode());
         verify(ack).acknowledge();
     }
 
     @Test
     public void stockGapPersistsReconciliationBeforeAcknowledgment() {
         IAwardOrder order = mock(IAwardOrder.class);
-        IStrategyRepository strategy = mock(IStrategyRepository.class);
-        when(order.queryInvoiceByOrderId("mq-test", 1L)).thenReturn(invoice);
-        when(strategy.settleAwardStock(any())).thenReturn(false);
-        LotteryStrategyAwardStockListener listener = new LotteryStrategyAwardStockListener();
+        IDrawConfigRepository drawConfig = mock(IDrawConfigRepository.class);
+        when(order.queryFulfillmentEventByOrderId("mq-test", 1L)).thenReturn(invoice);
+        when(drawConfig.settleAwardStock(any())).thenReturn(false);
+        StockSettlementListener listener = new StockSettlementListener();
         ReflectionTestUtils.setField(listener, "awardOrder", order);
-        ReflectionTestUtils.setField(listener, "strategyRepository", strategy);
+        ReflectionTestUtils.setField(listener, "drawConfigRepository", drawConfig);
         AwardStockSettlementVO stock = new AwardStockSettlementVO();
         stock.setuId("mq-test");
         stock.setOrderId(1L);
@@ -157,19 +174,19 @@ public class MqCallbackStateTest {
         org.mockito.InOrder sequence = inOrder(order, ack);
         sequence.verify(order).markStockSettlementFailed("mq-test", 1L);
         sequence.verify(ack).acknowledge();
-        verify(order, never()).updateStockMqState(anyString(), anyLong(), eq(Constants.MQState.FAIL.getCode()));
+        verify(order, never()).updateStockSettlementEventStatus(anyString(), anyLong(), eq(Constants.StockSettlementEventStatus.FAIL.getCode()));
     }
 
     @Test
     public void stockGapPersistenceErrorMustPreventAck() {
         IAwardOrder order = mock(IAwardOrder.class);
-        IStrategyRepository strategy = mock(IStrategyRepository.class);
-        when(order.queryInvoiceByOrderId("mq-test", 1L)).thenReturn(invoice);
-        when(strategy.settleAwardStock(any())).thenReturn(false);
+        IDrawConfigRepository drawConfig = mock(IDrawConfigRepository.class);
+        when(order.queryFulfillmentEventByOrderId("mq-test", 1L)).thenReturn(invoice);
+        when(drawConfig.settleAwardStock(any())).thenReturn(false);
         doThrow(new IllegalStateException("数据库不可用")).when(order).markStockSettlementFailed("mq-test", 1L);
-        LotteryStrategyAwardStockListener listener = new LotteryStrategyAwardStockListener();
+        StockSettlementListener listener = new StockSettlementListener();
         ReflectionTestUtils.setField(listener, "awardOrder", order);
-        ReflectionTestUtils.setField(listener, "strategyRepository", strategy);
+        ReflectionTestUtils.setField(listener, "drawConfigRepository", drawConfig);
         AwardStockSettlementVO stock = new AwardStockSettlementVO();
         stock.setuId("mq-test");
         stock.setOrderId(1L);
@@ -183,16 +200,16 @@ public class MqCallbackStateTest {
     @Test
     public void stockCompletionInvoiceSendUsesSentAndFailCallbacks() {
         IAwardOrder order = mock(IAwardOrder.class);
-        IStrategyRepository strategy = mock(IStrategyRepository.class);
+        IDrawConfigRepository drawConfig = mock(IDrawConfigRepository.class);
         KafkaProducer producer = mock(KafkaProducer.class);
         SettableListenableFuture<SendResult<String, Object>> success = new SettableListenableFuture<>();
         SettableListenableFuture<SendResult<String, Object>> failure = new SettableListenableFuture<>();
-        when(order.queryInvoiceByOrderId("mq-test", 1L)).thenReturn(invoice);
-        when(strategy.settleAwardStock(any())).thenReturn(true);
-        when(producer.sendLotteryInvoice(invoice)).thenReturn(success, failure);
-        LotteryStrategyAwardStockListener listener = new LotteryStrategyAwardStockListener();
+        when(order.queryFulfillmentEventByOrderId("mq-test", 1L)).thenReturn(invoice);
+        when(drawConfig.settleAwardStock(any())).thenReturn(true);
+        when(producer.sendAwardFulfillment(invoice)).thenReturn(success, failure);
+        StockSettlementListener listener = new StockSettlementListener();
         ReflectionTestUtils.setField(listener, "awardOrder", order);
-        ReflectionTestUtils.setField(listener, "strategyRepository", strategy);
+        ReflectionTestUtils.setField(listener, "drawConfigRepository", drawConfig);
         ReflectionTestUtils.setField(listener, "kafkaProducer", producer);
         ReflectionTestUtils.setField(listener, "invoiceMqEnabled", true);
         AwardStockSettlementVO stock = new AwardStockSettlementVO();
@@ -204,14 +221,14 @@ public class MqCallbackStateTest {
         listener.onMessage(record, ack, "lottery_strategy_award_stock");
         success.set(null);
         failure.setException(new IllegalStateException("发送失败"));
-        verify(order).updateInvoiceMqState("mq-test", 1L, Constants.MQState.SENT.getCode());
-        verify(order).updateInvoiceMqState("mq-test", 1L, Constants.MQState.FAIL.getCode());
+        verify(order).updateFulfillmentEventStatus("mq-test", 1L, Constants.FulfillmentEventStatus.SENT.getCode());
+        verify(order).updateFulfillmentEventStatus("mq-test", 1L, Constants.FulfillmentEventStatus.FAIL.getCode());
     }
 
-    private LotteryInvoiceListener listener(IInvoiceMqProcessGuard guard, AwardFulfillmentHandler handler) {
-        LotteryInvoiceListener listener = new LotteryInvoiceListener();
+    private AwardFulfillmentListener listener(IAwardFulfillmentGuard guard, AwardFulfillmentHandler handler) {
+        AwardFulfillmentListener listener = new AwardFulfillmentListener();
         ReflectionTestUtils.setField(listener, "orderRepository", repository);
-        ReflectionTestUtils.setField(listener, "invoiceMqProcessGuard", guard);
+        ReflectionTestUtils.setField(listener, "awardFulfillmentGuard", guard);
         ReflectionTestUtils.setField(listener, "fulfillmentHandlers", Collections.singletonList(handler));
         listener.initRegistry();
         return listener;
@@ -221,8 +238,8 @@ public class MqCallbackStateTest {
         return new ConsumerRecord<>("lottery_invoice", 0, 0, "1", JSON.toJSONString(invoice));
     }
 
-    private static InvoiceVO invoice() {
-        InvoiceVO invoice = new InvoiceVO();
+    private static AwardFulfillmentEvent invoice() {
+        AwardFulfillmentEvent invoice = new AwardFulfillmentEvent();
         invoice.setuId("mq-test");
         invoice.setOrderId(1L);
         invoice.setAwardId("C");

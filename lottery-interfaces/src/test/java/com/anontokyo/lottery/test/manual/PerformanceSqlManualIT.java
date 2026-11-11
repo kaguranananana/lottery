@@ -3,14 +3,14 @@ package com.anontokyo.lottery.test.manual;
 import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
-import com.anontokyo.lottery.domain.activity.model.vo.StrategyDetailVO;
+import com.anontokyo.lottery.domain.activity.model.vo.DrawConfigPrizeVO;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.infrastructure.cache.TwoLevelCacheService;
 import com.anontokyo.lottery.infrastructure.dao.*;
-import com.anontokyo.lottery.infrastructure.po.UserTakeActivityCount;
-import com.anontokyo.lottery.infrastructure.repository.StrategyRepository;
+import com.anontokyo.lottery.infrastructure.po.UserActivityQuota;
+import com.anontokyo.lottery.infrastructure.repository.DrawConfigRepository;
 import com.anontokyo.lottery.infrastructure.repository.ActivityRepository;
-import com.anontokyo.lottery.infrastructure.repository.UserTakeActivityRepository;
+import com.anontokyo.lottery.infrastructure.repository.DrawParticipationRepository;
 import org.junit.*;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.SqlSessionTemplate;
@@ -33,18 +33,19 @@ public class PerformanceSqlManualIT {
     private static DriverManagerDataSource datasource;
     private static SqlSessionTemplate session;
     private static TransactionTemplate transaction;
-    private static UserTakeActivityRepository takes;
-    private static StrategyRepository strategies;
+    private static DrawParticipationRepository takes;
+    private static DrawConfigRepository strategies;
 
     @BeforeClass public static void setup() throws Exception {
         String url = System.getProperty("lottery.perf.mysql");
-        assertEquals("必须显式选择专用压测端口", "jdbc:mysql://127.0.0.1:13329/", url);
+        assertTrue("须指定独立测试容器的本机 JDBC 地址",
+                url != null && url.matches("jdbc:mysql://127[.]0[.]0[.]1:[0-9]+/"));
         // 仅创建测试自有 schema，不重建 lottery 或历史压测数据。
         try (Connection c = DriverManager.getConnection(url, "root", "perf-only"); Statement s = c.createStatement()) {
             s.execute("CREATE DATABASE IF NOT EXISTS " + SCHEMA);
-            s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".user_take_activity_count LIKE lottery_01.user_take_activity_count");
-            s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".user_take_activity LIKE lottery_01.user_take_activity");
-            s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".strategy_detail LIKE lottery.strategy_detail");
+            s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".user_activity_quota LIKE lottery_01.user_activity_quota");
+            s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".draw_participation LIKE lottery_01.draw_participation");
+            s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".draw_config_prize LIKE lottery.draw_config_prize");
             s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".award_stock_settlement LIKE lottery.award_stock_settlement");
         }
         // 事务仓储回归使用当前生产连接参数，验证会话缓存下的次数、账本及库存原子性。
@@ -58,23 +59,23 @@ public class PerformanceSqlManualIT {
         factory.setMapperLocations(new PathMatchingResourcePatternResolver().getResources("classpath:mybatis/mapper/*_Mapper.xml"));
         session = new SqlSessionTemplate(factory.getObject());
         transaction = new TransactionTemplate(new DataSourceTransactionManager(datasource));
-        takes = new UserTakeActivityRepository();
-        ReflectionTestUtils.setField(takes, "userTakeActivityCountDao", session.getMapper(IUserTakeActivityCountDao.class));
-        ReflectionTestUtils.setField(takes, "userTakeActivityDao", session.getMapper(IUserTakeActivityDao.class));
+        takes = new DrawParticipationRepository();
+        ReflectionTestUtils.setField(takes, "userActivityQuotaDao", session.getMapper(IUserActivityQuotaDao.class));
+        ReflectionTestUtils.setField(takes, "drawParticipationDao", session.getMapper(IDrawParticipationDao.class));
         // 该用例聚焦单库锁，分片行为另由真实 HTTP 幂等审计覆盖。
         ReflectionTestUtils.setField(takes, "dbRouter", mock(IDBRouterStrategy.class));
         ReflectionTestUtils.setField(takes, "transactionTemplate", transaction);
-        strategies = new StrategyRepository();
-        ReflectionTestUtils.setField(strategies, "strategyDetailDao", session.getMapper(IStrategyDetailDao.class));
+        strategies = new DrawConfigRepository();
+        ReflectionTestUtils.setField(strategies, "drawConfigPrizeDao", session.getMapper(IDrawConfigPrizeDao.class));
         ReflectionTestUtils.setField(strategies, "awardStockSettlementDao", session.getMapper(IAwardStockSettlementDao.class));
         ReflectionTestUtils.setField(strategies, "transactionTemplate", transaction);
     }
 
     @Before public void cleanFixture() throws Exception {
         // 测试之间只清空本类创建的四张表，避免旧数据影响锁位置。
-        execute("TRUNCATE user_take_activity_count");
-        execute("TRUNCATE user_take_activity");
-        execute("TRUNCATE strategy_detail");
+        execute("TRUNCATE user_activity_quota");
+        execute("TRUNCATE draw_participation");
+        execute("TRUNCATE draw_config_prize");
         execute("TRUNCATE award_stock_settlement");
     }
 
@@ -89,23 +90,23 @@ public class PerformanceSqlManualIT {
     private static ActivityBillVO bill(String user, long activity, int quota) {
         ActivityBillVO b = new ActivityBillVO();
         b.setuId(user); b.setActivityId(activity); b.setTakeCount(quota);
-        b.setActivityName("SQL 性能回归"); b.setStrategyId(activity);
+b.setDrawConfigId(activity);
         return b;
     }
-    private static UserTakeActivityCount count(String user) {
-        UserTakeActivityCount c = new UserTakeActivityCount();
+    private static UserActivityQuota count(String user) {
+        UserActivityQuota c = new UserActivityQuota();
         c.setuId(user); c.setActivityId(1L); c.setTotalCount(10);
         return c;
     }
 
     @Test public void existingUsersMustNotBlockOnPrimarySupremum() throws Exception {
-        execute("INSERT INTO user_take_activity_count(u_id,activity_id,total_count,left_count) VALUES ('userA',1,10,10),('userB',1,10,10)");
+        execute("INSERT INTO user_activity_quota(u_id,activity_id,total_count,left_count) VALUES ('userA',1,10,10),('userB',1,10,10)");
         ExecutorService worker = Executors.newSingleThreadExecutor();
         try (Connection held = datasource.getConnection()) {
             held.setAutoCommit(false);
             // 保持真实无变化 upsert 的 supremum 锁，模拟尚未完成的参与事务。
             try (Statement s = held.createStatement()) {
-                s.executeUpdate("INSERT INTO user_take_activity_count(u_id,activity_id,total_count,left_count) VALUES ('userA',1,10,10) ON DUPLICATE KEY UPDATE u_id=u_id");
+                s.executeUpdate("INSERT INTO user_activity_quota(u_id,activity_id,total_count,left_count) VALUES ('userA',1,10,10) ON DUPLICATE KEY UPDATE u_id=u_id");
             }
             try {
                 Future<Constants.ResponseCode> other = worker.submit(() -> takes.takeParticipation(bill("userB", 1, 10), new java.util.Date(), IDS.incrementAndGet(), "existing"));
@@ -117,15 +118,15 @@ public class PerformanceSqlManualIT {
         } finally {
             worker.shutdown(); assertTrue(worker.awaitTermination(5, TimeUnit.SECONDS));
         }
-        assertEquals(9, number("SELECT left_count FROM user_take_activity_count WHERE u_id='userB'"));
+        assertEquals(9, number("SELECT left_count FROM user_activity_quota WHERE u_id='userB'"));
     }
 
     @Test public void firstParticipationAndExhaustionKeepQuotaSemantics() throws Exception {
         ActivityBillVO b = bill("newUser", 2, 1);
         assertEquals(Constants.ResponseCode.SUCCESS, takes.takeParticipation(b, new java.util.Date(), IDS.incrementAndGet(), "first"));
         assertEquals(Constants.ResponseCode.NO_UPDATE, takes.takeParticipation(b, new java.util.Date(), IDS.incrementAndGet(), "second"));
-        assertEquals(0, number("SELECT left_count FROM user_take_activity_count"));
-        assertEquals(1, number("SELECT COUNT(*) FROM user_take_activity"));
+        assertEquals(0, number("SELECT left_count FROM user_activity_quota"));
+        assertEquals(1, number("SELECT COUNT(*) FROM draw_participation"));
     }
 
     @Test public void duplicateRequestRollsBackQuota() throws Exception {
@@ -134,8 +135,8 @@ public class PerformanceSqlManualIT {
         assertEquals(Constants.ResponseCode.SUCCESS, takes.takeParticipation(b, new java.util.Date(), take, "same"));
         assertEquals(Constants.ResponseCode.SUCCESS, takes.consumeTake("replayUser", 3L, take));
         assertEquals(Constants.ResponseCode.INDEX_DUP, takes.takeParticipation(b, new java.util.Date(), IDS.incrementAndGet(), "same"));
-        assertEquals(9, number("SELECT left_count FROM user_take_activity_count"));
-        assertEquals(1, number("SELECT COUNT(*) FROM user_take_activity"));
+        assertEquals(9, number("SELECT left_count FROM user_activity_quota"));
+        assertEquals(1, number("SELECT COUNT(*) FROM draw_participation"));
     }
 
     @Test public void concurrentFirstParticipationKeepsSingleUnfinishedTake() throws Exception {
@@ -159,36 +160,36 @@ public class PerformanceSqlManualIT {
             }
             assertEquals(1, successes);
         } finally { workers.shutdownNow(); }
-        assertEquals(9, number("SELECT left_count FROM user_take_activity_count"));
-        assertEquals(1, number("SELECT COUNT(*) FROM user_take_activity"));
+        assertEquals(9, number("SELECT left_count FROM user_activity_quota"));
+        assertEquals(1, number("SELECT COUNT(*) FROM draw_participation"));
     }
 
     @Test public void settlementStillAtomicAndIdempotent() throws Exception {
-        execute("INSERT INTO strategy_detail(strategy_id,award_id,award_count,award_surplus_count) VALUES (5,'A',1,1)");
+        execute("INSERT INTO draw_config_prize(draw_config_id,award_id,award_count,award_surplus_count) VALUES (5,'A',1,1)");
         AwardStockSettlementVO first = settlement(1L);
         assertTrue(strategies.settleAwardStock(first));
         assertTrue(strategies.settleAwardStock(first));
         assertFalse(strategies.settleAwardStock(settlement(2L)));
-        assertEquals(0, number("SELECT award_surplus_count FROM strategy_detail"));
+        assertEquals(0, number("SELECT award_surplus_count FROM draw_config_prize"));
         assertEquals(1, number("SELECT COUNT(*) FROM award_stock_settlement"));
     }
     private static AwardStockSettlementVO settlement(long order) {
         AwardStockSettlementVO vo = new AwardStockSettlementVO();
-        vo.setOrderId(order); vo.setuId("settlementUser"); vo.setStrategyId(5L); vo.setAwardId("A");
+        vo.setOrderId(order); vo.setuId("settlementUser"); vo.setDrawConfigId(5L); vo.setAwardId("A");
         return vo;
     }
 
     @Test public void totalStockMustPersistThroughRealCreationMapper() throws Exception {
         ActivityRepository activities = new ActivityRepository();
-        ReflectionTestUtils.setField(activities, "strategyDetailDao", session.getMapper(IStrategyDetailDao.class));
+        ReflectionTestUtils.setField(activities, "drawConfigPrizeDao", session.getMapper(IDrawConfigPrizeDao.class));
         ReflectionTestUtils.setField(activities, "twoLevelCacheService", mock(TwoLevelCacheService.class));
-        StrategyDetailVO detail = new StrategyDetailVO();
-        detail.setStrategyId(6L); detail.setAwardId("total"); detail.setAwardCount(37); detail.setAwardSurplusCount(37);
-        activities.addStrategyDetailList(Collections.singletonList(detail));
+        DrawConfigPrizeVO detail = new DrawConfigPrizeVO();
+        detail.setDrawConfigId(6L); detail.setAwardId("total"); detail.setAwardCount(37); detail.setAwardSurplusCount(37);
+        activities.addDrawConfigPrizeList(Collections.singletonList(detail));
         // IS NULL 断言防止 JDBC getLong 将 NULL 隐式视为零，掩盖字段映射缺陷。
-        assertEquals(0, number("SELECT COUNT(*) FROM strategy_detail WHERE award_count IS NULL"));
-        assertEquals(37, number("SELECT award_count FROM strategy_detail"));
-        assertEquals(37, number("SELECT award_surplus_count FROM strategy_detail"));
+        assertEquals(0, number("SELECT COUNT(*) FROM draw_config_prize WHERE award_count IS NULL"));
+        assertEquals(37, number("SELECT award_count FROM draw_config_prize"));
+        assertEquals(37, number("SELECT award_surplus_count FROM draw_config_prize"));
     }
 
 }

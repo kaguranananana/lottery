@@ -1,5 +1,7 @@
 # Lottery 实际性能压测复现
 
+当前 `environment.py init` 从 [完整 Schema](../../docs/sql/lottery-schema.sql) 创建空库。旧压测库按 [V5 升级说明](../../docs/draw-schema-refactor.md) 处理。历史报告里的旧表名、压测结果和 `prepare_outbox_before.sh` 所用 worker 版本请在对应历史版本复现。
+
 > 历史结果对应 2026-10 的实现。本次只同步工具与业务语义并验证编译/语法，未重新执行 JMeter 容量实验；不能把旧数字作为取消活动总库存后的性能结论。
 
 后续定向优化、当前字段修复及压测驱动数据耗尽修复见 [优化报告](optimization-report.md) 和 [本轮证据/复现步骤](results/20261012-optimization/README.md)。本文的首次测量数字和 NULL 字段描述对应原始测试版本，原始结果未覆盖。

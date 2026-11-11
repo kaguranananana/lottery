@@ -3,7 +3,7 @@ package com.anontokyo.lottery.infrastructure.po;
 import java.util.Date;
 
 /**
- * 奖品库存结算幂等账本（全局库 lottery，与 strategy_detail 同库、同事务）。
+ * 奖品库存结算幂等账本（全局库 lottery，与 draw_config_prize 同库、同事务）。
  * order_id 唯一约束是「同一个订单只允许扣一次数据库库存」的最终事实来源；
  * Kafka 重复投递、消费者 crash 重放都会在此被 duplicate-key 拦截。
  */
@@ -15,7 +15,7 @@ public class AwardStockSettlement {
 
     private String uId;
 
-    private Long strategyId;
+    private Long drawConfigId;
 
     private String awardId;
 
@@ -45,12 +45,12 @@ public class AwardStockSettlement {
         this.uId = uId;
     }
 
-    public Long getStrategyId() {
-        return strategyId;
+    public Long getDrawConfigId() {
+        return drawConfigId;
     }
 
-    public void setStrategyId(Long strategyId) {
-        this.strategyId = strategyId;
+    public void setDrawConfigId(Long drawConfigId) {
+        this.drawConfigId = drawConfigId;
     }
 
     public String getAwardId() {

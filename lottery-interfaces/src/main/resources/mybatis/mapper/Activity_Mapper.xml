@@ -10,7 +10,7 @@
         <result column="begin_date_time" property="beginDateTime"/>
         <result column="end_date_time" property="endDateTime"/>
         <result column="take_count" property="takeCount"/>
-        <result column="strategy_id" property="strategyId"/>
+        <result column="draw_config_id" property="drawConfigId"/>
         <result column="state" property="state"/>
         <result column="creator" property="creator"/>
         <result column="create_time" property="createTime"/>
@@ -20,14 +20,14 @@
     <insert id="insert" parameterType="com.anontokyo.lottery.infrastructure.po.Activity">
         INSERT INTO activity
         (activity_id, activity_name, activity_desc, begin_date_time, end_date_time,
-         strategy_id, take_count, state, creator, create_time, update_time)
+         draw_config_id, take_count, state, creator, create_time, update_time)
         VALUES
             (#{activityId}, #{activityName}, #{activityDesc}, #{beginDateTime}, #{endDateTime},
-             #{strategyId}, #{takeCount}, #{state}, #{creator}, now(), now())
+             #{drawConfigId}, #{takeCount}, #{state}, #{creator}, now(), now())
     </insert>
 
     <select id="queryActivityById" parameterType="java.lang.Long" resultType="com.anontokyo.lottery.infrastructure.po.Activity">
-        SELECT activity_id, activity_name, activity_desc, begin_date_time, end_date_time, strategy_id,
+        SELECT activity_id, activity_name, activity_desc, begin_date_time, end_date_time, draw_config_id,
                take_count, state, creator, create_time, update_time
         FROM activity
         WHERE activity_id = #{activityId}
@@ -35,13 +35,13 @@
 
     <!-- 启动和预热共用活动行锁，防止另一启动者在 DOING 后回填丢失库存。 -->
     <select id="queryActivityForUpdate" resultMap="activityMap">
-        SELECT id, activity_id, strategy_id, state, begin_date_time, end_date_time
+        SELECT id, activity_id, draw_config_id, state, begin_date_time, end_date_time
         FROM activity WHERE activity_id = #{activityId} FOR UPDATE
     </select>
 
     <!-- 不按活动结束时间过滤，关闭后仍可能有库存结算在途。策略行锁约束并发启动。 -->
-    <select id="countPublishedActivitiesByStrategy" resultType="java.lang.Integer">
-        SELECT COUNT(*) FROM activity WHERE strategy_id = #{strategyId} AND state IN (5, 7)
+    <select id="countPublishedActivitiesByDrawConfig" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM activity WHERE draw_config_id = #{drawConfigId} AND state IN (5, 7)
     </select>
 
     <update id="alterState" parameterType="com.anontokyo.lottery.domain.activity.model.vo.AlterStateVO">
@@ -72,7 +72,7 @@
 
     <select id="queryActivityInfoList" parameterType="com.anontokyo.lottery.domain.activity.model.req.ActivityInfoLimitPageReq" resultMap="activityMap">
         SELECT id, activity_id, activity_name, activity_desc, begin_date_time, end_date_time,
-        take_count, strategy_id, state, creator, create_time, update_time
+        take_count, draw_config_id, state, creator, create_time, update_time
         FROM activity
         <trim prefix="where" prefixOverrides="AND | OR" suffixOverrides="and">
             <if test="null != activityId">

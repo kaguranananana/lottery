@@ -18,7 +18,7 @@ import java.util.function.Supplier;
 
 /**
  * 缓存基础设施：
- *  - 两级缓存（Caffeine L1 + Redis L2）只用于 StrategySnapshot：高频读、低变更、每次抽奖必需；
+ *  - 两级缓存（Caffeine L1 + Redis L2）只用于 DrawConfigSnapshot：高频读、低变更、每次抽奖必需；
  *  - 其余配置类数据（activity 等）走 {@link #getRedisCache} 单级 Redis，避免为多实例本地缓存失效引入广播机制；
  *  - null 占位防止不存在配置的反复穿透。
  * 一致性边界：快照视为短 TTL 的最终一致读（TTL 内可能读到旧版本）；运营变更需等 TTL 过期生效。
@@ -40,7 +40,7 @@ public class TwoLevelCacheService {
 
     @PostConstruct
     public void init() {
-        CacheConfigProperties.TwoLayerConfig config = cacheConfigProperties.getStrategySnapshot();
+        CacheConfigProperties.TwoLayerConfig config = cacheConfigProperties.getDrawConfigSnapshot();
         snapshotLocalCache = Caffeine.newBuilder()
                 .expireAfterWrite(config.getLocalExpireSeconds(), TimeUnit.SECONDS)
                 .maximumSize(config.getLocalMaxSize())
@@ -48,10 +48,10 @@ public class TwoLevelCacheService {
     }
 
     /**
-     * 两级缓存读取（仅 StrategySnapshot 使用）。
+     * 两级缓存读取（仅 DrawConfigSnapshot 使用）。
      */
-    public <T> T getStrategySnapshotCache(String cacheKey, Class<T> clazz, Supplier<T> loader) {
-        CacheConfigProperties.TwoLayerConfig config = cacheConfigProperties.getStrategySnapshot();
+    public <T> T getDrawConfigSnapshotCache(String cacheKey, Class<T> clazz, Supplier<T> loader) {
+        CacheConfigProperties.TwoLayerConfig config = cacheConfigProperties.getDrawConfigSnapshot();
 
         T localValue = getLocalValue(snapshotLocalCache, cacheKey, clazz);
         if (localValue != null) {
@@ -116,7 +116,7 @@ public class TwoLevelCacheService {
         return sourceValue;
     }
 
-    public void evictStrategySnapshotCache(String cacheKey) {
+    public void evictDrawConfigSnapshotCache(String cacheKey) {
         // 配置事务提交前不清缓存，防止其它请求从旧的已提交行重建缓存。
         afterCommit(() -> evict(cacheKey));
     }

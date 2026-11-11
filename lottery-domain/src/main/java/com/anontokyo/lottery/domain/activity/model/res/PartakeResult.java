@@ -9,9 +9,9 @@ import com.anontokyo.lottery.common.Result;
  */
 public class PartakeResult extends Result {
     /**
-     * 活动策略ID
+     * 活动抽奖配置ID
      */
-    private Long strategyId;
+    private Long drawConfigId;
 
     /**
      * 活动领取id
@@ -31,12 +31,12 @@ public class PartakeResult extends Result {
         this.takeId = takeId;
     }
 
-    public Long getStrategyId() {
-        return strategyId;
+    public Long getDrawConfigId() {
+        return drawConfigId;
     }
 
-    public void setStrategyId(Long strategyId) {
-        this.strategyId = strategyId;
+    public void setDrawConfigId(Long drawConfigId) {
+        this.drawConfigId = drawConfigId;
     }
 
     public PartakeResult(String code, String info) {

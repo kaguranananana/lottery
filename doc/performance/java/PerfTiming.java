@@ -91,9 +91,9 @@ public class PerfTiming {
     /** 业务阶段为包含式计时，不能把嵌套方法耗时直接相加。 */
     @Aspect
     public static class StageTiming {
-        @Around("execution(* com.anontokyo.lottery.infrastructure.repository.UserTakeActivityRepository.takeParticipation(..)) || "
+        @Around("execution(* com.anontokyo.lottery.infrastructure.repository.DrawParticipationRepository.takeParticipation(..)) || "
                 + "execution(* com.anontokyo.lottery.infrastructure.repository.OrderRepository.saveDrawOrderWithTakeLock(..)) || "
-                + "execution(* com.anontokyo.lottery.infrastructure.repository.StrategyRepository.settleAwardStock(..)) || "
+                + "execution(* com.anontokyo.lottery.infrastructure.repository.DrawConfigRepository.settleAwardStock(..)) || "
                 + "execution(* com.anontokyo.lottery.infrastructure.repository.OrderRepository.scan*ByShard(..)) || "
                 + "execution(* com.anontokyo.lottery.application.worker.LotteryXxlJob.*JobHandler(..)) || "
                 + "execution(* com.anontokyo.lottery.application.mq.producer.KafkaProducer.send*(..)) || "

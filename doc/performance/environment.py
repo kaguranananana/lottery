@@ -2,7 +2,6 @@
 """只操作经过 Docker 项目、服务和端口确认的专用压测实例。"""
 import json
 import pathlib
-import re
 import subprocess
 import sys
 
@@ -27,32 +26,10 @@ def sql(query):
     return process.stdout.decode()
 
 def initialize():
-    # 空环境只提取基线 DDL，不导入历史业务数据，也不执行基线 DROP。
+    # 完整业务 Schema 自带八张订单表、补偿索引与请求唯一约束。
     assert sql("SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name IN ('lottery','lottery_01','lottery_02');").strip() == '0', '初始化需要全新专用实例；已有结果须先保存'
-    chunks = ['SET NAMES utf8mb4;']
-    for schema in ('lottery', 'lottery_01', 'lottery_02'):
-        source = ROOT / 'doc/sql' / ('lottery.sql' if schema == 'lottery' else 'lottery_01.sql')
-        chunks += [f'CREATE DATABASE {schema}; USE {schema};']
-        chunks += re.findall(r'CREATE TABLE .*?;(?=\s*--)', source.read_text(), re.S)
-        if schema != 'lottery':
-            chunks += [f'ALTER TABLE user_strategy_export_{i:03d} ADD take_id BIGINT NULL;' for i in range(4)]
-    sql('\n'.join(chunks))
-    # 按当前交付迁移补齐库存 Outbox、唯一账本与请求归属约束。
-    # 新建专用环境也装配已验证的补偿访问路径，保留既有状态与唯一约束迁移顺序。
-    for name in ('doc/sql/20260315_async_award_stock_outbox.sql', 'docs/sql/V2__architecture_simplification.sql', 'docs/sql/V3__draw_request_ownership.sql', 'doc/sql/20261013_invoice_compensation_index.sql'):
-        sql((ROOT / name).read_text())
+    sql((ROOT / 'docs/sql/lottery-schema.sql').read_text())
 
-def apply_stock_index():
-    # 复用仓库已有库存索引定义，只处理全局库存表，不混入发奖扫描索引实验。
-    source = (ROOT / 'doc/sql/20260314_high_concurrency_index.sql').read_text()
-    statement = re.search(r'ALTER TABLE `strategy_detail`.*?;', source, re.S).group()
-    indexes = sql("SELECT index_name,GROUP_CONCAT(column_name ORDER BY seq_in_index) FROM information_schema.statistics WHERE table_schema='lottery' AND table_name='strategy_detail' GROUP BY index_name;")
-    # 已有相同前导列时不重复增加等价索引。
-    if any(row.split('\t')[1].split(',')[:2] == ['strategy_id','award_id'] for row in indexes.strip().splitlines()):
-        print('库存条件索引已存在')
-        return
-    sql('USE lottery; ' + statement)
-    print('已应用现有库存组合索引定义')
 
 if __name__ == '__main__':
     action = sys.argv[1]
@@ -60,8 +37,6 @@ if __name__ == '__main__':
         subprocess.run(COMPOSE + ['up', '-d', '--wait'], check=True)
     elif action == 'init':
         initialize()
-    elif action == 'stock-index':
-        apply_stock_index()
     elif action == 'stop':
         verify()
         # 真实数据量下默认关闭宽限曾导致 MySQL 被 SIGKILL；给予持久化关闭足够时间。

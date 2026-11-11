@@ -5,7 +5,7 @@ import cn.bugstack.middleware.db.router.strategy.IDBRouterStrategy;
 import com.anontokyo.lottery.LotteryApplication;
 import com.anontokyo.lottery.application.worker.LotteryXxlJob;
 import com.anontokyo.lottery.application.mq.producer.KafkaProducer;
-import com.anontokyo.lottery.application.mq.consumer.LotteryStrategyAwardStockListener;
+import com.anontokyo.lottery.application.mq.consumer.StockSettlementListener;
 import com.alibaba.fastjson.JSON;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
@@ -24,8 +24,8 @@ import com.anontokyo.lottery.domain.activity.service.deploy.IActivityDeploy;
 import com.anontokyo.lottery.domain.activity.service.lifecycle.ActivityLifecycleService;
 import com.anontokyo.lottery.domain.activity.service.partake.IActivityPartake;
 import com.anontokyo.lottery.infrastructure.dao.IActivityDao;
-import com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao;
-import com.anontokyo.lottery.infrastructure.po.UserStrategyExport;
+import com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao;
+import com.anontokyo.lottery.infrastructure.po.DrawOrder;
 import com.anontokyo.lottery.interfaces.web.dto.DrawRequest;
 import com.anontokyo.lottery.interfaces.web.dto.DrawResponse;
 import com.xxl.job.core.context.XxlJobContext;
@@ -67,23 +67,17 @@ public class FinalBusinessE2eManualIT {
     @Autowired private TestRestTemplate http;
     @Autowired private StringRedisTemplate redis;
     @Autowired private IDBRouterStrategy router;
-    @Autowired private IUserStrategyExportDao orders;
+    @Autowired private IDrawOrderDao orders;
     @Autowired private KafkaListenerEndpointRegistry listeners;
     @Autowired private IOrderRepository orderRepository;
     @Autowired private KafkaProducer producer;
-    @Autowired private LotteryStrategyAwardStockListener stockListener;
+    @Autowired private StockSettlementListener stockListener;
     @Value("${lottery.kafka.consumer.strategy-award-stock-group-id}") private String stockGroup;
 
     @BeforeClass
     public static void schema() throws Exception {
-        // 复用已确认的专用 compose fixture，并真实执行交付的 V3 两库/八表迁移。
+        // 复用真实中间件测试栈，从当前完整 Schema 建库。
         MqMiddlewareE2eManualIT.createSchema();
-        Process process = new ProcessBuilder("docker", "exec", "-i", "lottery-mq-e2e-mysql-1",
-                "mysql", "-uroot", "-proot").redirectError(ProcessBuilder.Redirect.INHERIT).start();
-        process.getOutputStream().write(Files.readAllBytes(Paths.get("../docs/sql/V3__draw_request_ownership.sql")));
-        process.getOutputStream().close();
-        assertTrue("V3 迁移超时", process.waitFor(30, TimeUnit.SECONDS));
-        assertEquals("V3 迁移失败", 0, process.exitValue());
     }
 
     @Before
@@ -109,7 +103,7 @@ public class FinalBusinessE2eManualIT {
         assertEquals(1, countTakes(user, id));
         assertEquals(2, leftCount(user, id));
         assertEquals(0, value("SELECT state FROM " + userSchema(user)
-                + ".user_take_activity WHERE u_id=? AND activity_id=?", user, id));
+                + ".draw_participation WHERE u_id=? AND activity_id=?", user, id));
         // 测试已知初始库存且没有在途中奖订单，恢复后原请求继续同一参与。
         redis.opsForValue().set(awardKey(id), "10");
         assertWin(draw(user, id, "missing-award"));
@@ -131,7 +125,7 @@ public class FinalBusinessE2eManualIT {
             assertEquals("0001", draw(user, id, "order-rollback").getCode());
             assertEquals(0, value("SELECT COUNT(*) FROM " + physicalTable + " WHERE u_id=?", user));
             assertEquals(0, value("SELECT state FROM " + userSchema(user)
-                    + ".user_take_activity WHERE u_id=? AND activity_id=?", user, id));
+                    + ".draw_participation WHERE u_id=? AND activity_id=?", user, id));
             assertEquals("已确认回滚的下单不能泄漏预扣奖品库存", "10", redis.opsForValue().get(awardKey(id)));
         } finally {
             update("DROP TRIGGER " + trigger);
@@ -149,13 +143,13 @@ public class FinalBusinessE2eManualIT {
         String schema = userSchema(user);
         String trigger = schema + ".reject_take_" + id;
         // 次数扣减之后的参与 INSERT 失败，次数初始化和扣减必须随参与一起回滚。
-        update("CREATE TRIGGER " + trigger + " BEFORE INSERT ON " + schema + ".user_take_activity"
+        update("CREATE TRIGGER " + trigger + " BEFORE INSERT ON " + schema + ".draw_participation"
                 + " FOR EACH ROW SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='take rollback probe'");
         try {
             assertEquals("0001", draw(user, id, "take-rollback").getCode());
             assertEquals(0, countTakes(user, id));
             assertEquals(0, value("SELECT COUNT(*) FROM " + schema
-                    + ".user_take_activity_count WHERE u_id=? AND activity_id=?", user, id));
+                    + ".user_activity_quota WHERE u_id=? AND activity_id=?", user, id));
             assertNoActivityStock(id);
             assertEquals("10", redis.opsForValue().get(awardKey(id)));
         } finally {
@@ -171,16 +165,16 @@ public class FinalBusinessE2eManualIT {
     public void createdActivityHasQuotaAndStrategyWithOnlyAwardStock() throws Exception {
         ActivityConfigReq req = config(10, 3, -60000);
         // 调用方不预填明细所属策略和剩余库存，创建服务必须完成初始化。
-        assertNull(req.getActivityConfigRich().getStrategy().getStrategyDetailList().get(0).getStrategyId());
-        assertNull(req.getActivityConfigRich().getStrategy().getStrategyDetailList().get(0).getAwardSurplusCount());
+        assertNull(req.getActivityConfigRich().getDrawConfig().getDrawConfigPrizeList().get(0).getDrawConfigId());
+        assertNull(req.getActivityConfigRich().getDrawConfig().getDrawConfigPrizeList().get(0).getAwardSurplusCount());
         deploy.createActivity(req);
         long id = req.getActivityId();
-        assertEquals(req.getActivityConfigRich().getStrategy().getStrategyId().longValue(), value("SELECT strategy_id FROM lottery.activity WHERE activity_id=?", id));
+        assertEquals(req.getActivityConfigRich().getDrawConfig().getDrawConfigId().longValue(), value("SELECT draw_config_id FROM lottery.activity WHERE activity_id=?", id));
         assertEquals(3, value("SELECT take_count FROM lottery.activity WHERE activity_id=?", id));
         assertEquals(0, value("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='lottery'"
                 + " AND table_name='activity' AND column_name IN ('stock_count','stock_surplus_count')"));
-        assertEquals(10, value("SELECT award_count FROM lottery.strategy_detail WHERE strategy_id=?", id));
-        assertEquals(10, value("SELECT award_surplus_count FROM lottery.strategy_detail WHERE strategy_id=?", id));
+        assertEquals(10, value("SELECT award_count FROM lottery.draw_config_prize WHERE draw_config_id=?", id));
+        assertEquals(10, value("SELECT award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id=?", id));
     }
 
     @Test
@@ -245,9 +239,42 @@ public class FinalBusinessE2eManualIT {
             assertEquals(1, value("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE order_id=?", first.getOrderId()));
             assertEquals(1, value("SELECT COUNT(*) FROM " + table(user) + " WHERE order_id=?", first.getOrderId()));
         }
-        assertEquals(22, value("SELECT award_surplus_count FROM lottery.strategy_detail WHERE strategy_id=?", id));
+        assertEquals(22, value("SELECT award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id=?", id));
         assertEquals("22", redis.opsForValue().get(awardKey(id)));
         assertNoActivityStock(id);
+    }
+
+    @Test
+    public void replayRetainsOrderSnapshotAndFulfillmentKeepsPlannedTime() throws Exception {
+        ActivityConfigReq req = config(10, 3, -60000);
+        java.util.Date scheduledAt = new java.util.Date(1893456000000L);
+        req.getActivityConfigRich().getDrawConfig().setScheduledAt(scheduledAt);
+        long id = req.getActivityId();
+        deploy.createActivity(req);
+        assertTrue(lifecycle.transition(id, Constants.ActivityState.PASS, Constants.ActivityState.DOING));
+        String user = "snapshot" + IDS.incrementAndGet();
+
+        DrawResponse first = draw(user, id, "snapshot");
+        assertWin(first);
+        // 改奖品目录后，历史订单回放仍读取下单时的名称和内容。
+        update("UPDATE lottery.award SET award_name=?, award_content=? WHERE award_id=?",
+                "更新后名称", "更新后内容", first.getAward().getAwardId());
+        assertEquals(scheduledAt, order(user, first.getOrderId()).getScheduledAt());
+        assertNull(order(user, first.getOrderId()).getFulfilledAt());
+
+        job.awardStockSettlementOutboxJobHandler();
+        awaitComplete(user, first.getOrderId());
+        DrawOrder saved = order(user, first.getOrderId());
+        assertEquals(scheduledAt, saved.getScheduledAt());
+        assertNotNull(saved.getFulfilledAt());
+
+        DrawResponse replay = draw(user, id, "snapshot");
+        assertEquals(first.getOrderId(), replay.getOrderId());
+        assertEquals(first.getAward().getAwardName(), replay.getAward().getAwardName());
+        assertEquals(first.getAward().getAwardContent(), replay.getAward().getAwardContent());
+        // 老客户端仍通过 grantDate 获取回放时的实际完成时间。
+        assertEquals(saved.getFulfilledAt().toString(), replay.getAward().getGrantDate());
+        assertEquals(2, leftCount(user, id));
     }
 
     @Test
@@ -321,7 +348,7 @@ public class FinalBusinessE2eManualIT {
         assertNoActivityStock(id);
         job.awardStockSettlementOutboxJobHandler();
         awaitComplete(user, first.getOrderId());
-        assertEquals(0, value("SELECT award_surplus_count FROM lottery.strategy_detail WHERE strategy_id=?", id));
+        assertEquals(0, value("SELECT award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id=?", id));
         assertEquals("0", redis.opsForValue().get(awardKey(id)));
     }
 
@@ -329,7 +356,7 @@ public class FinalBusinessE2eManualIT {
     public void noPrizeConsumesPersonalQuotaAndReplaysTheSameTake() throws Exception {
         ActivityConfigReq req = config(10, 3, -60000);
         // 概率余量全部落入 NO_PRIZE，仍调用真实快照构建和抽样算法。
-        req.getActivityConfigRich().getStrategy().getStrategyDetailList().get(0).setAwardRate(BigDecimal.ZERO);
+        req.getActivityConfigRich().getDrawConfig().getDrawConfigPrizeList().get(0).setAwardRate(BigDecimal.ZERO);
         deploy.createActivity(req);
         long id = req.getActivityId();
         assertTrue(lifecycle.transition(id, Constants.ActivityState.PASS, Constants.ActivityState.DOING));
@@ -340,7 +367,7 @@ public class FinalBusinessE2eManualIT {
         assertEquals(1, countTakes(user, id));
         assertEquals(2, leftCount(user, id));
         assertEquals(1, value("SELECT state FROM " + userSchema(user)
-                + ".user_take_activity WHERE u_id=? AND activity_id=?", user, id));
+                + ".draw_participation WHERE u_id=? AND activity_id=?", user, id));
         assertEquals(0, value("SELECT COUNT(*) FROM " + table(user) + " WHERE u_id=? AND activity_id=?", user, id));
         assertEquals("10", redis.opsForValue().get(awardKey(id)));
         assertNoActivityStock(id);
@@ -353,7 +380,7 @@ public class FinalBusinessE2eManualIT {
         DrawResponse a = draw(user, first, "first-pool-draw");
         assertWin(a);
         // 尚未派发 Outbox：MySQL 仍为 10，实时奖池已经扣到 9。
-        assertEquals(10, value("SELECT award_surplus_count FROM lottery.strategy_detail WHERE strategy_id=?", first));
+        assertEquals(10, value("SELECT award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id=?", first));
         long second = createSharedActivity(first);
         assertEquals(0, activities.warmupAwardStockForActivity(second));
         assertTrue(lifecycle.transition(second, Constants.ActivityState.PASS, Constants.ActivityState.DOING));
@@ -368,8 +395,8 @@ public class FinalBusinessE2eManualIT {
         job.awardStockSettlementOutboxJobHandler();
         awaitComplete(user, a.getOrderId());
         awaitComplete(user, b.getOrderId());
-        assertEquals(8, value("SELECT award_surplus_count FROM lottery.strategy_detail WHERE strategy_id=?", first));
-        assertEquals(2, value("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE strategy_id=?", first));
+        assertEquals(8, value("SELECT award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id=?", first));
+        assertEquals(2, value("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE draw_config_id=?", first));
     }
 
     @Test
@@ -426,7 +453,7 @@ public class FinalBusinessE2eManualIT {
         ActivityConfigReq req = config(10, 3, -60000);
         deploy.createActivity(req);
         long id = req.getActivityId();
-        update("UPDATE lottery.strategy_detail SET award_surplus_count=7 WHERE strategy_id=?", id);
+        update("UPDATE lottery.draw_config_prize SET award_surplus_count=7 WHERE draw_config_id=?", id);
         assertEquals(1, activities.warmupAwardStockForActivity(id));
         assertEquals("7", redis.opsForValue().get(awardKey(id)));
         assertTrue(lifecycle.transition(id, Constants.ActivityState.PASS, Constants.ActivityState.DOING));
@@ -462,23 +489,22 @@ public class FinalBusinessE2eManualIT {
     public void partialWarmupFailureKeepsPassAndSetNxPreservesExistingStock() throws Exception {
         ActivityConfigReq req = config(10, 3, -60000);
         // 两个奖品使故障仍发生在第二次写入，验证真实的部分预热恢复。
-        StrategyDetailVO second = new StrategyDetailVO();
+        DrawConfigPrizeVO second = new DrawConfigPrizeVO();
         second.setAwardId("q" + req.getActivityId());
-        second.setAwardName("零概率测试券");
         second.setAwardCount(5);
         second.setAwardRate(BigDecimal.ZERO);
-        req.getActivityConfigRich().getStrategy().setStrategyDetailList(Arrays.asList(
-                req.getActivityConfigRich().getStrategy().getStrategyDetailList().get(0), second));
+        req.getActivityConfigRich().getDrawConfig().setDrawConfigPrizeList(Arrays.asList(
+                req.getActivityConfigRich().getDrawConfig().getDrawConfigPrizeList().get(0), second));
         AwardVO secondAward = new AwardVO();
         secondAward.setAwardId(second.getAwardId());
-        secondAward.setAwardName(second.getAwardName());
+        secondAward.setAwardName("零概率测试券");
         secondAward.setAwardType(3);
         secondAward.setAwardContent("项目已有模拟发奖渠道");
         req.getActivityConfigRich().setAwardList(Arrays.asList(
                 req.getActivityConfigRich().getAwardList().get(0), secondAward));
         deploy.createActivity(req);
         long id = req.getActivityId();
-        String secondKey = Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT(id, second.getAwardId());
+        String secondKey = Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_COUNT(id, second.getAwardId());
         try {
             // 真实 Redis ACL 只允许写第一个奖品 Key，第二个奖品 SETNX 必须失败。
             redisCommand("ACL", "SETUSER", "default", "resetkeys", "%R~*", "%W~" + awardKey(id));
@@ -531,11 +557,11 @@ public class FinalBusinessE2eManualIT {
     public void createFailureRollsBackActivityStrategyAndAwards() throws Exception {
         ActivityConfigReq req = config(10, 3, -60000);
         // 后续策略插入唯一键失败：先插入的活动和奖品也必须回滚。
-        update("INSERT INTO lottery.strategy(strategy_id,strategy_mode,grant_type) VALUES (?,1,1)", req.getActivityId());
+        update("INSERT INTO lottery.draw_config(draw_config_id,grant_type) VALUES (?,1)", req.getActivityId());
         assertThrows(org.springframework.dao.DuplicateKeyException.class, () -> deploy.createActivity(req));
         assertEquals(0, value("SELECT COUNT(*) FROM lottery.activity WHERE activity_id=?", req.getActivityId()));
         assertEquals(0, value("SELECT COUNT(*) FROM lottery.award WHERE award_id=?", "p" + req.getActivityId()));
-        assertEquals(0, value("SELECT COUNT(*) FROM lottery.strategy_detail WHERE strategy_id=?", req.getActivityId()));
+        assertEquals(0, value("SELECT COUNT(*) FROM lottery.draw_config_prize WHERE draw_config_id=?", req.getActivityId()));
     }
 
     @Test
@@ -545,29 +571,29 @@ public class FinalBusinessE2eManualIT {
         DrawResponse result = draw(user, id, "gap-request");
         assertWin(result);
         // 已预扣且有持久订单，但全局库存被置为零，模拟真实库存分歧。
-        update("UPDATE lottery.strategy_detail SET award_surplus_count=0 WHERE strategy_id=?", id);
+        update("UPDATE lottery.draw_config_prize SET award_surplus_count=0 WHERE draw_config_id=?", id);
         job.awardStockSettlementOutboxJobHandler();
-        await("库存分歧持久化为 BLOCKED", () -> order(user, result.getOrderId()).getStockMqState() == 4);
+        await("库存分歧持久化为 BLOCKED", () -> order(user, result.getOrderId()).getStockSettlementEventStatus() == 4);
         assertEquals(0, value("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE order_id=?", result.getOrderId()));
-        assertEquals(Integer.valueOf(0), order(user, result.getOrderId()).getGrantState());
+        assertEquals(Integer.valueOf(0), order(user, result.getOrderId()).getAwardFulfillmentStatus());
         // 真实 broker 重复投递也可以 ACK，但不能产生账本或发奖。
         AwardStockSettlementVO settlement = settlement(user, id, result.getOrderId());
-        RecordMetadata record = producer.sendStrategyAwardStock(settlement).get(30, TimeUnit.SECONDS).getRecordMetadata();
+        RecordMetadata record = producer.sendStockSettlement(settlement).get(30, TimeUnit.SECONDS).getRecordMetadata();
         awaitStockOffset(record);
         for (int i = 0; i < 3; i++) job.awardStockSettlementOutboxJobHandler();
-        assertFalse(orderRepository.scanAwardStockMqStateByShard(db(user), tb(user), 200).stream()
+        assertFalse(orderRepository.scanStockSettlementEventStatusByShard(db(user), tb(user), 200).stream()
                 .anyMatch(row -> row.getOrderId().equals(result.getOrderId())));
         // 迟到发送成功/失败不可解除待对账状态。
-        orderRepository.updateStockMqState(user, result.getOrderId(), 3);
-        orderRepository.updateStockMqState(user, result.getOrderId(), 2);
-        assertEquals(Integer.valueOf(4), order(user, result.getOrderId()).getStockMqState());
+        orderRepository.updateStockSettlementEventStatus(user, result.getOrderId(), 3);
+        orderRepository.updateStockSettlementEventStatus(user, result.getOrderId(), 2);
+        assertEquals(Integer.valueOf(4), order(user, result.getOrderId()).getStockSettlementEventStatus());
         // 人工确认并修复全局库存，再在正确用户分片按订单 CAS 释放原 Outbox。
-        update("UPDATE lottery.strategy_detail SET award_surplus_count=10 WHERE strategy_id=?", id);
-        update("UPDATE " + table(user) + " SET stock_mq_state=0 WHERE u_id=? AND order_id=? AND stock_mq_state=4", user, result.getOrderId());
+        update("UPDATE lottery.draw_config_prize SET award_surplus_count=10 WHERE draw_config_id=?", id);
+        update("UPDATE " + table(user) + " SET stock_settlement_event_status=0 WHERE u_id=? AND order_id=? AND stock_settlement_event_status=4", user, result.getOrderId());
         job.awardStockSettlementOutboxJobHandler();
         awaitComplete(user, result.getOrderId());
         assertEquals(1, value("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE order_id=?", result.getOrderId()));
-        assertEquals(9, value("SELECT award_surplus_count FROM lottery.strategy_detail WHERE strategy_id=?", id));
+        assertEquals(9, value("SELECT award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id=?", id));
         assertEquals("9", redis.opsForValue().get(awardKey(id)));
     }
 
@@ -587,8 +613,8 @@ public class FinalBusinessE2eManualIT {
                     new ConsumerRecord<>("lottery_strategy_award_stock", 0, 0, String.valueOf(result.getOrderId()), JSON.toJSONString(settlement)),
                     () -> acknowledged.set(true), "lottery_strategy_award_stock"));
             assertFalse("SQL 故障不能 ACK", acknowledged.get());
-            assertEquals(Integer.valueOf(0), order(user, result.getOrderId()).getStockMqState());
-            assertEquals(10, value("SELECT award_surplus_count FROM lottery.strategy_detail WHERE strategy_id=?", id));
+            assertEquals(Integer.valueOf(0), order(user, result.getOrderId()).getStockSettlementEventStatus());
+            assertEquals(10, value("SELECT award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id=?", id));
         } finally {
             // 仅恢复专用测试实例的表，失败不可留下已改名的 fixture。
             update("RENAME TABLE lottery.award_stock_settlement_unavailable TO lottery.award_stock_settlement");
@@ -599,7 +625,7 @@ public class FinalBusinessE2eManualIT {
         job.awardStockSettlementOutboxJobHandler();
         awaitComplete(user, result.getOrderId());
         assertEquals(1, value("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE order_id=?", result.getOrderId()));
-        assertEquals(9, value("SELECT award_surplus_count FROM lottery.strategy_detail WHERE strategy_id=?", id));
+        assertEquals(9, value("SELECT award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id=?", id));
     }
 
     @Test
@@ -620,7 +646,7 @@ public class FinalBusinessE2eManualIT {
         AwardStockSettlementVO result = new AwardStockSettlementVO();
         result.setuId(user);
         result.setOrderId(orderId);
-        result.setStrategyId(id);
+        result.setDrawConfigId(id);
         result.setAwardId("p" + id);
         return result;
     }
@@ -670,23 +696,21 @@ public class FinalBusinessE2eManualIT {
         activity.setTakeCount(quota);
         activity.setState(4);
         activity.setCreator("e2e");
-        StrategyVO strategy = new StrategyVO();
-        strategy.setStrategyId(id);
-        strategy.setStrategyMode(1);
-        strategy.setGrantType(1);
-        StrategyDetailVO detail = new StrategyDetailVO();
+        DrawConfigVO drawConfig = new DrawConfigVO();
+        drawConfig.setDrawConfigId(id);
+        drawConfig.setGrantType(1);
+        DrawConfigPrizeVO detail = new DrawConfigPrizeVO();
         detail.setAwardId("p" + id);
-        detail.setAwardName("本地模拟券");
         detail.setAwardCount(stock);
         // 100% 中奖仅为稳定 fixture，不替换真实抽样实现。
         detail.setAwardRate(new BigDecimal("1.00"));
-        strategy.setStrategyDetailList(Collections.singletonList(detail));
+        drawConfig.setDrawConfigPrizeList(Collections.singletonList(detail));
         AwardVO award = new AwardVO();
         award.setAwardId(detail.getAwardId());
         award.setAwardType(3);
-        award.setAwardName(detail.getAwardName());
+        award.setAwardName("本地模拟券");
         award.setAwardContent("项目已有模拟发奖渠道");
-        return new ActivityConfigReq(id, new ActivityConfigRich(activity, strategy, Collections.singletonList(award)));
+        return new ActivityConfigReq(id, new ActivityConfigRich(activity, drawConfig, Collections.singletonList(award)));
     }
 
     private long createStarted(int stock, int quota) throws Exception {
@@ -696,10 +720,10 @@ public class FinalBusinessE2eManualIT {
         return req.getActivityId();
     }
 
-    private long createSharedActivity(long strategyId) {
+    private long createSharedActivity(long drawConfigId) {
         // 新建活动直接绑定已有策略，不能走会重复插入策略和奖品的整套配置创建。
         ActivityVO activity = config(10, 3, -60000).getActivityConfigRich().getActivity();
-        activity.setStrategyId(strategyId);
+        activity.setDrawConfigId(drawConfigId);
         activities.addActivity(activity);
         return activity.getActivityId();
     }
@@ -719,24 +743,24 @@ public class FinalBusinessE2eManualIT {
         assertNotNull(result.getOrderId());
     }
 
-    private UserStrategyExport order(String user, long orderId) {
-        UserStrategyExport query = new UserStrategyExport();
+    private DrawOrder order(String user, long orderId) {
+        DrawOrder query = new DrawOrder();
         query.setuId(user);
-        query.setUuid(String.valueOf(orderId));
-        return orders.queryUserStrategyExportByUuid(query);
+        query.setOrderId(orderId);
+        return orders.queryDrawOrderByOrderId(query);
     }
 
     private void awaitComplete(String user, long orderId) throws Exception {
         await("结算/发奖完成 " + orderId, () -> {
-            UserStrategyExport row = order(user, orderId);
-            return row.getStockMqState() == 1 && row.getMqState() == 1 && row.getGrantState() == 1;
+            DrawOrder row = order(user, orderId);
+            return row.getStockSettlementEventStatus() == 1 && row.getFulfillmentEventStatus() == 1 && row.getAwardFulfillmentStatus() == 1;
         });
     }
 
     private String table(String user) {
         try {
             router.doRouter(user);
-            return "lottery_" + DBContextHolder.getDBKey() + ".user_strategy_export_" + DBContextHolder.getTBKey();
+            return "lottery_" + DBContextHolder.getDBKey() + ".draw_order_" + DBContextHolder.getTBKey();
         } finally { router.clear(); }
     }
 
@@ -748,18 +772,18 @@ public class FinalBusinessE2eManualIT {
     }
 
     private long countTakes(String user, long id) throws Exception {
-        return value("SELECT COUNT(*) FROM " + userSchema(user) + ".user_take_activity WHERE u_id=? AND activity_id=?", user, id);
+        return value("SELECT COUNT(*) FROM " + userSchema(user) + ".draw_participation WHERE u_id=? AND activity_id=?", user, id);
     }
 
     private long leftCount(String user, long id) throws Exception {
-        return value("SELECT left_count FROM " + userSchema(user) + ".user_take_activity_count WHERE u_id=? AND activity_id=?", user, id);
+        return value("SELECT left_count FROM " + userSchema(user) + ".user_activity_quota WHERE u_id=? AND activity_id=?", user, id);
     }
 
     private void assertNoActivityStock(long id) {
         // 只检查旧 Key 不存在；业务代码不得再创建或操作活动总库存。
         assertFalse(redis.hasKey("lottery_activity_stock_count_" + id));
     }
-    private String awardKey(long id) { return Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT(id, "p" + id); }
+    private String awardKey(long id) { return Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_COUNT(id, "p" + id); }
 
     private static Connection connect() throws SQLException {
         return DriverManager.getConnection("jdbc:mysql://127.0.0.1:13309/?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai", "root", "root");

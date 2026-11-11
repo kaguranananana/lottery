@@ -6,9 +6,9 @@ import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
 import com.anontokyo.lottery.domain.activity.service.deploy.IActivityDeploy;
 import com.anontokyo.lottery.domain.activity.service.lifecycle.ActivityLifecycleService;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
-import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
+import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 import com.anontokyo.lottery.domain.award.service.order.IAwardOrder;
-import com.anontokyo.lottery.domain.support.lock.IStrategyAwardStockMqGuard;
+import com.anontokyo.lottery.domain.support.lock.IStockSettlementGuard;
 import com.alibaba.fastjson.JSON;
 import com.xxl.job.core.context.XxlJobHelper;
 import com.xxl.job.core.handler.annotation.XxlJob;
@@ -50,7 +50,7 @@ public class LotteryXxlJob {
     private KafkaProducer kafkaProducer;
 
     @Resource
-    private IStrategyAwardStockMqGuard strategyAwardStockMqGuard;
+    private IStockSettlementGuard stockSettlementGuard;
 
     @Value("${lottery.kafka.dispatcher.strategy-award-stock-batch-size:200}")
     private int stockSettlementDispatchBatchSize;
@@ -115,7 +115,7 @@ public class LotteryXxlJob {
     @XxlJob("lotteryOrderMQStateJobHandler")
     public void lotteryOrderMQStateJobHandler() {
         if (!invoiceMqEnabled) {
-            logger.warn("skip invoice mq compensation because invoice mq is disabled");
+            logger.warn("skip award fulfillment compensation because invoice mq is disabled");
             return;
         }
         // 验证参数
@@ -150,28 +150,28 @@ public class LotteryXxlJob {
             for (int i = 0; i < tbCount; i++) {
 
                 //  扫描表数据
-                List<InvoiceVO> invoiceVOList = awardOrder.scanInvoiceMqState(dbCount, i, INVOICE_COMPENSATION_BATCH_LIMIT);
-                logger.info("扫描用户抽奖奖品发放MQ状态[Table = 2*4] 扫描库：{} 扫描表：{} 扫描数：{}", dbCount, i, invoiceVOList.size());
+                List<AwardFulfillmentEvent> fulfillmentEventList = awardOrder.scanFulfillmentEventStatus(dbCount, i, INVOICE_COMPENSATION_BATCH_LIMIT);
+                logger.info("扫描用户抽奖奖品发放MQ状态[Table = 2*4] 扫描库：{} 扫描表：{} 扫描数：{}", dbCount, i, fulfillmentEventList.size());
 
                 // 补偿MQ消息
-                for (InvoiceVO invoiceVO : invoiceVOList) {
+                for (AwardFulfillmentEvent fulfillmentEvent : fulfillmentEventList) {
 
-                    ListenableFuture<SendResult<String, Object>> future = kafkaProducer.sendLotteryInvoice(invoiceVO);
+                    ListenableFuture<SendResult<String, Object>> future = kafkaProducer.sendAwardFulfillment(fulfillmentEvent);
                     future.addCallback(new ListenableFutureCallback<SendResult<String, Object>>() {
 
                         @Override
                         public void onSuccess(SendResult<String, Object> stringObjectSendResult) {
                             // 发送成功只推进 SENT；COMPLETE 由发奖消费者确认，CAS 保护迟到回调。
-                            awardOrder.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(), Constants.MQState.SENT.getCode());
+                            awardOrder.updateFulfillmentEventStatus(fulfillmentEvent.getuId(), fulfillmentEvent.getOrderId(), Constants.FulfillmentEventStatus.SENT.getCode());
                         }
 
                         @Override
                         public void onFailure(Throwable throwable) {
                             // 仅未发送状态可进入 FAIL，迟到失败不能覆盖已发送或已完成。
-                            awardOrder.updateInvoiceMqState(invoiceVO.getuId(), invoiceVO.getOrderId(), Constants.MQState.FAIL.getCode());
+                            awardOrder.updateFulfillmentEventStatus(fulfillmentEvent.getuId(), fulfillmentEvent.getOrderId(), Constants.FulfillmentEventStatus.FAIL.getCode());
                             // 保留失败 cause 和订单标识，便于定位补偿发送异常。
-                            logger.error("invoice mq compensation send failed uId:{} orderId:{}",
-                                    invoiceVO.getuId(), invoiceVO.getOrderId(), throwable);
+                            logger.error("award fulfillment compensation send failed uId:{} orderId:{}",
+                                    fulfillmentEvent.getuId(), fulfillmentEvent.getOrderId(), throwable);
                         }
 
                     });
@@ -216,7 +216,7 @@ public class LotteryXxlJob {
 
             for (int tbIdx = 0; tbIdx < tbCount; tbIdx++) {
                 List<AwardStockSettlementVO> pendingList =
-                        awardOrder.scanAwardStockMqState(dbIdx, tbIdx, stockSettlementDispatchBatchSize);
+                        awardOrder.scanStockSettlementEventStatus(dbIdx, tbIdx, stockSettlementDispatchBatchSize);
                 if (pendingList.isEmpty()) {
                     continue;
                 }
@@ -236,19 +236,19 @@ public class LotteryXxlJob {
         // 扫描 SQL 已排除 COMPLETE；逐条预读既重复访问数据库，也不能阻止读后的消费竞争。
         // 并发完成后的重复消息由消费者和账本去重，迟到发送通知仍由数据库 CAS 保护终态。
         // DISPATCHING 标记用于防止同一轮内多 worker 对同一条记录并发重复投递
-        if (!strategyAwardStockMqGuard.tryClaimDispatch(orderId)) {
+        if (!stockSettlementGuard.tryClaimDispatch(orderId)) {
             return;
         }
 
         try {
-            ListenableFuture<SendResult<String, Object>> future = kafkaProducer.sendStrategyAwardStock(settlementVO);
+            ListenableFuture<SendResult<String, Object>> future = kafkaProducer.sendStockSettlement(settlementVO);
             future.addCallback(new ListenableFutureCallback<SendResult<String, Object>>() {
 
                 @Override
                 public void onSuccess(SendResult<String, Object> result) {
-                    awardOrder.updateStockMqState(settlementVO.getuId(), orderId,
-                            Constants.MQState.SENT.getCode());
-                    strategyAwardStockMqGuard.clearDispatchMarker(orderId);
+                    awardOrder.updateStockSettlementEventStatus(settlementVO.getuId(), orderId,
+                            Constants.StockSettlementEventStatus.SENT.getCode());
+                    stockSettlementGuard.clearDispatchMarker(orderId);
                     if (logger.isDebugEnabled()) {
                         logger.debug("dispatch award stock settlement mq success uId:{} orderId:{}",
                                 settlementVO.getuId(), orderId);
@@ -257,16 +257,16 @@ public class LotteryXxlJob {
 
                 @Override
                 public void onFailure(Throwable throwable) {
-                    awardOrder.updateStockMqState(settlementVO.getuId(), orderId,
-                            Constants.MQState.FAIL.getCode());
-                    strategyAwardStockMqGuard.clearDispatchMarker(orderId);
+                    awardOrder.updateStockSettlementEventStatus(settlementVO.getuId(), orderId,
+                            Constants.StockSettlementEventStatus.FAIL.getCode());
+                    stockSettlementGuard.clearDispatchMarker(orderId);
                     logger.error("dispatch award stock settlement mq failed uId:{} orderId:{}",
                             settlementVO.getuId(), orderId, throwable);
                 }
             });
         } catch (Exception e) {
-            awardOrder.updateStockMqState(settlementVO.getuId(), orderId, Constants.MQState.FAIL.getCode());
-            strategyAwardStockMqGuard.clearDispatchMarker(orderId);
+            awardOrder.updateStockSettlementEventStatus(settlementVO.getuId(), orderId, Constants.StockSettlementEventStatus.FAIL.getCode());
+            stockSettlementGuard.clearDispatchMarker(orderId);
             logger.error("dispatch award stock settlement mq exception uId:{} orderId:{}",
                     settlementVO.getuId(), orderId, e);
         }

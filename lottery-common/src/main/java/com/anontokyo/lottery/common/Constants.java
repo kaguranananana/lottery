@@ -41,36 +41,6 @@ public class Constants {
     /**
      * 抽奖策略模式: 总体概率, 单项概率
      */
-    public enum StrategyMode {
-
-        SINGLE(1, "单项概率"),
-        ENTIRETY(2, "总体概率");
-
-        private Integer code;
-        private String info;
-
-        StrategyMode(Integer code, String info) {
-            this.code = code;
-            this.info = info;
-        }
-
-        public Integer getCode() {
-            return code;
-        }
-
-        public void setCode(Integer code) {
-            this.code = code;
-        }
-
-        public String getInfo() {
-            return info;
-        }
-
-        public void setInfo(String info) {
-            this.info = info;
-        }
-    }
-
     public enum DrawState {
 
         FAIL(0, "未中奖"),
@@ -261,7 +231,7 @@ public class Constants {
     /**
      * 发奖状态 0初始、1完成、2失败
      */
-    public enum GrantState {
+    public enum AwardFulfillmentStatus {
 
         INIT(0, "初始"),
         COMPLETE(1, "完成"),
@@ -270,7 +240,7 @@ public class Constants {
         private Integer code;
         private String info;
 
-        GrantState(Integer code, String info) {
+        AwardFulfillmentStatus(Integer code, String info) {
             this.code = code;
             this.info = info;
         }
@@ -295,47 +265,41 @@ public class Constants {
     /**
      * 消息投递状态（0初始待投递、1消费完成、2投递失败待重试、3已投递等待消费结果）
      */
-    public enum MQState {
-        INIT(0, "初始"),
-        COMPLETE(1, "完成"),
-        FAIL(2, "失败"),
-        /** dispatch 成功、尚未收到消费侧收口 */
-        SENT(3, "已发送"),
-        /** 仅库存结算使用：业务库存分歧，持久保留订单等待对账，禁止自动重投。 */
-        BLOCKED(4, "待对账");
+    public enum FulfillmentEventStatus {
+        INIT(0), COMPLETE(1), FAIL(2), SENT(3);
 
-        private Integer code;
-        private String info;
+        private final Integer code;
 
-        MQState(Integer code, String info) {
+        FulfillmentEventStatus(int code) {
             this.code = code;
-            this.info = info;
         }
 
         public Integer getCode() {
             return code;
         }
+    }
 
-        public void setCode(Integer code) {
+    /** 库存消息投递、结算事实与人工对账状态。 */
+    public enum StockSettlementEventStatus {
+        INIT(0), COMPLETE(1), FAIL(2), SENT(3), BLOCKED(4);
+
+        private final Integer code;
+
+        StockSettlementEventStatus(int code) {
             this.code = code;
         }
 
-        public String getInfo() {
-            return info;
-        }
-
-        public void setInfo(String info) {
-            this.info = info;
+        public Integer getCode() {
+            return code;
         }
     }
 
-
     public static final class RedisKey {
-        // 策略奖品库存 Key
+        // 配置奖品库存 Key
         private static final String LOTTERY_STRATEGY_AWARD_STOCK_COUNT = "lottery_strategy_award_stock_count_";
 
-        public static String KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT(Long strategyId, String awardId) {
-            return LOTTERY_STRATEGY_AWARD_STOCK_COUNT + strategyId + "_" + awardId;
+        public static String KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_COUNT(Long drawConfigId, String awardId) {
+            return LOTTERY_STRATEGY_AWARD_STOCK_COUNT + drawConfigId + "_" + awardId;
         }
 
         // Unconsumed user take-order cache key
@@ -346,38 +310,38 @@ public class Constants {
         }
 
         // Activity config cache key
-        private static final String LOTTERY_CACHE_ACTIVITY = "lottery_cache_activity_";
+        private static final String LOTTERY_CACHE_ACTIVITY = "lottery_cache_activity_v2_";
 
         public static String KEY_LOTTERY_CACHE_ACTIVITY(Long activityId) {
             return LOTTERY_CACHE_ACTIVITY + activityId;
         }
 
-        // Strategy snapshot cache key (two-level cache, draw hot path)
-        private static final String LOTTERY_CACHE_STRATEGY_SNAPSHOT = "lottery_cache_strategy_snapshot_";
+        // 抽奖配置快照已改字段名，使用新缓存前缀以便从 MySQL 重建。
+        private static final String LOTTERY_CACHE_DRAW_CONFIG_SNAPSHOT = "lottery_cache_draw_config_snapshot_v2_";
 
-        public static String KEY_LOTTERY_CACHE_STRATEGY_SNAPSHOT(Long strategyId) {
-            return LOTTERY_CACHE_STRATEGY_SNAPSHOT + strategyId;
+        public static String KEY_LOTTERY_CACHE_DRAW_CONFIG_SNAPSHOT(Long drawConfigId) {
+            return LOTTERY_CACHE_DRAW_CONFIG_SNAPSHOT + drawConfigId;
         }
 
 
-        // Strategy-award stock MQ processing key
+        // DrawConfig-award stock MQ processing key
         private static final String LOTTERY_STRATEGY_AWARD_STOCK_MQ_PROCESSING = "lottery_strategy_award_stock_mq_processing_";
 
-        public static String KEY_LOTTERY_STRATEGY_AWARD_STOCK_MQ_PROCESSING(Long orderId) {
+        public static String KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_MQ_PROCESSING(Long orderId) {
             return LOTTERY_STRATEGY_AWARD_STOCK_MQ_PROCESSING + orderId;
         }
 
-        // Strategy-award stock MQ dispatch marker
+        // DrawConfig-award stock MQ dispatch marker
         private static final String LOTTERY_STRATEGY_AWARD_STOCK_MQ_DISPATCHING = "lottery_strategy_award_stock_mq_dispatching_";
 
-        public static String KEY_LOTTERY_STRATEGY_AWARD_STOCK_MQ_DISPATCHING(Long orderId) {
+        public static String KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_MQ_DISPATCHING(Long orderId) {
             return LOTTERY_STRATEGY_AWARD_STOCK_MQ_DISPATCHING + orderId;
         }
 
         // Invoice MQ processing key
         private static final String LOTTERY_INVOICE_MQ_PROCESSING = "lottery_invoice_mq_processing_";
 
-        public static String KEY_LOTTERY_INVOICE_MQ_PROCESSING(Long orderId) {
+        public static String KEY_LOTTERY_AWARD_FULFILLMENT_PROCESSING(Long orderId) {
             return LOTTERY_INVOICE_MQ_PROCESSING + orderId;
         }
 

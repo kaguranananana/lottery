@@ -47,7 +47,7 @@ XXL handler由一秒固定延迟触发，消费者真实运行；该方式不证
 
 只读工具验证检查：Swap 汇总等于首末原始计数增量；精确订单数量与实际扫描行数可核对；计划 SQL 与 Mapper 条件一致；持久化与业务计数前后一致。仅 MySQL 核对不得标记完整链路通过。
 
-首次压测创建缺陷：StrategyDetailVO.awardCount为Integer、PO为String，BeanUtils不复制，总库存列NULL；剩余库存正常初始化。独立优化任务已统一创建/PO/快照总库存为Integer，并验证总/剩余字段；原始压测数据没有回填。该旧版的活动总库存已于2026-11-02移除；当前参与约束只依赖个人次数和take事实。
+首次压测创建缺陷：DrawConfigPrizeVO.awardCount为Integer、PO为String，BeanUtils不复制，总库存列NULL；剩余库存正常初始化。独立优化任务已统一创建/PO/快照总库存为Integer，并验证总/剩余字段；原始压测数据没有回填。该旧版的活动总库存已于2026-11-02移除；当前参与约束只依赖个人次数和take事实。
 
 后续定向诊断与源码优化见[独立优化契约](./performance-optimization.md)和[优化报告](../../../doc/performance/optimization-report.md)。测试启动器增加包含式阶段和客户端 SQL 累计计时，资源采样同时保存实际锁索引/数据与主动换页；不能将嵌套阶段、数据库 CPU、锁累计时间相加解释为墙钟耗时。
 

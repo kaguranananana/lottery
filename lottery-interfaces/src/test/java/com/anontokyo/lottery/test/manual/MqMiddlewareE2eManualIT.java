@@ -7,11 +7,11 @@ import com.anontokyo.lottery.application.mq.producer.KafkaProducer;
 import com.anontokyo.lottery.application.worker.LotteryXxlJob;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
-import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
+import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
-import com.anontokyo.lottery.domain.strategy.repository.IStrategyRepository;
-import com.anontokyo.lottery.infrastructure.dao.IUserStrategyExportDao;
-import com.anontokyo.lottery.infrastructure.po.UserStrategyExport;
+import com.anontokyo.lottery.domain.draw.repository.IDrawConfigRepository;
+import com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao;
+import com.anontokyo.lottery.infrastructure.po.DrawOrder;
 import com.xxl.job.core.context.XxlJobContext;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -38,8 +38,6 @@ import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.SettableListenableFuture;
 
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -69,9 +67,9 @@ public class MqMiddlewareE2eManualIT {
     private static final String STOCK_TOPIC = "lottery_strategy_award_stock";
     private static final String INVOICE_TOPIC = "lottery_invoice";
 
-    @Autowired private IUserStrategyExportDao orderDao;
+    @Autowired private IDrawOrderDao orderDao;
     @Autowired private IOrderRepository orders;
-    @Autowired private IStrategyRepository strategies;
+    @Autowired private IDrawConfigRepository strategies;
     @Autowired private IDBRouterStrategy router;
     @Autowired private LotteryXxlJob job;
     @Autowired private KafkaProducer producer;
@@ -80,7 +78,7 @@ public class MqMiddlewareE2eManualIT {
     @Value("${lottery.kafka.consumer.invoice-group-id}") private String invoiceGroup;
     @Value("${lottery.kafka.consumer.strategy-award-stock-group-id}") private String stockGroup;
 
-    private long strategyId;
+    private long drawConfigId;
     private CallbackProducer callbacks;
     private AdminClient admin;
 
@@ -100,31 +98,19 @@ public class MqMiddlewareE2eManualIT {
             for (String schema : Arrays.asList("lottery", "lottery_01", "lottery_02")) {
                 // 13309 是测试 compose 的专用 MySQL；只在这个隔离实例重建 fixture。
                 statement.execute("DROP DATABASE IF EXISTS " + schema);
-                statement.execute("CREATE DATABASE " + schema);
-                statement.execute("USE " + schema);
-                String baseline = schema.equals("lottery") ? "lottery.sql" : "lottery_01.sql";
-                createBaselineTables(statement, "../doc/sql/" + baseline);
-                if (!schema.equals("lottery")) {
-                    for (int table = 0; table < 4; table++) {
-                        // 当前订单 Mapper 需要 take_id，旧基线尚未包含该列。
-                        statement.execute("ALTER TABLE user_strategy_export_" + String.format("%03d", table)
-                                + " ADD take_id BIGINT NULL");
-                    }
-                }
             }
-            // 执行交付的库存 Outbox 字段/索引与全局账本迁移，不在测试里重写其结构。
-            executeSqlFile(statement, "../doc/sql/20260315_async_award_stock_outbox.sql");
-            executeSqlFile(statement, "../docs/sql/V2__architecture_simplification.sql");
+            ScriptUtils.executeSqlScript(connection,
+                    new org.springframework.core.io.FileSystemResource("../docs/sql/lottery-schema.sql"));
         }
     }
 
     @Before
     public void startPipeline() throws Exception {
-        strategyId = IDS.incrementAndGet();
+        drawConfigId = IDS.incrementAndGet();
         // 本用例独立库存，MySQL 与 Redis 初始均为 100，真实 Redis 预扣后再异步结算。
-        sql("INSERT INTO lottery.strategy_detail (strategy_id,award_id,award_name,award_count,award_surplus_count,award_rate)"
-                + " VALUES (?, 'C', '端到端测试券', 100, 100, 1.00)", strategyId);
-        redis.opsForValue().set(Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT(strategyId, "C"), "100");
+        sql("INSERT INTO lottery.draw_config_prize (draw_config_id,award_id,award_count,award_surplus_count,award_rate)"
+                + " VALUES (?, 'C', 100, 100, 1.00)", drawConfigId);
+        redis.opsForValue().set(Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_COUNT(drawConfigId, "C"), "100");
         callbacks = (CallbackProducer) producer;
         admin = AdminClient.create(Collections.singletonMap("bootstrap.servers", "127.0.0.1:19092"));
         listeners.start();
@@ -147,7 +133,7 @@ public class MqMiddlewareE2eManualIT {
     @Test
     public void completePipelineRoutesAcrossAllEightOrderTables() throws Exception {
         Set<String> visited = new HashSet<>();
-        List<UserStrategyExport> rows = new ArrayList<>();
+        List<DrawOrder> rows = new ArrayList<>();
         while (visited.size() < 8) {
             String user = "e2e" + IDS.incrementAndGet();
             String physicalTable = physicalTable(user);
@@ -157,20 +143,20 @@ public class MqMiddlewareE2eManualIT {
         }
         // 真实分片扫描、Redis dispatch marker、Kafka、结算事务、发奖消费者连续执行。
         job.awardStockSettlementOutboxJobHandler();
-        for (UserStrategyExport row : rows) {
+        for (DrawOrder row : rows) {
             awaitCompleted(row);
             assertEquals(1, ledgerCount(row));
-            await("发送回调清理 dispatch marker", () -> !redis.hasKey(Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_MQ_DISPATCHING(row.getOrderId())));
-            assertFalse(redis.hasKey(Constants.RedisKey.KEY_LOTTERY_INVOICE_MQ_PROCESSING(row.getOrderId())));
+            await("发送回调清理 dispatch marker", () -> !redis.hasKey(Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_MQ_DISPATCHING(row.getOrderId())));
+            assertFalse(redis.hasKey(Constants.RedisKey.KEY_LOTTERY_AWARD_FULFILLMENT_PROCESSING(row.getOrderId())));
         }
         assertEquals(92, dbStock());
-        assertEquals("92", redis.opsForValue().get(Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_COUNT(strategyId, "C")));
+        assertEquals("92", redis.opsForValue().get(Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_COUNT(drawConfigId, "C")));
         awaitCommitted();
     }
 
     @Test
     public void consumersFinishBeforeDelayedSuccessCallbacks() throws Exception {
-        UserStrategyExport row = createOrder(null, 0, 0);
+        DrawOrder row = createOrder(null, 0, 0);
         Gate stock = callbacks.hold(STOCK_TOPIC, row.getOrderId());
         Gate invoice = callbacks.hold(INVOICE_TOPIC, row.getOrderId());
         job.awardStockSettlementOutboxJobHandler();
@@ -178,19 +164,19 @@ public class MqMiddlewareE2eManualIT {
         Attempt invoiceSend = invoice.attempt(0);
         // Broker 已确认消息，两条真实消费者均已完成，但调度任务的发送通知仍未执行。
         awaitCompleted(row);
-        assertTrue(redis.hasKey(Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_MQ_DISPATCHING(row.getOrderId())));
+        assertTrue(redis.hasKey(Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_MQ_DISPATCHING(row.getOrderId())));
         Date completedAt = query(row).getUpdateTime();
         stockSend.success();
         invoiceSend.success();
         assertCompleted(row);
         assertEquals(completedAt, query(row).getUpdateTime());
-        await("dispatch marker 清理", () -> !redis.hasKey(Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_MQ_DISPATCHING(row.getOrderId())));
+        await("dispatch marker 清理", () -> !redis.hasKey(Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_MQ_DISPATCHING(row.getOrderId())));
         awaitCommitted();
     }
 
     @Test
     public void consumersFinishBeforeInjectedLateFailureCallbacks() throws Exception {
-        UserStrategyExport row = createOrder(null, 0, 0);
+        DrawOrder row = createOrder(null, 0, 0);
         Gate stock = callbacks.hold(STOCK_TOPIC, row.getOrderId());
         Gate invoice = callbacks.hold(INVOICE_TOPIC, row.getOrderId());
         job.awardStockSettlementOutboxJobHandler();
@@ -211,17 +197,17 @@ public class MqMiddlewareE2eManualIT {
     @Test
     public void realRedisExpiryAndOutOfOrderRetryCallbacksRemainSafe() throws Exception {
         topicContainer(STOCK_TOPIC).stop();
-        UserStrategyExport row = createOrder(null, 0, 0);
+        DrawOrder row = createOrder(null, 0, 0);
         Gate gate = callbacks.hold(STOCK_TOPIC, row.getOrderId());
         job.awardStockSettlementOutboxJobHandler();
         gate.attempt(0).failure();
-        assertEquals(Integer.valueOf(2), query(row).getStockMqState());
+        assertEquals(Integer.valueOf(2), query(row).getStockSettlementEventStatus());
         // 首次 FAIL 必须被生产补偿扫描重新投递。
         job.awardStockSettlementOutboxJobHandler();
         gate.attempt(1);
         for (int index = 2; index < 4; index++) {
             // 真实 Redis marker 过期模拟异步回调长于锁窗口，允许后续 worker 再次投递。
-            String marker = Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_MQ_DISPATCHING(row.getOrderId());
+            String marker = Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_MQ_DISPATCHING(row.getOrderId());
             redis.expire(marker, 1, TimeUnit.SECONDS);
             await("Redis dispatch marker 过期", () -> !redis.hasKey(marker));
             job.awardStockSettlementOutboxJobHandler();
@@ -229,9 +215,9 @@ public class MqMiddlewareE2eManualIT {
         }
         // 最新成功先到，旧失败后到；恢复真实消费后，最旧的成功通知最后到。
         gate.attempt(3).success();
-        assertEquals(Integer.valueOf(3), query(row).getStockMqState());
+        assertEquals(Integer.valueOf(3), query(row).getStockSettlementEventStatus());
         gate.attempt(2).failure();
-        assertEquals(Integer.valueOf(3), query(row).getStockMqState());
+        assertEquals(Integer.valueOf(3), query(row).getStockSettlementEventStatus());
         topicContainer(STOCK_TOPIC).start();
         awaitCompleted(row);
         gate.attempt(1).success();
@@ -243,7 +229,7 @@ public class MqMiddlewareE2eManualIT {
 
     @Test
     public void timedOutSentStockIsReallyResentAndConsumed() throws Exception {
-        UserStrategyExport row = createOrder(null, 3, 0);
+        DrawOrder row = createOrder(null, 3, 0);
         age(row);
         // 不改生产超时阈值，直接将隔离 fixture 的数据库时间设置为已过期。
         job.awardStockSettlementOutboxJobHandler();
@@ -256,10 +242,10 @@ public class MqMiddlewareE2eManualIT {
     @Test
     public void invoiceCompensationRecoversFailSentAndLegacyComplete() throws Exception {
         for (int state : Arrays.asList(2, 3, 1)) {
-            UserStrategyExport row = createOrder(null, 0, state);
+            DrawOrder row = createOrder(null, 0, state);
             // 库存已结算、发奖未完成的恢复窗口，用真实库存 Repository 建立事实。
             assertTrue(strategies.settleAwardStock(stock(row)));
-            orders.updateStockMqState(row.getuId(), row.getOrderId(), 1);
+            orders.updateStockSettlementEventStatus(row.getuId(), row.getOrderId(), 1);
             age(row);
             Gate gate = callbacks.hold(INVOICE_TOPIC, row.getOrderId());
             job.lotteryOrderMQStateJobHandler();
@@ -276,48 +262,48 @@ public class MqMiddlewareE2eManualIT {
 
     @Test
     public void duplicateBrokerMessagesDoNotRepeatInventoryOrGrant() throws Exception {
-        UserStrategyExport row = createOrder(null, 0, 0);
+        DrawOrder row = createOrder(null, 0, 0);
         job.awardStockSettlementOutboxJobHandler();
         awaitCompleted(row);
-        Date grantedAt = query(row).getGrantDate();
-        InvoiceVO invoice = orders.queryInvoiceByOrderId(row.getuId(), row.getOrderId());
+        Date grantedAt = query(row).getFulfilledAt();
+        AwardFulfillmentEvent invoice = orders.queryFulfillmentEventByOrderId(row.getuId(), row.getOrderId());
         for (int index = 0; index < 3; index++) {
             // 重复消息也真实进入 broker 和消费者，不直接调用消费方法。
-            producer.sendStrategyAwardStock(stock(row)).get(30, TimeUnit.SECONDS);
-            producer.sendLotteryInvoice(invoice).get(30, TimeUnit.SECONDS);
+            producer.sendStockSettlement(stock(row)).get(30, TimeUnit.SECONDS);
+            producer.sendAwardFulfillment(invoice).get(30, TimeUnit.SECONDS);
         }
         awaitCommitted();
         assertCompleted(row);
         assertEquals(1, ledgerCount(row));
         assertEquals(99, dbStock());
-        assertEquals(grantedAt, query(row).getGrantDate());
+        assertEquals(grantedAt, query(row).getFulfilledAt());
     }
 
     @Test
     public void actualBrokerFailureIsRetriedAfterKafkaRestarts() throws Exception {
         topicContainer(STOCK_TOPIC).stop();
-        UserStrategyExport row = createOrder(null, 0, 0);
+        DrawOrder row = createOrder(null, 0, 0);
         // 先真实发送一条消息来取得分区元数据，消费者暂停使订单仍处于 INIT。
-        producer.sendStrategyAwardStock(stock(row)).get(30, TimeUnit.SECONDS);
+        producer.sendStockSettlement(stock(row)).get(30, TimeUnit.SECONDS);
         int acceptedSends = callbacks.realSends.size();
         try {
             compose("stop", "kafka");
             job.awardStockSettlementOutboxJobHandler();
             // Kafka 确实不可用，真实 Future 超时经生产失败回调落 FAIL。
-            await("真实 broker 停机后的 FAIL", () -> query(row).getStockMqState() == 2);
+            await("真实 broker 停机后的 FAIL", () -> query(row).getStockSettlementEventStatus() == 2);
             assertEquals(acceptedSends + 1, callbacks.realSends.size());
             ListenableFuture<SendResult<String, Object>> failed = callbacks.realSends.remove(acceptedSends);
             ExecutionException rejected = assertThrows(ExecutionException.class, () -> failed.get(30, TimeUnit.SECONDS));
             // KafkaTemplate 的 Future 用 KafkaProducerException 包装原始 broker 超时，检查完整 cause 链。
             assertTrue(rejected.getCause() instanceof org.springframework.kafka.core.KafkaProducerException);
             assertTrue(rejected.getCause().getCause() instanceof org.apache.kafka.common.errors.TimeoutException);
-            await("真实发送失败清理 marker", () -> !redis.hasKey(Constants.RedisKey.KEY_LOTTERY_STRATEGY_AWARD_STOCK_MQ_DISPATCHING(row.getOrderId())));
+            await("真实发送失败清理 marker", () -> !redis.hasKey(Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_MQ_DISPATCHING(row.getOrderId())));
         } finally {
             // 用真实容器健康检查等待 broker 恢复，不将恢复前的连接失败当成补偿结果。
             compose("up", "-d", "--wait", "kafka");
         }
         job.awardStockSettlementOutboxJobHandler();
-        await("恢复后补偿发送成功", () -> query(row).getStockMqState() == 3);
+        await("恢复后补偿发送成功", () -> query(row).getStockSettlementEventStatus() == 3);
         topicContainer(STOCK_TOPIC).start();
         awaitCompleted(row);
         assertEquals(1, ledgerCount(row));
@@ -327,25 +313,25 @@ public class MqMiddlewareE2eManualIT {
 
     @Test
     public void stockGapStopsAutomaticResendUntilReconciled() throws Exception {
-        UserStrategyExport row = createOrder(null, 0, 0);
+        DrawOrder row = createOrder(null, 0, 0);
         Gate gate = callbacks.hold(STOCK_TOPIC, row.getOrderId());
         // 真实 Redis 已预扣且用户订单存在，但数据库库存损坏为零。
-        sql("UPDATE lottery.strategy_detail SET award_surplus_count=0 WHERE strategy_id=?", strategyId);
+        sql("UPDATE lottery.draw_config_prize SET award_surplus_count=0 WHERE draw_config_id=?", drawConfigId);
         job.awardStockSettlementOutboxJobHandler();
         Attempt sent = gate.attempt(0);
-        await("库存消费返回明确失败状态", () -> query(row).getStockMqState() == 2 || query(row).getStockMqState() == 4);
-        assertEquals("库存业务分歧必须待对账，不能进入自动重试 FAIL", Integer.valueOf(4), query(row).getStockMqState());
+        await("库存消费返回明确失败状态", () -> query(row).getStockSettlementEventStatus() == 2 || query(row).getStockSettlementEventStatus() == 4);
+        assertEquals("库存业务分歧必须待对账，不能进入自动重试 FAIL", Integer.valueOf(4), query(row).getStockSettlementEventStatus());
         assertEquals(0, ledgerCount(row));
         assertEquals(0, dbStock());
         // 发送成功迟于库存分歧，不能解除 BLOCKED。
         sent.success();
         for (int i = 0; i < 3; i++) job.awardStockSettlementOutboxJobHandler();
         assertEquals(1, gate.attempts.size());
-        assertEquals(Integer.valueOf(0), query(row).getGrantState());
+        assertEquals(Integer.valueOf(0), query(row).getAwardFulfillmentStatus());
         awaitCommitted();
         // 只修复 fixture 的错误库存，显式按订单释放原有 Outbox 后继续原业务链。
-        sql("UPDATE lottery.strategy_detail SET award_surplus_count=100 WHERE strategy_id=?", strategyId);
-        sql("UPDATE " + physicalTable(row.getuId()) + " SET stock_mq_state=0 WHERE order_id=? AND stock_mq_state=4", row.getOrderId());
+        sql("UPDATE lottery.draw_config_prize SET award_surplus_count=100 WHERE draw_config_id=?", drawConfigId);
+        sql("UPDATE " + physicalTable(row.getuId()) + " SET stock_settlement_event_status=0 WHERE order_id=? AND stock_settlement_event_status=4", row.getOrderId());
         job.awardStockSettlementOutboxJobHandler();
         awaitCompleted(row);
         gate.attempt(1).success();
@@ -368,75 +354,73 @@ public class MqMiddlewareE2eManualIT {
         assertEquals("测试容器操作失败：" + command, 0, process.exitValue());
     }
 
-    private UserStrategyExport createOrder(String user, int stockState, int invoiceState) {
+    private DrawOrder createOrder(String user, int stockState, int invoiceState) {
         long id = IDS.incrementAndGet();
-        UserStrategyExport row = new UserStrategyExport();
+        DrawOrder row = new DrawOrder();
         row.setuId(user == null ? "e2e" + id : user);
         row.setOrderId(id);
-        row.setUuid(String.valueOf(id));
-        row.setActivityId(strategyId);
-        row.setStrategyId(strategyId);
-        row.setStrategyMode(1);
+        row.setActivityId(drawConfigId);
+        row.setDrawConfigId(drawConfigId);
         row.setGrantType(1);
-        row.setGrantState(0);
+        row.setAwardFulfillmentStatus(0);
         row.setAwardId("C");
         row.setAwardType(3);
         row.setAwardName("端到端测试券");
         row.setAwardContent("本地模拟发奖");
-        row.setStockMqState(stockState);
-        row.setMqState(invoiceState);
+        row.setStockSettlementEventStatus(stockState);
+        row.setFulfillmentEventStatus(invoiceState);
         // 真实 Redis 库存预扣，订单由生产 DAO 路由写入，之后完全走生产异步链路。
-        assertTrue(strategies.deductStockByRedis(strategyId, "C").isSuccess());
+        assertTrue(strategies.deductStockByRedis(drawConfigId, "C").isSuccess());
         orderDao.insert(row);
         return row;
     }
 
-    private UserStrategyExport query(UserStrategyExport row) {
-        return orderDao.queryUserStrategyExportByUuid(row);
+    private DrawOrder query(DrawOrder row) {
+        return orderDao.queryDrawOrderByOrderId(row);
     }
 
-    private void awaitCompleted(UserStrategyExport row) throws Exception {
+    private void awaitCompleted(DrawOrder row) throws Exception {
         await("订单两条消息与发奖均完成 orderId=" + row.getOrderId(), () -> {
-            UserStrategyExport current = query(row);
-            return current.getStockMqState() == 1 && current.getMqState() == 1 && current.getGrantState() == 1;
+            DrawOrder current = query(row);
+            return current.getStockSettlementEventStatus() == 1 && current.getFulfillmentEventStatus() == 1 && current.getAwardFulfillmentStatus() == 1;
         });
     }
 
-    private void assertCompleted(UserStrategyExport row) {
-        UserStrategyExport current = query(row);
-        assertEquals(Integer.valueOf(1), current.getStockMqState());
-        assertEquals(Integer.valueOf(1), current.getMqState());
-        assertEquals(Integer.valueOf(1), current.getGrantState());
+    private void assertCompleted(DrawOrder row) {
+        DrawOrder current = query(row);
+        assertEquals(Integer.valueOf(1), current.getStockSettlementEventStatus());
+        assertEquals(Integer.valueOf(1), current.getFulfillmentEventStatus());
+        assertEquals(Integer.valueOf(1), current.getAwardFulfillmentStatus());
     }
 
     private String physicalTable(String user) {
         try {
             // 路由信息与动态 MyBatis 插件使用同一个生产上下文。
             router.doRouter(user);
-            return "lottery_" + DBContextHolder.getDBKey() + ".user_strategy_export_" + DBContextHolder.getTBKey();
+            return "lottery_" + DBContextHolder.getDBKey() + ".draw_order_" + DBContextHolder.getTBKey();
         } finally {
             router.clear();
         }
     }
 
-    private void age(UserStrategyExport row) throws SQLException {
+    private void age(DrawOrder row) throws SQLException {
         sql("UPDATE " + physicalTable(row.getuId())
                 + " SET update_time=DATE_SUB(NOW(),INTERVAL 11 MINUTE) WHERE order_id=?", row.getOrderId());
     }
 
-    private int ledgerCount(UserStrategyExport row) throws SQLException {
+    private int ledgerCount(DrawOrder row) throws SQLException {
         return number("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE order_id=?", row.getOrderId());
     }
 
     private int dbStock() throws SQLException {
-        return number("SELECT award_surplus_count FROM lottery.strategy_detail WHERE strategy_id=? AND award_id='C'", strategyId);
+        return number("SELECT award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id=? AND award_id='C'", drawConfigId);
     }
 
-    private AwardStockSettlementVO stock(UserStrategyExport row) {
+    private AwardStockSettlementVO stock(DrawOrder row) {
         AwardStockSettlementVO stock = new AwardStockSettlementVO();
         stock.setuId(row.getuId());
         stock.setOrderId(row.getOrderId());
-        stock.setStrategyId(strategyId);
+        stock.setDrawConfigId(drawConfigId);
         stock.setAwardId("C");
         return stock;
     }
@@ -504,29 +488,6 @@ public class MqMiddlewareE2eManualIT {
         }
     }
 
-    private static void createBaselineTables(Statement statement, String file) throws Exception {
-        for (String sql : sqlStatements(file)) {
-            // 只加载生产表定义，不加载旧业务种子或破坏其它实例数据。
-            if (sql.startsWith("CREATE TABLE")) {
-                statement.execute(sql);
-            }
-        }
-    }
-
-    private static void executeSqlFile(Statement statement, String file) throws Exception {
-        for (String sql : sqlStatements(file)) {
-            statement.execute(sql);
-        }
-    }
-
-    private static List<String> sqlStatements(String file) throws Exception {
-        String source = new String(Files.readAllBytes(Paths.get(file)), StandardCharsets.UTF_8);
-        List<String> statements = new ArrayList<>();
-        // 生产列注释可能含分号，必须按 SQL 引号和注释语法切分，不能用正则或 String.split 截断。
-        ScriptUtils.splitSqlScript(source, ";", statements);
-        return statements;
-    }
-
     /** 测试只装饰已经完成依赖注入的生产者，不替换 KafkaTemplate、DAO、Redis 或消费者。 */
     @TestConfiguration
     public static class CallbackHooks {
@@ -558,13 +519,13 @@ public class MqMiddlewareE2eManualIT {
         }
 
         @Override
-        public ListenableFuture<SendResult<String, Object>> sendStrategyAwardStock(AwardStockSettlementVO stock) {
-            return capture(STOCK_TOPIC, stock.getOrderId(), delegate.sendStrategyAwardStock(stock));
+        public ListenableFuture<SendResult<String, Object>> sendStockSettlement(AwardStockSettlementVO stock) {
+            return capture(STOCK_TOPIC, stock.getOrderId(), delegate.sendStockSettlement(stock));
         }
 
         @Override
-        public ListenableFuture<SendResult<String, Object>> sendLotteryInvoice(InvoiceVO invoice) {
-            return capture(INVOICE_TOPIC, invoice.getOrderId(), delegate.sendLotteryInvoice(invoice));
+        public ListenableFuture<SendResult<String, Object>> sendAwardFulfillment(AwardFulfillmentEvent invoice) {
+            return capture(INVOICE_TOPIC, invoice.getOrderId(), delegate.sendAwardFulfillment(invoice));
         }
 
         private ListenableFuture<SendResult<String, Object>> capture(String topic, Long orderId,

@@ -3,10 +3,10 @@ package com.anontokyo.lottery.test.domain;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.activity.model.req.PartakeReq;
 import com.anontokyo.lottery.domain.activity.model.res.PartakeResult;
-import com.anontokyo.lottery.domain.activity.model.vo.UserTakeActivityVO;
+import com.anontokyo.lottery.domain.activity.model.vo.DrawParticipationVO;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
 import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
-import com.anontokyo.lottery.domain.activity.repository.IUserTakeActivityRepository;
+import com.anontokyo.lottery.domain.activity.repository.IDrawParticipationRepository;
 import com.anontokyo.lottery.domain.activity.service.partake.impl.ActivityPartakeImpl;
 import com.anontokyo.lottery.domain.support.ids.IdGenerator;
 import org.junit.Before;
@@ -18,16 +18,16 @@ import static org.mockito.Mockito.*;
 
 /** 领域复用规则：缓存存在与否都不能改变请求归属。 */
 public class PartakeRequestOwnershipTest {
-    private IUserTakeActivityRepository repository;
+    private IDrawParticipationRepository repository;
     private IActivityRepository activities;
     private ActivityPartakeImpl partake;
 
     @Before
     public void setUp() {
-        repository = mock(IUserTakeActivityRepository.class);
+        repository = mock(IDrawParticipationRepository.class);
         activities = mock(IActivityRepository.class);
         partake = new ActivityPartakeImpl();
-        ReflectionTestUtils.setField(partake, "userTakeActivityRepository", repository);
+        ReflectionTestUtils.setField(partake, "drawParticipationRepository", repository);
         ReflectionTestUtils.setField(partake, "activityRepository", activities);
     }
 
@@ -60,7 +60,7 @@ public class PartakeRequestOwnershipTest {
 
     @Test
     public void databaseFailureMustNotCreateParticipation() {
-        when(repository.queryNoConsumedTakeActivityOrder(1L, "u1"))
+        when(repository.queryUnfinishedParticipation(1L, "u1"))
                 .thenThrow(new IllegalStateException("database unavailable"));
         try {
             partake.doPartake(new PartakeReq("u1", 1L, "B"));
@@ -79,7 +79,7 @@ public class PartakeRequestOwnershipTest {
         PartakeResult result = partake.doPartake(new PartakeReq("u1", 1L, "A"));
         assertEquals(Constants.ResponseCode.SUCCESS.getCode(), result.getCode());
         assertEquals(Long.valueOf(9), result.getTakeId());
-        assertEquals(Long.valueOf(8), result.getStrategyId());
+        assertEquals(Long.valueOf(8), result.getDrawConfigId());
         verify(activities).queryActivityBill(any());
         verifyNoMoreInteractions(activities);
     }
@@ -112,7 +112,7 @@ public class PartakeRequestOwnershipTest {
         ActivityBillVO bill = new ActivityBillVO();
         bill.setuId("u1");
         bill.setActivityId(1L);
-        bill.setStrategyId(8L);
+        bill.setDrawConfigId(8L);
         bill.setTakeCount(3);
         bill.setState(Constants.ActivityState.DOING.getCode());
         bill.setBeginDateTime(new java.util.Date(0));
@@ -123,11 +123,11 @@ public class PartakeRequestOwnershipTest {
     }
 
     private void unfinished(String requestId) {
-        UserTakeActivityVO take = new UserTakeActivityVO();
+        DrawParticipationVO take = new DrawParticipationVO();
         take.setRequestId(requestId);
         take.setTakeId(7L);
-        take.setStrategyId(8L);
+        take.setDrawConfigId(8L);
         take.setState(Constants.TaskState.NO_USED.getCode());
-        when(repository.queryNoConsumedTakeActivityOrder(1L, "u1")).thenReturn(take);
+        when(repository.queryUnfinishedParticipation(1L, "u1")).thenReturn(take);
     }
 }

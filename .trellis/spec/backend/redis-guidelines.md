@@ -6,7 +6,7 @@
 
 ## 库存扣减与预热
 
-活动总库存及对应 Key、预扣、回补和响应码已移除。[StrategyRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/StrategyRepository.java) 只预扣策略奖品库存。奖品 Key 缺失或 Redis 异常抛 IllegalStateException 并保留 cause，不能转换为未中奖并消费 take；只有真实售罄才返回 soldOut。最终奖品库存通过唯一账本在 MySQL 结算。
+活动总库存及对应 Key、预扣、回补和响应码已移除。[DrawConfigRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/DrawConfigRepository.java) 只预扣策略奖品库存。奖品 Key 缺失或 Redis 异常抛 IllegalStateException 并保留 cause，不能转换为未中奖并消费 take；只有真实售罄才返回 soldOut。最终奖品库存通过唯一账本在 MySQL 结算。
 
 [RedisUtil.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/utils/RedisUtil.java) 的 `long deductStock(String key)` 在一个 Lua 脚本中读取、检查存在性及余量，再 DECR：非负结果是剩余量，-2 为售罄，缺失或命令错误抛出。`void recoverStock(String key)` 仅对现存 Key 原子 INCR，缺失时不创建 Key 并抛出；仓储回补日志后继续传播异常。不能恢复为 GET→DECR→负数 INCR 的分步实现，也不能在热路径按 MySQL 剩余值回填，异步结算滞后的值会恢复已预扣库存。真实 Redis 覆盖见 RedisStockFailureManualIT。
 
@@ -22,7 +22,7 @@ Redis 故障使活动保持 PASS。新奖池部分预热成功保留，下一轮
 
 ## 缓存范围与配置
 
-[TwoLevelCacheService.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/cache/TwoLevelCacheService.java) 只给 StrategySnapshot 使用 Caffeine L1 与 Redis L2；活动配置是 Redis 单级。空查询使用短时 __NULL__ 标记。快照 loader 在本实例 synchronized 区域内加载；这不是分布式回源锁。
+[TwoLevelCacheService.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/cache/TwoLevelCacheService.java) 只给 DrawConfigSnapshot 使用 Caffeine L1 与 Redis L2；活动配置是 Redis 单级。空查询使用短时 __NULL__ 标记。快照 loader 在本实例 synchronized 区域内加载；这不是分布式回源锁。
 
 [application.yml](../../../lottery-interfaces/src/main/resources/application.yml) 的实际配置：快照 L1 60 秒、最大 10,000 条，L2 600 秒加 0..120 秒抖动，空值 60 秒；活动 300 秒加 0..60 秒抖动，空值 30 秒；未消费 take 1800 秒。配置以运行时绑定值为准，不照抄 [CacheConfigProperties.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/cache/CacheConfigProperties.java) 中未生效的默认值作为环境事实。
 

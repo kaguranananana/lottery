@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import javax.annotation.Resource;
 
 /**
- * 并发防重入锁（性能控制，不是业务幂等的事实来源——幂等由 user_take_activity.uk_request_id 兜底）。
+ * 并发防重入锁（性能控制，不是业务幂等的事实来源——幂等由 draw_participation.uk_request_id 兜底）。
  */
 @Component
 public class RedisActivityDrawProcessGuard implements IActivityDrawProcessGuard {

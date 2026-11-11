@@ -13,8 +13,6 @@ public class ActivityBillVO {
 
     /** 活动ID */
     private Long activityId;
-    /** 活动名称 */
-    private String activityName;
     /** 开始时间 */
     private Date beginDateTime;
     /** 结束时间 */
@@ -24,8 +22,8 @@ public class ActivityBillVO {
      * Constants.ActivityState
      */
     private Integer state;
-    /** 策略ID */
-    private Long strategyId;
+    /** 抽奖配置ID */
+    private Long drawConfigId;
 
     /** 每人可参与次数 */
     private Integer takeCount;
@@ -47,14 +45,6 @@ public class ActivityBillVO {
 
     public void setActivityId(Long activityId) {
         this.activityId = activityId;
-    }
-
-    public String getActivityName() {
-        return activityName;
-    }
-
-    public void setActivityName(String activityName) {
-        this.activityName = activityName;
     }
 
     public Date getBeginDateTime() {
@@ -82,12 +72,12 @@ public class ActivityBillVO {
         this.state = state;
     }
 
-    public Long getStrategyId() {
-        return strategyId;
+    public Long getDrawConfigId() {
+        return drawConfigId;
     }
 
-    public void setStrategyId(Long strategyId) {
-        this.strategyId = strategyId;
+    public void setDrawConfigId(Long drawConfigId) {
+        this.drawConfigId = drawConfigId;
     }
 
     public Integer getTakeCount() {
@@ -112,7 +102,6 @@ public class ActivityBillVO {
         return "ActivityBillVO{" +
                 "uId='" + uId + '\'' +
                 ", activityId=" + activityId +
-                ", activityName='" + activityName + '\'' +
                 ", beginDateTime=" + beginDateTime +
                 ", endDateTime=" + endDateTime +
                 ", state=" + state +

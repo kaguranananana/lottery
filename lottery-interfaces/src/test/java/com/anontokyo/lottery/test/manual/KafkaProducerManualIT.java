@@ -2,7 +2,7 @@ package com.anontokyo.lottery.test.manual;
 
 import com.anontokyo.lottery.application.mq.producer.KafkaProducer;
 import com.anontokyo.lottery.common.Constants;
-import com.anontokyo.lottery.domain.award.model.vo.InvoiceVO;
+import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.slf4j.Logger;
@@ -24,7 +24,7 @@ public class KafkaProducerManualIT {
     @Test
     public void test_send() throws InterruptedException {
 
-        InvoiceVO invoice = new InvoiceVO();
+        AwardFulfillmentEvent invoice = new AwardFulfillmentEvent();
         invoice.setuId("fustack");
         invoice.setOrderId(1444540456057864192L);
         invoice.setAwardId("3");
@@ -34,7 +34,7 @@ public class KafkaProducerManualIT {
         invoice.setShippingAddress(null);
         invoice.setExtInfo(null);
 
-        kafkaProducer.sendLotteryInvoice(invoice);
+        kafkaProducer.sendAwardFulfillment(invoice);
 
         // 等待消息发送完成
         Thread.sleep(2000);

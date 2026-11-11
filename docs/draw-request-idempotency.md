@@ -1,5 +1,7 @@
 # 抽奖请求幂等与未完成请求恢复
 
+下文记录 V3 的原始表名和验证。当前物理表、完整 Schema 和部署顺序见 [V5 升级说明](draw-schema-refactor.md)。
+
 ## 接口契约
 
 `POST /api/v1/draw` 请求结构保持不变：

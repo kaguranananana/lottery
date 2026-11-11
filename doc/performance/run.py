@@ -32,12 +32,12 @@ def redis(*args):
     return command(['docker','exec','lottery-perf-redis-1','redis-cli','--raw',*args])
 
 def orders_union(id):
-    return ' UNION ALL '.join(f'SELECT u_id,activity_id,order_id,take_id,award_id,stock_mq_state,mq_state,grant_state,UNIX_TIMESTAMP(update_time)*1000 AS done_ms FROM lottery_{db:02d}.user_strategy_export_{tb:03d} WHERE activity_id={id}' for db in (1,2) for tb in range(4))
+    return ' UNION ALL '.join(f'SELECT u_id,activity_id,order_id,take_id,award_id,stock_settlement_event_status,fulfillment_event_status,award_fulfillment_status,UNIX_TIMESTAMP(update_time)*1000 AS done_ms FROM lottery_{db:02d}.draw_order_{tb:03d} WHERE activity_id={id}' for db in (1,2) for tb in range(4))
 
 def snapshot(id):
     # 各表用真实物理名审计，不通过路由器执行跨分片聚合业务查询。
     union=orders_union(id)
-    query=f"SELECT COUNT(*),COALESCE(SUM(stock_mq_state<>1),0),COALESCE(SUM(mq_state<>1 OR grant_state<>1),0),COALESCE(SUM(stock_mq_state=4),0) FROM ({union}) o;"
+    query=f"SELECT COUNT(*),COALESCE(SUM(stock_settlement_event_status<>1),0),COALESCE(SUM(fulfillment_event_status<>1 OR award_fulfillment_status<>1),0),COALESCE(SUM(stock_settlement_event_status=4),0) FROM ({union}) o;"
     rows=sql(query).strip().split('\t')
     return dict(zip(('orders','stockPending','grantPending','blocked'),map(int,rows)))
 
@@ -45,16 +45,16 @@ def audit(id, directory):
     # 导出关联ID，随后逐项与所有 HTTP 样本核对，不能只比较总量。
     data=sql(orders_union(id)+';')
     (directory/'orders.tsv').write_text('user\tactivity\torder\ttake\taward\tstockState\tmqState\tgrantState\tdoneMs\n'+data)
-    take_union=' UNION ALL '.join(f'SELECT u_id,take_id,CONVERT(request_id USING utf8mb4) AS request_id,state FROM lottery_{db:02d}.user_take_activity WHERE activity_id={id}' for db in (1,2))
+    take_union=' UNION ALL '.join(f'SELECT u_id,take_id,CONVERT(request_id USING utf8mb4) AS request_id,state FROM lottery_{db:02d}.draw_participation WHERE activity_id={id}' for db in (1,2))
     (directory/'takes.tsv').write_text('user\ttake\trequest\tstate\n'+sql(take_union+';'))
-    (directory/'ledger.tsv').write_text('order\tuser\taward\n'+sql(f'SELECT order_id,u_id,award_id FROM lottery.award_stock_settlement WHERE strategy_id={id};'))
+    (directory/'ledger.tsv').write_text('order\tuser\taward\n'+sql(f'SELECT order_id,u_id,award_id FROM lottery.award_stock_settlement WHERE draw_config_id={id};'))
     queries=[
-        ('quota', ' UNION ALL '.join(f'SELECT {db},COUNT(*),COALESCE(SUM(total_count-left_count),0),COALESCE(SUM(left_count<0),0) FROM lottery_{db:02d}.user_take_activity_count WHERE activity_id={id}' for db in (1,2))),
+        ('quota', ' UNION ALL '.join(f'SELECT {db},COUNT(*),COALESCE(SUM(total_count-left_count),0),COALESCE(SUM(left_count<0),0) FROM lottery_{db:02d}.user_activity_quota WHERE activity_id={id}' for db in (1,2))),
         ('takes', f'SELECT COUNT(*),SUM(state=0),COUNT(*)-COUNT(DISTINCT take_id) FROM ({take_union}) t'),
         ('duplicateOrders',f'SELECT COUNT(*)-COUNT(DISTINCT order_id),COUNT(*)-COUNT(DISTINCT take_id) FROM ({orders_union(id)}) o'),
-        ('stock',f'SELECT award_id,award_count,award_surplus_count FROM lottery.strategy_detail WHERE strategy_id={id} ORDER BY award_id'),
-        ('ledger',f'SELECT award_id,COUNT(*) FROM lottery.award_stock_settlement WHERE strategy_id={id} GROUP BY award_id'),
-        ('activity',f'SELECT state,take_count,strategy_id FROM lottery.activity WHERE activity_id={id}'),
+        ('stock',f'SELECT award_id,award_count,award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id={id} ORDER BY award_id'),
+        ('ledger',f'SELECT award_id,COUNT(*) FROM lottery.award_stock_settlement WHERE draw_config_id={id} GROUP BY award_id'),
+        ('activity',f'SELECT state,take_count,draw_config_id FROM lottery.activity WHERE activity_id={id}'),
     ]
     result={name:sql(query+';').strip() for name,query in queries}
     result['pending']=snapshot(id)
@@ -114,7 +114,7 @@ def run(args):
     prefix=args.name.replace('-','')[:12]+'_'
     setup=http('/__perf/setup',dict(id=args.id,stock=args.stock,quota=10,users=args.users,prefix=prefix,awardStock=args.award_stock))
     write(directory/'setup.json',setup)
-    (directory/'initial-stock.tsv').write_text(sql(f'SELECT award_id,award_count,award_surplus_count FROM lottery.strategy_detail WHERE strategy_id={args.id} ORDER BY award_id;'))
+    (directory/'initial-stock.tsv').write_text(sql(f'SELECT award_id,award_count,award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id={args.id} ORDER BY award_id;'))
     write(directory/'initial-redis.json',{'awards':{f'p{args.id}_{i}':redis('GET',f'lottery_strategy_award_stock_count_{args.id}_p{args.id}_{i}').strip() for i in range(5)}})
     write(directory/'parameters.json',vars(args))
     digest(directory/'sql-before.tsv')

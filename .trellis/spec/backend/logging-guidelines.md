@@ -2,9 +2,9 @@
 
 ## 关联业务链路
 
-沿用 SLF4J 参数化日志与现有 LoggerFactory。[LotteryController.java](../../../lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/LotteryController.java) 记录 requestId、userId、activityId；[ActivityProcessImpl.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java) 记录 takeId 复用、订单回放与慢调用；[KafkaProducer.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/producer/KafkaProducer.java)、[LotteryStrategyAwardStockListener.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryStrategyAwardStockListener.java)、[LotteryInvoiceListener.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/LotteryInvoiceListener.java) 用 orderId 关联消息和订单。
+沿用 SLF4J 参数化日志与现有 LoggerFactory。[LotteryController.java](../../../lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/LotteryController.java) 记录 requestId、userId、activityId；[ActivityProcessImpl.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java) 记录 takeId 复用、订单回放与慢调用；[KafkaProducer.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/producer/KafkaProducer.java)、[StockSettlementListener.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/StockSettlementListener.java)、[AwardFulfillmentListener.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/AwardFulfillmentListener.java) 用 orderId 关联消息和订单。
 
-新增抽奖诊断带上相关 requestId、uId、activityId，订单和异步事件带 orderId，库存事件增加 strategyId、awardId 或库存 key。字段足以串联实际处理步骤即可，不引入与定位无关的追踪框架。
+新增抽奖诊断带上相关 requestId、uId、activityId，订单和异步事件带 orderId，库存事件增加 drawConfigId、awardId 或库存 key。字段足以串联实际处理步骤即可，不引入与定位无关的追踪框架。
 
 ## 日志级别与成本
 

@@ -27,25 +27,32 @@ public class DrawOrderVO {
      */
     private Long orderId;
     /**
-     * 策略ID
+     * 抽奖配置ID
      */
-    private Long strategyId;
-    /**
-     * 策略方式（1:单项概率、2:总体概率）
-     */
-    private Integer strategyMode;
+    private Long drawConfigId;
     /**
      * 发放奖品方式（1:即时、2:定时[含活动结束]、3:人工）
      */
     private Integer grantType;
     /**
-     * 发奖时间
+     * 下单时保存的计划发奖时间。
      */
-    private Date grantDate;
+    private Date scheduledAt;
+
+    /** 实际完成时间由发奖 CAS 写入。 */
+    private Date fulfilledAt;
+
+    public Date getFulfilledAt() {
+        return fulfilledAt;
+    }
+
+    public void setFulfilledAt(Date fulfilledAt) {
+        this.fulfilledAt = fulfilledAt;
+    }
     /**
      * 发奖状态
      */
-    private Integer grantState;
+    private Integer awardFulfillmentStatus;
     /**
      * 发奖ID
      */
@@ -63,13 +70,13 @@ public class DrawOrderVO {
      */
     private String awardContent;
     /**
-     * 消息发送状态（0未发送、1发送成功、2发送失败）
+     * 发奖事件状态（0待投递、1消费完成、2投递失败、3已投递）
      */
-    private Integer mqState;
+    private Integer fulfillmentEventStatus;
     /**
-     * Award stock settlement MQ state (0 init, 1 complete, 2 fail).
+     * 库存结算事件状态（0待投递、1结算完成、2投递失败、3已投递、4待对账）。
      */
-    private Integer stockMqState;
+    private Integer stockSettlementEventStatus;
 
     public String getuId() {
         return uId;
@@ -103,20 +110,12 @@ public class DrawOrderVO {
         this.orderId = orderId;
     }
 
-    public Long getStrategyId() {
-        return strategyId;
+    public Long getDrawConfigId() {
+        return drawConfigId;
     }
 
-    public void setStrategyId(Long strategyId) {
-        this.strategyId = strategyId;
-    }
-
-    public Integer getStrategyMode() {
-        return strategyMode;
-    }
-
-    public void setStrategyMode(Integer strategyMode) {
-        this.strategyMode = strategyMode;
+    public void setDrawConfigId(Long drawConfigId) {
+        this.drawConfigId = drawConfigId;
     }
 
     public Integer getGrantType() {
@@ -127,20 +126,20 @@ public class DrawOrderVO {
         this.grantType = grantType;
     }
 
-    public Date getGrantDate() {
-        return grantDate;
+    public Date getScheduledAt() {
+        return scheduledAt;
     }
 
-    public void setGrantDate(Date grantDate) {
-        this.grantDate = grantDate;
+    public void setScheduledAt(Date scheduledAt) {
+        this.scheduledAt = scheduledAt;
     }
 
-    public Integer getGrantState() {
-        return grantState;
+    public Integer getAwardFulfillmentStatus() {
+        return awardFulfillmentStatus;
     }
 
-    public void setGrantState(Integer grantState) {
-        this.grantState = grantState;
+    public void setAwardFulfillmentStatus(Integer awardFulfillmentStatus) {
+        this.awardFulfillmentStatus = awardFulfillmentStatus;
     }
 
     public String getAwardId() {
@@ -175,20 +174,20 @@ public class DrawOrderVO {
         this.awardContent = awardContent;
     }
 
-    public Integer getMqState() {
-        return mqState;
+    public Integer getFulfillmentEventStatus() {
+        return fulfillmentEventStatus;
     }
 
-    public void setMqState(Integer mqState) {
-        this.mqState = mqState;
+    public void setFulfillmentEventStatus(Integer fulfillmentEventStatus) {
+        this.fulfillmentEventStatus = fulfillmentEventStatus;
     }
 
-    public Integer getStockMqState() {
-        return stockMqState;
+    public Integer getStockSettlementEventStatus() {
+        return stockSettlementEventStatus;
     }
 
-    public void setStockMqState(Integer stockMqState) {
-        this.stockMqState = stockMqState;
+    public void setStockSettlementEventStatus(Integer stockSettlementEventStatus) {
+        this.stockSettlementEventStatus = stockSettlementEventStatus;
     }
 
     @Override
@@ -198,17 +197,16 @@ public class DrawOrderVO {
                 ", takeId=" + takeId +
                 ", activityId=" + activityId +
                 ", orderId=" + orderId +
-                ", strategyId=" + strategyId +
-                ", strategyMode=" + strategyMode +
+                ", drawConfigId=" + drawConfigId +
                 ", grantType=" + grantType +
-                ", grantDate=" + grantDate +
-                ", grantState=" + grantState +
+                ", scheduledAt=" + scheduledAt +
+                ", awardFulfillmentStatus=" + awardFulfillmentStatus +
                 ", awardId='" + awardId + '\'' +
                 ", awardType=" + awardType +
                 ", awardName='" + awardName + '\'' +
                 ", awardContent='" + awardContent + '\'' +
-                ", mqState=" + mqState +
-                ", stockMqState=" + stockMqState +
+                ", fulfillmentEventStatus=" + fulfillmentEventStatus +
+                ", stockSettlementEventStatus=" + stockSettlementEventStatus +
                 '}';
     }
 
