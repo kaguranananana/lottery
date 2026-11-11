@@ -35,6 +35,7 @@ public class OutboxDispatcher {
     private final KafkaProducer producer;
     private final ThreadPoolExecutor executor;
     private final Semaphore inFlight;
+    private final Semaphore recoveryInFlight;
     private final int leaseSeconds;
     private final int consumeTimeoutSeconds;
     private final int scanBatchSize;
@@ -45,10 +46,11 @@ public class OutboxDispatcher {
     private final LongAdder scanNanos = new LongAdder();
     private final LongAdder retries = new LongAdder();
     private final LongAdder rejected = new LongAdder();
+    private final LongAdder recoveryThrottled = new LongAdder();
     private final LongAdder sendFailures = new LongAdder();
 
     public OutboxDispatcher(IOrderRepository orders, KafkaProducer producer,
-            @Value("${lottery.outbox.workers:4}") int workers,
+            @Value("${lottery.outbox.workers:6}") int workers,
             @Value("${lottery.outbox.max-in-flight:128}") int maxInFlight,
             @Value("${lottery.outbox.lease-seconds:45}") int leaseSeconds,
             @Value("${lottery.outbox.consume-timeout-seconds:600}") int consumeTimeoutSeconds,
@@ -63,6 +65,8 @@ public class OutboxDispatcher {
         this.scanBatches = scanBatches;
         this.fulfillmentEnabled = fulfillmentEnabled;
         inFlight = new Semaphore(maxInFlight);
+        // 补偿最多占四分之一许可，两个定时任务不能同时填满实时工作队列。
+        recoveryInFlight = new Semaphore(Math.max(1, maxInFlight / 4));
         executor = new ThreadPoolExecutor(workers, workers, 0, TimeUnit.MILLISECONDS,
                 new ArrayBlockingQueue<>(maxInFlight),
                 new org.springframework.scheduling.concurrent.CustomizableThreadFactory("lottery-outbox-"));
@@ -87,8 +91,12 @@ public class OutboxDispatcher {
             return;
         }
         for (int batch = 0; batch < scanBatches; batch++) {
+            int limit = Math.min(scanBatchSize, recoveryInFlight.availablePermits());
+            if (limit == 0) {
+                return;
+            }
             long start = System.nanoTime();
-            List<DrawOrderVO> candidates = orders.scanOutbox(kind, scanBatchSize);
+            List<DrawOrderVO> candidates = orders.scanOutbox(kind, limit);
             scans.increment();
             candidatesRead.add(candidates.size());
             scanNanos.add(System.nanoTime() - start);
@@ -104,7 +112,7 @@ public class OutboxDispatcher {
                     return;
                 }
             }
-            if (candidates.size() < scanBatchSize || !awaitBatch(completed)) {
+            if (candidates.size() < limit || !awaitBatch(completed)) {
                 return;
             }
         }
@@ -136,7 +144,14 @@ public class OutboxDispatcher {
     private boolean offer(OutboxKind kind, long orderId, int attempt, boolean immediate, CountDownLatch batch,
             Supplier<ListenableFuture<SendResult<String, Object>>> send) {
         // 许可覆盖排队、Kafka 在途和结果落库，避免 Broker 停机时在途对象无界增长。
+        if (batch != null && !recoveryInFlight.tryAcquire()) {
+            recoveryThrottled.increment();
+            return false;
+        }
         if (!inFlight.tryAcquire()) {
+            if (batch != null) {
+                recoveryInFlight.release();
+            }
             rejected.increment();
             logger.debug("outbox capacity full, kind:{} orderId:{}", kind, orderId);
             return false;
@@ -206,6 +221,7 @@ public class OutboxDispatcher {
     private void release(CountDownLatch batch) {
         inFlight.release();
         if (batch != null) {
+            recoveryInFlight.release();
             batch.countDown();
         }
     }
@@ -217,6 +233,7 @@ public class OutboxDispatcher {
         counts.put("scanNanos", scanNanos.sum());
         counts.put("retries", retries.sum());
         counts.put("rejected", rejected.sum());
+        counts.put("recoveryThrottled", recoveryThrottled.sum());
         counts.put("sendFailures", sendFailures.sum());
         return counts;
     }
