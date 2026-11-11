@@ -69,21 +69,23 @@ public class MqCallbackStateTest {
     public void compensationUsesScannedGenerationWithoutPerOrderRead() {
         DrawOrderVO candidate = order(0, 0, 0);
         candidate.setStockAttempt(2);
-        when(orders.scanOutbox(OutboxKind.STOCK, 100)).thenReturn(Collections.singletonList(candidate));
+        when(orders.scanOutbox(OutboxKind.STOCK, 1)).thenReturn(Collections.singletonList(candidate));
         when(orders.claimOutbox(OutboxKind.STOCK, 1L, 2, false, 45)).thenReturn(true);
         SettableListenableFuture<SendResult<String, Object>> future = new SettableListenableFuture<>();
         when(producer.sendStockSettlement(any())).thenReturn(future);
-        outbox.recover(OutboxKind.STOCK);
+        java.util.concurrent.CompletableFuture<Void> scan = java.util.concurrent.CompletableFuture.runAsync(
+                () -> outbox.recover(OutboxKind.STOCK));
         verify(producer, timeout(2000)).sendStockSettlement(any());
         verify(orders, never()).findOrder(anyString(), anyLong());
         future.setException(new IllegalStateException("Kafka unavailable"));
         verify(orders, timeout(2000)).finishOutbox(OutboxKind.STOCK, 1L, 3, false, 20);
+        scan.join();
     }
 
     @Test
     public void fulfillmentRecoveryUsesSameClaimAndResultPath() {
         DrawOrderVO candidate = order(1, 0, 2);
-        when(orders.scanOutbox(OutboxKind.FULFILLMENT, 100)).thenReturn(Collections.singletonList(candidate));
+        when(orders.scanOutbox(OutboxKind.FULFILLMENT, 1)).thenReturn(Collections.singletonList(candidate));
         when(orders.claimOutbox(OutboxKind.FULFILLMENT, 1L, 0, false, 45)).thenReturn(true);
         SettableListenableFuture<SendResult<String, Object>> future = new SettableListenableFuture<>();
         future.set(null);

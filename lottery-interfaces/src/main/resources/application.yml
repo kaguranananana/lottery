@@ -88,7 +88,7 @@ lottery:
     stock-delay-ms: 10000
     fulfillment-delay-ms: 10000
   outbox:
-    workers: 4
+    workers: 6
     max-in-flight: 128
     lease-seconds: 45
     consume-timeout-seconds: 600
