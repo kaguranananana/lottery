@@ -12,9 +12,9 @@
 
 [KafkaProducer.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/producer/KafkaProducer.java) 以 orderId 字符串作为消息 key，沿用 lottery_invoice 与 lottery_strategy_award_stock 的消息契约。库存监听器在条件扣减事务中写唯一账本，通过订单 CAS 持久化结算终态和发奖义务后 ack。库存不足进入 BLOCKED 等待对账。发奖监听器按 supportType 选取处理器，当前模拟渠道在同一 SQL 写实际发奖与消息终态，持久化后 ack。消费异常记录并传播。
 
-[LotteryScheduledTasks.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryScheduledTasks.java) 的三个独立固定延迟任务分别扫描到期活动、库存义务与发奖义务。活动预热与状态更新由原生命周期服务执行，库存与发奖复用有界投递池。TX2 提交后才提交实时库存投递，结算完成持久化发奖义务后提交实时发奖。
+[LotteryScheduledTasks.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryScheduledTasks.java) 的三个独立固定延迟任务分别扫描到期活动、库存义务与发奖义务。活动预热与状态更新由原生命周期服务执行，库存与发奖复用有界投递池。TX2 写库存首发代数，提交后提交实时库存投递。库存完成 CAS 写发奖首发代数，只有更新成功的消费者提交实时发奖。首发到期后仍在途时允许补偿重投，消费者依赖原账本和发奖 CAS 幂等。
 
-[DrawOrder_Mapper.xml](../../../lottery-interfaces/src/main/resources/mybatis/mapper/DrawOrder_Mapper.xml) 按 retry_at 索引查询到期义务，领取 CAS 递增事件代数并设置租期，发送回调只更新当前代数和非终态。发送失败退避，发送成功保留 SENT 超时重投。迟到回调不允许覆盖 COMPLETE 或 BLOCKED。SQL 异常向上传播，零行状态 CAS 表示当前条件失效。库存与发奖独立记录时间，避免业务 update_time 改动推迟补偿。历史误写发奖终态在 V7 一次性修复。
+[DrawOrder_Mapper.xml](../../../lottery-interfaces/src/main/resources/mybatis/mapper/DrawOrder_Mapper.xml) 按 retry_at 索引查询到期义务，补偿领取 CAS 递增事件代数并设置租期，发送回调只更新当前代数和非终态。发送失败退避，发送成功保留 SENT 超时重投。迟到回调不允许覆盖 COMPLETE 或 BLOCKED。SQL 异常向上传播，零行状态 CAS 表示当前条件失效。库存与发奖独立记录时间，避免业务 update_time 改动推迟补偿。历史误写发奖终态在 V7 一次性修复。
 
 复用 [MqCallbackStateTest.java](../../../lottery-interfaces/src/test/java/com/anontokyo/lottery/test/mq/MqCallbackStateTest.java) 和 [FulfillmentEventStatusCasManualIT.java](../../../lottery-interfaces/src/test/java/com/anontokyo/lottery/test/manual/FulfillmentEventStatusCasManualIT.java) 验证迟到回调、重试代数与 SQL CAS。真实 Kafka 停机、重复消息和 HTTP 链路由 MqMiddlewareE2eManualIT、FinalBusinessE2eManualIT 验证。投递协议、迁移及人工对账见 [订单 Outbox](../../../docs/outbox-delivery.md)。
 

@@ -61,7 +61,7 @@ public interface IDrawOrderDao {
     List<DrawOrder> scanFulfillmentEventStatus(@Param("limit") int limit);
 
     int claimOutbox(@Param("kind") OutboxKind kind, @Param("orderId") long orderId,
-            @Param("attempt") int attempt, @Param("immediate") boolean immediate,
+            @Param("attempt") int attempt,
             @Param("leaseSeconds") int leaseSeconds);
 
     int finishOutbox(@Param("kind") OutboxKind kind, @Param("orderId") long orderId,

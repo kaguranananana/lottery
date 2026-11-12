@@ -27,8 +27,9 @@ public interface IOrderRepository {
 
     /**
      * 条件推进库存 MQ 状态：发送失败不覆盖 SENT，所有发送回调不覆盖 COMPLETE。
+     * @return true 表示本次推进状态，库存完成时同时领取首发发奖义务
      */
-    void updateStockSettlementEventStatus(String uId, Long orderId, Integer stockSettlementEventStatus);
+    boolean updateStockSettlementEventStatus(String uId, Long orderId, Integer stockSettlementEventStatus);
 
     /** 库存条件扣减失败：INIT/FAIL/SENT 转 BLOCKED 等待对账；持久化失败抛出，COMPLETE 不回退。 */
     void markStockSettlementFailed(String uId, Long orderId);
@@ -39,7 +40,7 @@ public interface IOrderRepository {
     List<DrawOrderVO> scanOutbox(OutboxKind kind, int limit);
 
     /** CAS 推进投递代数，并设置可恢复的发送租期。 */
-    boolean claimOutbox(OutboxKind kind, long orderId, int attempt, boolean immediate, int leaseSeconds);
+    boolean claimOutbox(OutboxKind kind, long orderId, int attempt, int leaseSeconds);
 
     /** 只允许当前代数的回调更新下次重试时间。 */
     void finishOutbox(OutboxKind kind, long orderId, int attempt, boolean sent, int delaySeconds);

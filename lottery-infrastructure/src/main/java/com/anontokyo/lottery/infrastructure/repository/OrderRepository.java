@@ -117,12 +117,12 @@ public class OrderRepository implements IOrderRepository {
     }
 
     @Override
-    public void updateStockSettlementEventStatus(String uId, Long orderId, Integer stockSettlementEventStatus) {
+    public boolean updateStockSettlementEventStatus(String uId, Long orderId, Integer stockSettlementEventStatus) {
         DrawOrder drawOrderRow = new DrawOrder();
         drawOrderRow.setuId(uId);
         drawOrderRow.setOrderId(orderId);
         drawOrderRow.setStockSettlementEventStatus(stockSettlementEventStatus);
-        drawOrderDao.updateStockSettlementEventStatus(drawOrderRow);
+        return drawOrderDao.updateStockSettlementEventStatus(drawOrderRow) == 1;
     }
 
     @Override
@@ -159,8 +159,8 @@ public class OrderRepository implements IOrderRepository {
     }
 
     @Override
-    public boolean claimOutbox(OutboxKind kind, long orderId, int attempt, boolean immediate, int leaseSeconds) {
-        return drawOrderDao.claimOutbox(kind, orderId, attempt, immediate, leaseSeconds) == 1;
+    public boolean claimOutbox(OutboxKind kind, long orderId, int attempt, int leaseSeconds) {
+        return drawOrderDao.claimOutbox(kind, orderId, attempt, leaseSeconds) == 1;
     }
 
     @Override

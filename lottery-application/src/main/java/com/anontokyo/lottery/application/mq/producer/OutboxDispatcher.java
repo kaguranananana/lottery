@@ -75,13 +75,13 @@ public class OutboxDispatcher {
     @TransactionalEventListener
     public void afterOrderCommit(AwardStockSettlementVO stock) {
         // 提交回调只尝试提交任务，连接仍由原事务归还，实际发送在独立线程。
-        offer(OutboxKind.STOCK, stock.getOrderId(), 0, true, null,
+        offer(OutboxKind.STOCK, stock.getOrderId(), 1, null,
                 () -> producer.sendStockSettlement(stock));
     }
 
-    public void afterStockSettled(AwardFulfillmentEvent award) {
+    public void afterStockSettled(AwardFulfillmentEvent award, int attempt) {
         if (fulfillmentEnabled) {
-            offer(OutboxKind.FULFILLMENT, award.getOrderId(), 0, true, null,
+            offer(OutboxKind.FULFILLMENT, award.getOrderId(), attempt, null,
                     () -> producer.sendAwardFulfillment(award));
         }
     }
@@ -132,16 +132,16 @@ public class OutboxDispatcher {
         if (kind == OutboxKind.STOCK) {
             AwardStockSettlementVO stock = new AwardStockSettlementVO();
             BeanUtils.copyProperties(order, stock);
-            return offer(kind, order.getOrderId(), order.getStockAttempt(), false, completed,
+            return offer(kind, order.getOrderId(), order.getStockAttempt(), completed,
                     () -> producer.sendStockSettlement(stock));
         }
         AwardFulfillmentEvent award = new AwardFulfillmentEvent();
         BeanUtils.copyProperties(order, award);
-        return offer(kind, order.getOrderId(), order.getFulfillmentAttempt(), false, completed,
+        return offer(kind, order.getOrderId(), order.getFulfillmentAttempt(), completed,
                 () -> producer.sendAwardFulfillment(award));
     }
 
-    private boolean offer(OutboxKind kind, long orderId, int attempt, boolean immediate, CountDownLatch batch,
+    private boolean offer(OutboxKind kind, long orderId, int attempt, CountDownLatch batch,
             Supplier<ListenableFuture<SendResult<String, Object>>> send) {
         // 许可覆盖排队、Kafka 在途和结果落库，避免 Broker 停机时在途对象无界增长。
         if (batch != null && !recoveryInFlight.tryAcquire()) {
@@ -157,7 +157,7 @@ public class OutboxDispatcher {
             return false;
         }
         try {
-            executor.execute(() -> dispatch(kind, orderId, attempt, immediate, batch, send));
+            executor.execute(() -> dispatch(kind, orderId, attempt, batch, send));
             return true;
         } catch (RejectedExecutionException e) {
             release(batch);
@@ -166,29 +166,35 @@ public class OutboxDispatcher {
         }
     }
 
-    private void dispatch(OutboxKind kind, long orderId, int attempt, boolean immediate, CountDownLatch batch,
+    private void dispatch(OutboxKind kind, long orderId, int attempt, CountDownLatch batch,
             Supplier<ListenableFuture<SendResult<String, Object>>> send) {
+        // 实时发送使用登记义务时已经持久化的代数。扫描候选可能失效，只允许 CAS 领取成功后发送。
+        if (batch != null && !claimRecovery(kind, orderId, attempt, batch)) {
+            return;
+        }
+        int generation = batch == null ? attempt : attempt + 1;
         try {
-            if (!orders.claimOutbox(kind, orderId, attempt, immediate, leaseSeconds)) {
-                release(batch);
-                return;
-            }
-            if (attempt > 0) {
-                retries.increment();
+            // Kafka 回调线程只交接结果，数据库状态写入继续由有界工作线程处理。
+            send.get().addCallback(result -> enqueueResult(kind, orderId, generation, batch, null),
+                    error -> enqueueResult(kind, orderId, generation, batch, error));
+        } catch (RuntimeException e) {
+            finish(kind, orderId, generation, batch, e);
+        }
+    }
+
+    private boolean claimRecovery(OutboxKind kind, long orderId, int attempt, CountDownLatch batch) {
+        try {
+            if (orders.claimOutbox(kind, orderId, attempt, leaseSeconds)) {
+                if (attempt > 0) {
+                    retries.increment();
+                }
+                return true;
             }
         } catch (RuntimeException e) {
             logger.error("outbox claim failed kind:{} orderId:{}", kind, orderId, e);
-            release(batch);
-            return;
         }
-
-        try {
-            // Kafka 回调线程只交接结果，数据库状态写入继续由有界工作线程处理。
-            send.get().addCallback(result -> enqueueResult(kind, orderId, attempt + 1, batch, null),
-                    error -> enqueueResult(kind, orderId, attempt + 1, batch, error));
-        } catch (RuntimeException e) {
-            finish(kind, orderId, attempt + 1, batch, e);
-        }
+        release(batch);
+        return false;
     }
 
     private void enqueueResult(OutboxKind kind, long orderId, int attempt, CountDownLatch batch, Throwable error) {

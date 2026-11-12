@@ -29,11 +29,13 @@
         INSERT INTO draw_order
         (u_id, activity_id, order_id, take_id, draw_config_id,
          grant_type, scheduled_at, award_fulfillment_status, award_id, award_type,
-         award_name, award_content, fulfillment_event_status, stock_settlement_event_status, stock_retry_at, create_time, update_time)
+         award_name, award_content, fulfillment_event_status, stock_settlement_event_status, stock_attempt, stock_retry_at, create_time, update_time)
         VALUES
         (#{uId},#{activityId},#{orderId},#{takeId},#{drawConfigId},
          #{grantType},#{scheduledAt},#{awardFulfillmentStatus},#{awardId},#{awardType},
          #{awardName},#{awardContent},#{fulfillmentEventStatus},#{stockSettlementEventStatus},
+         <!-- TX2 直接登记库存首发代数，提交后无需再写一次领取。保留原有两秒补偿时间。 -->
+         CASE WHEN #{stockSettlementEventStatus} IN (0,2,3) THEN 1 ELSE 0 END,
          CASE WHEN #{stockSettlementEventStatus} IN (0,2,3) THEN TIMESTAMPADD(SECOND,2,NOW(3)) ELSE NULL END, NOW(3), NOW())
     </insert>
     <update id="markUserAwardGranted">
@@ -58,6 +60,9 @@
         UPDATE draw_order SET stock_settlement_event_status = #{stockSettlementEventStatus}, update_time = NOW(),
             stock_retry_at = CASE WHEN #{stockSettlementEventStatus}=1 THEN NULL ELSE stock_retry_at END,
             stock_settled_at = CASE WHEN #{stockSettlementEventStatus}=1 THEN NOW(3) ELSE stock_settled_at END,
+            <!-- 首次完成库存时一起领取发奖首发，重复消费无法通过下方的状态 CAS。 -->
+            fulfillment_attempt = CASE WHEN #{stockSettlementEventStatus}=1 AND COALESCE(award_fulfillment_status,0) != 1
+                THEN fulfillment_attempt+1 ELSE fulfillment_attempt END,
             fulfillment_retry_at = CASE WHEN #{stockSettlementEventStatus}=1 AND COALESCE(award_fulfillment_status,0) != 1
                 THEN TIMESTAMPADD(SECOND,2,NOW(3)) ELSE fulfillment_retry_at END
         WHERE u_id = #{uId} AND order_id = #{orderId}
@@ -88,7 +93,8 @@
             resultMap="drawOrderRowMap">
         SELECT id, u_id, activity_id, order_id, take_id, draw_config_id,
                grant_type, scheduled_at, fulfilled_at, award_fulfillment_status, award_id, award_type,
-               award_name, award_content, fulfillment_event_status, stock_settlement_event_status, create_time, update_time
+               award_name, award_content, fulfillment_event_status, stock_settlement_event_status,
+               fulfillment_attempt, create_time, update_time
         FROM draw_order
         WHERE u_id = #{uId}
           AND order_id = #{orderId}
@@ -155,10 +161,7 @@
             <include refid="retryAt"/> = TIMESTAMPADD(SECOND,#{leaseSeconds},NOW(3))
         WHERE order_id = #{orderId} AND <include refid="attempt"/> = #{attempt}
           AND <include refid="canDispatch"/>
-        <choose>
-            <when test="immediate">AND #{attempt} = 0 AND <include refid="retryAt"/> IS NOT NULL</when>
-            <otherwise>AND <include refid="retryAt"/> &lt;= NOW(3)</otherwise>
-        </choose>
+          AND <include refid="retryAt"/> &lt;= NOW(3)
     </update>
 
     <update id="finishOutbox">

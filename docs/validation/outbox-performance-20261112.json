@@ -1,0 +1,2219 @@
+{
+  "baselineCommit": "ec3db40",
+  "currentRuns": {
+    "baselineNormal40": {
+      "parameters": {
+        "target_rps": 40.0,
+        "threads": 20,
+        "duration": 30,
+        "warmup": 8,
+        "ramp": 5,
+        "users": 4000
+      },
+      "windowSeconds": 22.0,
+      "offeredRps": 40.0,
+      "newDrawRps": 40.0,
+      "settlementRps": 40.0,
+      "fulfillmentRps": 40.0,
+      "ordersTotal": 1209,
+      "httpCodes": {
+        "200": 880
+      },
+      "businessCodes": {
+        "0000": 880
+      },
+      "systemErrorRate": 0.0,
+      "p95Ms": 12,
+      "p99Ms": 16,
+      "completedLatencyMs": {
+        "0.5": 8,
+        "0.95": 12,
+        "0.99": 16
+      },
+      "mysqlCpuMean": 15.314285714285715,
+      "slowQueries": 0,
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 2,
+          "maxWaiting": 0,
+          "acquireMeanMs": 0.00021333333333333333,
+          "timeouts": 0
+        }
+      },
+      "outbox": {
+        "scans": 8,
+        "candidates": 0,
+        "scanNanos": 6005791,
+        "retries": 0,
+        "rejected": 0,
+        "recoveryThrottled": 0,
+        "sendFailures": 0
+      },
+      "peakSampledKafkaLag": {
+        "lottery-perf-stock": 1,
+        "lottery-perf-invoice": 0
+      },
+      "drainSeconds": 0.29276013374328613,
+      "audit": "PASS",
+      "stockP95P99UpperMs": [
+        9,
+        15
+      ],
+      "fulfillmentP95P99UpperMs": [
+        14,
+        26
+      ],
+      "historicalCompletionP95P99UpperMs": [
+        946,
+        991
+      ],
+      "swapSampledWindowMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "swapFullObservationMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "pendingAtHttpEnd": {
+        "orders": 1209,
+        "stockPending": 0,
+        "grantPending": 0,
+        "blocked": 0,
+        "stockDue": 0,
+        "fulfillmentDue": 0
+      },
+      "mysqlDelta": {
+        "Aborted_connects": 0,
+        "Connections": 49,
+        "Innodb_buffer_pool_read_requests": 686691,
+        "Innodb_buffer_pool_reads": 4197,
+        "Innodb_row_lock_time": 337,
+        "Innodb_row_lock_waits": 974,
+        "Innodb_rows_deleted": 0,
+        "Innodb_rows_inserted": 3627,
+        "Innodb_rows_read": 5968204,
+        "Innodb_rows_updated": 10880,
+        "Questions": 31583,
+        "Slow_queries": 13,
+        "Threads_connected": 3,
+        "Threads_running": 0
+      },
+      "lockIndexSamples": {},
+      "dbAndKafkaStages": {},
+      "explicitCommit": [
+        {
+          "schema": "lottery",
+          "sql": "COMMIT",
+          "count": 3627,
+          "elapsedSeconds": 2.8391,
+          "avgMs": 0.7828,
+          "lockSeconds": 0.0,
+          "examined": 0,
+          "changed": 0
+        }
+      ],
+      "outboxClaimSql": [
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `stock_attempt` = `stock_attempt` + ? , `stock_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `stock_attempt` = ? AND `stock_settlement_event_status` IN (...) AND ? = ? AND `stock_retry_at` IS NOT NULL",
+          "count": 1209,
+          "elapsedSeconds": 1.1681,
+          "avgMs": 0.9662,
+          "lockSeconds": 0.0007,
+          "examined": 1209,
+          "changed": 1209
+        },
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `fulfillment_attempt` = `fulfillment_attempt` + ? , `fulfillment_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `fulfillment_attempt` = ? AND `fulfillment_event_status` IN (...) AND `stock_settlement_event_status` = ? AND COALESCE ( `award_fulfillment_status` , ? ) != ? AND ? = ? AND `fulfillment_retry_at` IS NOT NULL",
+          "count": 1209,
+          "elapsedSeconds": 1.144,
+          "avgMs": 0.9462,
+          "lockSeconds": 0.0006,
+          "examined": 1209,
+          "changed": 1209
+        }
+      ],
+      "outboxResultSql": [
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `stock_settlement_event_status` = CASE WHEN ? THEN ? WHEN `stock_settlement_event_status` IN (...) THEN ? ELSE `stock_settlement_event_status` END , `stock_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `stock_attempt` = ? AND `stock_settlement_event_status` IN (...)",
+          "count": 1209,
+          "elapsedSeconds": 1.2744,
+          "avgMs": 1.0541,
+          "lockSeconds": 0.0011,
+          "examined": 1209,
+          "changed": 1209
+        },
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `fulfillment_event_status` = CASE WHEN ? THEN ? WHEN `fulfillment_event_status` IN (...) THEN ? ELSE `fulfillment_event_status` END , `fulfillment_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `fulfillment_attempt` = ? AND `fulfillment_event_status` IN (...) AND `stock_settlement_event_status` = ? AND COALESCE ( `award_fulfillment_status` , ? ) != ?",
+          "count": 1209,
+          "elapsedSeconds": 1.2282,
+          "avgMs": 1.0159,
+          "lockSeconds": 0.0014,
+          "examined": 1209,
+          "changed": 1208
+        }
+      ],
+      "stability": null
+    },
+    "baselineShort150": {
+      "parameters": {
+        "target_rps": 150.0,
+        "threads": 48,
+        "duration": 35,
+        "warmup": 10,
+        "ramp": 5,
+        "users": 9000
+      },
+      "windowSeconds": 24.972,
+      "offeredRps": 149.92791926958193,
+      "newDrawRps": 150.08809867051096,
+      "settlementRps": 151.68989267980137,
+      "fulfillmentRps": 152.01025148165945,
+      "ordersTotal": 5250,
+      "httpCodes": {
+        "200": 3748
+      },
+      "businessCodes": {
+        "0000": 3748
+      },
+      "systemErrorRate": 0.0,
+      "p95Ms": 24,
+      "p99Ms": 31,
+      "completedLatencyMs": {
+        "0.5": 14,
+        "0.95": 24,
+        "0.99": 31
+      },
+      "mysqlCpuMean": 64.87125,
+      "slowQueries": 0,
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 11,
+          "maxWaiting": 0,
+          "acquireMeanMs": 0.00033938571186153065,
+          "timeouts": 0
+        }
+      },
+      "outbox": {
+        "scans": 8,
+        "candidates": 24,
+        "scanNanos": 7427084,
+        "retries": 0,
+        "rejected": 24,
+        "recoveryThrottled": 0,
+        "sendFailures": 0
+      },
+      "peakSampledKafkaLag": {
+        "lottery-perf-stock": 7,
+        "lottery-perf-invoice": 4
+      },
+      "drainSeconds": 0.23764395713806152,
+      "audit": "PASS",
+      "stockP95P99UpperMs": [
+        116,
+        266
+      ],
+      "fulfillmentP95P99UpperMs": [
+        144,
+        289
+      ],
+      "historicalCompletionP95P99UpperMs": [
+        984,
+        1063
+      ],
+      "swapSampledWindowMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "swapFullObservationMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "pendingAtHttpEnd": {
+        "orders": 5250,
+        "stockPending": 0,
+        "grantPending": 0,
+        "blocked": 0,
+        "stockDue": 0,
+        "fulfillmentDue": 0
+      },
+      "mysqlDelta": {
+        "Aborted_connects": 0,
+        "Connections": 59,
+        "Innodb_buffer_pool_read_requests": 2280757,
+        "Innodb_buffer_pool_reads": 4029,
+        "Innodb_row_lock_time": 16685,
+        "Innodb_row_lock_waits": 7244,
+        "Innodb_rows_deleted": 0,
+        "Innodb_rows_inserted": 15750,
+        "Innodb_rows_read": 4031973,
+        "Innodb_rows_updated": 47130,
+        "Questions": 136673,
+        "Slow_queries": 3,
+        "Threads_connected": 10,
+        "Threads_running": 0
+      },
+      "lockIndexSamples": {
+        "draw_order:uk_order_id": 5,
+        "draw_config_prize:idx_draw_config_award": 1
+      },
+      "dbAndKafkaStages": {},
+      "explicitCommit": [
+        {
+          "schema": "lottery",
+          "sql": "COMMIT",
+          "count": 15647,
+          "elapsedSeconds": 46.7904,
+          "avgMs": 2.9904,
+          "lockSeconds": 0.0,
+          "examined": 0,
+          "changed": 0
+        }
+      ],
+      "outboxClaimSql": [
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `fulfillment_attempt` = `fulfillment_attempt` + ? , `fulfillment_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `fulfillment_attempt` = ? AND `fulfillment_event_status` IN (...) AND `stock_settlement_event_status` = ? AND COALESCE ( `award_fulfillment_status` , ? ) != ? AND ? = ? AND `fulfillment_retry_at` IS NOT NULL",
+          "count": 5235,
+          "elapsedSeconds": 16.9215,
+          "avgMs": 3.2324,
+          "lockSeconds": 0.0044,
+          "examined": 5240,
+          "changed": 5230
+        },
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `stock_attempt` = `stock_attempt` + ? , `stock_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `stock_attempt` = ? AND `stock_settlement_event_status` IN (...) AND ? = ? AND `stock_retry_at` IS NOT NULL",
+          "count": 5224,
+          "elapsedSeconds": 16.4152,
+          "avgMs": 3.1423,
+          "lockSeconds": 0.0045,
+          "examined": 5231,
+          "changed": 5227
+        },
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `stock_attempt` = `stock_attempt` + ? , `stock_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `stock_attempt` = ? AND `stock_settlement_event_status` IN (...) AND `stock_retry_at` <= NOW (?)",
+          "count": 18,
+          "elapsedSeconds": 0.071,
+          "avgMs": 3.9444,
+          "lockSeconds": 0.0,
+          "examined": 18,
+          "changed": 18
+        },
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `fulfillment_attempt` = `fulfillment_attempt` + ? , `fulfillment_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `fulfillment_attempt` = ? AND `fulfillment_event_status` IN (...) AND `stock_settlement_event_status` = ? AND COALESCE ( `award_fulfillment_status` , ? ) != ? AND `fulfillment_retry_at` <= NOW (?)",
+          "count": 6,
+          "elapsedSeconds": 0.0266,
+          "avgMs": 4.4333,
+          "lockSeconds": 0.0,
+          "examined": 6,
+          "changed": 6
+        }
+      ],
+      "outboxResultSql": [
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `stock_settlement_event_status` = CASE WHEN ? THEN ? WHEN `stock_settlement_event_status` IN (...) THEN ? ELSE `stock_settlement_event_status` END , `stock_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `stock_attempt` = ? AND `stock_settlement_event_status` IN (...)",
+          "count": 5232,
+          "elapsedSeconds": 17.4932,
+          "avgMs": 3.3435,
+          "lockSeconds": 0.0052,
+          "examined": 5241,
+          "changed": 5214
+        },
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `fulfillment_event_status` = CASE WHEN ? THEN ? WHEN `fulfillment_event_status` IN (...) THEN ? ELSE `fulfillment_event_status` END , `fulfillment_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `fulfillment_attempt` = ? AND `fulfillment_event_status` IN (...) AND `stock_settlement_event_status` = ? AND COALESCE ( `award_fulfillment_status` , ? ) != ?",
+          "count": 5241,
+          "elapsedSeconds": 17.1035,
+          "avgMs": 3.2634,
+          "lockSeconds": 0.2039,
+          "examined": 5246,
+          "changed": 5120
+        }
+      ],
+      "stability": null
+    },
+    "baselineSustained150": {
+      "parameters": {
+        "target_rps": 150.0,
+        "threads": 48,
+        "duration": 311,
+        "warmup": 10,
+        "ramp": 5,
+        "users": 55000
+      },
+      "windowSeconds": 301.0,
+      "offeredRps": 150.0,
+      "newDrawRps": 149.98671096345515,
+      "settlementRps": 149.45847176079735,
+      "fulfillmentRps": 149.38538205980066,
+      "ordersTotal": 46658,
+      "httpCodes": {
+        "200": 45146
+      },
+      "businessCodes": {
+        "0000": 45146
+      },
+      "systemErrorRate": 0.0,
+      "p95Ms": 73,
+      "p99Ms": 253,
+      "completedLatencyMs": {
+        "0.5": 12,
+        "0.95": 73,
+        "0.99": 253
+      },
+      "mysqlCpuMean": 53.1853,
+      "slowQueries": 4406,
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 48,
+          "maxWaiting": 9,
+          "acquireMeanMs": 0.057713964450979545,
+          "timeouts": 0
+        }
+      },
+      "outbox": {
+        "scans": 86,
+        "candidates": 1167,
+        "scanNanos": 141678039,
+        "retries": 0,
+        "rejected": 1045,
+        "recoveryThrottled": 4,
+        "sendFailures": 0
+      },
+      "peakSampledKafkaLag": {
+        "lottery-perf-stock": 50,
+        "lottery-perf-invoice": 10
+      },
+      "drainSeconds": 15.27709698677063,
+      "audit": "PASS",
+      "stockP95P99UpperMs": [
+        655,
+        18894
+      ],
+      "fulfillmentP95P99UpperMs": [
+        792,
+        19531
+      ],
+      "historicalCompletionP95P99UpperMs": [
+        1285,
+        20080
+      ],
+      "swapSampledWindowMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "swapFullObservationMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "pendingAtHttpEnd": {
+        "orders": 46658,
+        "stockPending": 153,
+        "grantPending": 173,
+        "blocked": 0,
+        "stockDue": 153,
+        "fulfillmentDue": 20
+      },
+      "mysqlDelta": {
+        "Aborted_connects": 0,
+        "Connections": 333,
+        "Innodb_buffer_pool_read_requests": 19586309,
+        "Innodb_buffer_pool_reads": 4267,
+        "Innodb_row_lock_time": 105951,
+        "Innodb_row_lock_waits": 44910,
+        "Innodb_rows_deleted": 0,
+        "Innodb_rows_inserted": 139974,
+        "Innodb_rows_read": 15920121,
+        "Innodb_rows_updated": 415666,
+        "Questions": 1214093,
+        "Slow_queries": 4431,
+        "Threads_connected": 36,
+        "Threads_running": 0
+      },
+      "lockIndexSamples": {
+        "draw_order:uk_order_id": 40,
+        "draw_config_prize:idx_draw_config_award": 5
+      },
+      "dbAndKafkaStages": {
+        "first60MeanMs": {
+          "ack/lottery_strategy_award_stock": 0.867,
+          "ack/lottery_invoice": 0.767,
+          "stage/DrawConfigRepository.settleAwardStock(..)": 3.37,
+          "stage/OrderRepository.saveDrawOrderWithTakeLock(..)": 3.445,
+          "stage/DrawParticipationRepository.takeParticipation(..)": 3.786
+        },
+        "last60MeanMs": {
+          "ack/lottery_strategy_award_stock": 1.182,
+          "ack/lottery_invoice": 1.071,
+          "stage/DrawConfigRepository.settleAwardStock(..)": 10.227,
+          "stage/OrderRepository.saveDrawOrderWithTakeLock(..)": 19.397,
+          "stage/DrawParticipationRepository.takeParticipation(..)": 24.689
+        }
+      },
+      "explicitCommit": [
+        {
+          "schema": "lottery",
+          "sql": "COMMIT",
+          "count": 139538,
+          "elapsedSeconds": 825.9298,
+          "avgMs": 5.919,
+          "lockSeconds": 2.5642,
+          "examined": 0,
+          "changed": 0
+        }
+      ],
+      "outboxClaimSql": [
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `stock_attempt` = `stock_attempt` + ? , `stock_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `stock_attempt` = ? AND `stock_settlement_event_status` IN (...) AND ? = ? AND `stock_retry_at` IS NOT NULL",
+          "count": 45856,
+          "elapsedSeconds": 198.5808,
+          "avgMs": 4.3305,
+          "lockSeconds": 0.4267,
+          "examined": 45862,
+          "changed": 45830
+        },
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `fulfillment_attempt` = `fulfillment_attempt` + ? , `fulfillment_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `fulfillment_attempt` = ? AND `fulfillment_event_status` IN (...) AND `stock_settlement_event_status` = ? AND COALESCE ( `award_fulfillment_status` , ? ) != ? AND ? = ? AND `fulfillment_retry_at` IS NOT NULL",
+          "count": 46372,
+          "elapsedSeconds": 153.4757,
+          "avgMs": 3.3097,
+          "lockSeconds": 0.1199,
+          "examined": 46395,
+          "changed": 46347
+        },
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `stock_attempt` = `stock_attempt` + ? , `stock_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `stock_attempt` = ? AND `stock_settlement_event_status` IN (...) AND `stock_retry_at` <= NOW (?)",
+          "count": 775,
+          "elapsedSeconds": 4.0061,
+          "avgMs": 5.1692,
+          "lockSeconds": 0.0007,
+          "examined": 779,
+          "changed": 767
+        },
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `fulfillment_attempt` = `fulfillment_attempt` + ? , `fulfillment_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `fulfillment_attempt` = ? AND `fulfillment_event_status` IN (...) AND `stock_settlement_event_status` = ? AND COALESCE ( `award_fulfillment_status` , ? ) != ? AND `fulfillment_retry_at` <= NOW (?)",
+          "count": 252,
+          "elapsedSeconds": 2.6268,
+          "avgMs": 10.4238,
+          "lockSeconds": 0.0002,
+          "examined": 253,
+          "changed": 249
+        }
+      ],
+      "outboxResultSql": [
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `stock_settlement_event_status` = CASE WHEN ? THEN ? WHEN `stock_settlement_event_status` IN (...) THEN ? ELSE `stock_settlement_event_status` END , `stock_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `stock_attempt` = ? AND `stock_settlement_event_status` IN (...)",
+          "count": 46617,
+          "elapsedSeconds": 167.8632,
+          "avgMs": 3.6009,
+          "lockSeconds": 1.0609,
+          "examined": 46639,
+          "changed": 46090
+        },
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `fulfillment_event_status` = CASE WHEN ? THEN ? WHEN `fulfillment_event_status` IN (...) THEN ? ELSE `fulfillment_event_status` END , `fulfillment_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `fulfillment_attempt` = ? AND `fulfillment_event_status` IN (...) AND `stock_settlement_event_status` = ? AND COALESCE ( `award_fulfillment_status` , ? ) != ?",
+          "count": 46616,
+          "elapsedSeconds": 122.5063,
+          "avgMs": 2.628,
+          "lockSeconds": 2.6156,
+          "examined": 46641,
+          "changed": 42841
+        }
+      ],
+      "stability": {
+        "stable": false,
+        "checks": {
+          "至少180秒测量": true,
+          "达到目标到达速率95%": true,
+          "HTTP与系统错误率低于0.1%": true,
+          "HTTP P99低于1秒": true,
+          "积压峰值不超过10秒请求量": true,
+          "首尾平均积压增长不超过1秒请求量": false,
+          "异步P95保守上界低于10秒": true,
+          "入口结束后15秒内收敛": false,
+          "业务审计通过": true
+        },
+        "measuredRps": 149.98671096345515,
+        "targetRps": 150.0,
+        "backlogPeak": 310,
+        "backlogMeanGrowth": 215.57142857142856,
+        "firstMeanBacklog": 4.857142857142857,
+        "lastMeanBacklog": 220.42857142857142
+      }
+    },
+    "optimizedNormal40": {
+      "parameters": {
+        "target_rps": 40.0,
+        "threads": 20,
+        "duration": 30,
+        "warmup": 8,
+        "ramp": 5,
+        "users": 4000
+      },
+      "windowSeconds": 22.0,
+      "offeredRps": 40.0,
+      "newDrawRps": 40.04545454545455,
+      "settlementRps": 40.0,
+      "fulfillmentRps": 40.0,
+      "ordersTotal": 1208,
+      "httpCodes": {
+        "200": 881
+      },
+      "businessCodes": {
+        "0000": 881
+      },
+      "systemErrorRate": 0.0,
+      "p95Ms": 14,
+      "p99Ms": 17,
+      "completedLatencyMs": {
+        "0.5": 8,
+        "0.95": 14,
+        "0.99": 17
+      },
+      "mysqlCpuMean": 13.77125,
+      "slowQueries": 0,
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 1,
+          "maxWaiting": 0,
+          "acquireMeanMs": 0.000972972972972973,
+          "timeouts": 0
+        }
+      },
+      "outbox": {
+        "scans": 8,
+        "candidates": 0,
+        "scanNanos": 4912000,
+        "retries": 0,
+        "rejected": 0,
+        "recoveryThrottled": 0,
+        "sendFailures": 0
+      },
+      "peakSampledKafkaLag": {
+        "lottery-perf-stock": 0,
+        "lottery-perf-invoice": 0
+      },
+      "drainSeconds": 0.34113526344299316,
+      "audit": "PASS",
+      "stockP95P99UpperMs": [
+        10,
+        42
+      ],
+      "fulfillmentP95P99UpperMs": [
+        16,
+        63
+      ],
+      "historicalCompletionP95P99UpperMs": [
+        955,
+        1003
+      ],
+      "swapSampledWindowMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "swapFullObservationMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "pendingAtHttpEnd": {
+        "orders": 1208,
+        "stockPending": 0,
+        "grantPending": 0,
+        "blocked": 0,
+        "stockDue": 0,
+        "fulfillmentDue": 0
+      },
+      "mysqlDelta": {
+        "Aborted_connects": 0,
+        "Connections": 51,
+        "Innodb_buffer_pool_read_requests": 525032,
+        "Innodb_buffer_pool_reads": 3950,
+        "Innodb_row_lock_time": 313,
+        "Innodb_row_lock_waits": 848,
+        "Innodb_rows_deleted": 0,
+        "Innodb_rows_inserted": 3624,
+        "Innodb_rows_read": 4709443,
+        "Innodb_rows_updated": 8449,
+        "Questions": 29145,
+        "Slow_queries": 4,
+        "Threads_connected": 5,
+        "Threads_running": 0
+      },
+      "lockIndexSamples": {},
+      "dbAndKafkaStages": {},
+      "explicitCommit": [
+        {
+          "schema": "lottery",
+          "sql": "COMMIT",
+          "count": 3623,
+          "elapsedSeconds": 3.1294,
+          "avgMs": 0.8638,
+          "lockSeconds": 0.0,
+          "examined": 0,
+          "changed": 0
+        }
+      ],
+      "outboxClaimSql": [],
+      "outboxResultSql": [
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `stock_settlement_event_status` = CASE WHEN ? THEN ? WHEN `stock_settlement_event_status` IN (...) THEN ? ELSE `stock_settlement_event_status` END , `stock_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `stock_attempt` = ? AND `stock_settlement_event_status` IN (...)",
+          "count": 1207,
+          "elapsedSeconds": 1.695,
+          "avgMs": 1.4043,
+          "lockSeconds": 0.0016,
+          "examined": 1208,
+          "changed": 1205
+        },
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `fulfillment_event_status` = CASE WHEN ? THEN ? WHEN `fulfillment_event_status` IN (...) THEN ? ELSE `fulfillment_event_status` END , `fulfillment_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `fulfillment_attempt` = ? AND `fulfillment_event_status` IN (...) AND `stock_settlement_event_status` = ? AND COALESCE ( `award_fulfillment_status` , ? ) != ?",
+          "count": 1208,
+          "elapsedSeconds": 1.5254,
+          "avgMs": 1.2627,
+          "lockSeconds": 0.0024,
+          "examined": 1208,
+          "changed": 1204
+        }
+      ],
+      "stability": null
+    },
+    "optimizedNormal40Recheck": {
+      "parameters": {
+        "target_rps": 40.0,
+        "threads": 20,
+        "duration": 30,
+        "warmup": 8,
+        "ramp": 5,
+        "users": 4000
+      },
+      "windowSeconds": 22.0,
+      "offeredRps": 40.0,
+      "newDrawRps": 40.0,
+      "settlementRps": 40.0,
+      "fulfillmentRps": 40.0,
+      "ordersTotal": 1208,
+      "httpCodes": {
+        "200": 880
+      },
+      "businessCodes": {
+        "0000": 880
+      },
+      "systemErrorRate": 0.0,
+      "p95Ms": 13,
+      "p99Ms": 17,
+      "completedLatencyMs": {
+        "0.5": 8,
+        "0.95": 13,
+        "0.99": 17
+      },
+      "mysqlCpuMean": 13.698571428571428,
+      "slowQueries": 1,
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 2,
+          "maxWaiting": 0,
+          "acquireMeanMs": 0.0003781194857574994,
+          "timeouts": 0
+        }
+      },
+      "outbox": {
+        "scans": 8,
+        "candidates": 0,
+        "scanNanos": 5469416,
+        "retries": 0,
+        "rejected": 0,
+        "recoveryThrottled": 0,
+        "sendFailures": 0
+      },
+      "peakSampledKafkaLag": {
+        "lottery-perf-stock": 0,
+        "lottery-perf-invoice": 0
+      },
+      "drainSeconds": 0.27150797843933105,
+      "audit": "PASS",
+      "stockP95P99UpperMs": [
+        8,
+        12
+      ],
+      "fulfillmentP95P99UpperMs": [
+        11,
+        18
+      ],
+      "historicalCompletionP95P99UpperMs": [
+        951,
+        998
+      ],
+      "swapSampledWindowMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "swapFullObservationMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "pendingAtHttpEnd": {
+        "orders": 1208,
+        "stockPending": 0,
+        "grantPending": 0,
+        "blocked": 0,
+        "stockDue": 0,
+        "fulfillmentDue": 0
+      },
+      "mysqlDelta": {
+        "Aborted_connects": 0,
+        "Connections": 50,
+        "Innodb_buffer_pool_read_requests": 574942,
+        "Innodb_buffer_pool_reads": 4683,
+        "Innodb_row_lock_time": 385,
+        "Innodb_row_lock_waits": 1042,
+        "Innodb_rows_deleted": 0,
+        "Innodb_rows_inserted": 3624,
+        "Innodb_rows_read": 5986813,
+        "Innodb_rows_updated": 8456,
+        "Questions": 29143,
+        "Slow_queries": 14,
+        "Threads_connected": 4,
+        "Threads_running": 0
+      },
+      "lockIndexSamples": {},
+      "dbAndKafkaStages": {},
+      "explicitCommit": [
+        {
+          "schema": "lottery",
+          "sql": "COMMIT",
+          "count": 3623,
+          "elapsedSeconds": 2.9373,
+          "avgMs": 0.8107,
+          "lockSeconds": 0.0,
+          "examined": 0,
+          "changed": 0
+        }
+      ],
+      "outboxClaimSql": [],
+      "outboxResultSql": [
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `stock_settlement_event_status` = CASE WHEN ? THEN ? WHEN `stock_settlement_event_status` IN (...) THEN ? ELSE `stock_settlement_event_status` END , `stock_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `stock_attempt` = ? AND `stock_settlement_event_status` IN (...)",
+          "count": 1208,
+          "elapsedSeconds": 1.5077,
+          "avgMs": 1.2481,
+          "lockSeconds": 0.0013,
+          "examined": 1208,
+          "changed": 1208
+        },
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `fulfillment_event_status` = CASE WHEN ? THEN ? WHEN `fulfillment_event_status` IN (...) THEN ? ELSE `fulfillment_event_status` END , `fulfillment_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `fulfillment_attempt` = ? AND `fulfillment_event_status` IN (...) AND `stock_settlement_event_status` = ? AND COALESCE ( `award_fulfillment_status` , ? ) != ?",
+          "count": 1208,
+          "elapsedSeconds": 1.2505,
+          "avgMs": 1.0352,
+          "lockSeconds": 0.0009,
+          "examined": 1208,
+          "changed": 1208
+        }
+      ],
+      "stability": null
+    },
+    "optimizedBurst350": {
+      "parameters": {
+        "target_rps": 350.0,
+        "threads": 72,
+        "duration": 30,
+        "warmup": 8,
+        "ramp": 1,
+        "users": 18000
+      },
+      "windowSeconds": 21.905,
+      "offeredRps": 349.8288062086281,
+      "newDrawRps": 100.02282583884957,
+      "settlementRps": 100.06847751654873,
+      "fulfillmentRps": 100.06847751654873,
+      "ordersTotal": 3020,
+      "httpCodes": {
+        "429": 5474,
+        "200": 2191
+      },
+      "businessCodes": {
+        "L001": 5474,
+        "0000": 2191
+      },
+      "systemErrorRate": 0.0,
+      "p95Ms": 15,
+      "p99Ms": 21,
+      "completedLatencyMs": {
+        "0.5": 9,
+        "0.95": 20,
+        "0.99": 26
+      },
+      "mysqlCpuMean": 41.221428571428575,
+      "slowQueries": 0,
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 4,
+          "maxWaiting": 0,
+          "acquireMeanMs": 0.0020151133501259445,
+          "timeouts": 0
+        }
+      },
+      "outbox": {
+        "scans": 8,
+        "candidates": 0,
+        "scanNanos": 8877417,
+        "retries": 0,
+        "rejected": 0,
+        "recoveryThrottled": 0,
+        "sendFailures": 0
+      },
+      "peakSampledKafkaLag": {
+        "lottery-perf-stock": 2,
+        "lottery-perf-invoice": 2
+      },
+      "drainSeconds": 0.22235417366027832,
+      "audit": "PASS",
+      "stockP95P99UpperMs": [
+        26,
+        260
+      ],
+      "fulfillmentP95P99UpperMs": [
+        41,
+        279
+      ],
+      "historicalCompletionP95P99UpperMs": [
+        958,
+        998
+      ],
+      "swapSampledWindowMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "swapFullObservationMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "pendingAtHttpEnd": {
+        "orders": 3020,
+        "stockPending": 0,
+        "grantPending": 0,
+        "blocked": 0,
+        "stockDue": 0,
+        "fulfillmentDue": 0
+      },
+      "mysqlDelta": {
+        "Aborted_connects": 0,
+        "Connections": 52,
+        "Innodb_buffer_pool_read_requests": 1184142,
+        "Innodb_buffer_pool_reads": 3879,
+        "Innodb_row_lock_time": 2748,
+        "Innodb_row_lock_waits": 2760,
+        "Innodb_rows_deleted": 0,
+        "Innodb_rows_inserted": 9060,
+        "Innodb_rows_read": 4783204,
+        "Innodb_rows_updated": 21134,
+        "Questions": 72647,
+        "Slow_queries": 9,
+        "Threads_connected": 6,
+        "Threads_running": 0
+      },
+      "lockIndexSamples": {
+        "draw_order:uk_order_id": 1
+      },
+      "dbAndKafkaStages": {},
+      "explicitCommit": [
+        {
+          "schema": "lottery",
+          "sql": "COMMIT",
+          "count": 9045,
+          "elapsedSeconds": 13.0758,
+          "avgMs": 1.4456,
+          "lockSeconds": 0.0,
+          "examined": 0,
+          "changed": 0
+        }
+      ],
+      "outboxClaimSql": [],
+      "outboxResultSql": [
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `stock_settlement_event_status` = CASE WHEN ? THEN ? WHEN `stock_settlement_event_status` IN (...) THEN ? ELSE `stock_settlement_event_status` END , `stock_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `stock_attempt` = ? AND `stock_settlement_event_status` IN (...)",
+          "count": 3015,
+          "elapsedSeconds": 5.6604,
+          "avgMs": 1.8774,
+          "lockSeconds": 0.0036,
+          "examined": 3018,
+          "changed": 3012
+        },
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `fulfillment_event_status` = CASE WHEN ? THEN ? WHEN `fulfillment_event_status` IN (...) THEN ? ELSE `fulfillment_event_status` END , `fulfillment_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `fulfillment_attempt` = ? AND `fulfillment_event_status` IN (...) AND `stock_settlement_event_status` = ? AND COALESCE ( `award_fulfillment_status` , ? ) != ?",
+          "count": 3018,
+          "elapsedSeconds": 5.5972,
+          "avgMs": 1.8546,
+          "lockSeconds": 0.0177,
+          "examined": 3020,
+          "changed": 3015
+        }
+      ],
+      "stability": null
+    },
+    "optimizedShort150": {
+      "parameters": {
+        "target_rps": 150.0,
+        "threads": 48,
+        "duration": 35,
+        "warmup": 10,
+        "ramp": 5,
+        "users": 9000
+      },
+      "windowSeconds": 25.0,
+      "offeredRps": 149.96,
+      "newDrawRps": 149.96,
+      "settlementRps": 150.0,
+      "fulfillmentRps": 149.96,
+      "ordersTotal": 5254,
+      "httpCodes": {
+        "200": 3749
+      },
+      "businessCodes": {
+        "0000": 3749
+      },
+      "systemErrorRate": 0.0,
+      "p95Ms": 20,
+      "p99Ms": 38,
+      "completedLatencyMs": {
+        "0.5": 11,
+        "0.95": 20,
+        "0.99": 38
+      },
+      "mysqlCpuMean": 64.9,
+      "slowQueries": 3,
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 6,
+          "maxWaiting": 0,
+          "acquireMeanMs": 0.00017304031839418584,
+          "timeouts": 0
+        }
+      },
+      "outbox": {
+        "scans": 8,
+        "candidates": 0,
+        "scanNanos": 4920249,
+        "retries": 0,
+        "rejected": 0,
+        "recoveryThrottled": 0,
+        "sendFailures": 0
+      },
+      "peakSampledKafkaLag": {
+        "lottery-perf-stock": 4,
+        "lottery-perf-invoice": 2
+      },
+      "drainSeconds": 0.2804579734802246,
+      "audit": "PASS",
+      "stockP95P99UpperMs": [
+        29,
+        104
+      ],
+      "fulfillmentP95P99UpperMs": [
+        36,
+        115
+      ],
+      "historicalCompletionP95P99UpperMs": [
+        958,
+        1000
+      ],
+      "swapSampledWindowMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "swapFullObservationMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "pendingAtHttpEnd": {
+        "orders": 5254,
+        "stockPending": 0,
+        "grantPending": 0,
+        "blocked": 0,
+        "stockDue": 0,
+        "fulfillmentDue": 0
+      },
+      "mysqlDelta": {
+        "Aborted_connects": 0,
+        "Connections": 62,
+        "Innodb_buffer_pool_read_requests": 1942740,
+        "Innodb_buffer_pool_reads": 4221,
+        "Innodb_row_lock_time": 6527,
+        "Innodb_row_lock_waits": 5082,
+        "Innodb_rows_deleted": 0,
+        "Innodb_rows_inserted": 15762,
+        "Innodb_rows_read": 4880644,
+        "Innodb_rows_updated": 36757,
+        "Questions": 126274,
+        "Slow_queries": 11,
+        "Threads_connected": 13,
+        "Threads_running": 0
+      },
+      "lockIndexSamples": {
+        "draw_order:uk_order_id": 2
+      },
+      "dbAndKafkaStages": {},
+      "explicitCommit": [
+        {
+          "schema": "lottery",
+          "sql": "COMMIT",
+          "count": 15719,
+          "elapsedSeconds": 28.9355,
+          "avgMs": 1.8408,
+          "lockSeconds": 0.0,
+          "examined": 0,
+          "changed": 0
+        }
+      ],
+      "outboxClaimSql": [],
+      "outboxResultSql": [
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `stock_settlement_event_status` = CASE WHEN ? THEN ? WHEN `stock_settlement_event_status` IN (...) THEN ? ELSE `stock_settlement_event_status` END , `stock_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `stock_attempt` = ? AND `stock_settlement_event_status` IN (...)",
+          "count": 5254,
+          "elapsedSeconds": 11.9139,
+          "avgMs": 2.2676,
+          "lockSeconds": 0.0054,
+          "examined": 5252,
+          "changed": 5248
+        },
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `fulfillment_event_status` = CASE WHEN ? THEN ? WHEN `fulfillment_event_status` IN (...) THEN ? ELSE `fulfillment_event_status` END , `fulfillment_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `fulfillment_attempt` = ? AND `fulfillment_event_status` IN (...) AND `stock_settlement_event_status` = ? AND COALESCE ( `award_fulfillment_status` , ? ) != ?",
+          "count": 5252,
+          "elapsedSeconds": 11.3592,
+          "avgMs": 2.1628,
+          "lockSeconds": 0.0606,
+          "examined": 5251,
+          "changed": 5228
+        }
+      ],
+      "stability": null
+    },
+    "optimizedSustained150": {
+      "parameters": {
+        "target_rps": 150.0,
+        "threads": 48,
+        "duration": 311,
+        "warmup": 10,
+        "ramp": 5,
+        "users": 55000
+      },
+      "windowSeconds": 301.0,
+      "offeredRps": 149.88704318936877,
+      "newDrawRps": 149.8671096345515,
+      "settlementRps": 149.48837209302326,
+      "fulfillmentRps": 149.45847176079735,
+      "ordersTotal": 46623,
+      "httpCodes": {
+        "200": 45110
+      },
+      "businessCodes": {
+        "0000": 45110
+      },
+      "systemErrorRate": 0.0,
+      "p95Ms": 30,
+      "p99Ms": 255,
+      "completedLatencyMs": {
+        "0.5": 11,
+        "0.95": 30,
+        "0.99": 255
+      },
+      "mysqlCpuMean": 53.4718,
+      "slowQueries": 3422,
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 48,
+          "maxWaiting": 10,
+          "acquireMeanMs": 0.04891140314383836,
+          "timeouts": 0
+        }
+      },
+      "outbox": {
+        "scans": 64,
+        "candidates": 19,
+        "scanNanos": 44066163,
+        "retries": 19,
+        "rejected": 19,
+        "recoveryThrottled": 0,
+        "sendFailures": 0
+      },
+      "peakSampledKafkaLag": {
+        "lottery-perf-stock": 74,
+        "lottery-perf-invoice": 4
+      },
+      "drainSeconds": 0.2881588935852051,
+      "audit": "PASS",
+      "stockP95P99UpperMs": [
+        470,
+        937
+      ],
+      "fulfillmentP95P99UpperMs": [
+        493,
+        975
+      ],
+      "historicalCompletionP95P99UpperMs": [
+        1006,
+        1546
+      ],
+      "swapSampledWindowMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "swapFullObservationMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "pendingAtHttpEnd": {
+        "orders": 46623,
+        "stockPending": 0,
+        "grantPending": 0,
+        "blocked": 0,
+        "stockDue": 0,
+        "fulfillmentDue": 0
+      },
+      "mysqlDelta": {
+        "Aborted_connects": 0,
+        "Connections": 308,
+        "Innodb_buffer_pool_read_requests": 16985815,
+        "Innodb_buffer_pool_reads": 5798,
+        "Innodb_row_lock_time": 84040,
+        "Innodb_row_lock_waits": 45622,
+        "Innodb_rows_deleted": 0,
+        "Innodb_rows_inserted": 139869,
+        "Innodb_rows_read": 15843199,
+        "Innodb_rows_updated": 325892,
+        "Questions": 1119885,
+        "Slow_queries": 3467,
+        "Threads_connected": 23,
+        "Threads_running": 0
+      },
+      "lockIndexSamples": {
+        "draw_order:uk_order_id": 19,
+        "draw_config_prize:idx_draw_config_award": 3
+      },
+      "dbAndKafkaStages": {
+        "first60MeanMs": {
+          "ack/lottery_strategy_award_stock": 0.921,
+          "ack/lottery_invoice": 0.893,
+          "stage/DrawConfigRepository.settleAwardStock(..)": 3.321,
+          "stage/OrderRepository.saveDrawOrderWithTakeLock(..)": 3.455,
+          "stage/DrawParticipationRepository.takeParticipation(..)": 3.789
+        },
+        "last60MeanMs": {
+          "ack/lottery_strategy_award_stock": 1.191,
+          "ack/lottery_invoice": 1.13,
+          "stage/DrawConfigRepository.settleAwardStock(..)": 9.147,
+          "stage/OrderRepository.saveDrawOrderWithTakeLock(..)": 19.609,
+          "stage/DrawParticipationRepository.takeParticipation(..)": 24.938
+        }
+      },
+      "explicitCommit": [
+        {
+          "schema": "lottery",
+          "sql": "COMMIT",
+          "count": 139566,
+          "elapsedSeconds": 610.0358,
+          "avgMs": 4.3709,
+          "lockSeconds": 2.2225,
+          "examined": 0,
+          "changed": 0
+        }
+      ],
+      "outboxClaimSql": [
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `stock_attempt` = `stock_attempt` + ? , `stock_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `stock_attempt` = ? AND `stock_settlement_event_status` IN (...) AND `stock_retry_at` <= NOW (?)",
+          "count": 17,
+          "elapsedSeconds": 0.0975,
+          "avgMs": 5.7353,
+          "lockSeconds": 0.0,
+          "examined": 17,
+          "changed": 17
+        },
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `fulfillment_attempt` = `fulfillment_attempt` + ? , `fulfillment_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `fulfillment_attempt` = ? AND `fulfillment_event_status` IN (...) AND `stock_settlement_event_status` = ? AND COALESCE ( `award_fulfillment_status` , ? ) != ? AND `fulfillment_retry_at` <= NOW (?)",
+          "count": 2,
+          "elapsedSeconds": 0.0116,
+          "avgMs": 5.8,
+          "lockSeconds": 0.0,
+          "examined": 2,
+          "changed": 2
+        }
+      ],
+      "outboxResultSql": [
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `stock_settlement_event_status` = CASE WHEN ? THEN ? WHEN `stock_settlement_event_status` IN (...) THEN ? ELSE `stock_settlement_event_status` END , `stock_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `stock_attempt` = ? AND `stock_settlement_event_status` IN (...)",
+          "count": 46595,
+          "elapsedSeconds": 173.3556,
+          "avgMs": 3.7205,
+          "lockSeconds": 0.5677,
+          "examined": 46598,
+          "changed": 46540
+        },
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `fulfillment_event_status` = CASE WHEN ? THEN ? WHEN `fulfillment_event_status` IN (...) THEN ? ELSE `fulfillment_event_status` END , `fulfillment_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `fulfillment_attempt` = ? AND `fulfillment_event_status` IN (...) AND `stock_settlement_event_status` = ? AND COALESCE ( `award_fulfillment_status` , ? ) != ?",
+          "count": 46596,
+          "elapsedSeconds": 114.8774,
+          "avgMs": 2.4654,
+          "lockSeconds": 0.5763,
+          "examined": 46610,
+          "changed": 46106
+        }
+      ],
+      "stability": {
+        "stable": true,
+        "checks": {
+          "至少180秒测量": true,
+          "达到目标到达速率95%": true,
+          "HTTP与系统错误率低于0.1%": true,
+          "HTTP P99低于1秒": true,
+          "积压峰值不超过10秒请求量": true,
+          "首尾平均积压增长不超过1秒请求量": true,
+          "异步P95保守上界低于10秒": true,
+          "入口结束后15秒内收敛": true,
+          "业务审计通过": true
+        },
+        "measuredRps": 149.8671096345515,
+        "targetRps": 150.0,
+        "backlogPeak": 85,
+        "backlogMeanGrowth": 34.28571428571429,
+        "firstMeanBacklog": 3.857142857142857,
+        "lastMeanBacklog": 38.142857142857146
+      }
+    },
+    "optimizedSustained120": {
+      "parameters": {
+        "target_rps": 120.0,
+        "threads": 40,
+        "duration": 210,
+        "warmup": 15,
+        "ramp": 5,
+        "users": 32000
+      },
+      "windowSeconds": 195.0,
+      "offeredRps": 120.0,
+      "newDrawRps": 119.95384615384616,
+      "settlementRps": 119.93333333333334,
+      "fulfillmentRps": 119.93333333333334,
+      "ordersTotal": 25205,
+      "httpCodes": {
+        "200": 23391
+      },
+      "businessCodes": {
+        "0000": 23391
+      },
+      "systemErrorRate": 0.0,
+      "p95Ms": 88,
+      "p99Ms": 312,
+      "completedLatencyMs": {
+        "0.5": 13,
+        "0.95": 88,
+        "0.99": 312
+      },
+      "mysqlCpuMean": 36.20753846153846,
+      "slowQueries": 2821,
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 38,
+          "maxWaiting": 0,
+          "acquireMeanMs": 0.015910685704824453,
+          "timeouts": 0
+        }
+      },
+      "outbox": {
+        "scans": 44,
+        "candidates": 0,
+        "scanNanos": 31780001,
+        "retries": 0,
+        "rejected": 0,
+        "recoveryThrottled": 0,
+        "sendFailures": 0
+      },
+      "peakSampledKafkaLag": {
+        "lottery-perf-stock": 106,
+        "lottery-perf-invoice": 9
+      },
+      "drainSeconds": 0.2781178951263428,
+      "audit": "PASS",
+      "stockP95P99UpperMs": [
+        463,
+        809
+      ],
+      "fulfillmentP95P99UpperMs": [
+        486,
+        840
+      ],
+      "historicalCompletionP95P99UpperMs": [
+        1015,
+        1408
+      ],
+      "swapSampledWindowMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "swapFullObservationMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "pendingAtHttpEnd": {
+        "orders": 25205,
+        "stockPending": 0,
+        "grantPending": 0,
+        "blocked": 0,
+        "stockDue": 0,
+        "fulfillmentDue": 0
+      },
+      "mysqlDelta": {
+        "Aborted_connects": 0,
+        "Connections": 181,
+        "Innodb_buffer_pool_read_requests": 9738337,
+        "Innodb_buffer_pool_reads": 4504,
+        "Innodb_row_lock_time": 74142,
+        "Innodb_row_lock_waits": 24878,
+        "Innodb_rows_deleted": 0,
+        "Innodb_rows_inserted": 75615,
+        "Innodb_rows_read": 13261268,
+        "Innodb_rows_updated": 176094,
+        "Questions": 605460,
+        "Slow_queries": 2855,
+        "Threads_connected": 0,
+        "Threads_running": 0
+      },
+      "lockIndexSamples": {
+        "draw_order:uk_order_id": 22,
+        "draw_config_prize:idx_draw_config_award": 4
+      },
+      "dbAndKafkaStages": {
+        "first60MeanMs": {
+          "ack/lottery_strategy_award_stock": 0.9,
+          "ack/lottery_invoice": 0.708,
+          "stage/DrawConfigRepository.settleAwardStock(..)": 3.396,
+          "stage/OrderRepository.saveDrawOrderWithTakeLock(..)": 3.472,
+          "stage/DrawParticipationRepository.takeParticipation(..)": 3.76
+        },
+        "last60MeanMs": {
+          "ack/lottery_strategy_award_stock": 0.847,
+          "ack/lottery_invoice": 0.776,
+          "stage/DrawConfigRepository.settleAwardStock(..)": 7.514,
+          "stage/OrderRepository.saveDrawOrderWithTakeLock(..)": 14.666,
+          "stage/DrawParticipationRepository.takeParticipation(..)": 22.184
+        }
+      },
+      "explicitCommit": [
+        {
+          "schema": "lottery",
+          "sql": "COMMIT",
+          "count": 75427,
+          "elapsedSeconds": 519.8262,
+          "avgMs": 6.8918,
+          "lockSeconds": 1.4564,
+          "examined": 0,
+          "changed": 0
+        }
+      ],
+      "outboxClaimSql": [],
+      "outboxResultSql": [
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `stock_settlement_event_status` = CASE WHEN ? THEN ? WHEN `stock_settlement_event_status` IN (...) THEN ? ELSE `stock_settlement_event_status` END , `stock_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `stock_attempt` = ? AND `stock_settlement_event_status` IN (...)",
+          "count": 25173,
+          "elapsedSeconds": 140.1086,
+          "avgMs": 5.5658,
+          "lockSeconds": 0.2236,
+          "examined": 25191,
+          "changed": 25150
+        },
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_order` SET `fulfillment_event_status` = CASE WHEN ? THEN ? WHEN `fulfillment_event_status` IN (...) THEN ? ELSE `fulfillment_event_status` END , `fulfillment_retry_at` = TIMESTAMPADD ( SQL_TSI_SECOND , ? , NOW (?) ) WHERE `order_id` = ? AND `fulfillment_attempt` = ? AND `fulfillment_event_status` IN (...) AND `stock_settlement_event_status` = ? AND COALESCE ( `award_fulfillment_status` , ? ) != ?",
+          "count": 25199,
+          "elapsedSeconds": 86.9961,
+          "avgMs": 3.4524,
+          "lockSeconds": 0.7028,
+          "examined": 25204,
+          "changed": 24857
+        }
+      ],
+      "stability": {
+        "stable": true,
+        "checks": {
+          "至少180秒测量": true,
+          "达到目标到达速率95%": true,
+          "HTTP与系统错误率低于0.1%": true,
+          "HTTP P99低于1秒": true,
+          "积压峰值不超过10秒请求量": true,
+          "首尾平均积压增长不超过1秒请求量": true,
+          "异步P95保守上界低于10秒": true,
+          "入口结束后15秒内收敛": true,
+          "业务审计通过": true
+        },
+        "measuredRps": 119.95384615384616,
+        "targetRps": 120.0,
+        "backlogPeak": 122,
+        "backlogMeanGrowth": 40.85714285714286,
+        "firstMeanBacklog": 3.857142857142857,
+        "lastMeanBacklog": 44.714285714285715
+      }
+    }
+  },
+  "historicalRuns": {
+    "sharded150First": {
+      "parameters": {
+        "target_rps": 150.0,
+        "threads": 30,
+        "duration": 320,
+        "warmup": 20,
+        "ramp": null,
+        "users": 100000
+      },
+      "windowSeconds": 300.0,
+      "newDrawRps": 149.93666666666667,
+      "p95Ms": 19,
+      "p99Ms": 23,
+      "mysqlCpuMean": null,
+      "stockP95P99UpperMs": null,
+      "historicalCompletionP95P99UpperMs": [
+        2061,
+        2297
+      ],
+      "swapSampledWindowMiB": {
+        "Swapins": 0.125,
+        "Swapouts": 0.0
+      },
+      "swapFullObservationMiB": {
+        "Swapins": 0.1875,
+        "Swapouts": 0.0
+      },
+      "drainSeconds": 0.8298549652099609,
+      "outbox": null,
+      "explicitCommit": [
+        {
+          "schema": "lottery",
+          "sql": "COMMIT",
+          "count": 47936,
+          "elapsedSeconds": 97.0725,
+          "avgMs": 2.025,
+          "lockSeconds": 0.0001,
+          "examined": 0,
+          "changed": 0
+        },
+        {
+          "schema": "lottery_01",
+          "sql": "COMMIT",
+          "count": 48008,
+          "elapsedSeconds": 69.9961,
+          "avgMs": 1.458,
+          "lockSeconds": 0.0001,
+          "examined": 0,
+          "changed": 0
+        },
+        {
+          "schema": "lottery_02",
+          "sql": "COMMIT",
+          "count": 47915,
+          "elapsedSeconds": 69.5402,
+          "avgMs": 1.4513,
+          "lockSeconds": 0.0,
+          "examined": 0,
+          "changed": 0
+        }
+      ],
+      "stability": {
+        "stable": true,
+        "checks": {
+          "至少180秒测量": true,
+          "达到目标到达速率95%": true,
+          "HTTP与系统错误率低于0.1%": true,
+          "HTTP P99低于1秒": true,
+          "积压峰值不超过10秒请求量": true,
+          "首尾平均积压增长不超过1秒请求量": true,
+          "异步P95保守上界低于10秒": true,
+          "入口结束后15秒内收敛": true,
+          "业务审计通过": true
+        },
+        "measuredRps": 149.93666666666667,
+        "targetRps": 150.0,
+        "backlogPeak": 163,
+        "backlogMeanGrowth": 8.57142857142857,
+        "firstMeanBacklog": 120.57142857142857,
+        "lastMeanBacklog": 129.14285714285714
+      }
+    },
+    "sharded150Second": {
+      "parameters": {
+        "target_rps": 150.0,
+        "threads": 30,
+        "duration": 320,
+        "warmup": 20,
+        "ramp": null,
+        "users": 100000
+      },
+      "windowSeconds": 300.0,
+      "newDrawRps": 149.94,
+      "p95Ms": 58,
+      "p99Ms": 254,
+      "mysqlCpuMean": null,
+      "stockP95P99UpperMs": null,
+      "historicalCompletionP95P99UpperMs": [
+        2980,
+        3590
+      ],
+      "swapSampledWindowMiB": {
+        "Swapins": 0.375,
+        "Swapouts": 0.0
+      },
+      "swapFullObservationMiB": {
+        "Swapins": 0.375,
+        "Swapouts": 0.0
+      },
+      "drainSeconds": 0.6906390190124512,
+      "outbox": null,
+      "explicitCommit": [
+        {
+          "schema": "lottery_02",
+          "sql": "COMMIT",
+          "count": 47888,
+          "elapsedSeconds": 315.1309,
+          "avgMs": 6.5806,
+          "lockSeconds": 1.1114,
+          "examined": 0,
+          "changed": 0
+        },
+        {
+          "schema": "lottery_01",
+          "sql": "COMMIT",
+          "count": 47980,
+          "elapsedSeconds": 312.1779,
+          "avgMs": 6.5064,
+          "lockSeconds": 1.077,
+          "examined": 0,
+          "changed": 0
+        },
+        {
+          "schema": "lottery",
+          "sql": "COMMIT",
+          "count": 47923,
+          "elapsedSeconds": 154.9079,
+          "avgMs": 3.2324,
+          "lockSeconds": 0.1158,
+          "examined": 0,
+          "changed": 0
+        }
+      ],
+      "stability": {
+        "stable": true,
+        "checks": {
+          "至少180秒测量": true,
+          "达到目标到达速率95%": true,
+          "HTTP与系统错误率低于0.1%": true,
+          "HTTP P99低于1秒": true,
+          "积压峰值不超过10秒请求量": true,
+          "首尾平均积压增长不超过1秒请求量": true,
+          "异步P95保守上界低于10秒": true,
+          "入口结束后15秒内收敛": true,
+          "业务审计通过": true
+        },
+        "measuredRps": 149.94,
+        "targetRps": 150.0,
+        "backlogPeak": 391,
+        "backlogMeanGrowth": 128.0,
+        "firstMeanBacklog": 118.71428571428571,
+        "lastMeanBacklog": 246.71428571428572
+      }
+    },
+    "singleDbShort150": {
+      "parameters": {
+        "target_rps": 150.0,
+        "threads": 48,
+        "duration": 35,
+        "warmup": 10,
+        "ramp": 5,
+        "users": 9000
+      },
+      "windowSeconds": 25.0,
+      "newDrawRps": 149.52,
+      "p95Ms": 24,
+      "p99Ms": 35,
+      "mysqlCpuMean": 74.01375,
+      "stockP95P99UpperMs": null,
+      "historicalCompletionP95P99UpperMs": [
+        2035,
+        2274
+      ],
+      "swapSampledWindowMiB": {
+        "Swapins": 0.125,
+        "Swapouts": 0.0
+      },
+      "swapFullObservationMiB": {
+        "Swapins": 0.1875,
+        "Swapouts": 0.0
+      },
+      "drainSeconds": 0.18601608276367188,
+      "outbox": null,
+      "explicitCommit": [
+        {
+          "schema": "lottery",
+          "sql": "COMMIT",
+          "count": 15659,
+          "elapsedSeconds": 34.1078,
+          "avgMs": 2.1782,
+          "lockSeconds": 0.0,
+          "examined": 0,
+          "changed": 0
+        }
+      ],
+      "stability": null
+    },
+    "singleDbSustained150": {
+      "parameters": {
+        "target_rps": 150.0,
+        "threads": 48,
+        "duration": 310,
+        "warmup": 10,
+        "ramp": 5,
+        "users": 55000
+      },
+      "windowSeconds": 299.825,
+      "newDrawRps": 150.0041690986409,
+      "p95Ms": 69,
+      "p99Ms": 332,
+      "mysqlCpuMean": 111.4817,
+      "stockP95P99UpperMs": null,
+      "historicalCompletionP95P99UpperMs": [
+        20687,
+        21745
+      ],
+      "swapSampledWindowMiB": {
+        "Swapins": 24.15625,
+        "Swapouts": 212.125
+      },
+      "swapFullObservationMiB": {
+        "Swapins": 27.46875,
+        "Swapouts": 212.125
+      },
+      "drainSeconds": 19.693619966506958,
+      "outbox": null,
+      "explicitCommit": [
+        {
+          "schema": "lottery",
+          "sql": "COMMIT",
+          "count": 137960,
+          "elapsedSeconds": 1099.2408,
+          "avgMs": 7.9678,
+          "lockSeconds": 2.1407,
+          "examined": 0,
+          "changed": 0
+        }
+      ],
+      "stability": {
+        "stable": false,
+        "checks": {
+          "至少180秒测量": true,
+          "达到目标到达速率95%": true,
+          "HTTP与系统错误率低于0.1%": true,
+          "HTTP P99低于1秒": true,
+          "积压峰值不超过10秒请求量": false,
+          "首尾平均积压增长不超过1秒请求量": false,
+          "异步P95保守上界低于10秒": false,
+          "入口结束后15秒内收敛": false,
+          "业务审计通过": true
+        },
+        "measuredRps": 150.0041690986409,
+        "targetRps": 150.0,
+        "backlogPeak": 3075,
+        "backlogMeanGrowth": 1885.7142857142858,
+        "firstMeanBacklog": 514.2857142857143,
+        "lastMeanBacklog": 2400
+      }
+    },
+    "initialOutboxShort150": {
+      "parameters": {
+        "target_rps": 150.0,
+        "threads": 48,
+        "duration": 35,
+        "warmup": 10,
+        "ramp": 5,
+        "users": 9000
+      },
+      "windowSeconds": 24.834,
+      "newDrawRps": 149.99597326246277,
+      "p95Ms": 52,
+      "p99Ms": 73,
+      "mysqlCpuMean": 145.73250000000002,
+      "stockP95P99UpperMs": [
+        2537,
+        31775
+      ],
+      "historicalCompletionP95P99UpperMs": [
+        11617,
+        31998
+      ],
+      "swapSampledWindowMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "swapFullObservationMiB": {
+        "Swapins": 1.609375,
+        "Swapouts": 0.0
+      },
+      "drainSeconds": 17.41237187385559,
+      "outbox": {
+        "scans": 15,
+        "candidates": 1039,
+        "scanNanos": 42017624,
+        "retries": 0,
+        "rejected": 705,
+        "sendFailures": 0
+      },
+      "explicitCommit": [
+        {
+          "schema": "lottery",
+          "sql": "COMMIT",
+          "count": 15536,
+          "elapsedSeconds": 106.0046,
+          "avgMs": 6.8232,
+          "lockSeconds": 0.0423,
+          "examined": 0,
+          "changed": 0
+        }
+      ],
+      "stability": null
+    },
+    "finalOutboxShort150": {
+      "parameters": {
+        "target_rps": 150.0,
+        "threads": 48,
+        "duration": 35,
+        "warmup": 10,
+        "ramp": 5,
+        "users": 9000
+      },
+      "windowSeconds": 24.913,
+      "newDrawRps": 150.84494039256612,
+      "p95Ms": 366,
+      "p99Ms": 490,
+      "mysqlCpuMean": 151.4775,
+      "stockP95P99UpperMs": [
+        144141,
+        153615
+      ],
+      "historicalCompletionP95P99UpperMs": [
+        144646,
+        153991
+      ],
+      "swapSampledWindowMiB": {
+        "Swapins": 1.546875,
+        "Swapouts": 0.0
+      },
+      "swapFullObservationMiB": {
+        "Swapins": 67.640625,
+        "Swapouts": 0.0
+      },
+      "drainSeconds": 149.53232097625732,
+      "outbox": {
+        "scans": 72,
+        "candidates": 1778,
+        "scanNanos": 222073209,
+        "retries": 0,
+        "rejected": 1626,
+        "recoveryThrottled": 1,
+        "sendFailures": 0
+      },
+      "explicitCommit": [
+        {
+          "schema": "lottery",
+          "sql": "COMMIT",
+          "count": 15613,
+          "elapsedSeconds": 282.5792,
+          "avgMs": 18.099,
+          "lockSeconds": 3.9496,
+          "examined": 0,
+          "changed": 0
+        }
+      ],
+      "stability": null
+    },
+    "finalOutboxSustained120": {
+      "parameters": {
+        "target_rps": 120.0,
+        "threads": 40,
+        "duration": 210,
+        "warmup": 15,
+        "ramp": 5,
+        "users": 32000
+      },
+      "windowSeconds": 194.984,
+      "newDrawRps": 120.00984696180198,
+      "p95Ms": 91,
+      "p99Ms": 301,
+      "mysqlCpuMean": 91.65142857142857,
+      "stockP95P99UpperMs": [
+        1238,
+        8916
+      ],
+      "historicalCompletionP95P99UpperMs": [
+        1763,
+        9406
+      ],
+      "swapSampledWindowMiB": {
+        "Swapins": 153.859375,
+        "Swapouts": 737.0
+      },
+      "swapFullObservationMiB": {
+        "Swapins": 184.515625,
+        "Swapouts": 737.0
+      },
+      "drainSeconds": 0.4179878234863281,
+      "outbox": {
+        "scans": 52,
+        "candidates": 384,
+        "scanNanos": 105168998,
+        "retries": 0,
+        "rejected": 384,
+        "recoveryThrottled": 0,
+        "sendFailures": 0
+      },
+      "explicitCommit": [
+        {
+          "schema": "lottery",
+          "sql": "COMMIT",
+          "count": 75233,
+          "elapsedSeconds": 390.1713,
+          "avgMs": 5.1862,
+          "lockSeconds": 3.7018,
+          "examined": 0,
+          "changed": 0
+        }
+      ],
+      "stability": {
+        "stable": true,
+        "checks": {
+          "至少180秒测量": true,
+          "达到目标到达速率95%": true,
+          "HTTP与系统错误率低于0.1%": true,
+          "HTTP P99低于1秒": true,
+          "积压峰值不超过10秒请求量": true,
+          "首尾平均积压增长不超过1秒请求量": true,
+          "异步P95保守上界低于10秒": true,
+          "入口结束后15秒内收敛": true,
+          "业务审计通过": true
+        },
+        "measuredRps": 120.00984696180198,
+        "targetRps": 120.0,
+        "backlogPeak": 353,
+        "backlogMeanGrowth": 71,
+        "firstMeanBacklog": 7,
+        "lastMeanBacklog": 78
+      }
+    },
+    "finalOutboxNormal40": {
+      "parameters": {
+        "target_rps": 40.0,
+        "threads": 20,
+        "duration": 30,
+        "warmup": 8,
+        "ramp": 5,
+        "users": 4000
+      },
+      "windowSeconds": 21.801,
+      "newDrawRps": 40.04403467730838,
+      "p95Ms": 26,
+      "p99Ms": 34,
+      "mysqlCpuMean": 31.865,
+      "stockP95P99UpperMs": [
+        20,
+        29
+      ],
+      "historicalCompletionP95P99UpperMs": [
+        967,
+        1012
+      ],
+      "swapSampledWindowMiB": {
+        "Swapins": 0.0,
+        "Swapouts": 0.0
+      },
+      "swapFullObservationMiB": {
+        "Swapins": 0.359375,
+        "Swapouts": 0.0
+      },
+      "drainSeconds": 0.2535989284515381,
+      "outbox": {
+        "scans": 8,
+        "candidates": 0,
+        "scanNanos": 11124208,
+        "retries": 0,
+        "rejected": 0,
+        "recoveryThrottled": 0,
+        "sendFailures": 0
+      },
+      "explicitCommit": [
+        {
+          "schema": "lottery",
+          "sql": "COMMIT",
+          "count": 3581,
+          "elapsedSeconds": 7.3374,
+          "avgMs": 2.049,
+          "lockSeconds": 0.0,
+          "examined": 0,
+          "changed": 0
+        }
+      ],
+      "stability": null
+    }
+  },
+  "engineIoCommonWindow": {
+    "base-sustained150": {
+      "startRelativeS": 87.34500002861023,
+      "endRelativeS": 307.34500002861023,
+      "spanS": 220.0,
+      "delta": {
+        "fsync": 252575,
+        "logWaits": 0,
+        "redoMiscCount": 232169,
+        "redoMiscSeconds": 171.10182103742403,
+        "binlogMiscCount": 169438,
+        "binlogMiscSeconds": 154.50410665502403,
+        "mysqlThrottledUs": 95785,
+        "kafkaThrottledUs": 5053513,
+        "mysqlWrittenBytes": 3142078464,
+        "kafkaWrittenBytes": 29257728,
+        "mysqlMemoryMaxEvents": 0,
+        "kafkaMemoryMaxEvents": 0
+      },
+      "fsyncPerSec": 1148.0681818181818,
+      "mysqlWrittenMiBPerSec": 13.620543323863636,
+      "meanRedoMiscMs": 0.7369710040419868,
+      "meanBinlogMiscMs": 0.9118621953459319
+    },
+    "sustained150": {
+      "startRelativeS": 97.38800001144409,
+      "endRelativeS": 304.3880000114441,
+      "spanS": 207.0,
+      "delta": {
+        "fsync": 241217,
+        "logWaits": 0,
+        "redoMiscCount": 223236,
+        "redoMiscSeconds": 145.27725981261602,
+        "binlogMiscCount": 159535,
+        "binlogMiscSeconds": 128.19183923527203,
+        "mysqlThrottledUs": 0,
+        "kafkaThrottledUs": 7856704,
+        "mysqlWrittenBytes": 2836946944,
+        "kafkaWrittenBytes": 26411008,
+        "mysqlMemoryMaxEvents": 0,
+        "kafkaMemoryMaxEvents": 0
+      },
+      "fsyncPerSec": 1165.2995169082126,
+      "mysqlWrittenMiBPerSec": 13.070161533816425,
+      "meanRedoMiscMs": 0.6507788161972801,
+      "meanBinlogMiscMs": 0.8035342666829977
+    }
+  },
+  "testClasses": {
+    "unit-and-war": {
+      "DrawHttpOwnershipTest": {
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "MqCallbackStateTest": {
+        "tests": 11,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "RedisActivityDrawProcessGuardTest": {
+        "tests": 5,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "CacheTransactionInvalidationTest": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "DrawRequestIdempotencyTest": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "PartakeRequestOwnershipTest": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "WeightedRandomSelectorTest": {
+        "tests": 7,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "SnowflakeNodeConfigurationTest": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "StockReservationTransactionsTest": {
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "integration": {
+      "PerformanceSqlManualIT": {
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "FulfillmentEventStatusCasManualIT": {
+        "tests": 13,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "InvoiceCompensationIndexManualIT": {
+        "tests": 2,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "MqMiddlewareE2eManualIT": {
+        "tests": 9,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "ActivitySchemaMigrationManualIT": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "DrawAdmissionRedisManualIT": {
+        "tests": 4,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "FinalBusinessE2eManualIT": {
+        "tests": 26,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "RedisStockFailureManualIT": {
+        "tests": 6,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "ownership": {
+      "DrawRequestOwnershipManualIT": {
+        "tests": 10,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    },
+    "jdbc": {
+      "JdbcLocalSessionStateManualIT": {
+        "tests": 3,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      }
+    }
+  },
+  "testFixtureRetry": "首次合集成时旧 V4 种子与归属测试共用 lottery 库，归属测试在独立空 MySQL 复跑通过。",
+  "crashRecovery": {
+    "committedBeforeCrash": "2120679256001478656\t1\t0",
+    "processExit": -9,
+    "recoveredSecondsAfterRestart": 2.153,
+    "terminal": [
+      "1",
+      "1",
+      "1",
+      "2"
+    ],
+    "replayOrderId": 2120679256001478656,
+    "ledger": 1,
+    "quotaLeft": 2,
+    "nativeLifecycleStates": [
+      4,
+      5,
+      7
+    ],
+    "kafkaLag": {
+      "lottery-perf-stock": [
+        375548,
+        0,
+        8
+      ],
+      "lottery-perf-invoice": [
+        374777,
+        0,
+        8
+      ]
+    }
+  },
+  "globalAudit": {
+    "takes": 372365,
+    "ledger": 371965,
+    "orders": 371965,
+    "tables": 8,
+    "quotaSpent": 372365,
+    "stockSpent": 371965,
+    "wrongLedger": 0,
+    "negativeQuota": 0,
+    "negativeStock": 0,
+    "duplicateOrders": 0,
+    "unfinishedTakes": 0,
+    "unsettledOrders": 0,
+    "orderWithoutTake": 0,
+    "duplicateTakesWithOrders": 0,
+    "redisStockKeys": 255,
+    "redisStockEqualsMysql": true
+  },
+  "rawArchive": "raw-results-20261112-outbox-regression.zip"
+}
