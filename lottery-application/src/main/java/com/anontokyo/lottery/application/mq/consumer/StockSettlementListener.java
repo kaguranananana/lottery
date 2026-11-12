@@ -2,6 +2,7 @@ package com.anontokyo.lottery.application.mq.consumer;
 
 import com.alibaba.fastjson.JSON;
 import com.anontokyo.lottery.application.mq.producer.OutboxDispatcher;
+import com.anontokyo.lottery.common.Constants.AwardFulfillmentStatus;
 import com.anontokyo.lottery.common.Constants.StockSettlementEventStatus;
 import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
@@ -70,12 +71,15 @@ public class StockSettlementListener {
                 return;
             }
 
-            // 库存完成同时登记发奖义务。即使进程在提交 Kafka 之前退出，发奖扫描仍能恢复。
-            orderRepository.updateStockSettlementEventStatus(order.getuId(), order.getOrderId(),
-                    StockSettlementEventStatus.COMPLETE.getCode());
-            AwardFulfillmentEvent award = new AwardFulfillmentEvent();
-            BeanUtils.copyProperties(order, award);
-            outbox.afterStockSettled(award);
+            // 只有推进库存终态的消费者取得发奖首发资格，并在同一 SQL 中登记代数及补偿时间。
+            if (orderRepository.updateStockSettlementEventStatus(order.getuId(), order.getOrderId(),
+                    StockSettlementEventStatus.COMPLETE.getCode())
+                    && !AwardFulfillmentStatus.COMPLETE.getCode().equals(order.getAwardFulfillmentStatus())) {
+                AwardFulfillmentEvent award = new AwardFulfillmentEvent();
+                BeanUtils.copyProperties(order, award);
+                // 库存完成前发奖不可领取，订单快照上的代数正是这次推进前的值。
+                outbox.afterStockSettled(award, order.getFulfillmentAttempt() + 1);
+            }
             ack.acknowledge();
         } catch (RuntimeException e) {
             logger.error("stock consume failed topic:{} key:{}", topic, record.key(), e);

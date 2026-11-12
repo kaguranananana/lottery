@@ -52,14 +52,15 @@ public class MqCallbackStateTest {
     }
 
     @Test
-    public void realtimeSendsOnlyAfterClaimAndCallbackKeepsInflightBounded() {
+    public void realtimeUsesPersistedGenerationWithoutClaimAndKeepsInflightBounded() {
         SettableListenableFuture<SendResult<String, Object>> future = new SettableListenableFuture<>();
-        when(orders.claimOutbox(OutboxKind.STOCK, 1L, 0, true, 45)).thenReturn(true);
         when(producer.sendStockSettlement(any())).thenReturn(future);
         outbox.afterOrderCommit(stock(1L));
         verify(producer, timeout(2000)).sendStockSettlement(any());
         outbox.afterOrderCommit(stock(2L));
-        verify(orders, never()).claimOutbox(eq(OutboxKind.STOCK), eq(2L), anyInt(), anyBoolean(), anyInt());
+        // 订单提交时已登记代数，实时发送不访问数据库；第二笔因在途额度保留在 Outbox。
+        verifyNoInteractions(orders);
+        assertEquals(Long.valueOf(1), outbox.metrics().get("rejected"));
         verify(orders, never()).finishOutbox(any(), anyLong(), anyInt(), anyBoolean(), anyInt());
         future.set(null);
         verify(orders, timeout(2000)).finishOutbox(OutboxKind.STOCK, 1L, 1, true, 600);
@@ -70,7 +71,7 @@ public class MqCallbackStateTest {
         DrawOrderVO candidate = order(0, 0, 0);
         candidate.setStockAttempt(2);
         when(orders.scanOutbox(OutboxKind.STOCK, 1)).thenReturn(Collections.singletonList(candidate));
-        when(orders.claimOutbox(OutboxKind.STOCK, 1L, 2, false, 45)).thenReturn(true);
+        when(orders.claimOutbox(OutboxKind.STOCK, 1L, 2, 45)).thenReturn(true);
         SettableListenableFuture<SendResult<String, Object>> future = new SettableListenableFuture<>();
         when(producer.sendStockSettlement(any())).thenReturn(future);
         java.util.concurrent.CompletableFuture<Void> scan = java.util.concurrent.CompletableFuture.runAsync(
@@ -86,7 +87,7 @@ public class MqCallbackStateTest {
     public void fulfillmentRecoveryUsesSameClaimAndResultPath() {
         DrawOrderVO candidate = order(1, 0, 2);
         when(orders.scanOutbox(OutboxKind.FULFILLMENT, 1)).thenReturn(Collections.singletonList(candidate));
-        when(orders.claimOutbox(OutboxKind.FULFILLMENT, 1L, 0, false, 45)).thenReturn(true);
+        when(orders.claimOutbox(OutboxKind.FULFILLMENT, 1L, 0, 45)).thenReturn(true);
         SettableListenableFuture<SendResult<String, Object>> future = new SettableListenableFuture<>();
         future.set(null);
         when(producer.sendAwardFulfillment(any())).thenReturn(future);
@@ -155,6 +156,26 @@ public class MqCallbackStateTest {
         stockListener(config).onMessage(stockRecord(), ack, "lottery_strategy_award_stock");
         verify(config, never()).settleAwardStock(any());
         verify(ack).acknowledge();
+    }
+
+    @Test
+    public void onlyStockTransitionWinnerQueuesFulfillment() {
+        DrawOrderVO pending = order(0, 0, 0);
+        pending.setFulfillmentAttempt(2);
+        when(orders.findOrder("mq-test", 1L)).thenReturn(pending);
+        when(orders.updateStockSettlementEventStatus("mq-test", 1L, 1)).thenReturn(true, false);
+        IDrawConfigRepository config = mock(IDrawConfigRepository.class);
+        when(config.settleAwardStock(any())).thenReturn(true);
+        SettableListenableFuture<SendResult<String, Object>> future = new SettableListenableFuture<>();
+        when(producer.sendAwardFulfillment(any())).thenReturn(future);
+        // 两次消费都读到旧状态，只有赢得库存 CAS 的消费者能触发发奖首发。
+        stockListener(config).onMessage(stockRecord(), ack, "lottery_strategy_award_stock");
+        stockListener(config).onMessage(stockRecord(), ack, "lottery_strategy_award_stock");
+        assertEquals(Long.valueOf(0), outbox.metrics().get("rejected"));
+        verify(producer, timeout(2000)).sendAwardFulfillment(any());
+        future.set(null);
+        verify(orders, timeout(2000)).finishOutbox(OutboxKind.FULFILLMENT, 1L, 3, true, 600);
+        verify(ack, times(2)).acknowledge();
     }
 
     private AwardFulfillmentListener invoiceListener(AwardFulfillmentHandler handler) {

@@ -657,7 +657,7 @@ public class FinalBusinessE2eManualIT {
     private void recoverStock() throws Exception {
         // 仅使本测试中跳过实时调度的首发订单到期，租约、超时与回调仍由生产实现处理。
         update("UPDATE lottery.draw_order SET stock_retry_at=NOW(3)"
-                + " WHERE stock_settlement_event_status=0 AND stock_attempt=0 AND stock_retry_at IS NOT NULL");
+                + " WHERE stock_settlement_event_status=0 AND stock_attempt=1 AND stock_retry_at IS NOT NULL");
         job.recoverStock();
     }
 
@@ -671,6 +671,7 @@ public class FinalBusinessE2eManualIT {
         // 禁用调度的测试上下文仍能完成，只有真实提交事件可触发本单投递。
         awaitComplete(user, result.getOrderId());
         assertEquals(1, value("SELECT stock_attempt FROM lottery.draw_order WHERE order_id=?", result.getOrderId()));
+        assertEquals(1, value("SELECT fulfillment_attempt FROM lottery.draw_order WHERE order_id=?", result.getOrderId()));
         assertEquals(1, value("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE order_id=?", result.getOrderId()));
     }
 

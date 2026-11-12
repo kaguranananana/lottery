@@ -156,9 +156,9 @@ public class FulfillmentEventStatusCasManualIT {
 
     @Test
     public void duplicateAndLateEventsDoNotPostponeTimeout() {
-        assertTrue(repository.claimOutbox(OutboxKind.STOCK, 1, 0, true, 45));
+        assertTrue(repository.claimOutbox(OutboxKind.STOCK, 1, 0, 45));
         expire("stock");
-        assertTrue(repository.claimOutbox(OutboxKind.STOCK, 1, 1, false, 45));
+        assertTrue(repository.claimOutbox(OutboxKind.STOCK, 1, 1, 45));
         repository.finishOutbox(OutboxKind.STOCK, 1, 2, true, 600);
         java.sql.Timestamp deadline = retry("stock");
         repository.finishOutbox(OutboxKind.STOCK, 1, 1, false, 5);
@@ -184,7 +184,7 @@ public class FulfillmentEventStatusCasManualIT {
 
     @Test
     public void stockConsumerCompletesBeforeProducerCallbacks() {
-        assertTrue(repository.claimOutbox(OutboxKind.STOCK, 1, 0, true, 45));
+        assertTrue(repository.claimOutbox(OutboxKind.STOCK, 1, 0, 45));
         consumeStock(true);
         assertEquals(1, stockState());
         repository.finishOutbox(OutboxKind.STOCK, 1, 1, true, 600);
@@ -195,22 +195,36 @@ public class FulfillmentEventStatusCasManualIT {
     }
 
     @Test
-    public void realtimeAndRecoveryCannotBothClaimSameGeneration() throws Exception {
+    public void onlyOneRecoveryClaimsDueStockAndInitialCallbackCannotOverwriteIt() throws Exception {
+        // 用生产 INSERT 创建订单，先验证首发代数和到期前不可补偿。
+        jdbc.update("DELETE FROM draw_order");
+        DrawOrder row = new DrawOrder();
+        row.setuId("mq-test");
+        row.setOrderId(1L);
+        row.setStockSettlementEventStatus(0);
+        dao.insert(row);
+        assertEquals(Integer.valueOf(1), jdbc.queryForObject("SELECT stock_attempt FROM draw_order", Integer.class));
+        assertFalse(repository.claimOutbox(OutboxKind.STOCK, 1, 1, 45));
+        expire("stock");
         ExecutorService pool = Executors.newFixedThreadPool(2);
         CountDownLatch start = new CountDownLatch(1);
         try {
-            Future<Boolean> realtime = pool.submit(() -> {
-                start.await(); return repository.claimOutbox(OutboxKind.STOCK, 1, 0, true, 45);
-            });
-            Future<Boolean> recovery = pool.submit(() -> {
-                start.await(); return repository.claimOutbox(OutboxKind.STOCK, 1, 0, false, 45);
-            });
+            Callable<Boolean> recover = () -> {
+                start.await();
+                return repository.claimOutbox(OutboxKind.STOCK, 1, 1, 45);
+            };
+            Future<Boolean> first = pool.submit(recover);
+            Future<Boolean> second = pool.submit(recover);
             start.countDown();
-            assertNotEquals(realtime.get(10, TimeUnit.SECONDS), recovery.get(10, TimeUnit.SECONDS));
+            assertNotEquals(first.get(10, TimeUnit.SECONDS), second.get(10, TimeUnit.SECONDS));
             assertTrue(repository.scanOutbox(OutboxKind.STOCK, 10).isEmpty());
-            // 模拟领取后进程消失。只有到期后下一代可以领取。
+            java.sql.Timestamp deadline = retry("stock");
+            // 首发晚到的回调既不能推状态，也不能改补偿租期。
+            repository.finishOutbox(OutboxKind.STOCK, 1, 1, true, 600);
+            assertEquals(0, stockState());
+            assertEquals(deadline, retry("stock"));
             expire("stock");
-            assertTrue(repository.claimOutbox(OutboxKind.STOCK, 1, 1, false, 45));
+            assertTrue(repository.claimOutbox(OutboxKind.STOCK, 1, 2, 45));
         } finally {
             pool.shutdownNow();
         }
@@ -219,12 +233,12 @@ public class FulfillmentEventStatusCasManualIT {
     @Test
     public void timedOutStockFailureKeepsSentAndUsesBackoff() {
         jdbc.update("UPDATE draw_order SET stock_settlement_event_status=3");
-        assertTrue(repository.claimOutbox(OutboxKind.STOCK, 1, 0, false, 45));
+        assertTrue(repository.claimOutbox(OutboxKind.STOCK, 1, 0, 45));
         repository.finishOutbox(OutboxKind.STOCK, 1, 1, false, 5);
         assertEquals(3, stockState());
         assertTrue(repository.scanOutbox(OutboxKind.STOCK, 10).isEmpty());
         expire("stock");
-        assertTrue(repository.claimOutbox(OutboxKind.STOCK, 1, 1, false, 45));
+        assertTrue(repository.claimOutbox(OutboxKind.STOCK, 1, 1, 45));
         repository.finishOutbox(OutboxKind.STOCK, 1, 2, true, 600);
         consumeStock(true);
         assertEquals(1, stockState());
@@ -234,7 +248,7 @@ public class FulfillmentEventStatusCasManualIT {
     public void invoiceConsumerAndLateCallbacksShareRealCas() {
         jdbc.update("UPDATE draw_order SET stock_settlement_event_status=1,fulfillment_event_status=2");
         expire("fulfillment");
-        assertTrue(repository.claimOutbox(OutboxKind.FULFILLMENT, 1, 0, false, 45));
+        assertTrue(repository.claimOutbox(OutboxKind.FULFILLMENT, 1, 0, 45));
         consumeInvoice();
         repository.finishOutbox(OutboxKind.FULFILLMENT, 1, 1, true, 600);
         assertEquals(1, invoiceState());
@@ -248,9 +262,9 @@ public class FulfillmentEventStatusCasManualIT {
     public void invoiceRetriesIgnoreOldFailuresAfterNewSuccess() {
         jdbc.update("UPDATE draw_order SET stock_settlement_event_status=1,fulfillment_event_status=2");
         expire("fulfillment");
-        assertTrue(repository.claimOutbox(OutboxKind.FULFILLMENT, 1, 0, false, 45));
+        assertTrue(repository.claimOutbox(OutboxKind.FULFILLMENT, 1, 0, 45));
         expire("fulfillment");
-        assertTrue(repository.claimOutbox(OutboxKind.FULFILLMENT, 1, 1, false, 45));
+        assertTrue(repository.claimOutbox(OutboxKind.FULFILLMENT, 1, 1, 45));
         repository.finishOutbox(OutboxKind.FULFILLMENT, 1, 2, true, 600);
         java.sql.Timestamp deadline = retry("fulfillment");
         repository.finishOutbox(OutboxKind.FULFILLMENT, 1, 1, false, 5);
