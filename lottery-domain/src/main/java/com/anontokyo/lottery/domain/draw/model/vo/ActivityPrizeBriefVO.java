@@ -7,18 +7,18 @@ import java.math.BigDecimal;
  * @author：anontokyo
  * @date: 2026/1/12
  */
-public class DrawConfigPrizeBriefVO {
+public class ActivityPrizeBriefVO {
 
     // 自增ID
     private String id;
 
-    // 抽奖配置ID
-    private Long drawConfigId;
+    // 活动ID
+    private Long activityId;
 
     // 奖品ID
     private String awardId;
 
-    // 总库存沿持久化读取到抽奖配置快照保持 INT 语义，不进行字符串转换。
+    // 总库存沿持久化读取到活动奖池快照保持 INT 语义，不进行字符串转换。
     private Integer awardCount;
 
     // 中奖概率
@@ -56,11 +56,11 @@ public class DrawConfigPrizeBriefVO {
         this.id = id;
     }
 
-    public Long getDrawConfigId() {
-        return drawConfigId;
+    public Long getActivityId() {
+        return activityId;
     }
 
-    public void setDrawConfigId(Long drawConfigId) {
-        this.drawConfigId = drawConfigId;
+    public void setActivityId(Long activityId) {
+        this.activityId = activityId;
     }
 }

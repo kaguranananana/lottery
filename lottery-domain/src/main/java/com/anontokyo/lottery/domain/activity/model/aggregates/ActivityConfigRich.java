@@ -2,12 +2,12 @@ package com.anontokyo.lottery.domain.activity.model.aggregates;
 
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
 import com.anontokyo.lottery.domain.activity.model.vo.AwardVO;
-import com.anontokyo.lottery.domain.activity.model.vo.DrawConfigVO;
+import com.anontokyo.lottery.domain.activity.model.vo.ActivityPrizeVO;
 
 import java.util.List;
 
 /**
- * @description: 活动配置聚合信息
+ * @description: 活动及其独立奖池
  * @author：anontokyo
  * @date: 2026/1/12
  */
@@ -16,18 +16,18 @@ public class ActivityConfigRich {
     /** 活动信息 */
     private ActivityVO activity;
 
-    /** 策略信息(含抽奖配置奖品) */
-    private DrawConfigVO drawConfig;
+    /** 本活动的奖品、概率和库存 */
+    private List<ActivityPrizeVO> activityPrizeList;
 
-    /** 奖品列表 */
+    /** 新建的全局奖品；已存在的奖品直接通过奖池明细引用 */
     private List<AwardVO> awardList;
 
     public ActivityConfigRich() {
     }
 
-    public ActivityConfigRich(ActivityVO activity, DrawConfigVO drawConfig, List<AwardVO> awardList) {
+    public ActivityConfigRich(ActivityVO activity, List<ActivityPrizeVO> activityPrizeList, List<AwardVO> awardList) {
         this.activity = activity;
-        this.drawConfig = drawConfig;
+        this.activityPrizeList = activityPrizeList;
         this.awardList = awardList;
     }
 
@@ -39,12 +39,12 @@ public class ActivityConfigRich {
         this.activity = activity;
     }
 
-    public DrawConfigVO getDrawConfig() {
-        return drawConfig;
+    public List<ActivityPrizeVO> getActivityPrizeList() {
+        return activityPrizeList;
     }
 
-    public void setDrawConfig(DrawConfigVO drawConfig) {
-        this.drawConfig = drawConfig;
+    public void setActivityPrizeList(List<ActivityPrizeVO> activityPrizeList) {
+        this.activityPrizeList = activityPrizeList;
     }
 
     public List<AwardVO> getAwardList() {

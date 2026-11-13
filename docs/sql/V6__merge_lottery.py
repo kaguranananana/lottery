@@ -13,7 +13,7 @@ GLOBAL = ('activity', 'award', 'draw_config', 'draw_config_prize', 'award_stock_
 def migration(target):
     if not re.fullmatch(r'lottery_single(?:_[a-z0-9_]{1,40})?', target):
         raise ValueError('目标库必须使用新的 lottery_single 或 lottery_single_* 名称')
-    ddl = (BASE / 'lottery-schema.sql').read_text()
+    ddl = (BASE / 'lottery-v7-schema.sql').read_text()
     ddl = ddl.replace('CREATE DATABASE lottery ', f'CREATE DATABASE {target} ').replace('USE lottery;', f'USE {target};')
     # 按目标表的显式列名复制。分片自增 ID 会重编号，生成列由目标重新计算。
     statements = []

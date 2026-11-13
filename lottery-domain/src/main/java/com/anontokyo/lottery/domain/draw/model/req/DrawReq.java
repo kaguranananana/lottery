@@ -10,15 +10,15 @@ public class DrawReq {
     // 用户ID
     private String uId;
 
-    // 抽奖配置ID
-    private Long drawConfigId;
+    // 活动ID
+    private Long activityId;
 
     public DrawReq() {
     }
 
-    public DrawReq(String uId, Long drawConfigId) {
+    public DrawReq(String uId, Long activityId) {
         this.uId = uId;
-        this.drawConfigId = drawConfigId;
+        this.activityId = activityId;
     }
 
     public String getuId() {
@@ -29,12 +29,12 @@ public class DrawReq {
         this.uId = uId;
     }
 
-    public Long getDrawConfigId() {
-        return drawConfigId;
+    public Long getActivityId() {
+        return activityId;
     }
 
-    public void setDrawConfigId(Long drawConfigId) {
-        this.drawConfigId = drawConfigId;
+    public void setActivityId(Long activityId) {
+        this.activityId = activityId;
     }
 
 }

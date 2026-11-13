@@ -54,7 +54,7 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
             return new PartakeResult(grabResult.getCode(), grabResult.getInfo());
         }
 
-        return buildPartakeResult(activityBillVO.getDrawConfigId(), takeId, Constants.ResponseCode.SUCCESS);
+        return buildPartakeResult(takeId, Constants.ResponseCode.SUCCESS);
     }
 
     private PartakeResult resolveUnfinishedTake(PartakeReq req, DrawParticipationVO take) {
@@ -66,7 +66,7 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
         }
         // 仅创建记录的原请求可以继续消费同一 take。
         if (req.getRequestId().equals(take.getRequestId())) {
-            return buildPartakeResult(take.getDrawConfigId(), take.getTakeId(),
+            return buildPartakeResult(take.getTakeId(),
                     Constants.ResponseCode.NOT_CONSUMED_TAKE);
         }
         // 新请求只取得原请求号用于恢复，不取得 take 的消费资格。
@@ -78,9 +78,8 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
 
     protected abstract DrawParticipationVO queryUnfinishedParticipation(Long activityId, String uId);
 
-    private PartakeResult buildPartakeResult(Long drawConfigId, Long takeId, Constants.ResponseCode code) {
+    private PartakeResult buildPartakeResult(Long takeId, Constants.ResponseCode code) {
         PartakeResult partakeResult = new PartakeResult(code.getCode(), code.getInfo());
-        partakeResult.setDrawConfigId(drawConfigId);
         partakeResult.setTakeId(takeId);
         return partakeResult;
     }

@@ -16,7 +16,7 @@ def run(session, semantics_name):
     directory=BASE/'results'/session/'message-replay';directory.mkdir(exist_ok=False)
     write(directory/'before.json',before)
     # 保留原 semantics 证据；新增目录单独保存消息重放后的审计。
-    parameters={'strategy':activity,'user':'hot-same','order':order['orderId'],'award':order['award']['awardId']}
+    parameters={'activityId':activity,'user':'hot-same','order':order['orderId'],'award':order['award']['awardId']}
     request=urllib.request.Request(URL+'/__perf/replay?'+urllib.parse.urlencode(parameters),data=b'')
     with urllib.request.urlopen(request,timeout=15) as response:assert response.status==200
     deadline=time.monotonic()+30

@@ -2,23 +2,19 @@ package com.anontokyo.lottery.infrastructure.repository;
 
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
-import com.anontokyo.lottery.domain.draw.model.aggregates.DrawConfigAggregate;
-import com.anontokyo.lottery.domain.draw.model.snapshot.DrawConfigSnapshot;
+import com.anontokyo.lottery.domain.draw.model.snapshot.ActivityPrizeSnapshot;
 import com.anontokyo.lottery.domain.draw.model.vo.AwardBriefVO;
-import com.anontokyo.lottery.domain.draw.model.vo.DrawConfigPrizeStockDeductResultVO;
-import com.anontokyo.lottery.domain.draw.model.vo.DrawConfigBriefVO;
-import com.anontokyo.lottery.domain.draw.model.vo.DrawConfigPrizeBriefVO;
-import com.anontokyo.lottery.domain.draw.repository.IDrawConfigRepository;
-import com.anontokyo.lottery.domain.draw.service.snapshot.DrawConfigSnapshotFactory;
+import com.anontokyo.lottery.domain.draw.model.vo.ActivityPrizeStockDeductResultVO;
+import com.anontokyo.lottery.domain.draw.model.vo.ActivityPrizeBriefVO;
+import com.anontokyo.lottery.domain.draw.repository.IActivityPrizeRepository;
+import com.anontokyo.lottery.domain.draw.service.snapshot.ActivityPrizeSnapshotFactory;
 import com.anontokyo.lottery.infrastructure.cache.TwoLevelCacheService;
 import com.anontokyo.lottery.infrastructure.dao.IAwardStockSettlementDao;
 import com.anontokyo.lottery.infrastructure.dao.IAwardDao;
-import com.anontokyo.lottery.infrastructure.dao.IDrawConfigDao;
-import com.anontokyo.lottery.infrastructure.dao.IDrawConfigPrizeDao;
+import com.anontokyo.lottery.infrastructure.dao.IActivityPrizeDao;
 import com.anontokyo.lottery.infrastructure.po.AwardStockSettlement;
 import com.anontokyo.lottery.infrastructure.po.Award;
-import com.anontokyo.lottery.infrastructure.po.DrawConfig;
-import com.anontokyo.lottery.infrastructure.po.DrawConfigPrize;
+import com.anontokyo.lottery.infrastructure.po.ActivityPrize;
 import com.anontokyo.lottery.infrastructure.utils.RedisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -37,15 +33,12 @@ import java.util.List;
  */
 
 @Repository
-public class DrawConfigRepository implements IDrawConfigRepository {
+public class ActivityPrizeRepository implements IActivityPrizeRepository {
 
-    private Logger logger = LoggerFactory.getLogger(DrawConfigRepository.class);
-
-    @Resource
-    private IDrawConfigDao drawConfigDao;
+    private Logger logger = LoggerFactory.getLogger(ActivityPrizeRepository.class);
 
     @Resource
-    private IDrawConfigPrizeDao drawConfigPrizeDao;
+    private IActivityPrizeDao activityPrizeDao;
 
     @Resource
     private IAwardStockSettlementDao awardStockSettlementDao;
@@ -62,21 +55,20 @@ public class DrawConfigRepository implements IDrawConfigRepository {
     @Resource
     private TwoLevelCacheService twoLevelCacheService;
 
-    private final DrawConfigSnapshotFactory snapshotFactory = new DrawConfigSnapshotFactory();
+    private final ActivityPrizeSnapshotFactory snapshotFactory = new ActivityPrizeSnapshotFactory();
 
     @Override
-    public DrawConfigSnapshot queryDrawConfigSnapshot(Long drawConfigId) {
-        return twoLevelCacheService.getDrawConfigSnapshotCache(
-                Constants.RedisKey.KEY_LOTTERY_CACHE_DRAW_CONFIG_SNAPSHOT(drawConfigId),
-                DrawConfigSnapshot.class,
-                () -> buildSnapshotFromDb(drawConfigId));
+    public ActivityPrizeSnapshot queryActivityPrizeSnapshot(Long activityId) {
+        return twoLevelCacheService.getActivityPrizeSnapshotCache(
+                Constants.RedisKey.KEY_LOTTERY_CACHE_ACTIVITY_PRIZE_SNAPSHOT(activityId),
+                ActivityPrizeSnapshot.class,
+                () -> buildSnapshotFromDb(activityId));
     }
 
-    private DrawConfigSnapshot buildSnapshotFromDb(Long drawConfigId) {
-        DrawConfig drawConfig = drawConfigDao.queryDrawConfig(drawConfigId);
-        List<DrawConfigPrize> details = drawConfigPrizeDao.queryDrawConfigPrizeList(drawConfigId);
+    private ActivityPrizeSnapshot buildSnapshotFromDb(Long activityId) {
+        List<ActivityPrize> details = activityPrizeDao.queryActivityPrizeList(activityId);
 
-        return snapshotFactory.build(new DrawConfigAggregate(drawConfigId, toDrawConfigVO(drawConfig), toDrawConfigPrizeVOList(details)),
+        return snapshotFactory.build(activityId, toActivityPrizeVOList(details),
                 this::queryAwardInfoFromDb);
     }
 
@@ -90,7 +82,7 @@ public class DrawConfigRepository implements IDrawConfigRepository {
             AwardStockSettlement ledgerRow = new AwardStockSettlement();
             ledgerRow.setOrderId(settlement.getOrderId());
             ledgerRow.setuId(settlement.getuId());
-            ledgerRow.setDrawConfigId(settlement.getDrawConfigId());
+            ledgerRow.setActivityId(settlement.getActivityId());
             ledgerRow.setAwardId(settlement.getAwardId());
             try {
                 awardStockSettlementDao.insert(ledgerRow);
@@ -100,7 +92,7 @@ public class DrawConfigRepository implements IDrawConfigRepository {
                 return true;
             }
 
-            boolean deducted = deductStock(settlement.getDrawConfigId(), settlement.getAwardId());
+            boolean deducted = deductStock(settlement.getActivityId(), settlement.getAwardId());
             if (!deducted) {
                 status.setRollbackOnly();
                 return false;
@@ -115,55 +107,42 @@ public class DrawConfigRepository implements IDrawConfigRepository {
      * 抛出状态异常并保留原参与，由人工对账恢复后使用原请求继续。
      */
     @Override
-    public DrawConfigPrizeStockDeductResultVO deductStockByRedis(Long drawConfigId, String awardId) {
-        String stockKey = Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_COUNT(drawConfigId, awardId);
+    public ActivityPrizeStockDeductResultVO deductStockByRedis(Long activityId, String awardId) {
+        String stockKey = Constants.RedisKey.KEY_LOTTERY_ACTIVITY_PRIZE_STOCK_COUNT(activityId, awardId);
         try {
             // Lua 将存在性检查与条件扣减合并；缺失 Key 抛出，只有真实售罄才返回 soldOut。
             long remaining = redisUtil.deductStock(stockKey);
-            return remaining < 0 ? DrawConfigPrizeStockDeductResultVO.soldOut()
-                    : DrawConfigPrizeStockDeductResultVO.success();
+            return remaining < 0 ? ActivityPrizeStockDeductResultVO.soldOut()
+                    : ActivityPrizeStockDeductResultVO.success();
         } catch (Exception e) {
-            logger.error("deduct drawConfig award stock failed, drawConfigId:{} awardId:{} key:{}",
-                    drawConfigId, awardId, stockKey, e);
-            throw new IllegalStateException("drawConfig award stock state unavailable", e);
+            logger.error("deduct activity prize stock failed, activityId:{} awardId:{} key:{}",
+                    activityId, awardId, stockKey, e);
+            throw new IllegalStateException("activity prize stock state unavailable", e);
         }
     }
 
     @Override
-    public void recoverDrawConfigPrizeStockByRedis(Long drawConfigId, String awardId) {
-        String stockKey = Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_COUNT(drawConfigId, awardId);
+    public void recoverActivityPrizeStockByRedis(Long activityId, String awardId) {
+        String stockKey = Constants.RedisKey.KEY_LOTTERY_ACTIVITY_PRIZE_STOCK_COUNT(activityId, awardId);
         try {
             redisUtil.recoverStock(stockKey);
         } catch (Exception e) {
-            logger.error("recover drawConfig award stock by redis failed, drawConfigId:{} awardId:{}", drawConfigId,
+            logger.error("recover activity prize stock by redis failed, activityId:{} awardId:{}", activityId,
                     awardId, e);
             // 回补失败必须暴露，不能只写日志就让调用方认为补偿已完成。
             throw e;
         }
     }
 
-    private DrawConfigBriefVO toDrawConfigVO(DrawConfig drawConfig) {
-        if (drawConfig == null) {
-            return null;
-        }
-        DrawConfigBriefVO vo = new DrawConfigBriefVO();
-        vo.setId(drawConfig.getId());
-        vo.setDrawConfigId(drawConfig.getDrawConfigId());
-        vo.setDrawConfigDesc(drawConfig.getDrawConfigDesc());
-        vo.setGrantType(drawConfig.getGrantType());
-        vo.setScheduledAt(drawConfig.getScheduledAt());
-        return vo;
-    }
-
-    private List<DrawConfigPrizeBriefVO> toDrawConfigPrizeVOList(List<DrawConfigPrize> list) {
+    private List<ActivityPrizeBriefVO> toActivityPrizeVOList(List<ActivityPrize> list) {
         if (list == null || list.isEmpty()) {
             return new ArrayList<>();
         }
-        List<DrawConfigPrizeBriefVO> voList = new ArrayList<>(list.size());
-        for (DrawConfigPrize detail : list) {
-            DrawConfigPrizeBriefVO vo = new DrawConfigPrizeBriefVO();
+        List<ActivityPrizeBriefVO> voList = new ArrayList<>(list.size());
+        for (ActivityPrize detail : list) {
+            ActivityPrizeBriefVO vo = new ActivityPrizeBriefVO();
             vo.setId(detail.getId());
-            vo.setDrawConfigId(detail.getDrawConfigId());
+            vo.setActivityId(detail.getActivityId());
             vo.setAwardId(detail.getAwardId());
             vo.setAwardCount(detail.getAwardCount());
             vo.setAwardRate(detail.getAwardRate());
@@ -188,11 +167,11 @@ public class DrawConfigRepository implements IDrawConfigRepository {
     /**
      * 结算账本本地事务内完成「INSERT 账本 + 条件扣减库存」，供 settleAwardStock 使用。
      */
-    private boolean deductStock(Long drawConfigId, String awardId) {
-        DrawConfigPrize req = new DrawConfigPrize();
-        req.setDrawConfigId(drawConfigId);
+    private boolean deductStock(Long activityId, String awardId) {
+        ActivityPrize req = new ActivityPrize();
+        req.setActivityId(activityId);
         req.setAwardId(awardId);
-        int count = drawConfigPrizeDao.deductStock(req);
+        int count = activityPrizeDao.deductStock(req);
         return count == 1;
     }
 }

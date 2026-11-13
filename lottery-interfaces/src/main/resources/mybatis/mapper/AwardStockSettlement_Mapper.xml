@@ -4,9 +4,9 @@
 
     <insert id="insert" parameterType="com.anontokyo.lottery.infrastructure.po.AwardStockSettlement">
         INSERT INTO award_stock_settlement
-        (order_id, u_id, draw_config_id, award_id, create_time)
+        (order_id, u_id, activity_id, award_id, create_time)
         VALUES
-        (#{orderId}, #{uId}, #{drawConfigId}, #{awardId}, now())
+        (#{orderId}, #{uId}, #{activityId}, #{awardId}, now())
     </insert>
 
 </mapper>

@@ -16,5 +16,5 @@ public interface IDrawExec {
     /**
      * Recover the Redis-reserved award stock when downstream order creation fails.
      */
-    void recoverDrawAwardStock(Long drawConfigId, String awardId);
+    void recoverDrawAwardStock(Long activityId, String awardId);
 }

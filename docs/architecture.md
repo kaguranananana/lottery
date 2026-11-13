@@ -33,7 +33,7 @@ MyBatis 与 `TransactionTemplate` 使用同一个 Hikari 数据源，事务在�
 
 ## 当前业务约束与事务主链路
 
-系统只限制每位用户的参与次数和策略奖品库存。活动保存名称、时间、状态、`take_count` 和 `draw_config_id`，没有全场总抽奖名额。取消活动总库存，是因为该业务限制已不需要，且旧 MySQL 活动余量没有完整结算链路；不合并活动与策略，不改变概率算法。
+系统只限制每位用户的参与次数与当前活动的奖品库存。活动保存名称、时间、状态和个人次数；独立奖池通过 activity_id 关联活动。同一目录奖品可用于多个活动，概率和库存各自独立。见[七表模型与 V8 切换](activity-prize-pool.md)。
 
 ```mermaid
 flowchart TD
@@ -54,14 +54,14 @@ flowchart TD
 
 TX1 不访问 Redis 库存；次数扣减与参与插入一起回滚，唯一键冲突不重复耗次。TX2 失败保留现有奖品回补与事务结果判定，不在应用层扩大事务。TX3 扣减失败回滚新账本，再由独立订单 CAS 写 BLOCKED；已有账本证明同订单已结算。Redis 预扣后、TX2 提交前的 JVM 崩溃和提交结果未知仍需人工对账，Outbox 无法覆盖没有订单的预留。
 
-启动在活动行锁内检查 PASS 和有效时间，再锁共享策略行。新奖池只用 MySQL `award_surplus_count` SETNX，已有 Key 保留实时余量；已被 DOING/CLOSE 活动引用的奖池只检查现存 Key，缺失则拒绝启动，避免关闭后的在途结算或第二个活动把奖品复活。CLOSE 不能证明奖池从未使用，若在首次启动前关闭过唯一引用活动且 Redis 无 Key，也需人工确认奖池后初始化。任何预热异常使活动保持 PASS。
+启动在活动行锁内检查 READY 和活动时间，以 SETNX 建立奖品库存后 CAS 为 RUNNING。重复预热保留已有余额；RUNNING 和 CLOSED 的缺键必须对账。预热失败仍为 READY。
 
-[数据库初始化与 V6 升级](single-database.md) 提供当前表结构及历史数据迁移顺序。
+[数据库初始化与 V8 升级](activity-prize-pool.md) 提供当前表结构及历史数据迁移顺序。
 
 ## 2. 组件存在理由（自检清单）
 
 ### Redis 为什么存在？
-接口令牌桶、策略奖品库存原子预扣、抽奖并发防重入锁、DrawConfigSnapshot L2 和活动配置缓存。
+接口令牌桶、活动奖品库存原子预扣、抽奖并发防重入锁、ActivityPrizeSnapshot L2 和活动配置缓存。
 Redis 不承担任何“最终是否处理过”的事实判定：DONE 类 guard 已删除，幂等事实在 MySQL 唯一约束里。
 
 库存检查与条件扣减在单 Key Lua 中完成，售罄不写负数；缺失 Key 明确报错，奖品缺失不会被消费成未中奖。回补只修改现存 Key，异常不吞掉。订单 SQL 异常仅在事务未开始或确认回滚时归还奖品预扣，提交结果未知保留日志待对账，不能凭异常无条件加库存。
@@ -78,7 +78,7 @@ Redis 不承担任何“最终是否处理过”的事实判定：DONE 类 guard
 
 ### settlement ledger 为什么存在？
 保证 Kafka duplicate delivery / consumer crash 后的重复消费不会让同一个 orderId 扣两次库存。
-`INSERT award_stock_settlement(UNIQUE order_id) + UPDATE draw_config_prize ... surplus>0`
+`INSERT award_stock_settlement(UNIQUE order_id) + UPDATE activity_prize ... surplus>0`
 是同一个本地事务，账本唯一键冲突表示已结算。
 
 ### Spring 定时调度
@@ -86,7 +86,7 @@ Redis 不承担任何“最终是否处理过”的事实判定：DONE 类 guard
 三个固定延迟任务独立执行活动状态推进、库存重试与发奖重试。订单提交后的发送由有界 Outbox 工作池完成。重试规则、V7 部署及 BLOCKED 对账见 [订单 Outbox](outbox-delivery.md)。
 
 ### Caffeine 为什么存在？
-DrawConfigSnapshot 是每次抽奖必需、活动运行期基本不变的热点读：
+ActivityPrizeSnapshot 是每次抽奖必需、活动运行期基本不变的热点读：
 Caffeine L1(60s, max 10000) + Redis L2(600s+jitter120s)。
 一致性边界明确为**短 TTL 最终一致**：运营变更后 TTL 内可能读到旧版本，不做广播失效。
 其余实体不再有 L1（activity 只留 Redis 单级；award 信息并入快照；ruleTree 已删除）。
@@ -105,29 +105,28 @@ Caffeine L1(60s, max 10000) + Redis L2(600s+jitter120s)。
 ## 4. 状态机
 
 ```text
-EDIT(1) ──确认就绪──▶ PASS(4) ──调度到期──▶ DOING(5) ──过期/关闭──▶ CLOSE(7)
+DRAFT(1) ──确认就绪──▶ READY(4) ──到开始时间──▶ RUNNING(5) ──到期/关闭──▶ CLOSED(7)
                           │
-                          └──人工下线──▶ CLOSE(7)
+                          └──人工下线──▶ CLOSED(7)
 ```
 
 落地即一条 CAS：`UPDATE activity SET state=:target WHERE activity_id=:id AND state=:expected`，
-影响行数为 0 表示并发冲突或非法前置状态。历史 DB 中的提审/撤审/拒绝/开启态没有生产语义，
-migration 注释提供归并语句（默认不自动执行 DROP/UPDATE）。
+影响行数为 0 表示并发冲突或非法前置状态。V8 保留原数值 1/4/5/7，遇到其他历史状态时中止迁移，由业务确认归属。
 
 ## 5. 测试体系
 
 | 层级 | 内容 | 环境 |
 | --- | --- | --- |
 | 单元测试（CI 门禁） | WeightedRandomSelectorTest（微精度概率、NO_PRIZE、越界拒绝、边界采样）；RedisActivityDrawProcessGuardTest（锁 token/Lua 释放）；DrawRequestIdempotencyTest（编排层幂等：全流程一次/回放已消费 take/复用未完成 take/异常时释放锁） | 无需外部环境 |
-| 手工集成测试（ManualIT） | StockSettlementIdempotencyManualIT（场景 B 并发预扣不超卖、C/D 同一 orderId 二次结算被 UNIQUE 拦截）；DrawExecManualIT 等 legacy 场景 | 本机 MySQL+Redis，`mvn test -Dtest='*ManualIT'` |
+| 真实中间件回归 | FinalBusinessE2eManualIT、MqMiddlewareE2eManualIT、RedisStockFailureManualIT 与 SQL 专项覆盖并发、库存、订单、Kafka 和异常恢复 | 专用 MySQL、Redis、Kafka；见 [V8 回归复现](activity-prize-pool.md#回归复现) |
 
 运行要求：MySQL（lottery，端口 13306）、Redis localhost:6379、可选 Kafka localhost:9092；
-新库执行完整 Schema，历史库先核对 V5 前置结构再执行 V6。详见 [部署说明](single-database.md)。
+新库执行当前完整 Schema；已有 V7 单库按 V8 旁路升级，分片库先走 V6 合库。详见 [部署说明](activity-prize-pool.md)。
 
 ## 6. 部署与请求归属
 
 [单库部署](single-database.md) 记录历史分片数据合并与切换步骤。[抽奖幂等接口](draw-request-idempotency.md) 记录请求归属和未完成请求恢复。
 
-最终一轮的活动创建、分页、预热恢复、库存分歧及真实 HTTP 主链路证据见[最终正确性与 E2E 报告](final-correctness-e2e.md)。
+当前活动创建、预热、迁移回放和真实 HTTP 主链路证据见 [V8 实测](activity-prize-pool.md#2026-11-13-实测)。
 
 后续库存异常、事务回补、缓存提交时序及显式 Snowflake 节点配置修复，见[2026-10-24 故障评估](failure-review-20261024.md)。

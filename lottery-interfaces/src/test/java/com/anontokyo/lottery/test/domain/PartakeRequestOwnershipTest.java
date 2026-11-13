@@ -79,7 +79,6 @@ public class PartakeRequestOwnershipTest {
         PartakeResult result = partake.doPartake(new PartakeReq("u1", 1L, "A"));
         assertEquals(Constants.ResponseCode.SUCCESS.getCode(), result.getCode());
         assertEquals(Long.valueOf(9), result.getTakeId());
-        assertEquals(Long.valueOf(8), result.getDrawConfigId());
         verify(activities).queryActivityBill(any());
         verifyNoMoreInteractions(activities);
     }
@@ -97,10 +96,10 @@ public class PartakeRequestOwnershipTest {
     @Test
     public void closedOrFutureActivityDoesNotReachQuotaTransaction() {
         ActivityBillVO bill = runningBill();
-        bill.setState(Constants.ActivityState.CLOSE.getCode());
+        bill.setState(Constants.ActivityState.CLOSED.getCode());
         assertEquals(Constants.ResponseCode.UN_ERROR.getCode(),
                 partake.doPartake(new PartakeReq("u1", 1L, "A")).getCode());
-        bill.setState(Constants.ActivityState.DOING.getCode());
+        bill.setState(Constants.ActivityState.RUNNING.getCode());
         bill.setBeginDateTime(new java.util.Date(Long.MAX_VALUE));
         assertEquals(Constants.ResponseCode.UN_ERROR.getCode(),
                 partake.doPartake(new PartakeReq("u1", 1L, "B")).getCode());
@@ -112,9 +111,8 @@ public class PartakeRequestOwnershipTest {
         ActivityBillVO bill = new ActivityBillVO();
         bill.setuId("u1");
         bill.setActivityId(1L);
-        bill.setDrawConfigId(8L);
         bill.setTakeCount(3);
-        bill.setState(Constants.ActivityState.DOING.getCode());
+        bill.setState(Constants.ActivityState.RUNNING.getCode());
         bill.setBeginDateTime(new java.util.Date(0));
         bill.setEndDateTime(new java.util.Date(Long.MAX_VALUE));
         when(activities.queryActivityBill(any())).thenReturn(bill);
@@ -126,7 +124,6 @@ public class PartakeRequestOwnershipTest {
         DrawParticipationVO take = new DrawParticipationVO();
         take.setRequestId(requestId);
         take.setTakeId(7L);
-        take.setDrawConfigId(8L);
         take.setState(Constants.TaskState.NO_USED.getCode());
         when(repository.queryUnfinishedParticipation(1L, "u1")).thenReturn(take);
     }

@@ -7,7 +7,7 @@ import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
 import com.anontokyo.lottery.domain.activity.model.vo.DrawParticipationVO;
 import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
-import com.anontokyo.lottery.domain.draw.repository.IDrawConfigRepository;
+import com.anontokyo.lottery.domain.draw.repository.IActivityPrizeRepository;
 import com.anontokyo.lottery.domain.activity.service.partake.impl.ActivityPartakeImpl;
 import com.anontokyo.lottery.domain.award.service.order.impl.AwardOrderImpl;
 import com.anontokyo.lottery.domain.draw.model.res.DrawResult;
@@ -48,7 +48,7 @@ public class DrawRequestOwnershipManualIT {
     private static final AtomicLong ids = new AtomicLong(System.currentTimeMillis());
     private static DrawParticipationRepository takes;
     private static OrderRepository orders;
-    private IDrawConfigRepository stockReservations;
+    private IActivityPrizeRepository stockReservations;
     private ActivityProcessImpl process;
     private IDrawExec draw;
     private String user;
@@ -96,15 +96,14 @@ public class DrawRequestOwnershipManualIT {
         bill.setuId(user);
         bill.setActivityId(100001L);
 
-        bill.setDrawConfigId(10001L);
         bill.setTakeCount(10);
-        bill.setState(Constants.ActivityState.DOING.getCode());
+        bill.setState(Constants.ActivityState.RUNNING.getCode());
         bill.setBeginDateTime(new java.util.Date(0));
         bill.setEndDateTime(new java.util.Date(Long.MAX_VALUE));
         IActivityRepository activities = mock(IActivityRepository.class);
         // SQL 专项只模拟奖品预扣与回补，用户事务保持真实。
-        stockReservations = mock(IDrawConfigRepository.class);
-        ReflectionTestUtils.setField(orders, "drawConfigRepository", stockReservations);
+        stockReservations = mock(IActivityPrizeRepository.class);
+        ReflectionTestUtils.setField(orders, "activityPrizeRepository", stockReservations);
         when(activities.queryActivityBill(any())).thenReturn(bill);
         IdGenerator generator = ids::incrementAndGet;
         ActivityPartakeImpl partake = new ActivityPartakeImpl();
@@ -264,7 +263,7 @@ public class DrawRequestOwnershipManualIT {
         DrawParticipationVO unfinished = takes.queryParticipationByRequestId(100001L, user, "A");
         assertEquals(Constants.TaskState.NO_USED.getCode(), unfinished.getState());
         // 已确认回滚只回补本次预扣一次；真实 Redis 行为另由 HTTP E2E 验证。
-        verify(stockReservations).recoverDrawConfigPrizeStockByRedis(10001L, "3");
+        verify(stockReservations).recoverActivityPrizeStockByRedis(100001L, "3");
         assertEquals(9, leftCount());
         assertEquals(0, orderCount());
         DrawProcessResult resumed = request("A");

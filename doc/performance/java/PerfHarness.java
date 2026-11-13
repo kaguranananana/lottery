@@ -110,15 +110,12 @@ public class PerfHarness {
         activity.setTakeCount(quota);
         activity.setState(4);
         activity.setCreator("performance");
-        DrawConfigVO drawConfig = new DrawConfigVO();
-        drawConfig.setDrawConfigId(id);
-        drawConfig.setGrantType(1);
-        List<DrawConfigPrizeVO> details = new ArrayList<>();
+        List<ActivityPrizeVO> details = new ArrayList<>();
         List<AwardVO> awards = new ArrayList<>();
         // stock 仅作为每种奖品的默认总量；活动只有个人次数限制，没有总库存。
         // 五种等概率模拟券，压测默认总概率 100%；演示可留出未中奖概率。
         for (int i = 0; i < 5; i++) {
-            DrawConfigPrizeVO detail = new DrawConfigPrizeVO();
+            ActivityPrizeVO detail = new ActivityPrizeVO();
             detail.setAwardId("p" + id + "_" + i);
             detail.setAwardCount(awardStock < 0 ? stock : awardStock);
             detail.setAwardRate(awardRate);
@@ -130,11 +127,10 @@ public class PerfHarness {
             award.setAwardContent("项目现有本地模拟发奖");
             awards.add(award);
         }
-        drawConfig.setDrawConfigPrizeList(details);
-        // 创建聚合时生产服务绑定策略并初始化剩余库存，禁止直接把数据库设为运行态。
-        context.getBean(IActivityDeploy.class).createActivity(new ActivityConfigReq(id, new ActivityConfigRich(activity, drawConfig, awards)));
-        // PASS->DOING 在生产行锁事务内预热 Redis，再提交运行状态。
-        if (start && !context.getBean(ActivityLifecycleService.class).transition(id, Constants.ActivityState.PASS, Constants.ActivityState.DOING)) {
+        // 创建聚合时生产服务绑定活动奖品并初始化剩余库存，禁止直接把数据库设为运行态。
+        context.getBean(IActivityDeploy.class).createActivity(new ActivityConfigReq(id, new ActivityConfigRich(activity, details, awards)));
+        // READY→RUNNING 在生产行锁事务内预热 Redis，再提交运行状态。
+        if (start && !context.getBean(ActivityLifecycleService.class).transition(id, Constants.ActivityState.READY, Constants.ActivityState.RUNNING)) {
             throw new IllegalStateException("专用活动启动失败 " + id);
         }
         // 预置足量用户，压测仍执行真实 TX1 查询与扣减。
@@ -165,14 +161,14 @@ public class PerfHarness {
     }
 
     @PostMapping("/__perf/replay")
-    public void replay(@RequestParam("drawConfig") long drawConfig, @RequestParam("user") String user,
+    public void replay(@RequestParam("activityId") long activityId, @RequestParam("user") String user,
             @RequestParam("order") long order, @RequestParam("award") String award) throws Exception {
         com.anontokyo.lottery.domain.award.service.order.IAwardOrder orders = context.getBean(com.anontokyo.lottery.domain.award.service.order.IAwardOrder.class);
         com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent invoice = orders.queryFulfillmentEventByOrderId(user, order);
         // 只重投已有订单；测试控制面不创建订单，也不修改库存或完成状态。
         if (invoice == null) throw new IllegalArgumentException("重投订单不存在 " + order);
         com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO stock = new com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO();
-        stock.setuId(user); stock.setOrderId(order); stock.setDrawConfigId(drawConfig); stock.setAwardId(award);
+        stock.setuId(user); stock.setOrderId(order); stock.setActivityId(activityId); stock.setAwardId(award);
         com.anontokyo.lottery.application.mq.producer.KafkaProducer producer = context.getBean(com.anontokyo.lottery.application.mq.producer.KafkaProducer.class);
         // 两次实际 broker 确认后返回，消费者仍由真实 Kafka 异步驱动。
         for (int i = 0; i < 2; i++) {

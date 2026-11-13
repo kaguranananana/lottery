@@ -35,13 +35,13 @@ public class LotteryScheduledTasks {
             for (ActivityVO activity : page) {
                 try {
                     Date now = new Date();
-                    if (ActivityState.PASS.getCode().equals(activity.getState())) {
+                    if (ActivityState.READY.getCode().equals(activity.getState())) {
                         ActivityState target = activity.getEndDateTime().after(now)
-                                ? ActivityState.DOING : ActivityState.CLOSE;
+                                ? ActivityState.RUNNING : ActivityState.CLOSED;
                         // 生命周期服务在行锁内复核时间并预热，不复制原状态机。
-                        lifecycle.transition(activity.getActivityId(), ActivityState.PASS, target);
+                        lifecycle.transition(activity.getActivityId(), ActivityState.READY, target);
                     } else if (!activity.getEndDateTime().after(now)) {
-                        lifecycle.transition(activity.getActivityId(), ActivityState.DOING, ActivityState.CLOSE);
+                        lifecycle.transition(activity.getActivityId(), ActivityState.RUNNING, ActivityState.CLOSED);
                     }
                 } catch (RuntimeException e) {
                     logger.error("scheduled activity transition failed activityId:{}", activity.getActivityId(), e);

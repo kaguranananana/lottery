@@ -16,7 +16,7 @@ public class KafkaTopicConfig {
     }
 
     @Bean
-    public NewTopic lotteryDrawConfigPrizeStockTopic(
+    public NewTopic lotteryActivityPrizeStockTopic(
             @Value("${lottery.kafka.topic.strategy-award-stock.partitions:8}") int partitions,
             @Value("${lottery.kafka.topic.strategy-award-stock.replicas:1}") short replicas) {
         return new NewTopic("lottery_strategy_award_stock", partitions, replicas);

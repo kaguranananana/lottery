@@ -126,7 +126,6 @@ public class DrawRequestIdempotencyTest {
         DrawParticipationVO unfinished = new DrawParticipationVO();
         unfinished.setRequestId("req-1");
         unfinished.setTakeId(777L);
-        unfinished.setDrawConfigId(10001L);
         unfinished.setState(Constants.TaskState.NO_USED.getCode());
         when(drawParticipationRepository.queryParticipationByRequestId(100001L, "u1", "req-1")).thenReturn(unfinished);
         when(drawExec.doDrawExec(any(DrawReq.class))).thenReturn(
@@ -143,7 +142,7 @@ public class DrawRequestIdempotencyTest {
         verify(activityPartake).consumeTakeActivity(eq("u1"), eq(100001L), eq(777L));
         ArgumentCaptor<DrawReq> captor = ArgumentCaptor.forClass(DrawReq.class);
         verify(drawExec).doDrawExec(captor.capture());
-        assertEquals(Long.valueOf(10001L), captor.getValue().getDrawConfigId());
+        assertEquals(Long.valueOf(100001L), captor.getValue().getActivityId());
     }
 
     @Test
@@ -196,7 +195,6 @@ public class DrawRequestIdempotencyTest {
         DrawParticipationVO take = new DrawParticipationVO();
         take.setRequestId("req-1");
         take.setTakeId(777L);
-        take.setDrawConfigId(10001L);
         take.setState(Constants.TaskState.NO_USED.getCode());
         DrawParticipationVO completed = new DrawParticipationVO();
         completed.setRequestId("req-1");
@@ -218,7 +216,6 @@ public class DrawRequestIdempotencyTest {
     private PartakeResult partakeResult() {
         PartakeResult partakeResult = new PartakeResult(Constants.ResponseCode.SUCCESS.getCode(),
                 Constants.ResponseCode.SUCCESS.getInfo());
-        partakeResult.setDrawConfigId(10001L);
         partakeResult.setTakeId(777L);
         return partakeResult;
     }

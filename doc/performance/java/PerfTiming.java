@@ -120,7 +120,7 @@ public class PerfTiming {
 
         @Around("execution(* com.anontokyo.lottery.infrastructure.repository.DrawParticipationRepository.takeParticipation(..)) || "
                 + "execution(* com.anontokyo.lottery.infrastructure.repository.OrderRepository.saveDrawOrderWithTakeLock(..)) || "
-                + "execution(* com.anontokyo.lottery.infrastructure.repository.DrawConfigRepository.settleAwardStock(..)) || "
+                + "execution(* com.anontokyo.lottery.infrastructure.repository.ActivityPrizeRepository.settleAwardStock(..)) || "
                 + "execution(* com.anontokyo.lottery.infrastructure.repository.OrderRepository.scan*(..)) || "
                 + "execution(* com.anontokyo.lottery.application.worker.LotteryScheduledTasks.*(..)) || "
                 + "execution(* com.anontokyo.lottery.application.mq.producer.KafkaProducer.send*(..)) || "

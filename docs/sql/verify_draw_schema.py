@@ -45,7 +45,7 @@ def verify(container):
     sql(source('docs/sql/lottery-v5-schema.sql'))
     fresh = definitions()
     assert fresh.count('CREATE TABLE `') == 17
-    sql(source('docs/sql/lottery-demo-seed.sql'))
+    sql(source('docs/sql/lottery-v5-demo-seed.sql'))
     assert sql('SELECT COUNT(*) FROM lottery.activity WHERE state=4;') == '4'
 
     # 只重建本脚本创建的容器。旧教程样例曾有无效参与状态，使用真实 DDL 和显式历史行。
@@ -143,7 +143,7 @@ def verify(container):
 
     report = merge('lottery_single')
     assert report == '2\n0', report
-    fresh_v6 = source('docs/sql/lottery-schema.sql')
+    fresh_v6 = source('docs/sql/lottery-v7-schema.sql')
     sql(fresh_v6.replace('CREATE DATABASE lottery ', 'CREATE DATABASE lottery_clean_fixture ')
                 .replace('USE lottery;', 'USE lottery_clean_fixture;'))
     assert definitions('lottery_single').replace('lottery_single', 'lottery_clean_fixture') == definitions('lottery_clean_fixture')

@@ -10,9 +10,6 @@ public class AwardOrderReq {
     private String uId;
     private Long takeId;
     private Long activityId;
-    private Long drawConfigId;
-    private Integer grantType;
-    private Date scheduledAt;
     private String awardId;
     private Integer awardType;
     private String awardName;
@@ -40,30 +37,6 @@ public class AwardOrderReq {
 
     public void setActivityId(Long activityId) {
         this.activityId = activityId;
-    }
-
-    public Long getDrawConfigId() {
-        return drawConfigId;
-    }
-
-    public void setDrawConfigId(Long drawConfigId) {
-        this.drawConfigId = drawConfigId;
-    }
-
-    public Integer getGrantType() {
-        return grantType;
-    }
-
-    public void setGrantType(Integer grantType) {
-        this.grantType = grantType;
-    }
-
-    public Date getScheduledAt() {
-        return scheduledAt;
-    }
-
-    public void setScheduledAt(Date scheduledAt) {
-        this.scheduledAt = scheduledAt;
     }
 
     public String getAwardId() {

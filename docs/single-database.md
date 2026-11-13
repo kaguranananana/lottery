@@ -1,6 +1,8 @@
 # Lottery 单库部署与 V6 迁移
 
-全新环境执行 `lottery-schema.sql`，随后按需执行 `lottery-demo-seed.sql`。MySQL 8 中创建一个 `lottery` 数据库和八张表。
+> 本文记录 V6/V7 八表旁路合库。当前七表结构与部署见 [V8 活动独立奖池](activity-prize-pool.md)。
+
+复现 V7 八表环境使用 `lottery-v7-schema.sql`。当前 `lottery-schema.sql` 与演示种子使用 V8 七表，不能用于 V7 应用。
 
 | 表 | 身份与约束 |
 | --- | --- |

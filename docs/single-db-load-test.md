@@ -1,5 +1,7 @@
 # Lottery 单库、限流与实时 Outbox 实测
 
+> 本报告记录 V7 单库八表历史性能。V8 七表与本轮验证见 [活动独立奖池](activity-prize-pool.md)。
+
 [最新 150 RPS 性能回归](#2026-11-12--性能退化复现与首发写入优化)
 
 2026-11-11 至 11-12，Asia/Shanghai。JMeter 5.6.3 和应用运行在同一台 10 核、16 GiB 的 Apple Silicon 主机。独立 Docker 栈使用 MySQL 8.0.46、Redis 7.2.16 和 Kafka 2.8.1，MySQL 限 2 CPU/2 GiB。应用和 JMeter 使用 JDK 17，交付 WAR 使用 Java 8 构建。V7 压测复用了隔离库和原中间件资源配置，每轮使用新的活动、用户和库存。

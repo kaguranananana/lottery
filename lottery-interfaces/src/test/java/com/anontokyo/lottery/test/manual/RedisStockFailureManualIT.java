@@ -2,9 +2,9 @@ package com.anontokyo.lottery.test.manual;
 
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.draw.model.req.DrawReq;
-import com.anontokyo.lottery.domain.draw.model.snapshot.DrawConfigSnapshot;
+import com.anontokyo.lottery.domain.draw.model.snapshot.ActivityPrizeSnapshot;
 import com.anontokyo.lottery.domain.draw.service.draw.impl.DrawExecutor;
-import com.anontokyo.lottery.infrastructure.repository.DrawConfigRepository;
+import com.anontokyo.lottery.infrastructure.repository.ActivityPrizeRepository;
 import com.anontokyo.lottery.infrastructure.utils.RedisUtil;
 import org.junit.*;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
@@ -24,7 +24,7 @@ public class RedisStockFailureManualIT {
     private static final AtomicLong IDS = new AtomicLong(System.currentTimeMillis());
     private static LettuceConnectionFactory connections;
     private static StringRedisTemplate redis;
-    private DrawConfigRepository strategies;
+    private ActivityPrizeRepository strategies;
     private Long id;
     private String awardKey;
 
@@ -40,10 +40,10 @@ public class RedisStockFailureManualIT {
     @Before
     public void fixture() {
         id = IDS.incrementAndGet();
-        awardKey = Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_COUNT(id, "probe");
+        awardKey = Constants.RedisKey.KEY_LOTTERY_ACTIVITY_PRIZE_STOCK_COUNT(id, "probe");
         RedisUtil commands = new RedisUtil();
         ReflectionTestUtils.setField(commands, "stringRedisTemplate", redis);
-        strategies = new DrawConfigRepository();
+        strategies = new ActivityPrizeRepository();
         ReflectionTestUtils.setField(strategies, "redisUtil", commands);
     }
 
@@ -60,28 +60,28 @@ public class RedisStockFailureManualIT {
 
     @Test
     public void missingAwardStockIsAnErrorInsteadOfALosingDraw() {
-        DrawConfigSnapshot snapshot = new DrawConfigSnapshot();
+        ActivityPrizeSnapshot snapshot = new ActivityPrizeSnapshot();
         snapshot.setAwardIds(new String[]{"probe"});
         snapshot.setCumulativeWeights(new long[]{1_000_000L});
         // 仅固定抽样配置；扣减使用真实仓储和真实 Redis。
-        DrawConfigRepository source = spy(strategies);
-        doReturn(snapshot).when(source).queryDrawConfigSnapshot(id);
+        ActivityPrizeRepository source = spy(strategies);
+        doReturn(snapshot).when(source).queryActivityPrizeSnapshot(id);
         DrawExecutor draw = new DrawExecutor();
-        ReflectionTestUtils.setField(draw, "drawConfigRepository", source);
+        ReflectionTestUtils.setField(draw, "activityPrizeRepository", source);
         assertThrows(IllegalStateException.class, () -> draw.doDrawExec(new DrawReq("stock-probe", id)));
         assertFalse("缺失库存不得自动重建", redis.hasKey(awardKey));
     }
 
     @Test
     public void awardRecoveryMustNotRecreateMissingInventory() {
-        assertThrows(IllegalStateException.class, () -> strategies.recoverDrawConfigPrizeStockByRedis(id, "probe"));
+        assertThrows(IllegalStateException.class, () -> strategies.recoverActivityPrizeStockByRedis(id, "probe"));
         assertFalse("回补不能用 INCR 把缺失库存复活为 1", redis.hasKey(awardKey));
     }
 
     @Test
     public void awardRecoveryRestoresExactlyOneReservation() {
         redis.opsForValue().set(awardKey, "9");
-        strategies.recoverDrawConfigPrizeStockByRedis(id, "probe");
+        strategies.recoverActivityPrizeStockByRedis(id, "probe");
         assertEquals("10", redis.opsForValue().get(awardKey));
     }
 
@@ -89,7 +89,7 @@ public class RedisStockFailureManualIT {
     public void awardRecoveryFailureMustReachTheCaller() {
         // 使用真实 Redis WRONGTYPE 错误，验证回补异常没有被日志吞掉。
         redis.opsForList().leftPush(awardKey, "wrong-type");
-        assertThrows(RuntimeException.class, () -> strategies.recoverDrawConfigPrizeStockByRedis(id, "probe"));
+        assertThrows(RuntimeException.class, () -> strategies.recoverActivityPrizeStockByRedis(id, "probe"));
     }
 
     @Test

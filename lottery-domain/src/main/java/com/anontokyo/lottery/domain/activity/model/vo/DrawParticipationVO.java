@@ -12,12 +12,6 @@ public class DrawParticipationVO {
      */
     private Long takeId;
 
-
-    /**
-     * 抽奖配置ID
-     */
-    private Long drawConfigId;
-
     /**
      * 活动id
      */
@@ -33,14 +27,6 @@ public class DrawParticipationVO {
 
     public String getRequestId() { return requestId; }
     public void setRequestId(String requestId) { this.requestId = requestId; }
-
-    public Long getDrawConfigId() {
-        return drawConfigId;
-    }
-
-    public void setDrawConfigId(Long drawConfigId) {
-        this.drawConfigId = drawConfigId;
-    }
 
     public Long getTakeId() {
         return takeId;

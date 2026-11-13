@@ -18,18 +18,15 @@ public class ActivityBillVO {
     /** 结束时间 */
     private Date endDateTime;
     /**
-     * 活动状态：1编辑、2提审、3撤审、4通过、5运行(审核通过后worker扫描状态)、6拒绝、7关闭、8开启
+     * 活动状态：1草稿、4就绪、5运行、7关闭
      * Constants.ActivityState
      */
     private Integer state;
-    /** 抽奖配置ID */
-    private Long drawConfigId;
 
     /** 每人可参与次数 */
     private Integer takeCount;
     /** 剩余可领取次数 */
     private Integer userTakeLeftCount;
-
 
     public String getuId() {
         return uId;
@@ -63,21 +60,12 @@ public class ActivityBillVO {
         this.endDateTime = endDateTime;
     }
 
-
     public Integer getState() {
         return state;
     }
 
     public void setState(Integer state) {
         this.state = state;
-    }
-
-    public Long getDrawConfigId() {
-        return drawConfigId;
-    }
-
-    public void setDrawConfigId(Long drawConfigId) {
-        this.drawConfigId = drawConfigId;
     }
 
     public Integer getTakeCount() {
@@ -95,7 +83,6 @@ public class ActivityBillVO {
     public void setUserTakeLeftCount(Integer userTakeLeftCount) {
         this.userTakeLeftCount = userTakeLeftCount;
     }
-
 
     @Override
     public String toString() {

@@ -62,9 +62,6 @@ public class AwardOrderImpl implements IAwardOrder {
         drawOrderVO.setTakeId(awardOrderReq.getTakeId());
         drawOrderVO.setActivityId(awardOrderReq.getActivityId());
         drawOrderVO.setOrderId(idGenerator.nextId());
-        drawOrderVO.setDrawConfigId(awardOrderReq.getDrawConfigId());
-        drawOrderVO.setGrantType(awardOrderReq.getGrantType());
-        drawOrderVO.setScheduledAt(awardOrderReq.getScheduledAt());
         drawOrderVO.setAwardFulfillmentStatus(Constants.AwardFulfillmentStatus.INIT.getCode());
         drawOrderVO.setAwardId(awardOrderReq.getAwardId());
         drawOrderVO.setAwardType(awardOrderReq.getAwardType());

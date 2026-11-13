@@ -1,0 +1,3239 @@
+{
+  "baselineCommit": "4ab32e5",
+  "conditions": {
+    "mysql": "8.0.46",
+    "redis": "7.2.16",
+    "kafka": "2.8.1",
+    "jmeter": "5.6.3",
+    "mysqlCpuLimit": 2,
+    "mysqlMemoryMiB": 2048,
+    "durability": [
+      1,
+      1
+    ],
+    "threads": 72,
+    "warmupSeconds": 10,
+    "longWindowsSeconds": [
+      195,
+      301
+    ]
+  },
+  "performance": {
+    "V7": {
+      "40": {
+        "observedThreads": 72,
+        "windowSeconds": 65.0,
+        "rps": 40.01538461538462,
+        "offeredRps": 40.0,
+        "newDrawRps": 40.01538461538462,
+        "httpCodes": {
+          "200": 2601
+        },
+        "businessCodes": {
+          "0000": 2601
+        },
+        "systemErrorRate": 0.0,
+        "p50Ms": 10,
+        "p95Ms": 59,
+        "p99Ms": 188,
+        "ordersTotal": 3053,
+        "settledOrders": 3053,
+        "audit": "PASS",
+        "stockLatencyBoundsMs": {
+          "0.5": [
+            4,
+            7
+          ],
+          "0.95": [
+            57,
+            79
+          ],
+          "0.99": [
+            257,
+            302
+          ]
+        },
+        "peakSampledKafkaLag": {
+          "lottery-perf-stock": 1,
+          "lottery-perf-invoice": 1
+        },
+        "drainSeconds": 0.1538078784942627,
+        "pools": {
+          "HikariPool-1": {
+            "url": "lottery",
+            "maxActive": 3,
+            "maxWaiting": 0,
+            "acquireMeanMs": 0.011851158099492094,
+            "timeouts": 0
+          }
+        },
+        "outbox": {
+          "scans": 24,
+          "candidates": 0,
+          "scanNanos": 97196085,
+          "retries": 0,
+          "rejected": 0,
+          "recoveryThrottled": 0,
+          "sendFailures": 0
+        },
+        "redisAdmissionMeanMs": null,
+        "gcMs": 42,
+        "heapMaxObservedMiB": 335.70703125,
+        "mysqlDelta": {
+          "Innodb_row_lock_time": 4055,
+          "Innodb_row_lock_waits": 2503,
+          "Slow_queries": 73
+        },
+        "settlementRps": 40.01538461538462,
+        "fulfillmentRps": 40.01538461538462,
+        "completedLatencyMs": {
+          "0.5": 10,
+          "0.95": 59,
+          "0.99": 188
+        },
+        "fulfillmentLatencyBoundsMs": {
+          "0.5": [
+            7,
+            10
+          ],
+          "0.95": [
+            81,
+            103
+          ],
+          "0.99": [
+            281,
+            332
+          ]
+        },
+        "httpEnd": {
+          "orders": 3053,
+          "stockPending": 0,
+          "grantPending": 0,
+          "blocked": 0,
+          "stockDue": 0,
+          "fulfillmentDue": 0
+        },
+        "final": {
+          "pending": {
+            "orders": 3053,
+            "stockPending": 0,
+            "grantPending": 0,
+            "blocked": 0,
+            "stockDue": 0,
+            "fulfillmentDue": 0
+          },
+          "kafka": {
+            "lottery-perf-stock": [
+              3053,
+              0,
+              8
+            ],
+            "lottery-perf-invoice": [
+              3053,
+              0,
+              8
+            ]
+          }
+        },
+        "stability": {
+          "stable": false,
+          "checks": {
+            "至少180秒测量": false,
+            "达到目标到达速率95%": true,
+            "HTTP与系统错误率低于0.1%": true,
+            "HTTP P99低于1秒": true,
+            "积压峰值不超过10秒请求量": true,
+            "首尾平均积压增长不超过1秒请求量": true,
+            "异步P95保守上界低于10秒": true,
+            "入口结束后15秒内收敛": true,
+            "业务审计通过": true
+          },
+          "measuredRps": 40.01538461538462,
+          "targetRps": 40.0,
+          "backlogPeak": 1,
+          "backlogMeanGrowth": 0.0,
+          "firstMeanBacklog": 0.5714285714285714,
+          "lastMeanBacklog": 0.5714285714285714
+        },
+        "resources": {
+          "mysql": {
+            "cpuMean": 27.11090909090909,
+            "cpuMax": 81.5,
+            "memoryPeak": "458.4MiB / 2GiB"
+          },
+          "redis": {
+            "cpuMean": 1.1854545454545455,
+            "cpuMax": 3.69,
+            "memoryPeak": "9.316MiB / 256MiB"
+          },
+          "kafka": {
+            "cpuMean": 107.96636363636364,
+            "cpuMax": 206.22,
+            "memoryPeak": "680.2MiB / 1GiB"
+          },
+          "mysqlStatuses": {
+            "maxConnections": 25,
+            "maxRunning": 4,
+            "rowLockWaitsDelta": 1888,
+            "rowLockTimeMsDelta": 3310
+          },
+          "kafkaLag": {
+            "maxStockLag": 1,
+            "maxInvoiceLag": 1
+          },
+          "kafkaCommittedPerSecond": {
+            "lottery-perf-stock": 40.672069871581364,
+            "lottery-perf-invoice": 40.672069871581364
+          },
+          "gcCountDelta": {
+            "G1 Young Generation": 4,
+            "G1 Old Generation": 0
+          },
+          "collectionMaxMs": 2895
+        },
+        "hostSwapMiB": {
+          "Swapins": 155.16,
+          "Swapouts": 664.75
+        },
+        "lockObservations": [
+          {
+            "table": "draw_order",
+            "index": "uk_order_id",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 1
+          },
+          {
+            "table": "draw_participation",
+            "index": "idx_user_activity_state_id",
+            "mode": "X,INSERT_INTENTION",
+            "samples": 1
+          }
+        ],
+        "stages": {
+          "ack/lottery_invoice": {
+            "count": 3053,
+            "totalMs": 13855.947634,
+            "meanMs": 4.538469582050442,
+            "errors": 0,
+            "p95BucketUpperMs": 16.384
+          },
+          "ack/lottery_strategy_award_stock": {
+            "count": 3053,
+            "totalMs": 15227.743638,
+            "meanMs": 4.987796802489354,
+            "errors": 0,
+            "p95BucketUpperMs": 32.768
+          },
+          "sql/consumer/lottery_invoice/lottery/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.markUserAwardGranted": {
+            "count": 3053,
+            "totalMs": 11278.242754,
+            "meanMs": 3.694150918440878,
+            "errors": 0,
+            "p95BucketUpperMs": 16.384
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery/com.anontokyo.lottery.infrastructure.dao.IAwardStockSettlementDao.insert": {
+            "count": 3053,
+            "totalMs": 2103.330759,
+            "meanMs": 0.6889389973796266,
+            "errors": 0,
+            "p95BucketUpperMs": 2.048
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery/com.anontokyo.lottery.infrastructure.dao.IDrawConfigPrizeDao.deductStock": {
+            "count": 3053,
+            "totalMs": 2409.430358,
+            "meanMs": 0.7892009033737307,
+            "errors": 0,
+            "p95BucketUpperMs": 2.048
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.updateStockSettlementEventStatus": {
+            "count": 3053,
+            "totalMs": 8027.261248,
+            "meanMs": 2.629302734359646,
+            "errors": 0,
+            "p95BucketUpperMs": 8.192
+          },
+          "stage/DrawConfigRepository.settleAwardStock(..)": {
+            "count": 3053,
+            "totalMs": 15817.929207,
+            "meanMs": 5.181110123485097,
+            "errors": 0,
+            "p95BucketUpperMs": 16.384
+          },
+          "stage/DrawParticipationRepository.takeParticipation(..)": {
+            "count": 3053,
+            "totalMs": 21516.237173,
+            "meanMs": 7.047571953160825,
+            "errors": 0,
+            "p95BucketUpperMs": 32.768
+          },
+          "stage/OrderRepository.saveDrawOrderWithTakeLock(..)": {
+            "count": 3053,
+            "totalMs": 17041.364618,
+            "meanMs": 5.581842324926302,
+            "errors": 0,
+            "p95BucketUpperMs": 32.768
+          }
+        },
+        "serverSql": [
+          {
+            "schema": "lottery",
+            "sql": "COMMIT",
+            "baselinePresent": true,
+            "count": 9152,
+            "waitSeconds": 20.3315,
+            "meanMs": 2.2215362762237763,
+            "lockSeconds": 0.0001,
+            "rowsExamined": 0
+          },
+          {
+            "schema": "lottery",
+            "sql": "UPDATE `draw_config_prize` SET `award_surplus_count` = `award_surplus_count` - ? WHERE `draw_config_id` = ? AND `award_id` = ? AND `award_surplus_count` > ?",
+            "baselinePresent": false,
+            "count": 3052,
+            "waitSeconds": 0.7864,
+            "meanMs": 0.2576671035386632,
+            "lockSeconds": 0.3071,
+            "rowsExamined": 3053
+          }
+        ]
+      },
+      "80": {
+        "observedThreads": 72,
+        "windowSeconds": 65.0,
+        "rps": 79.98461538461538,
+        "offeredRps": 80.0,
+        "newDrawRps": 79.98461538461538,
+        "httpCodes": {
+          "200": 5199
+        },
+        "businessCodes": {
+          "0000": 5199
+        },
+        "systemErrorRate": 0.0,
+        "p50Ms": 11,
+        "p95Ms": 32,
+        "p99Ms": 209,
+        "ordersTotal": 6049,
+        "settledOrders": 6049,
+        "audit": "PASS",
+        "stockLatencyBoundsMs": {
+          "0.5": [
+            4,
+            7
+          ],
+          "0.95": [
+            34,
+            40
+          ],
+          "0.99": [
+            420,
+            455
+          ]
+        },
+        "peakSampledKafkaLag": {
+          "lottery-perf-stock": 5,
+          "lottery-perf-invoice": 3
+        },
+        "drainSeconds": 0.16555404663085938,
+        "pools": {
+          "HikariPool-1": {
+            "url": "lottery",
+            "maxActive": 10,
+            "maxWaiting": 0,
+            "acquireMeanMs": 0.03931449710284431,
+            "timeouts": 0
+          }
+        },
+        "outbox": {
+          "scans": 22,
+          "candidates": 0,
+          "scanNanos": 42573292,
+          "retries": 0,
+          "rejected": 0,
+          "recoveryThrottled": 0,
+          "sendFailures": 0
+        },
+        "redisAdmissionMeanMs": null,
+        "gcMs": 53,
+        "heapMaxObservedMiB": 326.70703125,
+        "mysqlDelta": {
+          "Innodb_row_lock_time": 5977,
+          "Innodb_row_lock_waits": 5589,
+          "Slow_queries": 107
+        },
+        "settlementRps": 79.98461538461538,
+        "fulfillmentRps": 79.98461538461538,
+        "completedLatencyMs": {
+          "0.5": 11,
+          "0.95": 32,
+          "0.99": 209
+        },
+        "fulfillmentLatencyBoundsMs": {
+          "0.5": [
+            7,
+            10
+          ],
+          "0.95": [
+            43,
+            53
+          ],
+          "0.99": [
+            440,
+            488
+          ]
+        },
+        "httpEnd": {
+          "orders": 6049,
+          "stockPending": 0,
+          "grantPending": 0,
+          "blocked": 0,
+          "stockDue": 0,
+          "fulfillmentDue": 0
+        },
+        "final": {
+          "pending": {
+            "orders": 6049,
+            "stockPending": 0,
+            "grantPending": 0,
+            "blocked": 0,
+            "stockDue": 0,
+            "fulfillmentDue": 0
+          },
+          "kafka": {
+            "lottery-perf-stock": [
+              9102,
+              0,
+              8
+            ],
+            "lottery-perf-invoice": [
+              9102,
+              0,
+              8
+            ]
+          }
+        },
+        "stability": {
+          "stable": false,
+          "checks": {
+            "至少180秒测量": false,
+            "达到目标到达速率95%": true,
+            "HTTP与系统错误率低于0.1%": true,
+            "HTTP P99低于1秒": true,
+            "积压峰值不超过10秒请求量": true,
+            "首尾平均积压增长不超过1秒请求量": true,
+            "异步P95保守上界低于10秒": true,
+            "入口结束后15秒内收敛": true,
+            "业务审计通过": true
+          },
+          "measuredRps": 79.98461538461538,
+          "targetRps": 80.0,
+          "backlogPeak": 2,
+          "backlogMeanGrowth": 0.0,
+          "firstMeanBacklog": 1.2857142857142858,
+          "lastMeanBacklog": 1.2857142857142858
+        },
+        "resources": {
+          "mysql": {
+            "cpuMean": 41.16238095238095,
+            "cpuMax": 99.02,
+            "memoryPeak": "485.9MiB / 2GiB"
+          },
+          "redis": {
+            "cpuMean": 1.7414285714285713,
+            "cpuMax": 2.84,
+            "memoryPeak": "9.207MiB / 256MiB"
+          },
+          "kafka": {
+            "cpuMean": 90.55761904761906,
+            "cpuMax": 201.05,
+            "memoryPeak": "716.9MiB / 1GiB"
+          },
+          "mysqlStatuses": {
+            "maxConnections": 36,
+            "maxRunning": 5,
+            "rowLockWaitsDelta": 3928,
+            "rowLockTimeMsDelta": 4155
+          },
+          "kafkaLag": {
+            "maxStockLag": 5,
+            "maxInvoiceLag": 3
+          },
+          "kafkaCommittedPerSecond": {
+            "lottery-perf-stock": 78.61931408942324,
+            "lottery-perf-invoice": 78.61931408942324
+          },
+          "gcCountDelta": {
+            "G1 Young Generation": 6,
+            "G1 Old Generation": 0
+          },
+          "collectionMaxMs": 3117
+        },
+        "hostSwapMiB": {
+          "Swapins": 106.8,
+          "Swapouts": 0.0
+        },
+        "lockObservations": [
+          {
+            "table": "draw_order",
+            "index": "uk_order_id",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 1
+          },
+          {
+            "table": "draw_order",
+            "index": "uk_order_id",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 1
+          },
+          {
+            "table": "draw_order",
+            "index": "uk_order_id",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 1
+          },
+          {
+            "table": "draw_order",
+            "index": "uk_order_id",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 1
+          }
+        ],
+        "stages": {
+          "ack/lottery_invoice": {
+            "count": 6049,
+            "totalMs": 6407.946888,
+            "meanMs": 1.0593398723755993,
+            "errors": 0,
+            "p95BucketUpperMs": 2.048
+          },
+          "ack/lottery_strategy_award_stock": {
+            "count": 6049,
+            "totalMs": 7493.680847,
+            "meanMs": 1.2388296986278724,
+            "errors": 0,
+            "p95BucketUpperMs": 4.096
+          },
+          "sql/consumer/lottery_invoice/lottery/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.markUserAwardGranted": {
+            "count": 6049,
+            "totalMs": 19019.986358,
+            "meanMs": 3.1443191201851546,
+            "errors": 0,
+            "p95BucketUpperMs": 8.192
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery/com.anontokyo.lottery.infrastructure.dao.IAwardStockSettlementDao.insert": {
+            "count": 6049,
+            "totalMs": 3217.191893,
+            "meanMs": 0.5318551649859481,
+            "errors": 0,
+            "p95BucketUpperMs": 2.048
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery/com.anontokyo.lottery.infrastructure.dao.IDrawConfigPrizeDao.deductStock": {
+            "count": 6049,
+            "totalMs": 3594.511333,
+            "meanMs": 0.5942323248470821,
+            "errors": 0,
+            "p95BucketUpperMs": 2.048
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.updateStockSettlementEventStatus": {
+            "count": 6049,
+            "totalMs": 13323.064889,
+            "meanMs": 2.202523539262688,
+            "errors": 0,
+            "p95BucketUpperMs": 8.192
+          },
+          "stage/DrawConfigRepository.settleAwardStock(..)": {
+            "count": 6049,
+            "totalMs": 24119.028888,
+            "meanMs": 3.9872753989089103,
+            "errors": 0,
+            "p95BucketUpperMs": 16.384
+          },
+          "stage/DrawParticipationRepository.takeParticipation(..)": {
+            "count": 6049,
+            "totalMs": 35212.245454,
+            "meanMs": 5.821168036700281,
+            "errors": 0,
+            "p95BucketUpperMs": 16.384
+          },
+          "stage/OrderRepository.saveDrawOrderWithTakeLock(..)": {
+            "count": 6049,
+            "totalMs": 30521.561285,
+            "meanMs": 5.045720166143164,
+            "errors": 0,
+            "p95BucketUpperMs": 16.384
+          }
+        },
+        "serverSql": [
+          {
+            "schema": "lottery",
+            "sql": "COMMIT",
+            "baselinePresent": true,
+            "count": 18137,
+            "waitSeconds": 36.455,
+            "meanMs": 2.009979599713293,
+            "lockSeconds": 0.054799999999999995,
+            "rowsExamined": 0
+          },
+          {
+            "schema": "lottery",
+            "sql": "UPDATE `draw_config_prize` SET `award_surplus_count` = `award_surplus_count` - ? WHERE `draw_config_id` = ? AND `award_id` = ? AND `award_surplus_count` > ?",
+            "baselinePresent": true,
+            "count": 6048,
+            "waitSeconds": 1.2042,
+            "meanMs": 0.19910714285714287,
+            "lockSeconds": 0.4471,
+            "rowsExamined": 6049
+          }
+        ]
+      },
+      "120": {
+        "observedThreads": 72,
+        "windowSeconds": 185.0,
+        "rps": 120.01621621621622,
+        "offeredRps": 120.0,
+        "newDrawRps": 120.01621621621622,
+        "httpCodes": {
+          "200": 22203
+        },
+        "businessCodes": {
+          "0000": 22203
+        },
+        "systemErrorRate": 0.0,
+        "p50Ms": 27,
+        "p95Ms": 270,
+        "p99Ms": 880,
+        "ordersTotal": 23428,
+        "settledOrders": 23428,
+        "audit": "PASS",
+        "stockLatencyBoundsMs": {
+          "0.5": [
+            102,
+            115
+          ],
+          "0.95": [
+            18345,
+            18367
+          ],
+          "0.99": [
+            45789,
+            45873
+          ]
+        },
+        "peakSampledKafkaLag": {
+          "lottery-perf-stock": 2013,
+          "lottery-perf-invoice": 9
+        },
+        "drainSeconds": 19.509260654449463,
+        "pools": {
+          "HikariPool-1": {
+            "url": "lottery",
+            "maxActive": 48,
+            "maxWaiting": 38,
+            "acquireMeanMs": 0.9884016751686258,
+            "timeouts": 0
+          }
+        },
+        "outbox": {
+          "scans": 62,
+          "candidates": 641,
+          "scanNanos": 198852463,
+          "retries": 598,
+          "rejected": 599,
+          "recoveryThrottled": 3,
+          "sendFailures": 0
+        },
+        "redisAdmissionMeanMs": null,
+        "gcMs": 191,
+        "heapMaxObservedMiB": 348.7752227783203,
+        "mysqlDelta": {
+          "Innodb_row_lock_time": 110621,
+          "Innodb_row_lock_waits": 24615,
+          "Slow_queries": 4630
+        },
+        "settlementRps": 110.73513513513514,
+        "fulfillmentRps": 110.68648648648649,
+        "completedLatencyMs": {
+          "0.5": 27,
+          "0.95": 270,
+          "0.99": 880
+        },
+        "fulfillmentLatencyBoundsMs": {
+          "0.5": [
+            118,
+            130
+          ],
+          "0.95": [
+            18407,
+            18437
+          ],
+          "0.99": [
+            45797,
+            45881
+          ]
+        },
+        "httpEnd": {
+          "orders": 23428,
+          "stockPending": 1518,
+          "grantPending": 1520,
+          "blocked": 0,
+          "stockDue": 186,
+          "fulfillmentDue": 0
+        },
+        "final": {
+          "pending": {
+            "orders": 23428,
+            "stockPending": 0,
+            "grantPending": 0,
+            "blocked": 0,
+            "stockDue": 0,
+            "fulfillmentDue": 0
+          },
+          "kafka": {
+            "lottery-perf-stock": [
+              32530,
+              0,
+              8
+            ],
+            "lottery-perf-invoice": [
+              32530,
+              0,
+              8
+            ]
+          }
+        },
+        "stability": {
+          "stable": false,
+          "checks": {
+            "至少180秒测量": true,
+            "达到目标到达速率95%": true,
+            "HTTP与系统错误率低于0.1%": true,
+            "HTTP P99低于1秒": true,
+            "积压峰值不超过10秒请求量": false,
+            "首尾平均积压增长不超过1秒请求量": false,
+            "异步P95保守上界低于10秒": false,
+            "入口结束后15秒内收敛": false,
+            "业务审计通过": true
+          },
+          "measuredRps": 120.01621621621622,
+          "targetRps": 120.0,
+          "backlogPeak": 2372,
+          "backlogMeanGrowth": 1444.7142857142856,
+          "firstMeanBacklog": 24.714285714285715,
+          "lastMeanBacklog": 1469.4285714285713
+        },
+        "resources": {
+          "mysql": {
+            "cpuMean": 104.33426229508197,
+            "cpuMax": 212.69,
+            "memoryPeak": "539.8MiB / 2GiB"
+          },
+          "redis": {
+            "cpuMean": 4.262295081967213,
+            "cpuMax": 9.23,
+            "memoryPeak": "9.219MiB / 256MiB"
+          },
+          "kafka": {
+            "cpuMean": 117.42967213114754,
+            "cpuMax": 238.64,
+            "memoryPeak": "635.4MiB / 1GiB"
+          },
+          "mysqlStatuses": {
+            "maxConnections": 49,
+            "maxRunning": 48,
+            "rowLockWaitsDelta": 19228,
+            "rowLockTimeMsDelta": 88543
+          },
+          "kafkaLag": {
+            "maxStockLag": 2013,
+            "maxInvoiceLag": 9
+          },
+          "kafkaCommittedPerSecond": {
+            "lottery-perf-stock": 107.4591467823572,
+            "lottery-perf-invoice": 107.4591467823572
+          },
+          "gcCountDelta": {
+            "G1 Young Generation": 26,
+            "G1 Old Generation": 0
+          },
+          "collectionMaxMs": 3681
+        },
+        "hostSwapMiB": {
+          "Swapins": 895.78,
+          "Swapouts": 1914.12
+        },
+        "lockObservations": [
+          {
+            "table": "draw_config_prize",
+            "index": "idx_draw_config_award",
+            "mode": "X",
+            "samples": 2
+          },
+          {
+            "table": "draw_config_prize",
+            "index": "idx_draw_config_award",
+            "mode": "X",
+            "samples": 2
+          },
+          {
+            "table": "draw_order",
+            "index": "uk_order_id",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 1
+          },
+          {
+            "table": "draw_order",
+            "index": "uk_order_id",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 1
+          },
+          {
+            "table": "draw_order",
+            "index": "uk_order_id",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 1
+          },
+          {
+            "table": "draw_order",
+            "index": "uk_order_id",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 1
+          }
+        ],
+        "stages": {
+          "ack/lottery_invoice": {
+            "count": 23428,
+            "totalMs": 68221.355889,
+            "meanMs": 2.911958164973536,
+            "errors": 0,
+            "p95BucketUpperMs": 8.192
+          },
+          "ack/lottery_strategy_award_stock": {
+            "count": 23428,
+            "totalMs": 78050.402169,
+            "meanMs": 3.3315008608929486,
+            "errors": 0,
+            "p95BucketUpperMs": 8.192
+          },
+          "sql/consumer/lottery_invoice/lottery/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.markUserAwardGranted": {
+            "count": 23428,
+            "totalMs": 267172.062148,
+            "meanMs": 11.40396372494451,
+            "errors": 0,
+            "p95BucketUpperMs": 32.768
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery/com.anontokyo.lottery.infrastructure.dao.IAwardStockSettlementDao.insert": {
+            "count": 23428,
+            "totalMs": 24543.499811,
+            "meanMs": 1.0476139581270274,
+            "errors": 0,
+            "p95BucketUpperMs": 4.096
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery/com.anontokyo.lottery.infrastructure.dao.IDrawConfigPrizeDao.deductStock": {
+            "count": 23428,
+            "totalMs": 42074.358813,
+            "meanMs": 1.7959005810568551,
+            "errors": 0,
+            "p95BucketUpperMs": 8.192
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.updateStockSettlementEventStatus": {
+            "count": 23428,
+            "totalMs": 182757.359959,
+            "meanMs": 7.800809286281372,
+            "errors": 0,
+            "p95BucketUpperMs": 32.768
+          },
+          "stage/DrawConfigRepository.settleAwardStock(..)": {
+            "count": 23428,
+            "totalMs": 285256.15228,
+            "meanMs": 12.175864447669456,
+            "errors": 0,
+            "p95BucketUpperMs": 32.768
+          },
+          "stage/DrawParticipationRepository.takeParticipation(..)": {
+            "count": 23428,
+            "totalMs": 675981.597297,
+            "meanMs": 28.853576801135393,
+            "errors": 0,
+            "p95BucketUpperMs": 131.072
+          },
+          "stage/OrderRepository.saveDrawOrderWithTakeLock(..)": {
+            "count": 23428,
+            "totalMs": 566610.284326,
+            "meanMs": 24.185175188919242,
+            "errors": 0,
+            "p95BucketUpperMs": 131.072
+          }
+        },
+        "serverSql": [
+          {
+            "schema": "lottery",
+            "sql": "COMMIT",
+            "baselinePresent": true,
+            "count": 69799,
+            "waitSeconds": 830.0678,
+            "meanMs": 11.892259201421224,
+            "lockSeconds": 9.8681,
+            "rowsExamined": 0
+          },
+          {
+            "schema": "lottery",
+            "sql": "UPDATE `draw_config_prize` SET `award_surplus_count` = `award_surplus_count` - ? WHERE `draw_config_id` = ? AND `award_id` = ? AND `award_surplus_count` > ?",
+            "baselinePresent": true,
+            "count": 23394,
+            "waitSeconds": 23.055699999999998,
+            "meanMs": 0.985539027100966,
+            "lockSeconds": 17.445899999999998,
+            "rowsExamined": 23418
+          }
+        ]
+      },
+      "150": {
+        "observedThreads": 72,
+        "windowSeconds": 289.935,
+        "rps": 150.75447945229104,
+        "offeredRps": 150.5061479297084,
+        "newDrawRps": 150.75447945229104,
+        "httpCodes": {
+          "200": 43709
+        },
+        "businessCodes": {
+          "0000": 43709
+        },
+        "systemErrorRate": 0.0,
+        "p50Ms": 33,
+        "p95Ms": 345,
+        "p99Ms": 749,
+        "ordersTotal": 45015,
+        "settledOrders": 45015,
+        "audit": "PASS",
+        "stockLatencyBoundsMs": {
+          "0.5": [
+            4685,
+            4704
+          ],
+          "0.95": [
+            74823,
+            74863
+          ],
+          "0.99": [
+            104056,
+            104182
+          ]
+        },
+        "peakSampledKafkaLag": {
+          "lottery-perf-stock": 7875,
+          "lottery-perf-invoice": 10
+        },
+        "drainSeconds": 76.82682013511658,
+        "pools": {
+          "HikariPool-1": {
+            "url": "lottery",
+            "maxActive": 48,
+            "maxWaiting": 38,
+            "acquireMeanMs": 1.3275475240985894,
+            "timeouts": 0
+          }
+        },
+        "outbox": {
+          "scans": 134,
+          "candidates": 2613,
+          "scanNanos": 1470691293,
+          "retries": 2534,
+          "rejected": 2538,
+          "recoveryThrottled": 0,
+          "sendFailures": 0
+        },
+        "redisAdmissionMeanMs": null,
+        "gcMs": 182,
+        "heapMaxObservedMiB": 350.8065490722656,
+        "mysqlDelta": {
+          "Innodb_row_lock_time": 295565,
+          "Innodb_row_lock_waits": 50895,
+          "Slow_queries": 11689
+        },
+        "settlementRps": 124.73830341283391,
+        "fulfillmentRps": 124.87281632089952,
+        "completedLatencyMs": {
+          "0.5": 33,
+          "0.95": 345,
+          "0.99": 749
+        },
+        "fulfillmentLatencyBoundsMs": {
+          "0.5": [
+            4707,
+            4729
+          ],
+          "0.95": [
+            74844,
+            74887
+          ],
+          "0.99": [
+            104133,
+            104208
+          ]
+        },
+        "httpEnd": {
+          "orders": 45015,
+          "stockPending": 8523,
+          "grantPending": 8526,
+          "blocked": 0,
+          "stockDue": 711,
+          "fulfillmentDue": 1
+        },
+        "final": {
+          "pending": {
+            "orders": 45015,
+            "stockPending": 0,
+            "grantPending": 0,
+            "blocked": 0,
+            "stockDue": 0,
+            "fulfillmentDue": 0
+          },
+          "kafka": {
+            "lottery-perf-stock": [
+              77545,
+              0,
+              8
+            ],
+            "lottery-perf-invoice": [
+              77545,
+              0,
+              8
+            ]
+          }
+        },
+        "stability": {
+          "stable": false,
+          "checks": {
+            "至少180秒测量": true,
+            "达到目标到达速率95%": true,
+            "HTTP与系统错误率低于0.1%": true,
+            "HTTP P99低于1秒": true,
+            "积压峰值不超过10秒请求量": false,
+            "首尾平均积压增长不超过1秒请求量": false,
+            "异步P95保守上界低于10秒": false,
+            "入口结束后15秒内收敛": false,
+            "业务审计通过": true
+          },
+          "measuredRps": 150.75447945229104,
+          "targetRps": 150.0,
+          "backlogPeak": 8606,
+          "backlogMeanGrowth": 5596.714285714286,
+          "firstMeanBacklog": 1097.142857142857,
+          "lastMeanBacklog": 6693.857142857143
+        },
+        "resources": {
+          "mysql": {
+            "cpuMean": 110.80510638297872,
+            "cpuMax": 206.03,
+            "memoryPeak": "611.7MiB / 2GiB"
+          },
+          "redis": {
+            "cpuMean": 5.079787234042553,
+            "cpuMax": 16.59,
+            "memoryPeak": "9.488MiB / 256MiB"
+          },
+          "kafka": {
+            "cpuMean": 109.89829787234042,
+            "cpuMax": 196.31,
+            "memoryPeak": "749.1MiB / 1GiB"
+          },
+          "mysqlStatuses": {
+            "maxConnections": 50,
+            "maxRunning": 40,
+            "rowLockWaitsDelta": 39659,
+            "rowLockTimeMsDelta": 197176
+          },
+          "kafkaLag": {
+            "maxStockLag": 7875,
+            "maxInvoiceLag": 10
+          },
+          "kafkaCommittedPerSecond": {
+            "lottery-perf-stock": 125.80455774986763,
+            "lottery-perf-invoice": 125.7721413212216
+          },
+          "gcCountDelta": {
+            "G1 Young Generation": 48,
+            "G1 Old Generation": 0
+          },
+          "collectionMaxMs": 4898
+        },
+        "hostSwapMiB": {
+          "Swapins": 1871.11,
+          "Swapouts": 1915.88
+        },
+        "lockObservations": [
+          {
+            "table": "draw_config_prize",
+            "index": "idx_draw_config_award",
+            "mode": "X",
+            "samples": 10
+          },
+          {
+            "table": "draw_config_prize",
+            "index": "idx_draw_config_award",
+            "mode": "X",
+            "samples": 8
+          },
+          {
+            "table": "draw_config_prize",
+            "index": "idx_draw_config_award",
+            "mode": "X",
+            "samples": 7
+          },
+          {
+            "table": "draw_config_prize",
+            "index": "idx_draw_config_award",
+            "mode": "X",
+            "samples": 4
+          },
+          {
+            "table": "draw_participation",
+            "index": "idx_user_activity_state_id",
+            "mode": "X,GAP,INSERT_INTENTION",
+            "samples": 2
+          },
+          {
+            "table": "draw_order",
+            "index": "uk_order_id",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 1
+          }
+        ],
+        "stages": {
+          "ack/lottery_invoice": {
+            "count": 45015,
+            "totalMs": 104706.332442,
+            "meanMs": 2.3260320435854713,
+            "errors": 0,
+            "p95BucketUpperMs": 8.192
+          },
+          "ack/lottery_strategy_award_stock": {
+            "count": 45015,
+            "totalMs": 117653.21419,
+            "meanMs": 2.6136446560035544,
+            "errors": 0,
+            "p95BucketUpperMs": 8.192
+          },
+          "sql/consumer/lottery_invoice/lottery/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.markUserAwardGranted": {
+            "count": 45015,
+            "totalMs": 627153.474297,
+            "meanMs": 13.932099839986671,
+            "errors": 0,
+            "p95BucketUpperMs": 65.536
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery/com.anontokyo.lottery.infrastructure.dao.IAwardStockSettlementDao.insert": {
+            "count": 45015,
+            "totalMs": 49342.717844,
+            "meanMs": 1.096139461157392,
+            "errors": 0,
+            "p95BucketUpperMs": 4.096
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery/com.anontokyo.lottery.infrastructure.dao.IDrawConfigPrizeDao.deductStock": {
+            "count": 45015,
+            "totalMs": 97294.328242,
+            "meanMs": 2.1613757245806955,
+            "errors": 0,
+            "p95BucketUpperMs": 8.192
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.updateStockSettlementEventStatus": {
+            "count": 45015,
+            "totalMs": 430094.964502,
+            "meanMs": 9.554481050805288,
+            "errors": 0,
+            "p95BucketUpperMs": 32.768
+          },
+          "stage/DrawConfigRepository.settleAwardStock(..)": {
+            "count": 45015,
+            "totalMs": 651458.278359,
+            "meanMs": 14.472026621326226,
+            "errors": 0,
+            "p95BucketUpperMs": 65.536
+          },
+          "stage/DrawParticipationRepository.takeParticipation(..)": {
+            "count": 45015,
+            "totalMs": 1701430.536882,
+            "meanMs": 37.79696849676775,
+            "errors": 0,
+            "p95BucketUpperMs": 262.144
+          },
+          "stage/OrderRepository.saveDrawOrderWithTakeLock(..)": {
+            "count": 45015,
+            "totalMs": 1499610.443875,
+            "meanMs": 33.31357200655337,
+            "errors": 0,
+            "p95BucketUpperMs": 262.144
+          }
+        },
+        "serverSql": [
+          {
+            "schema": "lottery",
+            "sql": "COMMIT",
+            "baselinePresent": true,
+            "count": 134253,
+            "waitSeconds": 1946.8646000000003,
+            "meanMs": 14.50146067499423,
+            "lockSeconds": 43.565599999999996,
+            "rowsExamined": 0
+          },
+          {
+            "schema": "lottery",
+            "sql": "UPDATE `draw_config_prize` SET `award_surplus_count` = `award_surplus_count` - ? WHERE `draw_config_id` = ? AND `award_id` = ? AND `award_surplus_count` > ?",
+            "baselinePresent": true,
+            "count": 44944,
+            "waitSeconds": 58.983999999999995,
+            "meanMs": 1.312388750444998,
+            "lockSeconds": 47.810300000000005,
+            "rowsExamined": 44989
+          }
+        ]
+      }
+    },
+    "V8": {
+      "40": {
+        "observedThreads": 72,
+        "windowSeconds": 65.0,
+        "rps": 39.96923076923077,
+        "offeredRps": 40.0,
+        "newDrawRps": 39.96923076923077,
+        "httpCodes": {
+          "200": 2598
+        },
+        "businessCodes": {
+          "0000": 2598
+        },
+        "systemErrorRate": 0.0,
+        "p50Ms": 10,
+        "p95Ms": 40,
+        "p99Ms": 170,
+        "ordersTotal": 3056,
+        "settledOrders": 3056,
+        "audit": "PASS",
+        "stockLatencyBoundsMs": {
+          "0.5": [
+            3,
+            6
+          ],
+          "0.95": [
+            18,
+            32
+          ],
+          "0.99": [
+            71,
+            120
+          ]
+        },
+        "peakSampledKafkaLag": {
+          "lottery-perf-stock": 2,
+          "lottery-perf-invoice": 1
+        },
+        "drainSeconds": 0.34046411514282227,
+        "pools": {
+          "HikariPool-1": {
+            "url": "lottery_v8_bench",
+            "maxActive": 11,
+            "maxWaiting": 0,
+            "acquireMeanMs": 0.014122563677630868,
+            "timeouts": 0
+          }
+        },
+        "outbox": {
+          "scans": 22,
+          "candidates": 0,
+          "scanNanos": 148907704,
+          "retries": 0,
+          "rejected": 0,
+          "recoveryThrottled": 0,
+          "sendFailures": 0
+        },
+        "redisAdmissionMeanMs": null,
+        "gcMs": 33,
+        "heapMaxObservedMiB": 327.8681640625,
+        "mysqlDelta": {
+          "Innodb_row_lock_time": 2879,
+          "Innodb_row_lock_waits": 2709,
+          "Slow_queries": 27
+        },
+        "settlementRps": 39.96923076923077,
+        "fulfillmentRps": 39.93846153846154,
+        "fulfillmentLatencyBoundsMs": {
+          "0.5": [
+            6,
+            9
+          ],
+          "0.95": [
+            32,
+            45
+          ],
+          "0.99": [
+            89,
+            146
+          ]
+        },
+        "completedLatencyMs": {
+          "0.5": 10,
+          "0.95": 40,
+          "0.99": 170
+        },
+        "httpEnd": {
+          "orders": 3056,
+          "stockPending": 0,
+          "grantPending": 0,
+          "blocked": 0,
+          "stockDue": 0,
+          "fulfillmentDue": 0
+        },
+        "final": {
+          "pending": {
+            "orders": 3056,
+            "stockPending": 0,
+            "grantPending": 0,
+            "blocked": 0,
+            "stockDue": 0,
+            "fulfillmentDue": 0
+          },
+          "kafka": {
+            "lottery-perf-stock": [
+              80606,
+              0,
+              8
+            ],
+            "lottery-perf-invoice": [
+              80606,
+              0,
+              8
+            ]
+          }
+        },
+        "stability": {
+          "stable": false,
+          "checks": {
+            "至少180秒测量": false,
+            "达到目标到达速率95%": true,
+            "HTTP与系统错误率低于0.1%": true,
+            "HTTP P99低于1秒": true,
+            "积压峰值不超过10秒请求量": true,
+            "首尾平均积压增长不超过1秒请求量": true,
+            "异步P95保守上界低于10秒": true,
+            "入口结束后15秒内收敛": true,
+            "业务审计通过": true
+          },
+          "measuredRps": 39.96923076923077,
+          "targetRps": 40.0,
+          "backlogPeak": 1,
+          "backlogMeanGrowth": 0.0,
+          "firstMeanBacklog": 0.5714285714285714,
+          "lastMeanBacklog": 0.5714285714285714
+        },
+        "resources": {
+          "mysql": {
+            "cpuMean": 23.915,
+            "cpuMax": 56.32,
+            "memoryPeak": "626.9MiB / 2GiB"
+          },
+          "redis": {
+            "cpuMean": 1.0572727272727274,
+            "cpuMax": 2.53,
+            "memoryPeak": "9.492MiB / 256MiB"
+          },
+          "kafka": {
+            "cpuMean": 69.75954545454546,
+            "cpuMax": 172.67,
+            "memoryPeak": "877.5MiB / 1GiB"
+          },
+          "mysqlStatuses": {
+            "maxConnections": 23,
+            "maxRunning": 4,
+            "rowLockWaitsDelta": 1932,
+            "rowLockTimeMsDelta": 2093
+          },
+          "kafkaLag": {
+            "maxStockLag": 2,
+            "maxInvoiceLag": 1
+          },
+          "kafkaCommittedPerSecond": {
+            "lottery-perf-stock": 40.22797083749676,
+            "lottery-perf-invoice": 40.22797083749676
+          },
+          "gcCountDelta": {
+            "G1 Young Generation": 3,
+            "G1 Old Generation": 0
+          },
+          "collectionMaxMs": 2809
+        },
+        "hostSwapMiB": {
+          "Swapins": 999.3,
+          "Swapouts": 617.89
+        },
+        "lockObservations": [],
+        "stages": {
+          "ack/lottery_invoice": {
+            "count": 3056,
+            "totalMs": 3279.799984,
+            "meanMs": 1.0732329790575916,
+            "errors": 0,
+            "p95BucketUpperMs": 2.048
+          },
+          "ack/lottery_strategy_award_stock": {
+            "count": 3056,
+            "totalMs": 3672.729064,
+            "meanMs": 1.2018092486910994,
+            "errors": 0,
+            "p95BucketUpperMs": 4.096
+          },
+          "sql/consumer/lottery_invoice/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.markUserAwardGranted": {
+            "count": 3056,
+            "totalMs": 9026.190023,
+            "meanMs": 2.9535962117146597,
+            "errors": 0,
+            "p95BucketUpperMs": 8.192
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IActivityPrizeDao.deductStock": {
+            "count": 3056,
+            "totalMs": 1701.466699,
+            "meanMs": 0.5567626632853403,
+            "errors": 0,
+            "p95BucketUpperMs": 2.048
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IAwardStockSettlementDao.insert": {
+            "count": 3056,
+            "totalMs": 1639.177584,
+            "meanMs": 0.5363800994764397,
+            "errors": 0,
+            "p95BucketUpperMs": 2.048
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.updateStockSettlementEventStatus": {
+            "count": 3056,
+            "totalMs": 6105.079643,
+            "meanMs": 1.997735485274869,
+            "errors": 0,
+            "p95BucketUpperMs": 8.192
+          },
+          "stage/ActivityPrizeRepository.settleAwardStock(..)": {
+            "count": 3056,
+            "totalMs": 11827.08642,
+            "meanMs": 3.870119901832461,
+            "errors": 0,
+            "p95BucketUpperMs": 16.384
+          },
+          "stage/DrawParticipationRepository.takeParticipation(..)": {
+            "count": 3056,
+            "totalMs": 15986.941404,
+            "meanMs": 5.231328993455498,
+            "errors": 0,
+            "p95BucketUpperMs": 16.384
+          },
+          "stage/OrderRepository.saveDrawOrderWithTakeLock(..)": {
+            "count": 3056,
+            "totalMs": 13870.237354,
+            "meanMs": 4.538690233638744,
+            "errors": 0,
+            "p95BucketUpperMs": 16.384
+          }
+        },
+        "serverSqlUnavailable": "isolated schema filter used V7 name; Mapper phase timing still available"
+      },
+      "80": {
+        "observedThreads": 72,
+        "windowSeconds": 65.0,
+        "rps": 80.0,
+        "offeredRps": 80.0,
+        "newDrawRps": 80.0,
+        "httpCodes": {
+          "200": 5200
+        },
+        "businessCodes": {
+          "0000": 5200
+        },
+        "systemErrorRate": 0.0,
+        "p50Ms": 19,
+        "p95Ms": 70,
+        "p99Ms": 217,
+        "ordersTotal": 6041,
+        "settledOrders": 6041,
+        "audit": "PASS",
+        "stockLatencyBoundsMs": {
+          "0.5": [
+            7,
+            13
+          ],
+          "0.95": [
+            114,
+            141
+          ],
+          "0.99": [
+            410,
+            432
+          ]
+        },
+        "peakSampledKafkaLag": {
+          "lottery-perf-stock": 7,
+          "lottery-perf-invoice": 3
+        },
+        "drainSeconds": 0.1709461212158203,
+        "pools": {
+          "HikariPool-1": {
+            "url": "lottery_v8_bench",
+            "maxActive": 9,
+            "maxWaiting": 0,
+            "acquireMeanMs": 0.04708443532861949,
+            "timeouts": 0
+          }
+        },
+        "outbox": {
+          "scans": 22,
+          "candidates": 0,
+          "scanNanos": 64513870,
+          "retries": 0,
+          "rejected": 0,
+          "recoveryThrottled": 0,
+          "sendFailures": 0
+        },
+        "redisAdmissionMeanMs": null,
+        "gcMs": 134,
+        "heapMaxObservedMiB": 326.8681640625,
+        "mysqlDelta": {
+          "Innodb_row_lock_time": 13921,
+          "Innodb_row_lock_waits": 5915,
+          "Slow_queries": 121
+        },
+        "settlementRps": 80.0,
+        "fulfillmentRps": 79.98461538461538,
+        "fulfillmentLatencyBoundsMs": {
+          "0.5": [
+            13,
+            19
+          ],
+          "0.95": [
+            139,
+            165
+          ],
+          "0.99": [
+            430,
+            452
+          ]
+        },
+        "completedLatencyMs": {
+          "0.5": 19,
+          "0.95": 70,
+          "0.99": 217
+        },
+        "httpEnd": {
+          "orders": 6041,
+          "stockPending": 0,
+          "grantPending": 0,
+          "blocked": 0,
+          "stockDue": 0,
+          "fulfillmentDue": 0
+        },
+        "final": {
+          "pending": {
+            "orders": 6041,
+            "stockPending": 0,
+            "grantPending": 0,
+            "blocked": 0,
+            "stockDue": 0,
+            "fulfillmentDue": 0
+          },
+          "kafka": {
+            "lottery-perf-stock": [
+              86647,
+              0,
+              8
+            ],
+            "lottery-perf-invoice": [
+              86647,
+              0,
+              8
+            ]
+          }
+        },
+        "stability": {
+          "stable": false,
+          "checks": {
+            "至少180秒测量": false,
+            "达到目标到达速率95%": true,
+            "HTTP与系统错误率低于0.1%": true,
+            "HTTP P99低于1秒": true,
+            "积压峰值不超过10秒请求量": true,
+            "首尾平均积压增长不超过1秒请求量": true,
+            "异步P95保守上界低于10秒": true,
+            "入口结束后15秒内收敛": true,
+            "业务审计通过": true
+          },
+          "measuredRps": 80.0,
+          "targetRps": 80.0,
+          "backlogPeak": 8,
+          "backlogMeanGrowth": 0.0,
+          "firstMeanBacklog": 3.2857142857142856,
+          "lastMeanBacklog": 3.2857142857142856
+        },
+        "resources": {
+          "mysql": {
+            "cpuMean": 64.38045454545454,
+            "cpuMax": 112.73,
+            "memoryPeak": "656.6MiB / 2GiB"
+          },
+          "redis": {
+            "cpuMean": 3.1136363636363638,
+            "cpuMax": 5.94,
+            "memoryPeak": "9.25MiB / 256MiB"
+          },
+          "kafka": {
+            "cpuMean": 94.91681818181819,
+            "cpuMax": 165.83,
+            "memoryPeak": "771.5MiB / 1GiB"
+          },
+          "mysqlStatuses": {
+            "maxConnections": 38,
+            "maxRunning": 7,
+            "rowLockWaitsDelta": 4305,
+            "rowLockTimeMsDelta": 11088
+          },
+          "kafkaLag": {
+            "maxStockLag": 7,
+            "maxInvoiceLag": 3
+          },
+          "kafkaCommittedPerSecond": {
+            "lottery-perf-stock": 81.32452286906124,
+            "lottery-perf-invoice": 81.32452286906124
+          },
+          "gcCountDelta": {
+            "G1 Young Generation": 7,
+            "G1 Old Generation": 0
+          },
+          "collectionMaxMs": 3133
+        },
+        "hostSwapMiB": {
+          "Swapins": 33.48,
+          "Swapouts": 0.0
+        },
+        "lockObservations": [
+          {
+            "table": "draw_order",
+            "index": "uk_order_id",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 1
+          },
+          {
+            "table": "draw_order",
+            "index": "uk_order_id",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 1
+          },
+          {
+            "table": "draw_order",
+            "index": "uk_order_id",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 1
+          },
+          {
+            "table": "draw_order",
+            "index": "uk_order_id",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 1
+          },
+          {
+            "table": "draw_order",
+            "index": "uk_order_id",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 1
+          },
+          {
+            "table": "draw_order",
+            "index": "uk_order_id",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 1
+          }
+        ],
+        "stages": {
+          "ack/lottery_invoice": {
+            "count": 6041,
+            "totalMs": 10508.275244,
+            "meanMs": 1.7394926740605858,
+            "errors": 0,
+            "p95BucketUpperMs": 4.096
+          },
+          "ack/lottery_strategy_award_stock": {
+            "count": 6041,
+            "totalMs": 12112.777342,
+            "meanMs": 2.005094742923357,
+            "errors": 0,
+            "p95BucketUpperMs": 4.096
+          },
+          "sql/consumer/lottery_invoice/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.markUserAwardGranted": {
+            "count": 6041,
+            "totalMs": 38590.059734,
+            "meanMs": 6.388025117364675,
+            "errors": 0,
+            "p95BucketUpperMs": 32.768
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IActivityPrizeDao.deductStock": {
+            "count": 6041,
+            "totalMs": 6661.423434,
+            "meanMs": 1.1027021079291508,
+            "errors": 0,
+            "p95BucketUpperMs": 4.096
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IAwardStockSettlementDao.insert": {
+            "count": 6041,
+            "totalMs": 5519.718647,
+            "meanMs": 0.9137094267505379,
+            "errors": 0,
+            "p95BucketUpperMs": 4.096
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.updateStockSettlementEventStatus": {
+            "count": 6041,
+            "totalMs": 25172.291238,
+            "meanMs": 4.166908001655355,
+            "errors": 0,
+            "p95BucketUpperMs": 16.384
+          },
+          "stage/ActivityPrizeRepository.settleAwardStock(..)": {
+            "count": 6041,
+            "totalMs": 44608.423613,
+            "meanMs": 7.384278035590134,
+            "errors": 0,
+            "p95BucketUpperMs": 32.768
+          },
+          "stage/DrawParticipationRepository.takeParticipation(..)": {
+            "count": 6041,
+            "totalMs": 61663.645744,
+            "meanMs": 10.20752288429068,
+            "errors": 0,
+            "p95BucketUpperMs": 32.768
+          },
+          "stage/OrderRepository.saveDrawOrderWithTakeLock(..)": {
+            "count": 6041,
+            "totalMs": 50935.767707,
+            "meanMs": 8.431678150471777,
+            "errors": 0,
+            "p95BucketUpperMs": 32.768
+          }
+        },
+        "serverSqlUnavailable": "isolated schema filter used V7 name; Mapper phase timing still available"
+      },
+      "120": {
+        "observedThreads": 72,
+        "windowSeconds": 185.0,
+        "rps": 119.97837837837838,
+        "offeredRps": 120.00540540540541,
+        "newDrawRps": 119.97837837837838,
+        "httpCodes": {
+          "200": 22196
+        },
+        "businessCodes": {
+          "0000": 22196
+        },
+        "systemErrorRate": 0.0,
+        "p50Ms": 27,
+        "p95Ms": 432,
+        "p99Ms": 827,
+        "ordersTotal": 23432,
+        "settledOrders": 23432,
+        "audit": "PASS",
+        "stockLatencyBoundsMs": {
+          "0.5": [
+            160,
+            176
+          ],
+          "0.95": [
+            21949,
+            21989
+          ],
+          "0.99": [
+            36883,
+            36946
+          ]
+        },
+        "peakSampledKafkaLag": {
+          "lottery-perf-stock": 1863,
+          "lottery-perf-invoice": 9
+        },
+        "drainSeconds": 24.87504267692566,
+        "pools": {
+          "HikariPool-1": {
+            "url": "lottery_v8_bench",
+            "maxActive": 48,
+            "maxWaiting": 38,
+            "acquireMeanMs": 1.4373799087970958,
+            "timeouts": 0
+          }
+        },
+        "outbox": {
+          "scans": 66,
+          "candidates": 824,
+          "scanNanos": 341598247,
+          "retries": 781,
+          "rejected": 785,
+          "recoveryThrottled": 2,
+          "sendFailures": 0
+        },
+        "redisAdmissionMeanMs": null,
+        "gcMs": 164,
+        "heapMaxObservedMiB": 338.5390853881836,
+        "mysqlDelta": {
+          "Innodb_row_lock_time": 133379,
+          "Innodb_row_lock_waits": 24296,
+          "Slow_queries": 5575
+        },
+        "settlementRps": 108.11891891891892,
+        "fulfillmentRps": 108.1027027027027,
+        "fulfillmentLatencyBoundsMs": {
+          "0.5": [
+            177,
+            194
+          ],
+          "0.95": [
+            22016,
+            22050
+          ],
+          "0.99": [
+            36895,
+            36955
+          ]
+        },
+        "completedLatencyMs": {
+          "0.5": 27,
+          "0.95": 432,
+          "0.99": 827
+        },
+        "httpEnd": {
+          "orders": 23432,
+          "stockPending": 2100,
+          "grantPending": 2103,
+          "blocked": 0,
+          "stockDue": 77,
+          "fulfillmentDue": 0
+        },
+        "final": {
+          "pending": {
+            "orders": 23432,
+            "stockPending": 0,
+            "grantPending": 0,
+            "blocked": 0,
+            "stockDue": 0,
+            "fulfillmentDue": 0
+          },
+          "kafka": {
+            "lottery-perf-stock": [
+              110079,
+              0,
+              8
+            ],
+            "lottery-perf-invoice": [
+              110079,
+              0,
+              8
+            ]
+          }
+        },
+        "stability": {
+          "stable": false,
+          "checks": {
+            "至少180秒测量": true,
+            "达到目标到达速率95%": true,
+            "HTTP与系统错误率低于0.1%": true,
+            "HTTP P99低于1秒": true,
+            "积压峰值不超过10秒请求量": false,
+            "首尾平均积压增长不超过1秒请求量": false,
+            "异步P95保守上界低于10秒": false,
+            "入口结束后15秒内收敛": false,
+            "业务审计通过": true
+          },
+          "measuredRps": 119.97837837837838,
+          "targetRps": 120.0,
+          "backlogPeak": 2004,
+          "backlogMeanGrowth": 1417.1428571428573,
+          "firstMeanBacklog": 15.428571428571429,
+          "lastMeanBacklog": 1432.5714285714287
+        },
+        "resources": {
+          "mysql": {
+            "cpuMean": 90.95423728813559,
+            "cpuMax": 289.4,
+            "memoryPeak": "673.8MiB / 2GiB"
+          },
+          "redis": {
+            "cpuMean": 4.0750847457627115,
+            "cpuMax": 11.85,
+            "memoryPeak": "9.516MiB / 256MiB"
+          },
+          "kafka": {
+            "cpuMean": 102.36372881355932,
+            "cpuMax": 208.8,
+            "memoryPeak": "830MiB / 1GiB"
+          },
+          "mysqlStatuses": {
+            "maxConnections": 49,
+            "maxRunning": 50,
+            "rowLockWaitsDelta": 18585,
+            "rowLockTimeMsDelta": 89517
+          },
+          "kafkaLag": {
+            "maxStockLag": 1863,
+            "maxInvoiceLag": 9
+          },
+          "kafkaCommittedPerSecond": {
+            "lottery-perf-stock": 107.65008820856426,
+            "lottery-perf-invoice": 107.56098864871608
+          },
+          "gcCountDelta": {
+            "G1 Young Generation": 25,
+            "G1 Old Generation": 0
+          },
+          "collectionMaxMs": 5923
+        },
+        "hostSwapMiB": {
+          "Swapins": 965.53,
+          "Swapouts": 781.92
+        },
+        "lockObservations": [
+          {
+            "table": "activity_prize",
+            "index": "uk_activity_award",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 5
+          },
+          {
+            "table": "activity_prize",
+            "index": "uk_activity_award",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 2
+          },
+          {
+            "table": "activity_prize",
+            "index": "uk_activity_award",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 2
+          },
+          {
+            "table": "draw_order",
+            "index": "uk_order_id",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 1
+          },
+          {
+            "table": "draw_order",
+            "index": "uk_order_id",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 1
+          },
+          {
+            "table": "draw_order",
+            "index": "uk_order_id",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 1
+          }
+        ],
+        "stages": {
+          "ack/lottery_invoice": {
+            "count": 23432,
+            "totalMs": 57208.748968,
+            "meanMs": 2.4414795565039262,
+            "errors": 0,
+            "p95BucketUpperMs": 8.192
+          },
+          "ack/lottery_strategy_award_stock": {
+            "count": 23432,
+            "totalMs": 59670.394204,
+            "meanMs": 2.546534406111301,
+            "errors": 0,
+            "p95BucketUpperMs": 8.192
+          },
+          "sql/consumer/lottery_invoice/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.markUserAwardGranted": {
+            "count": 23432,
+            "totalMs": 307738.665353,
+            "meanMs": 13.133264994580061,
+            "errors": 0,
+            "p95BucketUpperMs": 65.536
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IActivityPrizeDao.deductStock": {
+            "count": 23432,
+            "totalMs": 46186.736434,
+            "meanMs": 1.971096638528508,
+            "errors": 0,
+            "p95BucketUpperMs": 8.192
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IAwardStockSettlementDao.insert": {
+            "count": 23432,
+            "totalMs": 25474.156555,
+            "meanMs": 1.0871524647917377,
+            "errors": 0,
+            "p95BucketUpperMs": 4.096
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.updateStockSettlementEventStatus": {
+            "count": 23432,
+            "totalMs": 207039.598416,
+            "meanMs": 8.835762991464664,
+            "errors": 0,
+            "p95BucketUpperMs": 32.768
+          },
+          "stage/ActivityPrizeRepository.settleAwardStock(..)": {
+            "count": 23432,
+            "totalMs": 317699.77716,
+            "meanMs": 13.558372190167294,
+            "errors": 0,
+            "p95BucketUpperMs": 65.536
+          },
+          "stage/DrawParticipationRepository.takeParticipation(..)": {
+            "count": 23432,
+            "totalMs": 770418.804917,
+            "meanMs": 32.87891792919939,
+            "errors": 0,
+            "p95BucketUpperMs": 262.144
+          },
+          "stage/OrderRepository.saveDrawOrderWithTakeLock(..)": {
+            "count": 23432,
+            "totalMs": 646019.221332,
+            "meanMs": 27.56995652663025,
+            "errors": 0,
+            "p95BucketUpperMs": 131.072
+          }
+        },
+        "serverSqlUnavailable": "isolated schema filter used V7 name; Mapper phase timing still available"
+      },
+      "150": {
+        "observedThreads": 72,
+        "windowSeconds": 290.937,
+        "rps": 150.0221697480898,
+        "offeredRps": 149.98092370513203,
+        "newDrawRps": 150.0221697480898,
+        "httpCodes": {
+          "200": 43647
+        },
+        "businessCodes": {
+          "0000": 43647
+        },
+        "systemErrorRate": 0.0,
+        "p50Ms": 47,
+        "p95Ms": 193,
+        "p99Ms": 439,
+        "ordersTotal": 45141,
+        "settledOrders": 45141,
+        "audit": "PASS",
+        "stockLatencyBoundsMs": {
+          "0.5": [
+            56092,
+            56104
+          ],
+          "0.95": [
+            93827,
+            93849
+          ],
+          "0.99": [
+            101378,
+            101400
+          ]
+        },
+        "peakSampledKafkaLag": {
+          "lottery-perf-stock": 13051,
+          "lottery-perf-invoice": 16
+        },
+        "drainSeconds": 73.12861013412476,
+        "pools": {
+          "HikariPool-1": {
+            "url": "lottery_v8_bench",
+            "maxActive": 48,
+            "maxWaiting": 36,
+            "acquireMeanMs": 0.416061553616872,
+            "timeouts": 0
+          }
+        },
+        "outbox": {
+          "scans": 85,
+          "candidates": 150,
+          "scanNanos": 227662466,
+          "retries": 150,
+          "rejected": 150,
+          "recoveryThrottled": 0,
+          "sendFailures": 0
+        },
+        "redisAdmissionMeanMs": null,
+        "gcMs": 126,
+        "heapMaxObservedMiB": 355.07411193847656,
+        "mysqlDelta": {
+          "Innodb_row_lock_time": 430905,
+          "Innodb_row_lock_waits": 53332,
+          "Slow_queries": 8453
+        },
+        "settlementRps": 105.70673376022988,
+        "fulfillmentRps": 105.71017093047635,
+        "fulfillmentLatencyBoundsMs": {
+          "0.5": [
+            56110,
+            56123
+          ],
+          "0.95": [
+            93837,
+            93857
+          ],
+          "0.99": [
+            101385,
+            101408
+          ]
+        },
+        "completedLatencyMs": {
+          "0.5": 47,
+          "0.95": 193,
+          "0.99": 439
+        },
+        "httpEnd": {
+          "orders": 45141,
+          "stockPending": 13037,
+          "grantPending": 13039,
+          "blocked": 0,
+          "stockDue": 0,
+          "fulfillmentDue": 0
+        },
+        "final": {
+          "pending": {
+            "orders": 45141,
+            "stockPending": 0,
+            "grantPending": 0,
+            "blocked": 0,
+            "stockDue": 0,
+            "fulfillmentDue": 0
+          },
+          "kafka": {
+            "lottery-perf-stock": [
+              155220,
+              0,
+              8
+            ],
+            "lottery-perf-invoice": [
+              155220,
+              0,
+              8
+            ]
+          }
+        },
+        "stability": {
+          "stable": false,
+          "checks": {
+            "至少180秒测量": true,
+            "达到目标到达速率95%": true,
+            "HTTP与系统错误率低于0.1%": true,
+            "HTTP P99低于1秒": true,
+            "积压峰值不超过10秒请求量": false,
+            "首尾平均积压增长不超过1秒请求量": false,
+            "异步P95保守上界低于10秒": false,
+            "入口结束后15秒内收敛": false,
+            "业务审计通过": true
+          },
+          "measuredRps": 150.0221697480898,
+          "targetRps": 150.0,
+          "backlogPeak": 13065,
+          "backlogMeanGrowth": 11483.42857142857,
+          "firstMeanBacklog": 268,
+          "lastMeanBacklog": 11751.42857142857
+        },
+        "resources": {
+          "mysql": {
+            "cpuMean": 131.94260416666665,
+            "cpuMax": 173.12,
+            "memoryPeak": "690.1MiB / 2GiB"
+          },
+          "redis": {
+            "cpuMean": 6.080520833333333,
+            "cpuMax": 18.34,
+            "memoryPeak": "10.32MiB / 256MiB"
+          },
+          "kafka": {
+            "cpuMean": 113.91458333333334,
+            "cpuMax": 172.46,
+            "memoryPeak": "773.8MiB / 1GiB"
+          },
+          "mysqlStatuses": {
+            "maxConnections": 49,
+            "maxRunning": 50,
+            "rowLockWaitsDelta": 35523,
+            "rowLockTimeMsDelta": 349887
+          },
+          "kafkaLag": {
+            "maxStockLag": 13051,
+            "maxInvoiceLag": 16
+          },
+          "kafkaCommittedPerSecond": {
+            "lottery-perf-stock": 104.27954235212992,
+            "lottery-perf-invoice": 104.27250594576338
+          },
+          "gcCountDelta": {
+            "G1 Young Generation": 43,
+            "G1 Old Generation": 0
+          },
+          "collectionMaxMs": 4016
+        },
+        "hostSwapMiB": {
+          "Swapins": 1466.88,
+          "Swapouts": 905.3
+        },
+        "lockObservations": [
+          {
+            "table": "activity_prize",
+            "index": "uk_activity_award",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 6
+          },
+          {
+            "table": "activity_prize",
+            "index": "uk_activity_award",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 6
+          },
+          {
+            "table": "activity_prize",
+            "index": "uk_activity_award",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 5
+          },
+          {
+            "table": "draw_participation",
+            "index": "idx_user_activity_state_id",
+            "mode": "X,GAP,INSERT_INTENTION",
+            "samples": 5
+          },
+          {
+            "table": "activity_prize",
+            "index": "uk_activity_award",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 3
+          },
+          {
+            "table": "activity_prize",
+            "index": "uk_activity_award",
+            "mode": "X,REC_NOT_GAP",
+            "samples": 2
+          }
+        ],
+        "stages": {
+          "ack/lottery_invoice": {
+            "count": 45141,
+            "totalMs": 120130.48579,
+            "meanMs": 2.6612278369996236,
+            "errors": 0,
+            "p95BucketUpperMs": 8.192
+          },
+          "ack/lottery_strategy_award_stock": {
+            "count": 45141,
+            "totalMs": 129282.884505,
+            "meanMs": 2.86397918754569,
+            "errors": 0,
+            "p95BucketUpperMs": 8.192
+          },
+          "sql/consumer/lottery_invoice/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.markUserAwardGranted": {
+            "count": 45141,
+            "totalMs": 744629.190257,
+            "meanMs": 16.495629034735607,
+            "errors": 0,
+            "p95BucketUpperMs": 65.536
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IActivityPrizeDao.deductStock": {
+            "count": 45141,
+            "totalMs": 114930.152171,
+            "meanMs": 2.546025833964688,
+            "errors": 0,
+            "p95BucketUpperMs": 16.384
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IAwardStockSettlementDao.insert": {
+            "count": 45141,
+            "totalMs": 56542.889592,
+            "meanMs": 1.2525838947298464,
+            "errors": 0,
+            "p95BucketUpperMs": 4.096
+          },
+          "sql/consumer/lottery_strategy_award_stock/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.updateStockSettlementEventStatus": {
+            "count": 45141,
+            "totalMs": 484489.577033,
+            "meanMs": 10.732805587669745,
+            "errors": 0,
+            "p95BucketUpperMs": 32.768
+          },
+          "stage/ActivityPrizeRepository.settleAwardStock(..)": {
+            "count": 45141,
+            "totalMs": 735574.992771,
+            "meanMs": 16.295053117365587,
+            "errors": 0,
+            "p95BucketUpperMs": 65.536
+          },
+          "stage/DrawParticipationRepository.takeParticipation(..)": {
+            "count": 45141,
+            "totalMs": 1309078.141667,
+            "meanMs": 28.999759457411223,
+            "errors": 0,
+            "p95BucketUpperMs": 131.072
+          },
+          "stage/OrderRepository.saveDrawOrderWithTakeLock(..)": {
+            "count": 45141,
+            "totalMs": 1180611.68918,
+            "meanMs": 26.15386653330675,
+            "errors": 0,
+            "p95BucketUpperMs": 131.072
+          }
+        },
+        "serverSqlUnavailable": "isolated schema filter used V7 name; Mapper phase timing still available"
+      }
+    }
+  },
+  "limited350": {
+    "observedThreads": 72,
+    "windowSeconds": 24.497,
+    "rps": 349.7162917908315,
+    "offeredRps": 349.47136384047025,
+    "newDrawRps": 100.09388904763848,
+    "httpCodes": {
+      "200": 2452,
+      "429": 6115
+    },
+    "businessCodes": {
+      "0000": 2452,
+      "L001": 6109,
+      "L003": 6
+    },
+    "systemErrorRate": 0.0,
+    "p50Ms": 4,
+    "p95Ms": 78,
+    "p99Ms": 113,
+    "ordersTotal": 3395,
+    "settledOrders": 3395,
+    "audit": "PASS",
+    "stockLatencyBoundsMs": {
+      "0.5": [
+        3660,
+        3677
+      ],
+      "0.95": [
+        5256,
+        5282
+      ],
+      "0.99": [
+        5706,
+        5723
+      ]
+    },
+    "peakSampledKafkaLag": {
+      "lottery-perf-stock": 368,
+      "lottery-perf-invoice": 3
+    },
+    "drainSeconds": 2.539639949798584,
+    "pools": {
+      "HikariPool-1": {
+        "url": "lottery_v8_bench",
+        "maxActive": 18,
+        "maxWaiting": 0,
+        "acquireMeanMs": 0.02023061232985056,
+        "timeouts": 0
+      }
+    },
+    "outbox": {
+      "scans": 14,
+      "candidates": 0,
+      "scanNanos": 62059209,
+      "retries": 0,
+      "rejected": 0,
+      "recoveryThrottled": 0,
+      "sendFailures": 0
+    },
+    "redisAdmissionMeanMs": 3.114899667991872,
+    "gcMs": 28,
+    "heapMaxObservedMiB": 318.6826171875,
+    "mysqlDelta": {
+      "Innodb_row_lock_time": 30216,
+      "Innodb_row_lock_waits": 3921,
+      "Slow_queries": 326
+    },
+    "settlementRps": 103.80862962811773,
+    "fulfillmentRps": 103.89027227823816,
+    "fulfillmentLatencyBoundsMs": {
+      "0.5": [
+        3683,
+        3701
+      ],
+      "0.95": [
+        5269,
+        5295
+      ],
+      "0.99": [
+        5731,
+        5756
+      ]
+    },
+    "completedLatencyMs": {
+      "0.5": 55,
+      "0.95": 105,
+      "0.99": 166
+    },
+    "httpEnd": {
+      "orders": 3395,
+      "stockPending": 68,
+      "grantPending": 70,
+      "blocked": 0,
+      "stockDue": 0,
+      "fulfillmentDue": 0
+    },
+    "final": {
+      "pending": {
+        "orders": 3395,
+        "stockPending": 0,
+        "grantPending": 0,
+        "blocked": 0,
+        "stockDue": 0,
+        "fulfillmentDue": 0
+      },
+      "kafka": {
+        "lottery-perf-stock": [
+          158766,
+          0,
+          8
+        ],
+        "lottery-perf-invoice": [
+          158766,
+          0,
+          8
+        ]
+      }
+    },
+    "resources": {
+      "mysql": {
+        "cpuMean": 127.76875,
+        "cpuMax": 160.05,
+        "memoryPeak": "703.3MiB / 2GiB"
+      },
+      "redis": {
+        "cpuMean": 10.1725,
+        "cpuMax": 12.71,
+        "memoryPeak": "9.402MiB / 256MiB"
+      },
+      "kafka": {
+        "cpuMean": 113.60875,
+        "cpuMax": 155.82,
+        "memoryPeak": "824.8MiB / 1GiB"
+      },
+      "mysqlStatuses": {
+        "maxConnections": 41,
+        "maxRunning": 12,
+        "rowLockWaitsDelta": 1190,
+        "rowLockTimeMsDelta": 8844
+      },
+      "kafkaLag": {
+        "maxStockLag": 368,
+        "maxInvoiceLag": 3
+      },
+      "kafkaCommittedPerSecond": {
+        "lottery-perf-stock": 113.36886520097713,
+        "lottery-perf-invoice": 113.36886520097713
+      },
+      "gcCountDelta": {
+        "G1 Young Generation": 3,
+        "G1 Old Generation": 0
+      },
+      "collectionMaxMs": 3120
+    },
+    "hostSwapMiB": {
+      "Swapins": 1.06,
+      "Swapouts": 0.0
+    },
+    "lockObservations": [
+      {
+        "table": "draw_order",
+        "index": "uk_order_id",
+        "mode": "X,REC_NOT_GAP",
+        "samples": 1
+      },
+      {
+        "table": "activity_prize",
+        "index": "uk_activity_award",
+        "mode": "X,REC_NOT_GAP",
+        "samples": 1
+      },
+      {
+        "table": "draw_order",
+        "index": "uk_order_id",
+        "mode": "X,REC_NOT_GAP",
+        "samples": 1
+      },
+      {
+        "table": "draw_order",
+        "index": "uk_order_id",
+        "mode": "X,REC_NOT_GAP",
+        "samples": 1
+      },
+      {
+        "table": "draw_order",
+        "index": "uk_order_id",
+        "mode": "X,REC_NOT_GAP",
+        "samples": 1
+      },
+      {
+        "table": "draw_order",
+        "index": "uk_order_id",
+        "mode": "X,REC_NOT_GAP",
+        "samples": 1
+      }
+    ],
+    "stages": {
+      "ack/lottery_invoice": {
+        "count": 3395,
+        "totalMs": 13222.723192,
+        "meanMs": 3.894763826804124,
+        "errors": 0,
+        "p95BucketUpperMs": 8.192
+      },
+      "ack/lottery_strategy_award_stock": {
+        "count": 3395,
+        "totalMs": 14524.6016,
+        "meanMs": 4.278233166421208,
+        "errors": 0,
+        "p95BucketUpperMs": 8.192
+      },
+      "sql/consumer/lottery_invoice/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.markUserAwardGranted": {
+        "count": 3395,
+        "totalMs": 67532.85498,
+        "meanMs": 19.891857136966127,
+        "errors": 0,
+        "p95BucketUpperMs": 65.536
+      },
+      "sql/consumer/lottery_strategy_award_stock/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IActivityPrizeDao.deductStock": {
+        "count": 3395,
+        "totalMs": 11543.063284,
+        "meanMs": 3.4000186403534607,
+        "errors": 0,
+        "p95BucketUpperMs": 16.384
+      },
+      "sql/consumer/lottery_strategy_award_stock/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IAwardStockSettlementDao.insert": {
+        "count": 3395,
+        "totalMs": 6772.323555,
+        "meanMs": 1.9947933888070692,
+        "errors": 0,
+        "p95BucketUpperMs": 8.192
+      },
+      "sql/consumer/lottery_strategy_award_stock/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.updateStockSettlementEventStatus": {
+        "count": 3395,
+        "totalMs": 43415.610911,
+        "meanMs": 12.788103361119292,
+        "errors": 0,
+        "p95BucketUpperMs": 32.768
+      },
+      "stage/ActivityPrizeRepository.settleAwardStock(..)": {
+        "count": 3395,
+        "totalMs": 72388.328011,
+        "meanMs": 21.322040651251843,
+        "errors": 0,
+        "p95BucketUpperMs": 65.536
+      },
+      "stage/DrawParticipationRepository.takeParticipation(..)": {
+        "count": 3395,
+        "totalMs": 100827.951381,
+        "meanMs": 29.698954751399114,
+        "errors": 0,
+        "p95BucketUpperMs": 131.072
+      },
+      "stage/OrderRepository.saveDrawOrderWithTakeLock(..)": {
+        "count": 3395,
+        "totalMs": 93272.760093,
+        "meanMs": 27.473567037702505,
+        "errors": 0,
+        "p95BucketUpperMs": 131.072
+      }
+    },
+    "serverSql": [
+      {
+        "schema": "lottery_v8_bench",
+        "sql": "COMMIT",
+        "baselinePresent": true,
+        "count": 10061,
+        "waitSeconds": 128.68820000000005,
+        "meanMs": 12.790796143524506,
+        "lockSeconds": 0.1423000000000023,
+        "rowsExamined": 0
+      },
+      {
+        "schema": "lottery_v8_bench",
+        "sql": "UPDATE `activity_prize` SET `award_surplus_count` = `award_surplus_count` - ? WHERE `activity_id` = ? AND `award_id` = ? AND `award_surplus_count` > ?",
+        "baselinePresent": true,
+        "count": 3375,
+        "waitSeconds": 5.896200000000007,
+        "meanMs": 1.7470222222222243,
+        "lockSeconds": 4.419499999999999,
+        "rowsExamined": 3394
+      }
+    ]
+  },
+  "schema": {
+    "tableCount": 7,
+    "equivalentFreshAndUpgraded": true,
+    "blockedBeforeCreate": [
+      "shared_pool",
+      "duplicate_prize",
+      "undrained_order"
+    ],
+    "fixtureRows": {
+      "activity": 2,
+      "award": 1,
+      "activity_prize": 2,
+      "award_stock_settlement": 1,
+      "draw_participation": 2,
+      "user_activity_quota": 1,
+      "draw_order": 1
+    },
+    "preservedBusinessDataMismatches": 0,
+    "existingBusinessDatabaseMutated": false
+  },
+  "migratedHttp": {
+    "historicalReplay": true,
+    "unfinishedRequestRecovered": true,
+    "legacyOrder": 91,
+    "legacyTake": 81,
+    "resumedTake": 82,
+    "quotaLeft": 1,
+    "ledgerRows": 2,
+    "stockByActivity": {
+      "501": 7,
+      "502": 3
+    }
+  },
+  "crash": {
+    "before": [
+      "1",
+      "0",
+      "0",
+      "0"
+    ],
+    "after": [
+      "2",
+      "1",
+      "1",
+      "1"
+    ],
+    "participants": 1,
+    "remainingQuota": 2,
+    "ledgerRows": 1,
+    "stock": 9,
+    "replayed": true,
+    "secondsFromReady": 0.407,
+    "lag": {
+      "lottery-perf-stock": [
+        77546,
+        0,
+        8
+      ],
+      "lottery-perf-invoice": [
+        77546,
+        0,
+        8
+      ]
+    }
+  },
+  "semantics": {
+    "differentCodes": {
+      "D006": 49,
+      "0000": 1
+    },
+    "sameCodes": {
+      "D006": 49,
+      "0000": 1
+    },
+    "newDraws": {
+      "hot-different": 1,
+      "hot-same": 1,
+      "timeout-user": 1,
+      "pending-user": 1
+    },
+    "timeoutObserved": true,
+    "pendingCode": "D007",
+    "audit": "PASS"
+  },
+  "replayCost": {
+    "samplesPerPath": 130,
+    "new": {
+      "p50Ms": 23,
+      "p95Ms": 29,
+      "p99Ms": 37
+    },
+    "replay": {
+      "p50Ms": 7,
+      "p95Ms": 10,
+      "p99Ms": 11
+    },
+    "participations": 150,
+    "orders": 150
+  },
+  "plans": {
+    "V7StockUpdate": "idx_draw_config_award; 1 estimated row",
+    "V8StockUpdate": "uk_activity_award; 1 estimated row",
+    "V8Snapshot": "uk_activity_award prefix activity_id",
+    "outboxStock": "idx_stock_retry",
+    "outboxFulfillment": "idx_fulfillment_retry"
+  },
+  "tests": {
+    "defaultJava8": 53,
+    "sql": 34,
+    "finalBusinessHttp": 28,
+    "redis": 10,
+    "kafkaPipeline": 9
+  },
+  "repeat150": {
+    "V7": {
+      "observedThreads": 72,
+      "windowSeconds": 79.731,
+      "rps": 150.04201627974064,
+      "offeredRps": 149.9416788952854,
+      "newDrawRps": 150.04201627974064,
+      "httpCodes": {
+        "200": 11963
+      },
+      "businessCodes": {
+        "0000": 11963
+      },
+      "systemErrorRate": 0.0,
+      "p50Ms": 45,
+      "p95Ms": 97,
+      "p99Ms": 195,
+      "ordersTotal": 13467,
+      "settledOrders": 13467,
+      "audit": "PASS",
+      "stockLatencyBoundsMs": {
+        "0.5": [
+          19711,
+          19727
+        ],
+        "0.95": [
+          29084,
+          29113
+        ],
+        "0.99": [
+          31235,
+          31254
+        ]
+      },
+      "peakSampledKafkaLag": {
+        "lottery-perf-stock": 3509,
+        "lottery-perf-invoice": 4
+      },
+      "drainSeconds": 15.888020992279053,
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery",
+          "maxActive": 44,
+          "maxWaiting": 0,
+          "acquireMeanMs": 0.005311588921282799,
+          "timeouts": 0
+        }
+      },
+      "outbox": {
+        "scans": 32,
+        "candidates": 126,
+        "scanNanos": 99948461,
+        "retries": 121,
+        "rejected": 121,
+        "recoveryThrottled": 1,
+        "sendFailures": 0
+      },
+      "redisAdmissionMeanMs": null,
+      "gcMs": 108,
+      "heapMaxObservedMiB": 323.017578125,
+      "mysqlDelta": {
+        "Innodb_row_lock_time": 82228,
+        "Innodb_row_lock_waits": 15179,
+        "Slow_queries": 620
+      },
+      "settlementRps": 115.90222121884838,
+      "fulfillmentRps": 115.9398477380191,
+      "completedLatencyMs": {
+        "0.5": 45,
+        "0.95": 97,
+        "0.99": 195
+      },
+      "fulfillmentLatencyBoundsMs": {
+        "0.5": [
+          19731,
+          19748
+        ],
+        "0.95": [
+          29095,
+          29123
+        ],
+        "0.99": [
+          31245,
+          31264
+        ]
+      },
+      "httpEnd": {
+        "orders": 13467,
+        "stockPending": 3382,
+        "grantPending": 3384,
+        "blocked": 0,
+        "stockDue": 0,
+        "fulfillmentDue": 0
+      },
+      "final": {
+        "pending": {
+          "orders": 13467,
+          "stockPending": 0,
+          "grantPending": 0,
+          "blocked": 0,
+          "stockDue": 0,
+          "fulfillmentDue": 0
+        },
+        "kafka": {
+          "lottery-perf-stock": [
+            172233,
+            0,
+            8
+          ],
+          "lottery-perf-invoice": [
+            172233,
+            0,
+            8
+          ]
+        }
+      },
+      "resources": {
+        "mysql": {
+          "cpuMean": 150.08692307692309,
+          "cpuMax": 168.84,
+          "memoryPeak": "716.6MiB / 2GiB"
+        },
+        "redis": {
+          "cpuMean": 7.101538461538461,
+          "cpuMax": 11.16,
+          "memoryPeak": "9.68MiB / 256MiB"
+        },
+        "kafka": {
+          "cpuMean": 136.96269230769232,
+          "cpuMax": 177.63,
+          "memoryPeak": "908.1MiB / 1GiB"
+        },
+        "mysqlStatuses": {
+          "maxConnections": 49,
+          "maxRunning": 16,
+          "rowLockWaitsDelta": 8613,
+          "rowLockTimeMsDelta": 52086
+        },
+        "kafkaLag": {
+          "maxStockLag": 3509,
+          "maxInvoiceLag": 4
+        },
+        "kafkaCommittedPerSecond": {
+          "lottery-perf-stock": 118.80080660407083,
+          "lottery-perf-invoice": 118.80080660407083
+        },
+        "gcCountDelta": {
+          "G1 Young Generation": 13,
+          "G1 Old Generation": 0
+        },
+        "collectionMaxMs": 3257
+      },
+      "hostSwapMiB": {
+        "Swapins": 3.3,
+        "Swapouts": 0.0
+      },
+      "lockObservations": [
+        {
+          "table": "draw_config_prize",
+          "index": "idx_draw_config_award",
+          "mode": "X",
+          "samples": 2
+        },
+        {
+          "table": "draw_order",
+          "index": "uk_order_id",
+          "mode": "X,REC_NOT_GAP",
+          "samples": 1
+        },
+        {
+          "table": "draw_order",
+          "index": "uk_order_id",
+          "mode": "X,REC_NOT_GAP",
+          "samples": 1
+        },
+        {
+          "table": "draw_order",
+          "index": "uk_order_id",
+          "mode": "X,REC_NOT_GAP",
+          "samples": 1
+        },
+        {
+          "table": "draw_order",
+          "index": "uk_order_id",
+          "mode": "X,REC_NOT_GAP",
+          "samples": 1
+        },
+        {
+          "table": "draw_order",
+          "index": "uk_order_id",
+          "mode": "X,REC_NOT_GAP",
+          "samples": 1
+        }
+      ],
+      "stages": {
+        "ack/lottery_invoice": {
+          "count": 13467,
+          "totalMs": 49022.524751,
+          "meanMs": 3.6401963875399126,
+          "errors": 0,
+          "p95BucketUpperMs": 8.192
+        },
+        "ack/lottery_strategy_award_stock": {
+          "count": 13467,
+          "totalMs": 53998.36397,
+          "meanMs": 4.009680253211554,
+          "errors": 0,
+          "p95BucketUpperMs": 16.384
+        },
+        "sql/consumer/lottery_invoice/lottery/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.markUserAwardGranted": {
+          "count": 13467,
+          "totalMs": 194157.066806,
+          "meanMs": 14.417247108190391,
+          "errors": 0,
+          "p95BucketUpperMs": 32.768
+        },
+        "sql/consumer/lottery_strategy_award_stock/lottery/com.anontokyo.lottery.infrastructure.dao.IAwardStockSettlementDao.insert": {
+          "count": 13467,
+          "totalMs": 20308.052216,
+          "meanMs": 1.507986353011064,
+          "errors": 0,
+          "p95BucketUpperMs": 4.096
+        },
+        "sql/consumer/lottery_strategy_award_stock/lottery/com.anontokyo.lottery.infrastructure.dao.IDrawConfigPrizeDao.deductStock": {
+          "count": 13467,
+          "totalMs": 33260.271718,
+          "meanMs": 2.4697610245785997,
+          "errors": 0,
+          "p95BucketUpperMs": 16.384
+        },
+        "sql/consumer/lottery_strategy_award_stock/lottery/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.updateStockSettlementEventStatus": {
+          "count": 13467,
+          "totalMs": 127280.284376,
+          "meanMs": 9.45127232316032,
+          "errors": 0,
+          "p95BucketUpperMs": 32.768
+        },
+        "stage/DrawConfigRepository.settleAwardStock(..)": {
+          "count": 13467,
+          "totalMs": 209761.105353,
+          "meanMs": 15.575934161505904,
+          "errors": 0,
+          "p95BucketUpperMs": 32.768
+        },
+        "stage/DrawParticipationRepository.takeParticipation(..)": {
+          "count": 13467,
+          "totalMs": 325617.205253,
+          "meanMs": 24.17889695203089,
+          "errors": 0,
+          "p95BucketUpperMs": 65.536
+        },
+        "stage/OrderRepository.saveDrawOrderWithTakeLock(..)": {
+          "count": 13467,
+          "totalMs": 305265.261473,
+          "meanMs": 22.667651405138486,
+          "errors": 0,
+          "p95BucketUpperMs": 65.536
+        }
+      },
+      "serverSql": [
+        {
+          "schema": "lottery",
+          "sql": "COMMIT",
+          "baselinePresent": true,
+          "count": 39936,
+          "waitSeconds": 399.6239999999998,
+          "meanMs": 10.006610576923071,
+          "lockSeconds": 0.7531000000000034,
+          "rowsExamined": 0
+        },
+        {
+          "schema": "lottery",
+          "sql": "UPDATE `draw_config_prize` SET `award_surplus_count` = `award_surplus_count` - ? WHERE `draw_config_id` = ? AND `award_id` = ? AND `award_surplus_count` > ?",
+          "baselinePresent": true,
+          "count": 13416,
+          "waitSeconds": 17.07560000000001,
+          "meanMs": 1.2727787716159815,
+          "lockSeconds": 12.369199999999992,
+          "rowsExamined": 13446
+        }
+      ]
+    },
+    "V8": {
+      "observedThreads": 72,
+      "windowSeconds": 79.477,
+      "rps": 150.09373781093902,
+      "offeredRps": 149.94275073291644,
+      "newDrawRps": 150.09373781093902,
+      "httpCodes": {
+        "200": 11929
+      },
+      "businessCodes": {
+        "0000": 11929
+      },
+      "systemErrorRate": 0.0,
+      "p50Ms": 49,
+      "p95Ms": 110,
+      "p99Ms": 183,
+      "ordersTotal": 13433,
+      "settledOrders": 13433,
+      "audit": "PASS",
+      "stockLatencyBoundsMs": {
+        "0.5": [
+          21717,
+          21746
+        ],
+        "0.95": [
+          33268,
+          33296
+        ],
+        "0.99": [
+          35566,
+          35578
+        ]
+      },
+      "peakSampledKafkaLag": {
+        "lottery-perf-stock": 4053,
+        "lottery-perf-invoice": 5
+      },
+      "drainSeconds": 20.3212468624115,
+      "pools": {
+        "HikariPool-1": {
+          "url": "lottery_v8_bench",
+          "maxActive": 23,
+          "maxWaiting": 0,
+          "acquireMeanMs": 0.03346427784712534,
+          "timeouts": 0
+        }
+      },
+      "outbox": {
+        "scans": 32,
+        "candidates": 164,
+        "scanNanos": 96451753,
+        "retries": 149,
+        "rejected": 149,
+        "recoveryThrottled": 1,
+        "sendFailures": 0
+      },
+      "redisAdmissionMeanMs": null,
+      "gcMs": 116,
+      "heapMaxObservedMiB": 334.10595703125,
+      "mysqlDelta": {
+        "Innodb_row_lock_time": 89171,
+        "Innodb_row_lock_waits": 15333,
+        "Slow_queries": 591
+      },
+      "settlementRps": 111.36555229814914,
+      "fulfillmentRps": 111.34038778514538,
+      "fulfillmentLatencyBoundsMs": {
+        "0.5": [
+          21730,
+          21757
+        ],
+        "0.95": [
+          33276,
+          33307
+        ],
+        "0.99": [
+          35574,
+          35586
+        ]
+      },
+      "completedLatencyMs": {
+        "0.5": 49,
+        "0.95": 110,
+        "0.99": 183
+      },
+      "httpEnd": {
+        "orders": 13433,
+        "stockPending": 3818,
+        "grantPending": 3821,
+        "blocked": 0,
+        "stockDue": 0,
+        "fulfillmentDue": 0
+      },
+      "final": {
+        "pending": {
+          "orders": 13433,
+          "stockPending": 0,
+          "grantPending": 0,
+          "blocked": 0,
+          "stockDue": 0,
+          "fulfillmentDue": 0
+        },
+        "kafka": {
+          "lottery-perf-stock": [
+            185666,
+            0,
+            8
+          ],
+          "lottery-perf-invoice": [
+            185666,
+            0,
+            8
+          ]
+        }
+      },
+      "resources": {
+        "mysql": {
+          "cpuMean": 153.40076923076924,
+          "cpuMax": 177.7,
+          "memoryPeak": "728.2MiB / 2GiB"
+        },
+        "redis": {
+          "cpuMean": 6.823076923076923,
+          "cpuMax": 10.81,
+          "memoryPeak": "9.422MiB / 256MiB"
+        },
+        "kafka": {
+          "cpuMean": 118.5673076923077,
+          "cpuMax": 167.59,
+          "memoryPeak": "905.8MiB / 1GiB"
+        },
+        "mysqlStatuses": {
+          "maxConnections": 49,
+          "maxRunning": 24,
+          "rowLockWaitsDelta": 8479,
+          "rowLockTimeMsDelta": 57778
+        },
+        "kafkaLag": {
+          "maxStockLag": 4053,
+          "maxInvoiceLag": 5
+        },
+        "kafkaCommittedPerSecond": {
+          "lottery-perf-stock": 114.09124813525608,
+          "lottery-perf-invoice": 114.10678766782695
+        },
+        "gcCountDelta": {
+          "G1 Young Generation": 12,
+          "G1 Old Generation": 0
+        },
+        "collectionMaxMs": 3325
+      },
+      "hostSwapMiB": {
+        "Swapins": 2.42,
+        "Swapouts": 0.0
+      },
+      "lockObservations": [
+        {
+          "table": "activity_prize",
+          "index": "uk_activity_award",
+          "mode": "X,REC_NOT_GAP",
+          "samples": 2
+        },
+        {
+          "table": "draw_order",
+          "index": "uk_order_id",
+          "mode": "X,REC_NOT_GAP",
+          "samples": 1
+        },
+        {
+          "table": "draw_order",
+          "index": "uk_order_id",
+          "mode": "X,REC_NOT_GAP",
+          "samples": 1
+        },
+        {
+          "table": "draw_order",
+          "index": "uk_order_id",
+          "mode": "X,REC_NOT_GAP",
+          "samples": 1
+        },
+        {
+          "table": "draw_order",
+          "index": "uk_order_id",
+          "mode": "X,REC_NOT_GAP",
+          "samples": 1
+        },
+        {
+          "table": "draw_order",
+          "index": "uk_order_id",
+          "mode": "X,REC_NOT_GAP",
+          "samples": 1
+        }
+      ],
+      "stages": {
+        "ack/lottery_invoice": {
+          "count": 13433,
+          "totalMs": 40900.400133,
+          "meanMs": 3.0447703515968136,
+          "errors": 0,
+          "p95BucketUpperMs": 8.192
+        },
+        "ack/lottery_strategy_award_stock": {
+          "count": 13433,
+          "totalMs": 41647.83238,
+          "meanMs": 3.100411849921834,
+          "errors": 0,
+          "p95BucketUpperMs": 8.192
+        },
+        "sql/consumer/lottery_invoice/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.markUserAwardGranted": {
+          "count": 13433,
+          "totalMs": 204595.489129,
+          "meanMs": 15.230811369686592,
+          "errors": 0,
+          "p95BucketUpperMs": 32.768
+        },
+        "sql/consumer/lottery_strategy_award_stock/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IActivityPrizeDao.deductStock": {
+          "count": 13433,
+          "totalMs": 36004.37247,
+          "meanMs": 2.6802927469664257,
+          "errors": 0,
+          "p95BucketUpperMs": 16.384
+        },
+        "sql/consumer/lottery_strategy_award_stock/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IAwardStockSettlementDao.insert": {
+          "count": 13433,
+          "totalMs": 21116.799374,
+          "meanMs": 1.572009184396635,
+          "errors": 0,
+          "p95BucketUpperMs": 4.096
+        },
+        "sql/consumer/lottery_strategy_award_stock/lottery_v8_bench/com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao.updateStockSettlementEventStatus": {
+          "count": 13433,
+          "totalMs": 134717.561254,
+          "meanMs": 10.028851429613638,
+          "errors": 0,
+          "p95BucketUpperMs": 32.768
+        },
+        "stage/ActivityPrizeRepository.settleAwardStock(..)": {
+          "count": 13433,
+          "totalMs": 221216.783767,
+          "meanMs": 16.468159291818655,
+          "errors": 0,
+          "p95BucketUpperMs": 65.536
+        },
+        "stage/DrawParticipationRepository.takeParticipation(..)": {
+          "count": 13433,
+          "totalMs": 354481.983079,
+          "meanMs": 26.38889176498176,
+          "errors": 0,
+          "p95BucketUpperMs": 65.536
+        },
+        "stage/OrderRepository.saveDrawOrderWithTakeLock(..)": {
+          "count": 13433,
+          "totalMs": 332400.784405,
+          "meanMs": 24.745089287947593,
+          "errors": 0,
+          "p95BucketUpperMs": 65.536
+        }
+      },
+      "serverSql": [
+        {
+          "schema": "lottery_v8_bench",
+          "sql": "COMMIT",
+          "baselinePresent": true,
+          "count": 39797,
+          "waitSeconds": 432.4937,
+          "meanMs": 10.86749503731437,
+          "lockSeconds": 0.2701999999999991,
+          "rowsExamined": 0
+        },
+        {
+          "schema": "lottery_v8_bench",
+          "sql": "UPDATE `activity_prize` SET `award_surplus_count` = `award_surplus_count` - ? WHERE `activity_id` = ? AND `award_id` = ? AND `award_surplus_count` > ?",
+          "baselinePresent": true,
+          "count": 13394,
+          "waitSeconds": 19.2324,
+          "meanMs": 1.4358966701508136,
+          "lockSeconds": 13.832800000000006,
+          "rowsExamined": 13414
+        }
+      ]
+    }
+  }
+}

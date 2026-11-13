@@ -26,18 +26,6 @@ public class DrawOrderVO {
      * 订单ID
      */
     private Long orderId;
-    /**
-     * 抽奖配置ID
-     */
-    private Long drawConfigId;
-    /**
-     * 发放奖品方式（1:即时、2:定时[含活动结束]、3:人工）
-     */
-    private Integer grantType;
-    /**
-     * 下单时保存的计划发奖时间。
-     */
-    private Date scheduledAt;
 
     /** 实际完成时间由发奖 CAS 写入。 */
     private Date fulfilledAt;
@@ -110,30 +98,6 @@ public class DrawOrderVO {
         this.orderId = orderId;
     }
 
-    public Long getDrawConfigId() {
-        return drawConfigId;
-    }
-
-    public void setDrawConfigId(Long drawConfigId) {
-        this.drawConfigId = drawConfigId;
-    }
-
-    public Integer getGrantType() {
-        return grantType;
-    }
-
-    public void setGrantType(Integer grantType) {
-        this.grantType = grantType;
-    }
-
-    public Date getScheduledAt() {
-        return scheduledAt;
-    }
-
-    public void setScheduledAt(Date scheduledAt) {
-        this.scheduledAt = scheduledAt;
-    }
-
     public Integer getAwardFulfillmentStatus() {
         return awardFulfillmentStatus;
     }
@@ -197,9 +161,6 @@ public class DrawOrderVO {
                 ", takeId=" + takeId +
                 ", activityId=" + activityId +
                 ", orderId=" + orderId +
-                ", drawConfigId=" + drawConfigId +
-                ", grantType=" + grantType +
-                ", scheduledAt=" + scheduledAt +
                 ", awardFulfillmentStatus=" + awardFulfillmentStatus +
                 ", awardId='" + awardId + '\'' +
                 ", awardType=" + awardType +

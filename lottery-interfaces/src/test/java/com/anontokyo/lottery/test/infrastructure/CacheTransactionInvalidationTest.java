@@ -48,7 +48,7 @@ public class CacheTransactionInvalidationTest {
     @Test
     public void snapshotInvalidationWaitsForCommit() {
         transaction.execute(status -> {
-            cache.evictDrawConfigSnapshotCache("snapshot-probe");
+            cache.evictActivityPrizeSnapshotCache("snapshot-probe");
             verify(redis, never()).delStringKey("snapshot-probe");
             return null;
         });

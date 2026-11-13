@@ -28,3 +28,6 @@ logs/
 
 # macOS metadata
 .DS_Store
+
+# Python 迁移和压测脚本的本机字节码
+__pycache__/

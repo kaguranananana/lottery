@@ -18,10 +18,10 @@ import java.util.Set;
  * 落库使用 compare-and-set（UPDATE ... WHERE state = expected），以影响行数判断是否成功。
  *
  * 合法转换：
- * EDIT(1)  -> PASS(4)   运营确认就绪
- * PASS(4)  -> DOING(5)  调度进入运行
- * PASS(4)  -> CLOSE(7)  未开始即下线
- * DOING(5) -> CLOSE(7)  到期或人工关闭
+ * DRAFT(1)  -> READY(4)   运营确认就绪
+ * READY(4)  -> RUNNING(5)  调度进入运行
+ * READY(4)  -> CLOSED(7)  未开始即下线
+ * RUNNING(5) -> CLOSED(7)  到期或人工关闭
  */
 @Service
 public class ActivityLifecycleService {
@@ -32,10 +32,10 @@ public class ActivityLifecycleService {
 
     static {
         Map<Constants.ActivityState, Set<Constants.ActivityState>> transitions = new EnumMap<>(Constants.ActivityState.class);
-        transitions.put(Constants.ActivityState.EDIT, EnumSet.of(Constants.ActivityState.PASS));
-        transitions.put(Constants.ActivityState.PASS, EnumSet.of(Constants.ActivityState.DOING, Constants.ActivityState.CLOSE));
-        transitions.put(Constants.ActivityState.DOING, EnumSet.of(Constants.ActivityState.CLOSE));
-        transitions.put(Constants.ActivityState.CLOSE, Collections.emptySet());
+        transitions.put(Constants.ActivityState.DRAFT, EnumSet.of(Constants.ActivityState.READY));
+        transitions.put(Constants.ActivityState.READY, EnumSet.of(Constants.ActivityState.RUNNING, Constants.ActivityState.CLOSED));
+        transitions.put(Constants.ActivityState.RUNNING, EnumSet.of(Constants.ActivityState.CLOSED));
+        transitions.put(Constants.ActivityState.CLOSED, Collections.emptySet());
         ALLOWED_TRANSITIONS = Collections.unmodifiableMap(transitions);
     }
 

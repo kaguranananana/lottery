@@ -50,18 +50,18 @@ def audit(id, directory):
     (directory/'orders.tsv').write_text('user\tactivity\torder\ttake\taward\tstockState\tmqState\tgrantState\tdoneMs\tcreatedMs\tstockDoneMs\tgrantDoneMs\n'+data)
     take_query=f'SELECT u_id,take_id,CONVERT(request_id USING utf8mb4) AS request_id,state FROM lottery.draw_participation WHERE activity_id={id}'
     (directory/'takes.tsv').write_text('user\ttake\trequest\tstate\n'+sql(take_query+';'))
-    (directory/'ledger.tsv').write_text('order\tuser\taward\n'+sql(f'SELECT order_id,u_id,award_id FROM lottery.award_stock_settlement WHERE draw_config_id={id};'))
+    (directory/'ledger.tsv').write_text('order\tuser\taward\n'+sql(f'SELECT order_id,u_id,award_id FROM lottery.award_stock_settlement WHERE activity_id={id};'))
     queries=[
         ('quota', f'SELECT COUNT(*),COALESCE(SUM(total_count-left_count),0),COALESCE(SUM(left_count<0),0) FROM lottery.user_activity_quota WHERE activity_id={id}'),
         ('takes', f'SELECT COUNT(*),SUM(state=0),COUNT(*)-COUNT(DISTINCT take_id) FROM ({take_query}) t'),
         ('duplicateOrders',f'SELECT COUNT(*)-COUNT(DISTINCT order_id),COUNT(*)-COUNT(DISTINCT take_id) FROM ({orders_query(id)}) o'),
-        ('stock',f'SELECT award_id,award_count,award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id={id} ORDER BY award_id'),
-        ('ledger',f'SELECT award_id,COUNT(*) FROM lottery.award_stock_settlement WHERE draw_config_id={id} GROUP BY award_id'),
-        ('activity',f'SELECT state,take_count,draw_config_id FROM lottery.activity WHERE activity_id={id}'),
+        ('stock',f'SELECT award_id,award_count,award_surplus_count FROM lottery.activity_prize WHERE activity_id={id} ORDER BY award_id'),
+        ('ledger',f'SELECT award_id,COUNT(*) FROM lottery.award_stock_settlement WHERE activity_id={id} GROUP BY award_id'),
+        ('activity',f'SELECT state,take_count FROM lottery.activity WHERE activity_id={id}'),
     ]
     result={name:sql(query+';').strip() for name,query in queries}
     result['pending']=snapshot(id)
-    result['redisAwards']={f'p{id}_{i}':redis('GET',f'lottery_strategy_award_stock_count_{id}_p{id}_{i}').strip() for i in range(5)}
+    result['redisAwards']={f'p{id}_{i}':redis('GET',f'lottery_activity_prize_stock_count_{id}_p{id}_{i}').strip() for i in range(5)}
     result['kafka']=http('/__perf/lag')
     write(directory/'audit.json',result)
     return result
@@ -121,8 +121,8 @@ def run(args):
     prefix=args.name.replace('-','')[:12]+'_'
     setup=http('/__perf/setup',dict(id=args.id,stock=args.stock,quota=args.quota,users=1 if args.single_user else args.users,prefix=prefix,awardStock=args.award_stock))
     write(directory/'setup.json',setup)
-    (directory/'initial-stock.tsv').write_text(sql(f'SELECT award_id,award_count,award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id={args.id} ORDER BY award_id;'))
-    write(directory/'initial-redis.json',{'awards':{f'p{args.id}_{i}':redis('GET',f'lottery_strategy_award_stock_count_{args.id}_p{args.id}_{i}').strip() for i in range(5)}})
+    (directory/'initial-stock.tsv').write_text(sql(f'SELECT award_id,award_count,award_surplus_count FROM lottery.activity_prize WHERE activity_id={args.id} ORDER BY award_id;'))
+    write(directory/'initial-redis.json',{'awards':{f'p{args.id}_{i}':redis('GET',f'lottery_activity_prize_stock_count_{args.id}_p{args.id}_{i}').strip() for i in range(5)}})
     write(directory/'parameters.json',vars(args))
     digest(directory/'sql-before.tsv')
     (directory/'slow-before.tsv').write_text(slow_queries())

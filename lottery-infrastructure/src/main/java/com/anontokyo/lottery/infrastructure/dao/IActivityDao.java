@@ -19,11 +19,8 @@ public interface IActivityDao {
 
     Activity queryActivityById(Long activityId);
 
-    /** 在全局库本地事务中锁定活动启动状态及关联策略。 */
+    /** 在本地事务中锁定活动行，串行化预热和启动。 */
     Activity queryActivityForUpdate(Long activityId);
-
-    /** 策略行锁内检查共享奖池是否已被运行或关闭的活动使用。 */
-    int countPublishedActivitiesByDrawConfig(Long drawConfigId);
 
     /**
      * 活动状态变更（乐观更新：必须匹配变更前状态）。

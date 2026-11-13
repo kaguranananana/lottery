@@ -8,9 +8,7 @@ import java.util.Date;
  * @date: 2026/1/12
  */
 
-
 public class DrawAwardInfo {
-
 
     /**
      * 奖品ID
@@ -32,16 +30,6 @@ public class DrawAwardInfo {
      */
     private String awardContent;
 
-
-    /**
-     * 发放奖品方式（1:即时、2:定时[含活动结束]、3:人工）
-     */
-    private Integer grantType;
-    /**
-     * 下单时保存的计划发奖时间。
-     */
-    private Date scheduledAt;
-
     /** 实际完成时间由发奖 CAS 写入。 */
     private Date fulfilledAt;
 
@@ -61,16 +49,6 @@ public class DrawAwardInfo {
         this.awardType = awardType;
         this.awardName = awardName;
         this.awardContent = awardContent;
-    }
-
-    public DrawAwardInfo(String awardId, Integer awardType, String awardName, String awardContent,
-                         Integer grantType, Date scheduledAt) {
-        this.awardId = awardId;
-        this.awardType = awardType;
-        this.awardName = awardName;
-        this.awardContent = awardContent;
-        this.grantType = grantType;
-        this.scheduledAt = scheduledAt;
     }
 
     public String getAwardId() {
@@ -105,19 +83,4 @@ public class DrawAwardInfo {
         this.awardContent = awardContent;
     }
 
-    public Integer getGrantType() {
-        return grantType;
-    }
-
-    public void setGrantType(Integer grantType) {
-        this.grantType = grantType;
-    }
-
-    public Date getScheduledAt() {
-        return scheduledAt;
-    }
-
-    public void setScheduledAt(Date scheduledAt) {
-        this.scheduledAt = scheduledAt;
-    }
 }

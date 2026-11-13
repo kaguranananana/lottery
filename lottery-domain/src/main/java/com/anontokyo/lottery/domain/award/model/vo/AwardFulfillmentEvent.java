@@ -1,9 +1,5 @@
 package com.anontokyo.lottery.domain.award.model.vo;
 
-import com.alibaba.fastjson.annotation.JSONField;
-
-import java.util.Date;
-
 /**
  * @description:
  * @author：anontokyo
@@ -40,37 +36,12 @@ public class AwardFulfillmentEvent {
     /** 关联的用户参与记录ID（幂等回放） */
     private Long takeId;
 
-    /** 发放方式（1:即时、2:定时、3:人工），回放时透出 */
-    private Integer grantType;
-
-    /** 计划发放时间，回放时透出 */
-    private Date scheduledAt;
-
     public Long getTakeId() {
         return takeId;
     }
 
     public void setTakeId(Long takeId) {
         this.takeId = takeId;
-    }
-
-    public Integer getGrantType() {
-        return grantType;
-    }
-
-    public void setGrantType(Integer grantType) {
-        this.grantType = grantType;
-    }
-
-    // Kafka 中已存在 grantDate 字段，仍按原协议读写计划时间。
-    @JSONField(name = "grantDate")
-    public Date getScheduledAt() {
-        return scheduledAt;
-    }
-
-    @JSONField(name = "grantDate")
-    public void setScheduledAt(Date scheduledAt) {
-        this.scheduledAt = scheduledAt;
     }
 
     public String getAwardContent() {
@@ -136,7 +107,6 @@ public class AwardFulfillmentEvent {
     public void setAwardId(String awardId) {
         this.awardId = awardId;
     }
-
 
     @Override
     public String toString() {

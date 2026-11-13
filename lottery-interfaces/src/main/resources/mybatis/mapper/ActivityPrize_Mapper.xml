@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.anontokyo.lottery.infrastructure.dao.IActivityPrizeDao">
+    <insert id="insertList" parameterType="java.util.List">
+        INSERT INTO activity_prize(activity_id, award_id, award_count, award_surplus_count,
+        award_rate, create_time, update_time)
+        VALUES
+        <foreach collection="list" item="item" index="index" separator=",">
+            (
+            #{item.activityId},
+            #{item.awardId},
+            #{item.awardCount},
+            #{item.awardSurplusCount},
+            #{item.awardRate},
+            NOW(),
+            NOW()
+            )
+        </foreach>
+    </insert>
+
+    <select id="queryActivityPrizeList" parameterType="java.lang.Long" resultType="com.anontokyo.lottery.infrastructure.po.ActivityPrize">
+        SELECT id, activity_id, award_id, award_count, award_rate, award_surplus_count, create_time, update_time
+        FROM activity_prize
+        WHERE activity_id = #{activityId}
+    </select>
+
+    <update id="deductStock" parameterType="com.anontokyo.lottery.infrastructure.po.ActivityPrize">
+        UPDATE activity_prize
+        SET award_surplus_count = award_surplus_count - 1
+        WHERE activity_id = #{activityId}
+          AND award_id = #{awardId}
+          AND award_surplus_count > 0
+    </update>
+
+</mapper>

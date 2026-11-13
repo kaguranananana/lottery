@@ -41,9 +41,8 @@ public class DrawOrderDaoTest {
         drawOrderRow.setuId("Uhdgkw766120d");
         drawOrderRow.setActivityId(100001L);
         drawOrderRow.setOrderId(idGenerator.nextId());
-        drawOrderRow.setDrawConfigId(10001L);
-        drawOrderRow.setGrantType(1);
-        drawOrderRow.setScheduledAt(new Date());
+
+
         drawOrderRow.setAwardFulfillmentStatus(1);
         drawOrderRow.setAwardId("1");
         drawOrderRow.setAwardType(Constants.AwardType.DESC.getCode());

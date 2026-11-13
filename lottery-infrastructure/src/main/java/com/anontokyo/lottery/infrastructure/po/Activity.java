@@ -27,16 +27,10 @@ public class Activity {
     // 结束时间
     private Date endDateTime;
 
-
-    /**
-     * 抽奖配置ID
-     */
-    private Long drawConfigId;
-
     // 每人可参与次数
     private Integer takeCount;
 
-    // 活动状态：编辑、提审、撤审、通过、运行、拒绝、关闭、开启
+    // 活动状态：草稿、就绪、运行、关闭
     private Integer state;
 
     // 创建人
@@ -45,10 +39,8 @@ public class Activity {
     // 创建时间
     private Date createTime;
 
-
     // 修改时间
     private Date updateTime;
-
 
     public Long getId() {
         return id;
@@ -98,7 +90,6 @@ public class Activity {
         this.endDateTime = endDateTime;
     }
 
-
     public Integer getTakeCount() {
         return takeCount;
     }
@@ -137,14 +128,6 @@ public class Activity {
 
     public void setUpdateTime(Date updateTime) {
         this.updateTime = updateTime;
-    }
-
-    public Long getDrawConfigId() {
-        return drawConfigId;
-    }
-
-    public void setDrawConfigId(Long drawConfigId) {
-        this.drawConfigId = drawConfigId;
     }
 
 }

@@ -1,19 +1,19 @@
 package com.anontokyo.lottery.domain.draw.repository;
 
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
-import com.anontokyo.lottery.domain.draw.model.snapshot.DrawConfigSnapshot;
-import com.anontokyo.lottery.domain.draw.model.vo.DrawConfigPrizeStockDeductResultVO;
+import com.anontokyo.lottery.domain.draw.model.snapshot.ActivityPrizeSnapshot;
+import com.anontokyo.lottery.domain.draw.model.vo.ActivityPrizeStockDeductResultVO;
 
 /**
- * 抽奖策略仓储。抽奖配置快照是抽奖主链路唯一的配置读取入口，
+ * 活动奖池仓储。活动奖池快照是抽奖主链路唯一的配置读取入口，
  * 两级缓存由 infrastructure 实现，domain 不感知缓存细节。
  */
-public interface IDrawConfigRepository {
+public interface IActivityPrizeRepository {
 
     /**
-     * 读取含整数权重的抽奖配置快照（Caffeine+Redis 两级缓存，短 TTL 最终一致）。
+     * 读取含整数权重的活动奖池快照（Caffeine+Redis 两级缓存，短 TTL 最终一致）。
      */
-    DrawConfigSnapshot queryDrawConfigSnapshot(Long drawConfigId);
+    ActivityPrizeSnapshot queryActivityPrizeSnapshot(Long activityId);
 
     /**
      * 结算奖品库存：同一数据库事务内「写结算账本 + 条件扣减」；
@@ -25,10 +25,10 @@ public interface IDrawConfigRepository {
     /**
      * Redis 条件原子扣减奖品库存。
      */
-    DrawConfigPrizeStockDeductResultVO deductStockByRedis(Long drawConfigId, String awardId);
+    ActivityPrizeStockDeductResultVO deductStockByRedis(Long activityId, String awardId);
 
     /**
      * 回补 Redis 奖品剩余库存（下单失败回滚用）。
      */
-    void recoverDrawConfigPrizeStockByRedis(Long drawConfigId, String awardId);
+    void recoverActivityPrizeStockByRedis(Long activityId, String awardId);
 }

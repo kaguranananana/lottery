@@ -2,12 +2,12 @@ package com.anontokyo.lottery.test.manual;
 
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
-import com.anontokyo.lottery.domain.activity.model.vo.DrawConfigPrizeVO;
+import com.anontokyo.lottery.domain.activity.model.vo.ActivityPrizeVO;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.infrastructure.cache.TwoLevelCacheService;
 import com.anontokyo.lottery.infrastructure.dao.*;
 import com.anontokyo.lottery.infrastructure.po.UserActivityQuota;
-import com.anontokyo.lottery.infrastructure.repository.DrawConfigRepository;
+import com.anontokyo.lottery.infrastructure.repository.ActivityPrizeRepository;
 import com.anontokyo.lottery.infrastructure.repository.ActivityRepository;
 import com.anontokyo.lottery.infrastructure.repository.DrawParticipationRepository;
 import org.junit.*;
@@ -33,7 +33,7 @@ public class PerformanceSqlManualIT {
     private static SqlSessionTemplate session;
     private static TransactionTemplate transaction;
     private static DrawParticipationRepository takes;
-    private static DrawConfigRepository strategies;
+    private static ActivityPrizeRepository strategies;
 
     @BeforeClass public static void setup() throws Exception {
         String url = System.getProperty("lottery.perf.mysql");
@@ -44,7 +44,7 @@ public class PerformanceSqlManualIT {
             s.execute("CREATE DATABASE IF NOT EXISTS " + SCHEMA);
             s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".user_activity_quota LIKE lottery.user_activity_quota");
             s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".draw_participation LIKE lottery.draw_participation");
-            s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".draw_config_prize LIKE lottery.draw_config_prize");
+            s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".activity_prize LIKE lottery.activity_prize");
             s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".award_stock_settlement LIKE lottery.award_stock_settlement");
         }
         // 事务仓储回归使用当前生产连接参数，验证会话缓存下的次数、账本及库存原子性。
@@ -62,8 +62,8 @@ public class PerformanceSqlManualIT {
         ReflectionTestUtils.setField(takes, "userActivityQuotaDao", session.getMapper(IUserActivityQuotaDao.class));
         ReflectionTestUtils.setField(takes, "drawParticipationDao", session.getMapper(IDrawParticipationDao.class));
         ReflectionTestUtils.setField(takes, "transactionTemplate", transaction);
-        strategies = new DrawConfigRepository();
-        ReflectionTestUtils.setField(strategies, "drawConfigPrizeDao", session.getMapper(IDrawConfigPrizeDao.class));
+        strategies = new ActivityPrizeRepository();
+        ReflectionTestUtils.setField(strategies, "activityPrizeDao", session.getMapper(IActivityPrizeDao.class));
         ReflectionTestUtils.setField(strategies, "awardStockSettlementDao", session.getMapper(IAwardStockSettlementDao.class));
         ReflectionTestUtils.setField(strategies, "transactionTemplate", transaction);
     }
@@ -72,7 +72,7 @@ public class PerformanceSqlManualIT {
         // 测试之间只清空本类创建的四张表，避免旧数据影响锁位置。
         execute("TRUNCATE user_activity_quota");
         execute("TRUNCATE draw_participation");
-        execute("TRUNCATE draw_config_prize");
+        execute("TRUNCATE activity_prize");
         execute("TRUNCATE award_stock_settlement");
     }
 
@@ -87,7 +87,6 @@ public class PerformanceSqlManualIT {
     private static ActivityBillVO bill(String user, long activity, int quota) {
         ActivityBillVO b = new ActivityBillVO();
         b.setuId(user); b.setActivityId(activity); b.setTakeCount(quota);
-b.setDrawConfigId(activity);
         return b;
     }
     private static UserActivityQuota count(String user) {
@@ -162,31 +161,32 @@ b.setDrawConfigId(activity);
     }
 
     @Test public void settlementStillAtomicAndIdempotent() throws Exception {
-        execute("INSERT INTO draw_config_prize(draw_config_id,award_id,award_count,award_surplus_count) VALUES (5,'A',1,1)");
+        execute("INSERT INTO activity_prize(activity_id,award_id,award_count,award_surplus_count,award_rate) VALUES (5,'A',1,1,1)");
         AwardStockSettlementVO first = settlement(1L);
         assertTrue(strategies.settleAwardStock(first));
         assertTrue(strategies.settleAwardStock(first));
         assertFalse(strategies.settleAwardStock(settlement(2L)));
-        assertEquals(0, number("SELECT award_surplus_count FROM draw_config_prize"));
+        assertEquals(0, number("SELECT award_surplus_count FROM activity_prize"));
         assertEquals(1, number("SELECT COUNT(*) FROM award_stock_settlement"));
     }
     private static AwardStockSettlementVO settlement(long order) {
         AwardStockSettlementVO vo = new AwardStockSettlementVO();
-        vo.setOrderId(order); vo.setuId("settlementUser"); vo.setDrawConfigId(5L); vo.setAwardId("A");
+        vo.setOrderId(order); vo.setuId("settlementUser"); vo.setActivityId(5L); vo.setAwardId("A");
         return vo;
     }
 
     @Test public void totalStockMustPersistThroughRealCreationMapper() throws Exception {
         ActivityRepository activities = new ActivityRepository();
-        ReflectionTestUtils.setField(activities, "drawConfigPrizeDao", session.getMapper(IDrawConfigPrizeDao.class));
+        ReflectionTestUtils.setField(activities, "activityPrizeDao", session.getMapper(IActivityPrizeDao.class));
         ReflectionTestUtils.setField(activities, "twoLevelCacheService", mock(TwoLevelCacheService.class));
-        DrawConfigPrizeVO detail = new DrawConfigPrizeVO();
-        detail.setDrawConfigId(6L); detail.setAwardId("total"); detail.setAwardCount(37); detail.setAwardSurplusCount(37);
-        activities.addDrawConfigPrizeList(Collections.singletonList(detail));
+        ActivityPrizeVO detail = new ActivityPrizeVO();
+        detail.setActivityId(6L); detail.setAwardId("total"); detail.setAwardCount(37); detail.setAwardSurplusCount(37);
+        detail.setAwardRate(java.math.BigDecimal.ONE);
+        activities.addActivityPrizeList(Collections.singletonList(detail));
         // IS NULL 断言防止 JDBC getLong 将 NULL 隐式视为零，掩盖字段映射缺陷。
-        assertEquals(0, number("SELECT COUNT(*) FROM draw_config_prize WHERE award_count IS NULL"));
-        assertEquals(37, number("SELECT award_count FROM draw_config_prize"));
-        assertEquals(37, number("SELECT award_surplus_count FROM draw_config_prize"));
+        assertEquals(0, number("SELECT COUNT(*) FROM activity_prize WHERE award_count IS NULL"));
+        assertEquals(37, number("SELECT award_count FROM activity_prize"));
+        assertEquals(37, number("SELECT award_surplus_count FROM activity_prize"));
     }
 
 }

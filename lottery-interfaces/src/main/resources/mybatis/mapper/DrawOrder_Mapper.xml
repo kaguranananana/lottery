@@ -8,9 +8,6 @@
         <result column="activity_id" property="activityId"/>
         <result column="order_id" property="orderId"/>
         <result column="take_id" property="takeId"/>
-        <result column="draw_config_id" property="drawConfigId"/>
-        <result column="grant_type" property="grantType"/>
-        <result column="scheduled_at" property="scheduledAt"/>
         <result column="fulfilled_at" property="fulfilledAt"/>
         <result column="award_fulfillment_status" property="awardFulfillmentStatus"/>
         <result column="award_id" property="awardId"/>
@@ -27,12 +24,12 @@
 
     <insert id="insert" parameterType="com.anontokyo.lottery.infrastructure.po.DrawOrder">
         INSERT INTO draw_order
-        (u_id, activity_id, order_id, take_id, draw_config_id,
-         grant_type, scheduled_at, award_fulfillment_status, award_id, award_type,
+        (u_id, activity_id, order_id, take_id,
+         award_fulfillment_status, award_id, award_type,
          award_name, award_content, fulfillment_event_status, stock_settlement_event_status, stock_attempt, stock_retry_at, create_time, update_time)
         VALUES
-        (#{uId},#{activityId},#{orderId},#{takeId},#{drawConfigId},
-         #{grantType},#{scheduledAt},#{awardFulfillmentStatus},#{awardId},#{awardType},
+        (#{uId},#{activityId},#{orderId},#{takeId},
+         #{awardFulfillmentStatus},#{awardId},#{awardType},
          #{awardName},#{awardContent},#{fulfillmentEventStatus},#{stockSettlementEventStatus},
          <!-- TX2 直接登记库存首发代数，提交后无需再写一次领取。保留原有两秒补偿时间。 -->
          CASE WHEN #{stockSettlementEventStatus} IN (0,2,3) THEN 1 ELSE 0 END,
@@ -82,8 +79,8 @@
     </update>
 
     <select id="queryDrawOrderByUId" parameterType="java.lang.String" resultMap="drawOrderRowMap">
-        SELECT id, u_id, activity_id, order_id, take_id, draw_config_id,
-               grant_type, scheduled_at, fulfilled_at, award_fulfillment_status, award_id, award_type,
+        SELECT id, u_id, activity_id, order_id, take_id,
+               fulfilled_at, award_fulfillment_status, award_id, award_type,
                award_name, award_content, fulfillment_event_status, stock_settlement_event_status, create_time, update_time
         FROM draw_order
         WHERE u_id = #{uId}
@@ -91,8 +88,8 @@
     <select id="queryDrawOrderByOrderId"
             parameterType="com.anontokyo.lottery.infrastructure.po.DrawOrder"
             resultMap="drawOrderRowMap">
-        SELECT id, u_id, activity_id, order_id, take_id, draw_config_id,
-               grant_type, scheduled_at, fulfilled_at, award_fulfillment_status, award_id, award_type,
+        SELECT id, u_id, activity_id, order_id, take_id,
+               fulfilled_at, award_fulfillment_status, award_id, award_type,
                award_name, award_content, fulfillment_event_status, stock_settlement_event_status,
                fulfillment_attempt, create_time, update_time
         FROM draw_order
@@ -103,8 +100,8 @@
     <select id="queryDrawOrderByTakeId"
             parameterType="com.anontokyo.lottery.infrastructure.po.DrawOrder"
             resultMap="drawOrderRowMap">
-        SELECT id, u_id, activity_id, order_id, take_id, draw_config_id,
-               grant_type, scheduled_at, fulfilled_at, award_fulfillment_status, award_id, award_type,
+        SELECT id, u_id, activity_id, order_id, take_id,
+               fulfilled_at, award_fulfillment_status, award_id, award_type,
                award_name, award_content, fulfillment_event_status, stock_settlement_event_status, create_time, update_time
         FROM draw_order
         WHERE u_id = #{uId}
@@ -138,7 +135,7 @@
     </sql>
 
     <select id="scanStockSettlementEventStatus" resultMap="drawOrderRowMap">
-        SELECT u_id, order_id, draw_config_id, award_id, stock_attempt
+        SELECT u_id, order_id, activity_id, award_id, stock_attempt
         FROM draw_order
         WHERE stock_retry_at &lt;= NOW(3) AND stock_settlement_event_status IN (0,2,3)
         ORDER BY stock_retry_at, order_id
@@ -146,7 +143,7 @@
     </select>
     <select id="scanFulfillmentEventStatus" resultMap="drawOrderRowMap">
         SELECT u_id, order_id, take_id, award_id, award_type, award_name, award_content,
-               grant_type, scheduled_at, fulfillment_attempt
+               fulfillment_attempt
         FROM draw_order
         WHERE fulfillment_retry_at &lt;= NOW(3) AND fulfillment_event_status IN (0,2,3)
           AND stock_settlement_event_status=1 AND COALESCE(award_fulfillment_status,0) != 1

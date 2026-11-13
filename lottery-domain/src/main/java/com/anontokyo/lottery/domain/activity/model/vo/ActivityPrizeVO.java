@@ -3,16 +3,16 @@ package com.anontokyo.lottery.domain.activity.model.vo;
 import java.math.BigDecimal;
 
 /**
- * @description: 策略详情配置
+ * @description: 活动奖品、概率与初始库存
  * @author：anontokyo
  * @date: 2026/1/12
  */
-public class DrawConfigPrizeVO {
+public class ActivityPrizeVO {
 
     /**
-     * 抽奖配置ID
+     * 活动ID
      */
-    private Long drawConfigId;
+    private Long activityId;
 
     /**
      * 奖品ID
@@ -35,12 +35,12 @@ public class DrawConfigPrizeVO {
      */
     private BigDecimal awardRate;
 
-    public Long getDrawConfigId() {
-        return drawConfigId;
+    public Long getActivityId() {
+        return activityId;
     }
 
-    public void setDrawConfigId(Long drawConfigId) {
-        this.drawConfigId = drawConfigId;
+    public void setActivityId(Long activityId) {
+        this.activityId = activityId;
     }
 
     public String getAwardId() {
@@ -77,8 +77,8 @@ public class DrawConfigPrizeVO {
 
     @Override
     public String toString() {
-        return "DrawConfigPrizeVO{" +
-                "drawConfigId=" + drawConfigId +
+        return "ActivityPrizeVO{" +
+                "activityId=" + activityId +
                 ", awardId='" + awardId + '\'' +
                 ", awardCount=" + awardCount +
                 ", awardSurplusCount=" + awardSurplusCount +

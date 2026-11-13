@@ -13,7 +13,7 @@ import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository.OutboxKind;
 import com.anontokyo.lottery.domain.award.service.fulfillment.AwardFulfillmentHandler;
 import com.anontokyo.lottery.domain.award.service.fulfillment.AwardFulfillmentResult;
-import com.anontokyo.lottery.domain.draw.repository.IDrawConfigRepository;
+import com.anontokyo.lottery.domain.draw.repository.IActivityPrizeRepository;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.After;
 import org.junit.Test;
@@ -40,15 +40,21 @@ public class MqCallbackStateTest {
     }
 
     @Test
-    public void legacyKafkaFieldsRoundTripWithNewJavaNames() {
+    public void legacyKafkaPayloadKeepsOrderIdentityWithoutAliasingPoolId() {
         AwardStockSettlementVO stock = JSON.parseObject(
-                "{\"orderId\":7,\"strategyId\":42}", AwardStockSettlementVO.class);
-        assertEquals(Long.valueOf(42L), stock.getDrawConfigId());
-        assertTrue(JSON.parseObject(JSON.toJSONString(stock)).containsKey("strategyId"));
+                "{\"uId\":\"mq-test\",\"orderId\":7,\"strategyId\":42}", AwardStockSettlementVO.class);
+        assertEquals("mq-test", stock.getuId());
+        assertEquals(Long.valueOf(7L), stock.getOrderId());
+        assertNull(stock.getActivityId());
+        stock.setActivityId(57L);
+        com.alibaba.fastjson.JSONObject payload = JSON.parseObject(JSON.toJSONString(stock));
+        assertEquals(Long.valueOf(57L), payload.getLong("activityId"));
+        assertFalse(payload.containsKey("strategyId"));
         AwardFulfillmentEvent award = JSON.parseObject(
-                "{\"orderId\":7,\"grantDate\":1893456000000}", AwardFulfillmentEvent.class);
-        assertEquals(1893456000000L, award.getScheduledAt().getTime());
-        assertTrue(JSON.parseObject(JSON.toJSONString(award)).containsKey("grantDate"));
+                "{\"uId\":\"mq-test\",\"orderId\":7,\"grantDate\":1893456000000}", AwardFulfillmentEvent.class);
+        assertEquals(Long.valueOf(7L), award.getOrderId());
+        assertEquals("mq-test", award.getuId());
+        assertFalse(JSON.parseObject(JSON.toJSONString(award)).containsKey("grantDate"));
     }
 
     @Test
@@ -132,7 +138,7 @@ public class MqCallbackStateTest {
     @Test
     public void stockGapPersistsReconciliationBeforeAck() {
         when(orders.findOrder("mq-test", 1L)).thenReturn(order(0, 0, 0));
-        IDrawConfigRepository config = mock(IDrawConfigRepository.class);
+        IActivityPrizeRepository config = mock(IActivityPrizeRepository.class);
         stockListener(config).onMessage(stockRecord(), ack, "lottery_strategy_award_stock");
         org.mockito.InOrder sequence = inOrder(orders, ack);
         sequence.verify(orders).markStockSettlementFailed("mq-test", 1L);
@@ -144,7 +150,7 @@ public class MqCallbackStateTest {
     public void stockGapPersistenceErrorPreventsAck() {
         when(orders.findOrder("mq-test", 1L)).thenReturn(order(0, 0, 0));
         doThrow(new IllegalStateException("DB unavailable")).when(orders).markStockSettlementFailed("mq-test", 1L);
-        assertThrows(IllegalStateException.class, () -> stockListener(mock(IDrawConfigRepository.class))
+        assertThrows(IllegalStateException.class, () -> stockListener(mock(IActivityPrizeRepository.class))
                 .onMessage(stockRecord(), ack, "lottery_strategy_award_stock"));
         verify(ack, never()).acknowledge();
     }
@@ -152,7 +158,7 @@ public class MqCallbackStateTest {
     @Test
     public void blockedStockCannotBeRetriedByBrokerDuplicate() {
         when(orders.findOrder("mq-test", 1L)).thenReturn(order(4, 0, 0));
-        IDrawConfigRepository config = mock(IDrawConfigRepository.class);
+        IActivityPrizeRepository config = mock(IActivityPrizeRepository.class);
         stockListener(config).onMessage(stockRecord(), ack, "lottery_strategy_award_stock");
         verify(config, never()).settleAwardStock(any());
         verify(ack).acknowledge();
@@ -164,7 +170,7 @@ public class MqCallbackStateTest {
         pending.setFulfillmentAttempt(2);
         when(orders.findOrder("mq-test", 1L)).thenReturn(pending);
         when(orders.updateStockSettlementEventStatus("mq-test", 1L, 1)).thenReturn(true, false);
-        IDrawConfigRepository config = mock(IDrawConfigRepository.class);
+        IActivityPrizeRepository config = mock(IActivityPrizeRepository.class);
         when(config.settleAwardStock(any())).thenReturn(true);
         SettableListenableFuture<SendResult<String, Object>> future = new SettableListenableFuture<>();
         when(producer.sendAwardFulfillment(any())).thenReturn(future);
@@ -186,10 +192,10 @@ public class MqCallbackStateTest {
         return listener;
     }
 
-    private StockSettlementListener stockListener(IDrawConfigRepository config) {
+    private StockSettlementListener stockListener(IActivityPrizeRepository config) {
         StockSettlementListener listener = new StockSettlementListener();
         ReflectionTestUtils.setField(listener, "orderRepository", orders);
-        ReflectionTestUtils.setField(listener, "drawConfigRepository", config);
+        ReflectionTestUtils.setField(listener, "activityPrizeRepository", config);
         ReflectionTestUtils.setField(listener, "outbox", outbox);
         return listener;
     }

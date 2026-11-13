@@ -7,8 +7,7 @@ import com.anontokyo.lottery.domain.activity.model.req.PartakeReq;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
 import com.anontokyo.lottery.domain.activity.model.vo.AwardVO;
-import com.anontokyo.lottery.domain.activity.model.vo.DrawConfigPrizeVO;
-import com.anontokyo.lottery.domain.activity.model.vo.DrawConfigVO;
+import com.anontokyo.lottery.domain.activity.model.vo.ActivityPrizeVO;
 
 import java.util.List;
 
@@ -18,9 +17,8 @@ public interface IActivityRepository {
 
     void addAward(List<AwardVO> awardList);
 
-    void addDrawConfig(DrawConfigVO drawConfig);
 
-    void addDrawConfigPrizeList(List<DrawConfigPrizeVO> drawConfigPrizeList);
+    void addActivityPrizeList(List<ActivityPrizeVO> activityPrizeList);
 
     boolean alterStatus(Long activityId, Constants.ActivityState beforeState, Constants.ActivityState afterState);
 
@@ -29,8 +27,8 @@ public interface IActivityRepository {
     List<ActivityVO> scanToDoActivityList(Long id);
 
     /**
-     * 仅 PASS 活动可预热配置奖品库存；共享抽奖配置串行检查，SETNX 保留已有值。
-     * 已投入使用的共享奖池缺失 Key 时显式报错，禁止按滞后 MySQL 库存回填。
+     * 仅 READY 活动可预热本奖池；活动行锁内执行 SETNX，保留已有值。
+     * 已投入使用的奖池禁止按滞后 MySQL 库存回填。
      * @return 实际初始化的奖品 Key 数量
      */
     int warmupAwardStockForActivity(Long activityId);

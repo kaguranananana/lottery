@@ -87,7 +87,6 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
                     && !Constants.TaskState.NO_USED.getCode().equals(existingTake.getState())))) {
                 throw new IllegalStateException("Invalid take ownership/state: " + existingTake.getTakeId());
             }
-            Long drawConfigId;
             Long takeId;
             if (existingTake != null
                     && Constants.TaskState.USED.getCode().equals(existingTake.getState())) {
@@ -98,7 +97,6 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
             if (existingTake != null
                     && Constants.TaskState.NO_USED.getCode().equals(existingTake.getState())) {
                 // 上次请求中断遗留的未消费 take：复用，不再新建参与记录、不重复消耗次数
-                drawConfigId = existingTake.getDrawConfigId();
                 takeId = existingTake.getTakeId();
                 logger.info("draw reuses unfinished take by requestId uId:{} activityId:{} requestId:{} takeId:{}",
                         req.getuId(), req.getActivityId(), req.getRequestId(), takeId);
@@ -122,12 +120,11 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
                     logSlowDrawProcess(req, result.getCode(), processStart, partakeCostMs, drawCostMs, settleCostMs);
                     return result;
                 }
-                drawConfigId = partakeResult.getDrawConfigId();
                 takeId = partakeResult.getTakeId();
             }
 
             long stageStart = System.nanoTime();
-            DrawResult drawResult = drawExec.doDrawExec(new DrawReq(req.getuId(), drawConfigId));
+            DrawResult drawResult = drawExec.doDrawExec(new DrawReq(req.getuId(), req.getActivityId()));
             drawCostMs = elapsedMillis(stageStart);
             if (Constants.DrawState.FAIL.getCode().equals(drawResult.getDrawState())) {
                 stageStart = System.nanoTime();
@@ -153,10 +150,10 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
             DrawAwardInfo drawAwardInfo = drawResult.getDrawAwardInfo();
 
             stageStart = System.nanoTime();
-            AwardOrderResult orderResult = awardOrder.placeOrder(buildAwardOrderReq(req, drawConfigId, takeId, drawAwardInfo));
+            AwardOrderResult orderResult = awardOrder.placeOrder(buildAwardOrderReq(req, takeId, drawAwardInfo));
             settleCostMs = elapsedMillis(stageStart);
             if (!Constants.ResponseCode.SUCCESS.getCode().equals(orderResult.getCode())) {
-                drawExec.recoverDrawAwardStock(drawConfigId, drawAwardInfo.getAwardId());
+                drawExec.recoverDrawAwardStock(req.getActivityId(), drawAwardInfo.getAwardId());
                 // 下单竞争失败已回补本线程预扣库存，回放取得消费权的线程提交的结果。
                 if (Constants.ResponseCode.NO_UPDATE.getCode().equals(orderResult.getCode())) {
                     return replayAfterConsumptionConflict(req);
@@ -219,8 +216,6 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
 
         DrawAwardInfo awardInfo = new DrawAwardInfo(order.getAwardId(), order.getAwardType(),
                 order.getAwardName(), order.getAwardContent());
-        awardInfo.setGrantType(order.getGrantType());
-        awardInfo.setScheduledAt(order.getScheduledAt());
         awardInfo.setFulfilledAt(order.getFulfilledAt());
 
         DrawProcessResult result = new DrawProcessResult(Constants.ResponseCode.SUCCESS.getCode(),
@@ -235,15 +230,12 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
         return activityRepository.queryRunningActivityList();
     }
 
-    private AwardOrderReq buildAwardOrderReq(DrawProcessReq req, Long drawConfigId, Long takeId,
+    private AwardOrderReq buildAwardOrderReq(DrawProcessReq req, Long takeId,
             DrawAwardInfo drawAwardInfo) {
         AwardOrderReq awardOrderReq = new AwardOrderReq();
         awardOrderReq.setuId(req.getuId());
         awardOrderReq.setTakeId(takeId);
         awardOrderReq.setActivityId(req.getActivityId());
-        awardOrderReq.setDrawConfigId(drawConfigId);
-        awardOrderReq.setGrantType(drawAwardInfo.getGrantType());
-        awardOrderReq.setScheduledAt(drawAwardInfo.getScheduledAt());
         awardOrderReq.setAwardId(drawAwardInfo.getAwardId());
         awardOrderReq.setAwardType(drawAwardInfo.getAwardType());
         awardOrderReq.setAwardName(drawAwardInfo.getAwardName());

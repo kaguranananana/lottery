@@ -1,0 +1,16 @@
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	UPDATE	draw_config_prize	NULL	range	idx_draw_config_award	idx_draw_config_award	267	const,const	1	100.00	Using where
+id	select_type	table	partitions	type	possible_keys	key	key_len	ref	rows	filtered	Extra
+1	UPDATE	activity_prize	NULL	range	uk_activity_award,idx_activity_prize_award	uk_activity_award	266	const,const	1	100.00	Using where
+EXPLAIN
+-> Index lookup on activity_prize using uk_activity_award (activity_id=752150)  (cost=1.25 rows=5)
+
+EXPLAIN
+-> Limit: 200 row(s)  (cost=0.71 rows=0.3)
+    -> Filter: (draw_order.stock_settlement_event_status in (0,2,3))  (cost=0.71 rows=0.3)
+        -> Index range scan on draw_order using idx_stock_retry over (NULL < stock_retry_at <= '测量时刻'), with index condition: (draw_order.stock_retry_at <= <cache>(now(3)))  (cost=0.71 rows=1)
+
+EXPLAIN
+-> Limit: 100 row(s)  (cost=0.71 rows=0.05)
+    -> Filter: ((draw_order.stock_settlement_event_status = 1) and (draw_order.fulfillment_event_status in (0,2,3)) and (coalesce(draw_order.award_fulfillment_status,0) <> 1))  (cost=0.71 rows=0.05)
+        -> Index range scan on draw_order using idx_fulfillment_retry over (NULL < fulfillment_retry_at <= '测量时刻'), with index condition: (draw_order.fulfillment_retry_at <= <cache>(now(3)))  (cost=0.71 rows=1)

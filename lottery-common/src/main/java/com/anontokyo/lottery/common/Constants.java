@@ -39,7 +39,7 @@ public class Constants {
     }
 
     /**
-     * 抽奖策略模式: 总体概率, 单项概率
+     * 抽奖结果状态
      */
     public enum DrawState {
 
@@ -156,19 +156,18 @@ public class Constants {
 
     /**
      * 活动状态（保留运行时真实使用的状态）：
-     * 1编辑(DRAFT)、4通过(READY)、5运行(RUNNING)、7关闭(CLOSED)
-     * 历史 2提审/3撤审/6拒绝/8开启 无生产语义，见 docs/sql migration 注释。
+     * 1草稿(DRAFT)、4就绪(READY)、5运行(RUNNING)、7关闭(CLOSED)。
      */
     public enum ActivityState {
 
-        /** 1：编辑 */
-        EDIT(1, "编辑"),
-        /** 4：通过（就绪，可由调度进入运行） */
-        PASS(4, "通过"),
+        /** 1：草稿 */
+        DRAFT(1, "草稿"),
+        /** 4：就绪，等待启动 */
+        READY(4, "就绪"),
         /** 5：运行(活动中) */
-        DOING(5, "运行(活动中)"),
+        RUNNING(5, "运行"),
         /** 7：关闭 */
-        CLOSE(7, "关闭");
+        CLOSED(7, "关闭");
 
         private Integer code;
         private String info;
@@ -296,10 +295,10 @@ public class Constants {
 
     public static final class RedisKey {
         // 配置奖品库存 Key
-        private static final String LOTTERY_STRATEGY_AWARD_STOCK_COUNT = "lottery_strategy_award_stock_count_";
+        private static final String LOTTERY_ACTIVITY_PRIZE_STOCK_COUNT = "lottery_activity_prize_stock_count_";
 
-        public static String KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_COUNT(Long drawConfigId, String awardId) {
-            return LOTTERY_STRATEGY_AWARD_STOCK_COUNT + drawConfigId + "_" + awardId;
+        public static String KEY_LOTTERY_ACTIVITY_PRIZE_STOCK_COUNT(Long activityId, String awardId) {
+            return LOTTERY_ACTIVITY_PRIZE_STOCK_COUNT + activityId + "_" + awardId;
         }
 
         // Unconsumed user take-order cache key
@@ -310,17 +309,17 @@ public class Constants {
         }
 
         // Activity config cache key
-        private static final String LOTTERY_CACHE_ACTIVITY = "lottery_cache_activity_v2_";
+        private static final String LOTTERY_CACHE_ACTIVITY = "lottery_cache_activity_v3_";
 
         public static String KEY_LOTTERY_CACHE_ACTIVITY(Long activityId) {
             return LOTTERY_CACHE_ACTIVITY + activityId;
         }
 
-        // 抽奖配置快照已改字段名，使用新缓存前缀以便从 MySQL 重建。
-        private static final String LOTTERY_CACHE_DRAW_CONFIG_SNAPSHOT = "lottery_cache_draw_config_snapshot_v2_";
+        // 活动奖池快照使用独立缓存前缀，旧结构可自然过期。
+        private static final String LOTTERY_CACHE_ACTIVITY_PRIZE_SNAPSHOT = "lottery_cache_activity_prize_snapshot_";
 
-        public static String KEY_LOTTERY_CACHE_DRAW_CONFIG_SNAPSHOT(Long drawConfigId) {
-            return LOTTERY_CACHE_DRAW_CONFIG_SNAPSHOT + drawConfigId;
+        public static String KEY_LOTTERY_CACHE_ACTIVITY_PRIZE_SNAPSHOT(Long activityId) {
+            return LOTTERY_CACHE_ACTIVITY_PRIZE_SNAPSHOT + activityId;
         }
 
 

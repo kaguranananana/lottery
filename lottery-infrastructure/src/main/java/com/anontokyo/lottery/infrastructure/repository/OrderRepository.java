@@ -3,7 +3,7 @@ package com.anontokyo.lottery.infrastructure.repository;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
-import com.anontokyo.lottery.domain.draw.repository.IDrawConfigRepository;
+import com.anontokyo.lottery.domain.draw.repository.IActivityPrizeRepository;
 import org.springframework.beans.BeanUtils;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -34,7 +34,7 @@ public class OrderRepository implements IOrderRepository {
     private TransactionTemplate transactionTemplate;
 
     @Resource
-    private IDrawConfigRepository drawConfigRepository;
+    private IActivityPrizeRepository activityPrizeRepository;
 
     @Autowired
     private ApplicationEventPublisher events;
@@ -65,8 +65,8 @@ public class OrderRepository implements IOrderRepository {
             }
 
             return Constants.ResponseCode.SUCCESS;
-        }, () -> drawConfigRepository.recoverDrawConfigPrizeStockByRedis(
-                drawOrder.getDrawConfigId(), drawOrder.getAwardId()),
+        }, () -> activityPrizeRepository.recoverActivityPrizeStockByRedis(
+                drawOrder.getActivityId(), drawOrder.getAwardId()),
                 "award uId=" + drawOrder.getuId() + " takeId=" + drawOrder.getTakeId()
                         + " orderId=" + drawOrder.getOrderId());
     }
@@ -94,9 +94,6 @@ public class OrderRepository implements IOrderRepository {
         drawOrderRow.setActivityId(drawOrder.getActivityId());
         drawOrderRow.setOrderId(drawOrder.getOrderId());
         drawOrderRow.setTakeId(drawOrder.getTakeId());
-        drawOrderRow.setDrawConfigId(drawOrder.getDrawConfigId());
-        drawOrderRow.setGrantType(drawOrder.getGrantType());
-        drawOrderRow.setScheduledAt(drawOrder.getScheduledAt());
         drawOrderRow.setAwardFulfillmentStatus(drawOrder.getAwardFulfillmentStatus());
         drawOrderRow.setAwardId(drawOrder.getAwardId());
         drawOrderRow.setAwardType(drawOrder.getAwardType());
@@ -229,8 +226,6 @@ public class OrderRepository implements IOrderRepository {
         fulfillmentEvent.setuId(drawOrderRow.getuId());
         fulfillmentEvent.setOrderId(drawOrderRow.getOrderId());
         fulfillmentEvent.setTakeId(drawOrderRow.getTakeId());
-        fulfillmentEvent.setGrantType(drawOrderRow.getGrantType());
-        fulfillmentEvent.setScheduledAt(drawOrderRow.getScheduledAt());
         fulfillmentEvent.setAwardId(drawOrderRow.getAwardId());
         fulfillmentEvent.setAwardType(drawOrderRow.getAwardType());
         fulfillmentEvent.setAwardName(drawOrderRow.getAwardName());

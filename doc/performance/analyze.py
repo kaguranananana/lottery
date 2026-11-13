@@ -107,14 +107,20 @@ def analyze(directory):
     result={'name':directory.name,'threads':params['threads'],'windowSeconds':seconds,'totalSamples':len(rows),'measuredSamples':len(measured),'rps':len(measured)/seconds,'newDrawRps':len(success)/seconds,'newDrawsWindow':len(success),'newDrawsTotal':len(takes),'ordersTotal':len(orders),'meanMs':sum(latencies)/len(latencies),'p50Ms':quantile(latencies,.5),'p95Ms':quantile(latencies,.95),'p99Ms':quantile(latencies,.99),'maxMs':max(latencies),'httpErrorRate':sum(r['responseCode']!='200' for r in measured)/len(measured),'systemErrorRate':sum(r['businessCode'] not in ('0000','D001','D006','D007') or r['responseCode']!='200' for r in measured)/len(measured),'businessCodes':business,'cpuMeanPercentOfOneCore':sum(cpu)/len(cpu) if cpu else None,'heapMaxObservedMiB':max(s['app']['heapUsed'] for s in samples)/1048576,'gcMs':gctime,'gcPauseRatio':gctime/(samples[-1]['app']['time']-samples[0]['app']['time']),'pools':stats,'tomcatMaxBusy':max(v[0] for s in samples for v in s['app']['tomcat'].values()),'backlog':[(s['time'],s['async']) for s in pending],'rpsBuckets':buckets,'drainSeconds':json.loads((directory/'drain.json').read_text())['seconds'],'asyncP95LowerMs':quantile([b[0] for b in bounds],.95) if bounds else None,'asyncP95UpperMs':quantile([b[1] for b in bounds],.95) if bounds else None,'audit':'PASS'}
     # 提交发生于订单 INSERT 与 HTTP 返回之间，因此分别保留结算时延上下界。
     stock_bounds=[]
+    fulfillment_bounds=[]
     for row in success:
         if row['businessCode']=='0000':
             order=by_take[row['takeId']]
             settled=int(order['stockDoneMs'])
             responded=int(row['timeStamp'])+int(row['elapsed'])
             stock_bounds.append((max(0,settled-responded),max(0,settled-int(order['createdMs']))))
+            # 发奖同样从真实 HTTP 响应和订单创建时间界定 TX2 提交，使用毫秒精度 fulfilled_at。
+            fulfilled=int(order['grantDoneMs'])
+            fulfillment_bounds.append((max(0,fulfilled-responded),max(0,fulfilled-int(order['createdMs']))))
     result['stockLatencyBoundsMs']={str(q):[quantile([b[i] for b in stock_bounds],q) for i in (0,1)]
                                     for q in (.5,.95,.99)} if stock_bounds else {}
+    result['fulfillmentLatencyBoundsMs']={str(q):[quantile([b[i] for b in fulfillment_bounds],q) for i in (0,1)]
+                                          for q in (.5,.95,.99)} if fulfillment_bounds else {}
     result['settlementRps']=sum(low<=int(row['stockDoneMs'])<high for row in orders)/seconds
     result['fulfillmentRps']=sum(low<=int(row['grantDoneMs'])<high for row in orders)/seconds
     result['observedThreads']=observed_threads

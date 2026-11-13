@@ -23,11 +23,11 @@
 | 主题 | 设计与实现 |
 | --- | --- |
 | 参与约束 | 用户受个人 `take_count` 限制，活动没有独立的总抽奖名额 |
-| 奖品库存 | Redis 原子预扣控制策略奖品库存，MySQL 条件更新完成持久化结算 |
+| 奖品库存 | Redis 原子预扣控制活动奖品库存，MySQL 条件更新完成持久化结算 |
 | 请求幂等 | `requestId` 标识一次逻辑抽奖，配合数据库唯一约束、未完成参与恢复和结果回放 |
 | 可靠异步结算 | 中奖订单和待投递状态在同一事务写入，通过 Transactional Outbox + Kafka 异步结算 |
 | 消费幂等与补偿 | `UNIQUE(order_id)` 结算账本、状态 CAS 和 Spring 定时扫描处理重复消费与失败恢复 |
-| 缓存与数据组织 | Caffeine + Redis 两级策略缓存，单 MySQL 库和八张业务表 |
+| 缓存与数据组织 | Caffeine + Redis 两级奖池缓存，单 MySQL 库和七张业务表 |
 | 验证与性能 | 单元测试、真实中间件 E2E、JMeter 压测及 SQL 执行计划对照实验 |
 
 ## 系统架构
@@ -40,7 +40,7 @@ flowchart TD
     API --> APP[Application：抽奖流程与请求幂等]
     APP --> DOMAIN[Domain：资格校验与概率抽样]
     APP --> REDIS[Redis：库存预扣与并发控制]
-    DOMAIN --> CACHE[Caffeine + Redis：策略快照]
+    DOMAIN --> CACHE[Caffeine + Redis：活动奖池快照]
     APP --> DB[(MySQL：参与记录 / 中奖订单 / Outbox)]
     DB --> JOB[提交后立即投递，Spring 定时补偿]
     JOB --> MQ[Kafka：库存结算事件]
@@ -55,7 +55,7 @@ flowchart TD
 1. HTTP 校验认证用户，按本机并发与 Redis 配额准入，再进入应用层编排。
 2. 通过短时并发锁、请求号及参与记录，判断是新请求、结果回放还是未完成请求恢复。
 3. 校验活动状态和时间；TX1 在同一个本地事务中条件扣减个人次数并创建参与记录。
-4. 读取策略快照进行加权随机抽样；命中奖品后预扣其 Redis 库存。未中奖或命中已售罄奖品时消费参与记录，仍消耗一次个人机会。
+4. 读取活动奖池快照进行加权随机抽样；命中奖品后预扣其 Redis 库存。未中奖或命中已售罄奖品时消费参与记录，仍消耗一次个人机会。
 5. TX2 在同一个本地事务中消费参与记录、创建中奖订单并写入 `stock_settlement_event_status=INIT`。
 6. 提交后实时投递 Outbox 至 Kafka，Spring 调度补偿未完成义务；TX3 在本地事务中插入唯一账本、条件扣减 MySQL 奖品库存，再发送发奖消息。三个事务独立提交。
 
@@ -63,12 +63,12 @@ flowchart TD
 
 ### 1. 库存一致性：Redis 预扣与 MySQL 结算
 
-- **Redis** 按 `drawConfigId + awardId` 原子预扣奖品库存，避免每次中奖直接竞争 MySQL 库存行；活动自身不维护库存。
+- **Redis** 按 `activityId + awardId` 原子预扣奖品库存，避免每次中奖直接竞争 MySQL 库存行；活动自身不维护库存。
 - **MySQL** 保留持久化记录，奖品库存采用 `surplus > 0` 条件更新，阻止并发结算导致负库存。
-- 活动启动持有活动行锁及共享策略行锁；只用 MySQL 奖品剩余量 SETNX 预热，成功后才 CAS 到 DOING。第二个活动引用相同策略时共享已有奖池，保留实时余额。
-- 奖品库存 Key 缺失时明确报错，保留原未消费 take 与 requestId；只有真实售罄才视为未中奖。已运行或关闭的共享奖池缺 Key 时阻止新活动启动，须先对账，不能用滞后 MySQL 值回填。
+- 活动启动在活动行锁内检查 READY 和时间窗口，以 MySQL 奖品余量 SETNX 预热后 CAS 到 RUNNING。各活动引用同一奖品时使用独立概率和库存。
+- 奖品库存 Key 缺失时明确报错，保留原未消费 take 与 requestId；只有真实售罄才视为未中奖。已运行或关闭的活动缺 Key 须先对账，不能用滞后 MySQL 值回填。
 
-系统仅保留“用户个人参与次数”和“策略奖品库存”两种限制。旧活动总库存的 MySQL 剩余量没有完整结算链路，本次取消全场名额限制并移除两列及 Redis 预扣/回补；详见 [业务简化与迁移](docs/activity-stock-removal.md)。
+系统仅保留“用户个人参与次数”和“活动奖品库存”两种限制。旧活动总库存的 MySQL 剩余量没有完整结算链路，本次取消全场名额限制并移除两列及 Redis 预扣/回补；详见 [业务简化与迁移](docs/activity-stock-removal.md)。
 
 Redis 预扣与 MySQL 下单不是跨存储原子事务。明确业务拒绝与确认回滚时保留现有奖品回补；预扣后 JVM 退出、事务结果未知或回补失败仍可能遗留预留，需要按订单和账本对账。
 
@@ -100,11 +100,11 @@ Kafka 按 `orderId` 发送结算事件，消费端将两项操作放在同一个
 
 - 使用 `BigDecimal` 将奖品概率转换为整数权重，通过随机整数、前缀和与二分查找完成抽样。
 - 配置概率总和不足 100% 时，剩余概率归入 `NO_PRIZE`；命中已售罄奖品不会重新分配其他奖品的概率。
-- 对高频读取、低频变更的策略快照使用 **Caffeine L1 + Redis L2** 两级缓存，接受短 TTL 内的配置最终一致性。
+- 对高频读取、低频变更的活动奖池快照使用 **Caffeine L1 + Redis L2** 两级缓存，接受短 TTL 内的配置最终一致性。
 
 ### 5. 单库与抽奖准入
 
-八张业务表共用一个 MySQL 数据库和一个 Hikari 连接池。订单号、参与号、请求归属和库存账本分别由唯一约束保护。已有 V5 数据通过旁路迁移合并，保留业务标识与消息状态。详见 [单库部署与迁移](docs/single-database.md)。
+七张业务表共用一个 MySQL 数据库和一个 Hikari 连接池。订单号、参与号、请求归属和库存账本分别由唯一约束保护。已有 V7 单库可按 [活动独立奖池与 V8 切换](docs/activity-prize-pool.md) 旁路升级。新建库直接使用当前 Schema。
 
 抽奖使用 Servlet 认证身份。Controller 先获取本机 Semaphore 许可，再用一条 Redis Lua 同时检查全局和用户活动令牌桶。429 或限流 Redis 故障返回 503 时，可以用原请求号重试。详见 [抽奖 HTTP 契约](.trellis/spec/backend/http-contract.md)。
 
@@ -163,7 +163,7 @@ mvn clean package
 ### 数据初始化与应用启动
 
 1. 准备独立的 MySQL 测试实例。
-2. 空实例执行 [完整 Schema](docs/sql/lottery-schema.sql) 创建 `lottery`，可选加载 [演示数据](docs/sql/lottery-demo-seed.sql)。已有分片库按 [V6 升级说明](docs/single-database.md) 演练，已有单库按 [V7 切换](docs/outbox-delivery.md#v7-切换) 更新。
+2. 空实例执行 [完整 Schema](docs/sql/lottery-schema.sql) 创建 `lottery`，可选加载 [演示数据](docs/sql/lottery-demo-seed.sql)。已有单库按 [V8 切换](docs/activity-prize-pool.md) 演练。已有分片库先按 [V6 升级说明](docs/single-database.md) 完成合库，再走 V8。
 3. 根据本地环境配置 `lottery-interfaces/src/main/resources/application.yml`，包括 MySQL、Redis、Kafka 地址及凭据；默认配置的 MySQL 端口为 `13306`、Redis 为 `6379`、Kafka 为 `9092`。
 4. 启动所需中间件与应用；活动应按正常状态流转完成库存预热，不能仅将数据库状态改为运行中来跳过预热。
 
@@ -201,7 +201,7 @@ curl -X POST http://localhost:8080/api/v1/draw \
 ```text
 lottery-interfaces        Spring Boot 启动入口、抽奖网页、HTTP API、测试
 lottery-application       抽奖流程编排、Kafka 生产/消费、Spring 定时任务
-lottery-domain            资格校验、策略抽样、活动与订单业务规则
+lottery-domain            资格校验、奖池抽样、活动与订单业务规则
 lottery-infrastructure    MyBatis / Redis / Repository / 缓存实现
 lottery-common            统一结果、枚举与公共常量
 
@@ -224,6 +224,7 @@ docs                      架构、幂等、一致性与 E2E 设计文档
 
 - [取消活动总库存：流程、迁移与验证](docs/activity-stock-removal.md)
 - [架构设计与组件取舍](docs/architecture.md)
+- [活动独立奖池与 V8 切换](docs/activity-prize-pool.md)
 - [抽奖请求幂等](docs/draw-request-idempotency.md)
 - [Kafka 消息状态与 CAS](docs/kafka-mq-state-cas.md)
 - [正确性与 E2E 验证](docs/final-correctness-e2e.md)

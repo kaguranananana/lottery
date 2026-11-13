@@ -8,7 +8,6 @@
         <result column="take_id" property="takeId"/>
         <result column="activity_id" property="activityId"/>
         <result column="participated_at" property="participatedAt"/>
-        <result column="draw_config_id" property="drawConfigId"/>
         <result column="state" property="state"/>
         <result column="request_id" property="requestId"/>
         <result column="create_time" property="createTime"/>
@@ -18,10 +17,10 @@
     <insert id="insert" parameterType="com.anontokyo.lottery.infrastructure.po.DrawParticipation">
         INSERT INTO draw_participation
         (u_id, take_id, activity_id, participated_at,
-         draw_config_id, state, request_id, create_time, update_time)
+         state, request_id, create_time, update_time)
         VALUES
         (#{uId}, #{takeId}, #{activityId}, #{participatedAt},
-         #{drawConfigId}, #{state}, #{requestId}, now(), now())
+         #{state}, #{requestId}, now(), now())
     </insert>
 
     <update id="consumeParticipation">
@@ -31,7 +30,7 @@
 
     <select id="queryUnfinishedParticipation"
             resultMap="drawParticipationMap">
-        SELECT activity_id, take_id, draw_config_id, state, request_id
+        SELECT activity_id, take_id, state, request_id
         FROM draw_participation
         WHERE u_id = #{uId} AND activity_id = #{activityId} AND state = 0
         ORDER BY id DESC
@@ -40,7 +39,7 @@
 
     <select id="queryParticipationByRequestId"
             resultMap="drawParticipationMap">
-        SELECT activity_id, take_id, draw_config_id, state, request_id
+        SELECT activity_id, take_id, state, request_id
         FROM draw_participation
         WHERE u_id = #{uId} AND activity_id = #{activityId} AND request_id = #{requestId}
         LIMIT 1

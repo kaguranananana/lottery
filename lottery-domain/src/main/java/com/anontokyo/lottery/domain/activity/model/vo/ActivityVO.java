@@ -39,21 +39,13 @@ public class ActivityVO {
      */
     private Date endDateTime;
 
-
-    /** 活动所属抽奖策略，创建时由同一配置聚合绑定。 */
-    private Long drawConfigId;
-
-    public Long getDrawConfigId() { return drawConfigId; }
-
-    public void setDrawConfigId(Long drawConfigId) { this.drawConfigId = drawConfigId; }
-
     /**
      * 每人可参与次数
      */
     private Integer takeCount;
 
     /**
-     * 活动状态：编辑、提审、撤审、通过、运行、拒绝、关闭、开启
+     * 活动状态：草稿、就绪、运行、关闭
      */
     private Integer state;
 
@@ -102,7 +94,6 @@ public class ActivityVO {
         this.endDateTime = endDateTime;
     }
 
-
     public Integer getTakeCount() {
         return takeCount;
     }
@@ -126,7 +117,6 @@ public class ActivityVO {
     public void setCreator(String creator) {
         this.creator = creator;
     }
-
 
     public Long getId() {
         return id;

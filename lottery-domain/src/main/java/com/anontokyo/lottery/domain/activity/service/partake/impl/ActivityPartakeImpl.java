@@ -23,7 +23,7 @@ public class ActivityPartakeImpl extends BaseActivityPartake {
 
     @Override
     protected Result checkActivityBill(PartakeReq partake, ActivityBillVO bill) {
-        if (!Constants.ActivityState.DOING.getCode().equals(bill.getState())) {
+        if (!Constants.ActivityState.RUNNING.getCode().equals(bill.getState())) {
             logger.warn("activity unavailable state:{}", bill.getState());
             return Result.buildResult(Constants.ResponseCode.UN_ERROR, "activity unavailable");
         }

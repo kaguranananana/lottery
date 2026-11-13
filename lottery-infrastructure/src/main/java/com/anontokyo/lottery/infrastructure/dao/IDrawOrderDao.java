@@ -16,14 +16,14 @@ import java.util.List;
 public interface IDrawOrderDao {
     /**
      * 新增数据
-     * @param drawOrderRow 用户策略
+     * @param drawOrderRow 中奖订单
      */
     void insert(DrawOrder drawOrderRow);
 
     /**
      * 查询数据
      * @param uId 用户ID
-     * @return 用户策略
+     * @return 中奖订单
      */
     DrawOrder queryDrawOrderByUId(String uId);
 

@@ -20,7 +20,7 @@ common 只承载真实共享契约，优先复用 [Result.java](../../../lottery
 | [StockSettlementIdempotencyManualIT.java](../../../lottery-interfaces/src/test/java/com/anontokyo/lottery/test/manual/StockSettlementIdempotencyManualIT.java) | 手写 JDBC 结算 SQL 与 Redis 并发操作 | 本机 MySQL/Redis；不是生产 Repository 或 Kafka 全链路测试 |
 | 其它 ManualIT 及 legacy DAO/API 测试 | Spring 上下文与真实中间件场景 | 按具体用例准备环境 |
 
-[StockSettlementIdempotencyManualIT.java](../../../lottery-interfaces/src/test/java/com/anontokyo/lottery/test/manual/StockSettlementIdempotencyManualIT.java) 依赖预置策略 10001/奖品 C 的库存，并有未完成的测试数据准备注释；不能将它视为已自动部署并覆盖 Outbox 的可靠门禁。其并发线程内吞异常和裸 SQL 也不是新测试的推荐模式。
+[StockSettlementIdempotencyManualIT.java](../../../lottery-interfaces/src/test/java/com/anontokyo/lottery/test/manual/StockSettlementIdempotencyManualIT.java) 依赖预置活动 10001/奖品 C 的库存，并有未完成的测试数据准备注释；不能将它视为已自动部署并覆盖 Outbox 的可靠门禁。其并发线程内吞异常和裸 SQL 也不是新测试的推荐模式。
 
 ## Maven 命令与适用范围
 
@@ -50,7 +50,7 @@ mvn test -Dtest='*ManualIT' -Dsurefire.failIfNoSpecifiedTests=false
 
 MqMiddlewareE2eManualIT 在独立 Docker compose 中运行真实 MySQL 8、Redis、Kafka 与生产 Spring 组件，覆盖多用户订单、库存账本事务、实际 Kafka ack、迟到通知、重复消息与真实 broker 停机恢复。测试仅通过生产者装饰器延后 Future 通知，不使用中间件 Mock；注入失败与真实 broker 失败必须分开报告。会重建测试端口 13309 的专用单库 fixture，运行步骤与已确认的停止宽限期要求见[端到端验证记录](../../../docs/kafka-middleware-e2e.md)。
 
-最终验证增加 FinalBusinessE2eManualIT：真实随机端口 HTTP、活动配置事务、Redis、单库订单表、Kafka 与库存账本，不替换任何中间件。测试包含 Redis 停机、ACL 第二个 Key 写入失败、SQL 账本表临时改名；异常 ACK 用例直接调用生产消费者，恢复后通过真实 Kafka 完成。MqMiddlewareE2eManualIT 在 DROP 前检查 Docker 标签及端口；两者只能在专用 compose 13309 实例运行。SQL-only 集成测试使用另一专用空 MySQL（13319），结果与命令见[当前全链路实测](../../../docs/single-db-load-test.md)。
+最终验证增加 FinalBusinessE2eManualIT：真实随机端口 HTTP、活动配置事务、Redis、单库订单表、Kafka 与库存账本，不替换任何中间件。测试包含 Redis 停机、ACL 第二个 Key 写入失败、SQL 账本表临时改名；异常 ACK 用例直接调用生产消费者，恢复后通过真实 Kafka 完成。MqMiddlewareE2eManualIT 在 DROP 前检查 Docker 标签及端口；两者只能在专用 compose 13309 实例运行。SQL-only 集成测试使用另一专用空 MySQL（13319），结果与命令见[当前全链路实测](../../../docs/activity-prize-pool.md)。
 
 2026-10-24 扩展 HTTP E2E：缺失奖品库存时保留原 take；真实 take/order INSERT trigger 失败后事务回滚与库存归还；同请求恢复且次数不重复扣减。后续运行结果与剩余边界见[故障评估](../../../docs/failure-review-20261024.md)。
 

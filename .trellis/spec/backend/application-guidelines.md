@@ -10,7 +10,7 @@
 
 ## Kafka、调度与持久状态
 
-[KafkaProducer.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/producer/KafkaProducer.java) 以 orderId 字符串作为消息 key，沿用 lottery_invoice 与 lottery_strategy_award_stock 的消息契约。库存监听器在条件扣减事务中写唯一账本，通过订单 CAS 持久化结算终态和发奖义务后 ack。库存不足进入 BLOCKED 等待对账。发奖监听器按 supportType 选取处理器，当前模拟渠道在同一 SQL 写实际发奖与消息终态，持久化后 ack。消费异常记录并传播。
+[KafkaProducer.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/producer/KafkaProducer.java) 以 orderId 字符串作为消息 key，沿用 lottery_invoice 与 lottery_strategy_award_stock 的 topic 和 key。库存新消息包含 activityId；旧 strategyId 不别名为活动号，消费者仅按用户和订单号重读订单来确定结算归属。库存监听器在条件扣减事务中写唯一账本，通过订单 CAS 持久化结算终态和发奖义务后 ack。库存不足进入 BLOCKED 等待对账。发奖监听器按 supportType 选取处理器，当前模拟渠道在同一 SQL 写实际发奖与消息终态，持久化后 ack。消费异常记录并传播。
 
 [LotteryScheduledTasks.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryScheduledTasks.java) 的三个独立固定延迟任务分别扫描到期活动、库存义务与发奖义务。活动预热与状态更新由原生命周期服务执行，库存与发奖复用有界投递池。TX2 写库存首发代数，提交后提交实时库存投递。库存完成 CAS 写发奖首发代数，只有更新成功的消费者提交实时发奖。首发到期后仍在途时允许补偿重投，消费者依赖原账本和发奖 CAS 幂等。
 

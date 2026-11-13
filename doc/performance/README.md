@@ -1,10 +1,10 @@
 # Lottery 实际性能压测复现
 
-当前单库压测结果见 [单库与入口限流报告](../../docs/single-db-load-test.md)。历史报告使用当时的代码和数据，复现旧实验时检出对应历史版本。旧版持久化结构和迁移顺序见 [V6 迁移](../../docs/single-database.md)。
+V8 使用七表和活动库存键；本轮对照见 [V8 实测](../../docs/activity-prize-pool.md#2026-11-13-实测)。V7 及更早的历史压测结果见 [单库与入口限流报告](../../docs/single-db-load-test.md)。历史报告使用当时的代码和数据，复现旧实验时检出对应历史版本。当前迁移顺序见 [V8 活动独立奖池](../../docs/activity-prize-pool.md)。
 
 后续定向优化、当前字段修复及压测驱动数据耗尽修复见 [优化报告](optimization-report.md) 和 [本轮证据/复现步骤](results/20261012-optimization/README.md)。本文的首次测量数字和 NULL 字段描述对应原始测试版本，原始结果未覆盖。
 
-2026-10-13 的补偿索引同数据/反向实验及更高持续负载见 [持续容量与扫描证据](results/20261013-capacity-scan/README.md)。新空环境 init 已包含 `20261013_invoice_compensation_index.sql`；已有实例保留数据、核实身份后显式执行迁移，不能重新 init。`invoice_scan_compare.py <新目录> --repeats 6` 在应用停止且义务排空后交替比较索引路径，记录实际执行树、计数/状态及换页端点；不把 SQL 局部收益当整体吞吐倍数。
+2026-10-13 的补偿索引同数据/反向实验及更高持续负载见 [持续容量与扫描证据](results/20261013-capacity-scan/README.md)。该结果使用历史补偿索引迁移；当前空环境由七表 Schema 直接建立重试索引。已有 V7 实例请另建测试环境或按 V8 迁移。`invoice_scan_compare.py <新目录> --repeats 6` 在应用停止且义务排空后交替比较索引路径，记录实际执行树、计数/状态及换页端点；不把 SQL 局部收益当整体吞吐倍数。
 
 后续会话缓存对照、驱动事务回归修复及持续容量边界见 [JDBC 与容量复核](results/20261013-jdbc-session/README.md)。当前单库 JDBC URL 使用 `useLocalSessionState=true`；Connector/J 已修复至8.0.29，会话状态须经 JDBC API 管理。不要仅复制参数到旧8.0.28驱动；真实回滚失败及最小修复见 [驱动修复记录](results/20261013-jdbc-session/driver-fix.md)。
 
@@ -38,7 +38,7 @@ mkdir -p doc/performance/results/my-run
 bash doc/performance/start.sh doc/performance/results/my-run > doc/performance/results/my-run/application.log 2>&1
 ```
 
-每次新建活动先调用真实创建服务，再执行 PASS→DOING（事务内 SETNX 预热），不直接修改状态为运行中。每轮默认预置10万用户，写入单一额度表；每用户10次机会，每次基准请求使用新用户、新 requestId。活动无总库存，五种模拟券每种100万库存、20%概率，100%中奖以覆盖较重的订单与异步主链路。已预置用户仍执行真实的额度查询、条件扣减与参与写入。
+每次新建活动先调用真实创建服务，再执行 READY→RUNNING（事务内 SETNX 预热），不直接修改状态为运行中。每轮默认预置10万用户，写入单一额度表；每用户10次机会，每次基准请求使用新用户、新 requestId。活动无总库存，五种模拟券每种100万库存、20%概率，100%中奖以覆盖较重的订单与异步主链路。已预置用户仍执行真实的额度查询、条件扣减与参与写入。
 
 ## 实际运行
 

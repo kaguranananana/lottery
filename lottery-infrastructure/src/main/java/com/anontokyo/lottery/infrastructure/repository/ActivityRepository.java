@@ -9,7 +9,7 @@ import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
 import com.anontokyo.lottery.infrastructure.cache.CacheConfigProperties;
 import com.anontokyo.lottery.infrastructure.cache.TwoLevelCacheService;
 import com.anontokyo.lottery.infrastructure.dao.*;
-import com.anontokyo.lottery.infrastructure.po.DrawConfigPrize;
+import com.anontokyo.lottery.infrastructure.po.ActivityPrize;
 import com.anontokyo.lottery.infrastructure.po.*;
 import com.anontokyo.lottery.infrastructure.utils.RedisUtil;
 import org.slf4j.Logger;
@@ -44,10 +44,7 @@ public class ActivityRepository implements IActivityRepository {
     private IAwardDao awardDao;
 
     @Resource
-    private IDrawConfigDao drawConfigDao;
-
-    @Resource
-    private IDrawConfigPrizeDao drawConfigPrizeDao;
+    private IActivityPrizeDao activityPrizeDao;
 
     @Resource
     private RedisUtil redisUtil;
@@ -75,33 +72,22 @@ public class ActivityRepository implements IActivityRepository {
             req.add(award);
         }
         awardDao.insertList(req);
-        for (AwardVO awardVO : awardList) {
-        }
     }
 
     @Override
-    public void addDrawConfig(DrawConfigVO drawConfig) {
-        DrawConfig req = new DrawConfig();
-        BeanUtils.copyProperties(drawConfig, req);
-        drawConfigDao.insert(req);
-        twoLevelCacheService.evictDrawConfigSnapshotCache(
-                Constants.RedisKey.KEY_LOTTERY_CACHE_DRAW_CONFIG_SNAPSHOT(drawConfig.getDrawConfigId()));
-    }
-
-    @Override
-    public void addDrawConfigPrizeList(List<DrawConfigPrizeVO> drawConfigPrizeList) {
-        List<DrawConfigPrize> req = new ArrayList<>();
-        Set<Long> drawConfigIds = new HashSet<>();
-        for (DrawConfigPrizeVO drawConfigPrizeVO : drawConfigPrizeList) {
-            DrawConfigPrize drawConfigPrize = new DrawConfigPrize();
-            BeanUtils.copyProperties(drawConfigPrizeVO, drawConfigPrize);
-            req.add(drawConfigPrize);
-            drawConfigIds.add(drawConfigPrizeVO.getDrawConfigId());
+    public void addActivityPrizeList(List<ActivityPrizeVO> activityPrizeList) {
+        List<ActivityPrize> req = new ArrayList<>();
+        Set<Long> activityIds = new HashSet<>();
+        for (ActivityPrizeVO activityPrizeVO : activityPrizeList) {
+            ActivityPrize activityPrize = new ActivityPrize();
+            BeanUtils.copyProperties(activityPrizeVO, activityPrize);
+            req.add(activityPrize);
+            activityIds.add(activityPrizeVO.getActivityId());
         }
-        drawConfigPrizeDao.insertList(req);
-        for (Long drawConfigId : drawConfigIds) {
-            twoLevelCacheService.evictDrawConfigSnapshotCache(
-                    Constants.RedisKey.KEY_LOTTERY_CACHE_DRAW_CONFIG_SNAPSHOT(drawConfigId));
+        activityPrizeDao.insertList(req);
+        for (Long activityId : activityIds) {
+            twoLevelCacheService.evictActivityPrizeSnapshotCache(
+                    Constants.RedisKey.KEY_LOTTERY_CACHE_ACTIVITY_PRIZE_SNAPSHOT(activityId));
         }
 
     }
@@ -109,12 +95,12 @@ public class ActivityRepository implements IActivityRepository {
     @Override
     public boolean alterStatus(Long activityId, Constants.ActivityState beforeState,
             Constants.ActivityState afterState) {
-        if (afterState == Constants.ActivityState.DOING) {
+        if (afterState == Constants.ActivityState.RUNNING) {
             // 所有启动入口集中在仓储，数据库行锁串行化预热与状态提交。
             return Boolean.TRUE.equals(transactionTemplate.execute(status -> {
                 Activity activity = activityDao.queryActivityForUpdate(activityId);
                 // 重复启动或已关闭不再预热，避免运行期缺失库存被回填。
-                if (activity == null || beforeState != Constants.ActivityState.PASS
+                if (activity == null || beforeState != Constants.ActivityState.READY
                         || !beforeState.getCode().equals(activity.getState())) {
                     return false;
                 }
@@ -123,9 +109,9 @@ public class ActivityRepository implements IActivityRepository {
                 if (activity.getBeginDateTime().after(now) || !activity.getEndDateTime().after(now)) {
                     return false;
                 }
-                // 任意 Redis 写入失败必须抛出，事务回滚使状态保持 PASS。
-                warmupAwardStock(activity);
-                // 奖品库存可用后才发布 DOING，后续抽奖才能看到运行状态。
+                // 任意 Redis 写入失败必须抛出，事务回滚使状态保持 READY。
+                warmupAwardStock(activity.getActivityId());
+                // 奖品库存可用后才发布 RUNNING，后续抽奖才能看到运行状态。
                 return updateStatus(activityId, beforeState, afterState);
             }));
         }
@@ -159,7 +145,6 @@ public class ActivityRepository implements IActivityRepository {
         activityBillVO.setBeginDateTime(activity.getBeginDateTime());
         activityBillVO.setEndDateTime(activity.getEndDateTime());
         activityBillVO.setTakeCount(activity.getTakeCount());
-        activityBillVO.setDrawConfigId(activity.getDrawConfigId());
         activityBillVO.setState(activity.getState());
         return activityBillVO;
     }
@@ -182,57 +167,32 @@ public class ActivityRepository implements IActivityRepository {
         return activityVOList;
     }
 
-    /** 仅允许 PASS 活动预热奖品；共享奖池一旦投入使用，缺失库存必须先对账。 */
+    /** 仅允许 READY 活动预热奖品；奖池投入使用后，缺失库存必须先对账。 */
     @Override
     public int warmupAwardStockForActivity(Long activityId) {
         return transactionTemplate.execute(status -> {
-            // 与启动使用同一行锁，保证检查 PASS 到最后一个 SETNX 期间不会启动。
+            // 与启动使用同一行锁，保证检查 READY 到最后一个 SETNX 期间不会启动。
             Activity activity = activityDao.queryActivityForUpdate(activityId);
-            if (activity == null || !Constants.ActivityState.PASS.getCode().equals(activity.getState())) {
-                throw new IllegalStateException("只有 PASS 活动允许预热，activityId=" + activityId);
+            if (activity == null || !Constants.ActivityState.READY.getCode().equals(activity.getState())) {
+                throw new IllegalStateException("只有 READY 活动允许预热，activityId=" + activityId);
             }
-            return warmupAwardStock(activity);
+            return warmupAwardStock(activity.getActivityId());
         });
     }
 
-    private int warmupAwardStock(Activity activity) {
-        if (activity.getDrawConfigId() == null) {
-            throw new IllegalStateException("活动未关联策略，activityId=" + activity.getActivityId());
+    private int warmupAwardStock(Long activityId) {
+        // 调用方持有活动行锁并已确认 READY；RUNNING 和 CLOSED 永远不从 MySQL 回填。
+        List<ActivityPrize> prizes = activityPrizeDao.queryActivityPrizeList(activityId);
+        if (prizes.isEmpty()) {
+            throw new IllegalStateException("活动奖池不能为空，activityId=" + activityId);
         }
-        // 活动行锁只约束同一活动；策略行锁使共享奖池的多个启动者串行检查和预热。
-        if (drawConfigDao.queryDrawConfigForUpdate(activity.getDrawConfigId()) == null) {
-            throw new IllegalStateException("活动策略不存在，drawConfigId=" + activity.getDrawConfigId());
-        }
-        // DOING 奖池不能重建；CLOSE 后也可能有尚未结算的订单，缺失 Key 仍需对账。
-        boolean poolInUse = activityDao.countPublishedActivitiesByDrawConfig(activity.getDrawConfigId()) > 0;
-        List<DrawConfigPrize> details = drawConfigPrizeDao.queryDrawConfigPrizeList(activity.getDrawConfigId());
-        if (details.isEmpty()) {
-            throw new IllegalStateException("活动策略没有奖品，drawConfigId=" + activity.getDrawConfigId());
-        }
-        // 只初始化奖品 Key；任何配置错误或 Redis 故障都会阻止活动进入 DOING。
         int warmedKeys = 0;
-        for (DrawConfigPrize detail : details) {
-            if (detail.getAwardId() == null || detail.getAwardId().trim().isEmpty()
-                    || detail.getAwardSurplusCount() == null || detail.getAwardSurplusCount() < 0) {
-                throw new IllegalStateException("配置奖品或剩余库存配置错误，drawConfigId="
-                        + activity.getDrawConfigId() + " awardId=" + detail.getAwardId());
-            }
-            String key = Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_COUNT(
-                    activity.getDrawConfigId(), detail.getAwardId());
-            if (poolInUse) {
-                // 只读取，不以 SETNX 修复缺失 Key，避免第二个活动启动时复活共享库存。
-                if (redisUtil.get(key) == null) {
-                    logger.error("shared award stock missing, reconciliation required activityId:{} key:{}",
-                            activity.getActivityId(), key);
-                    throw new IllegalStateException("共享奖品库存缺失，须先对账，key=" + key);
-                }
-            } else {
-                // 从未投入使用的奖池以 MySQL 剩余库存 SETNX 预热，保留已有实时值。
-                warmedKeys += warmupKey(key, detail.getAwardSurplusCount());
-            }
+        for (ActivityPrize prize : prizes) {
+            // SETNX 保留已预热余额，只补齐首次启动前未建立的 Key。
+            String key = Constants.RedisKey.KEY_LOTTERY_ACTIVITY_PRIZE_STOCK_COUNT(activityId, prize.getAwardId());
+            warmedKeys += warmupKey(key, prize.getAwardSurplusCount());
         }
-        logger.info("award stock warmup finished activityId:{} drawConfigId:{} keysWarmup:{}",
-                activity.getActivityId(), activity.getDrawConfigId(), warmedKeys);
+        logger.info("award stock warmup finished activityId:{} keysWarmup:{}", activityId, warmedKeys);
         return warmedKeys;
     }
 

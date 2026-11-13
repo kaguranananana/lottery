@@ -3,11 +3,11 @@ package com.anontokyo.lottery.domain.draw.service.draw.impl;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.draw.model.req.DrawReq;
 import com.anontokyo.lottery.domain.draw.model.res.DrawResult;
-import com.anontokyo.lottery.domain.draw.model.snapshot.DrawConfigSnapshot;
+import com.anontokyo.lottery.domain.draw.model.snapshot.ActivityPrizeSnapshot;
 import com.anontokyo.lottery.domain.draw.model.vo.AwardBriefVO;
 import com.anontokyo.lottery.domain.draw.model.vo.DrawAwardInfo;
-import com.anontokyo.lottery.domain.draw.model.vo.DrawConfigPrizeStockDeductResultVO;
-import com.anontokyo.lottery.domain.draw.repository.IDrawConfigRepository;
+import com.anontokyo.lottery.domain.draw.model.vo.ActivityPrizeStockDeductResultVO;
+import com.anontokyo.lottery.domain.draw.repository.IActivityPrizeRepository;
 import com.anontokyo.lottery.domain.draw.service.draw.IDrawExec;
 import com.anontokyo.lottery.domain.draw.service.draw.WeightedRandomSelector;
 import org.slf4j.Logger;
@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 
 /**
- * 抽奖执行：读取抽奖配置快照 → 权重随机选择 → Redis 扣减奖品库存。
+ * 抽奖执行：读取活动奖池快照 → 权重随机选择 → Redis 扣减奖品库存。
  * 快照中原始概率语义保持不变；命中已售罄奖品直接视为未中奖，不做重新归一化。
  */
 @Service("drawExec")
@@ -26,41 +26,40 @@ public class DrawExecutor implements IDrawExec {
     private final Logger logger = LoggerFactory.getLogger(DrawExecutor.class);
 
     @Resource
-    private IDrawConfigRepository drawConfigRepository;
+    private IActivityPrizeRepository activityPrizeRepository;
 
     @Override
     public DrawResult doDrawExec(DrawReq req) {
-        DrawConfigSnapshot snapshot = drawConfigRepository.queryDrawConfigSnapshot(req.getDrawConfigId());
+        ActivityPrizeSnapshot snapshot = activityPrizeRepository.queryActivityPrizeSnapshot(req.getActivityId());
 
         String awardId = WeightedRandomSelector.select(snapshot);
         if (awardId == null) {
-            return new DrawResult(req.getuId(), req.getDrawConfigId(), Constants.DrawState.FAIL.getCode());
+            return new DrawResult(req.getuId(), req.getActivityId(), Constants.DrawState.FAIL.getCode());
         }
 
-        DrawConfigPrizeStockDeductResultVO deductResult =
-                drawConfigRepository.deductStockByRedis(req.getDrawConfigId(), awardId);
+        ActivityPrizeStockDeductResultVO deductResult =
+                activityPrizeRepository.deductStockByRedis(req.getActivityId(), awardId);
         if (!deductResult.isSuccess()) {
             // 售罄 ⇒ 本次未中奖。禁止把该奖品的权重重新分配给其他奖品。
-            logger.warn("award sold out treated as no prize uId:{} drawConfigId:{} awardId:{}",
-                    req.getuId(), req.getDrawConfigId(), awardId);
-            return new DrawResult(req.getuId(), req.getDrawConfigId(), Constants.DrawState.FAIL.getCode());
+            logger.warn("award sold out treated as no prize uId:{} activityId:{} awardId:{}",
+                    req.getuId(), req.getActivityId(), awardId);
+            return new DrawResult(req.getuId(), req.getActivityId(), Constants.DrawState.FAIL.getCode());
         }
 
         AwardBriefVO award = snapshot.getAwardInfos().get(awardId);
+        // 订单、结算和回补使用同一个被预扣的奖池奖品标识。
         DrawAwardInfo drawAwardInfo = new DrawAwardInfo(
-                award.getAwardId(),
+                awardId,
                 award.getAwardType(),
                 award.getAwardName(),
                 award.getAwardContent());
-        drawAwardInfo.setGrantType(snapshot.getGrantType());
-        drawAwardInfo.setScheduledAt(snapshot.getScheduledAt());
 
-        return new DrawResult(req.getuId(), req.getDrawConfigId(),
+        return new DrawResult(req.getuId(), req.getActivityId(),
                 Constants.DrawState.SUCCESS.getCode(), drawAwardInfo);
     }
 
     @Override
-    public void recoverDrawAwardStock(Long drawConfigId, String awardId) {
-        drawConfigRepository.recoverDrawConfigPrizeStockByRedis(drawConfigId, awardId);
+    public void recoverDrawAwardStock(Long activityId, String awardId) {
+        activityPrizeRepository.recoverActivityPrizeStockByRedis(activityId, awardId);
     }
 }

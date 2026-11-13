@@ -43,8 +43,8 @@ public class InvoiceCompensationIndexManualIT {
         jdbc = new JdbcTemplate(source);
         // 字段覆盖生产扫描投影与条件，旧库存状态索引用于复现历史读放大。
         jdbc.execute("CREATE TABLE draw_order (id BIGINT AUTO_INCREMENT PRIMARY KEY,"
-                + "u_id VARCHAR(32),order_id BIGINT,take_id BIGINT,draw_config_id BIGINT,award_id VARCHAR(64),award_type INT,"
-                + "award_name VARCHAR(64),award_content VARCHAR(128),grant_type INT,scheduled_at DATETIME,"
+                + "u_id VARCHAR(32),order_id BIGINT,take_id BIGINT,activity_id BIGINT,award_id VARCHAR(64),award_type INT,"
+                + "award_name VARCHAR(64),award_content VARCHAR(128),"
                 + "award_fulfillment_status TINYINT,fulfillment_event_status TINYINT,stock_settlement_event_status TINYINT,create_time DATETIME,update_time DATETIME,"
                 + "fulfillment_retry_at DATETIME(3), stock_attempt INT DEFAULT 0, fulfillment_attempt INT DEFAULT 0,"
                 + "INDEX idx_stock_settlement_event_status_create_time(stock_settlement_event_status,create_time)) ENGINE=InnoDB");

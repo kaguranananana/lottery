@@ -5,7 +5,7 @@ import org.springframework.stereotype.Component;
 
 /**
  * 缓存分层配置。
- * drawConfig-snapshot 使用 Caffeine + Redis 两级；
+ * activity-prize-snapshot 使用 Caffeine + Redis 两级；
  * activity 配置为低频读、允许短暂滞后，只走 Redis 单级，避免多实例本地缓存不一致问题。
  */
 @Component
@@ -27,8 +27,8 @@ public class CacheConfigProperties {
      */
     private long stockMqDispatchRedisTtlSeconds = 60L;
 
-    /** 抽奖抽奖配置快照：高频读、低变更，唯一使用两级缓存的实体 */
-    private TwoLayerConfig drawConfigSnapshot = new TwoLayerConfig(60L, 600L, 120L, 60L, 10000L);
+    /** 活动奖池快照：高频读、低变更，唯一使用两级缓存的实体 */
+    private TwoLayerConfig activityPrizeSnapshot = new TwoLayerConfig(60L, 600L, 120L, 60L, 10000L);
 
     /** 活动配置：仅 Redis 单级 */
     private SingleLayerConfig activity = new SingleLayerConfig(300L, 60L, 30L);
@@ -57,12 +57,12 @@ public class CacheConfigProperties {
         this.stockMqDispatchRedisTtlSeconds = stockMqDispatchRedisTtlSeconds;
     }
 
-    public TwoLayerConfig getDrawConfigSnapshot() {
-        return drawConfigSnapshot;
+    public TwoLayerConfig getActivityPrizeSnapshot() {
+        return activityPrizeSnapshot;
     }
 
-    public void setDrawConfigSnapshot(TwoLayerConfig drawConfigSnapshot) {
-        this.drawConfigSnapshot = drawConfigSnapshot;
+    public void setActivityPrizeSnapshot(TwoLayerConfig activityPrizeSnapshot) {
+        this.activityPrizeSnapshot = activityPrizeSnapshot;
     }
 
     public SingleLayerConfig getActivity() {

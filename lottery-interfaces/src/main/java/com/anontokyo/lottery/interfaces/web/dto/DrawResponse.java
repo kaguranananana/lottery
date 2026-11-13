@@ -24,7 +24,6 @@ public class DrawResponse {
         private Integer awardType;
         private String awardName;
         private String awardContent;
-        private Integer grantType;
         private String grantDate;
 
         public String getAwardId() { return awardId; }
@@ -35,8 +34,6 @@ public class DrawResponse {
         public void setAwardName(String awardName) { this.awardName = awardName; }
         public String getAwardContent() { return awardContent; }
         public void setAwardContent(String awardContent) { this.awardContent = awardContent; }
-        public Integer getGrantType() { return grantType; }
-        public void setGrantType(Integer grantType) { this.grantType = grantType; }
         public String getGrantDate() { return grantDate; }
         public void setGrantDate(String grantDate) { this.grantDate = grantDate; }
     }

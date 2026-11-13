@@ -52,23 +52,23 @@ def experiment(schema, table, held_sql, other_sql):
 def run(output):
     # 每次新建名字，CREATE 冲突显式失败，不清空既有 fixture。
     schema='lottery_perf_probe_'+str(int(time.time()*1000))
-    sql(f"CREATE DATABASE {schema}; CREATE TABLE {schema}.user_activity_quota LIKE lottery.user_activity_quota; CREATE TABLE {schema}.draw_config_prize LIKE lottery.draw_config_prize;")
+    sql(f"CREATE DATABASE {schema}; CREATE TABLE {schema}.user_activity_quota LIKE lottery.user_activity_quota; CREATE TABLE {schema}.activity_prize LIKE lottery.activity_prize;")
     sql(f"INSERT INTO {schema}.user_activity_quota(u_id,activity_id,total_count,left_count) VALUES ('userA',1,10,10),('userB',1,10,10);")
     # 固定 75 行，与初步诊断时生产压测表的大小相同；两种奖品分属不同记录。
-    stock_rows=','.join(f"({1 if i<5 else i},'award{i}',10000,10000)" for i in range(75))
-    sql(f'INSERT INTO {schema}.draw_config_prize(draw_config_id,award_id,award_count,award_surplus_count) VALUES {stock_rows};')
+    stock_rows=','.join(f"({1 if i<5 else i},'award{i}',10000,10000,0)" for i in range(75))
+    sql(f'INSERT INTO {schema}.activity_prize(activity_id,award_id,award_count,award_surplus_count,award_rate) VALUES {stock_rows};')
     held="INSERT INTO user_activity_quota(u_id,activity_id,total_count,left_count) VALUES ('userA',1,10,10) ON DUPLICATE KEY UPDATE u_id=u_id"
     other="INSERT INTO user_activity_quota(u_id,activity_id,total_count,left_count) VALUES ('userB',1,10,10) ON DUPLICATE KEY UPDATE u_id=u_id"
     result={'schema':schema,'heldSeconds':3,'upsert':experiment(schema,'user_activity_quota',held,other)}
     result['readThenUpdate']=experiment(schema,'user_activity_quota',held,"SELECT total_count,left_count FROM user_activity_quota WHERE u_id='userB' AND activity_id=1; UPDATE user_activity_quota SET left_count=left_count-1 WHERE u_id='userB' AND activity_id=1 AND left_count>0")
-    first="UPDATE draw_config_prize SET award_surplus_count=award_surplus_count-1 WHERE draw_config_id=1 AND award_id='award0' AND award_surplus_count>0"
+    first="UPDATE activity_prize SET award_surplus_count=award_surplus_count-1 WHERE activity_id=1 AND award_id='award0' AND award_surplus_count>0"
     second=first.replace('award0','award1')
-    # 先记录原始计划，再执行已有脚本中相同的库存索引定义，不重新设计重复索引。
-    sql(f'ALTER TABLE {schema}.draw_config_prize DROP KEY idx_draw_config_award;')
+    # 只在 fixture 去掉两个业务索引，复现无索引时扫描其他奖品并扩大加锁范围。
+    sql(f'ALTER TABLE {schema}.activity_prize DROP KEY uk_activity_award, DROP KEY idx_activity_prize_award;')
     result['stockPlanBefore']=sql(f'USE {schema}; EXPLAIN {second};')
-    result['stockWithoutIndex']=experiment(schema,'draw_config_prize',first,second)
-    sql(f'ALTER TABLE {schema}.draw_config_prize ADD KEY idx_draw_config_award (draw_config_id,award_id);')
-    result['stockWithIndex']=experiment(schema,'draw_config_prize',first,second)
+    result['stockWithoutIndex']=experiment(schema,'activity_prize',first,second)
+    sql(f'ALTER TABLE {schema}.activity_prize ADD UNIQUE KEY uk_activity_award (activity_id,award_id), ADD KEY idx_activity_prize_award (award_id);')
+    result['stockWithIndex']=experiment(schema,'activity_prize',first,second)
     # 这些断言验证具体锁机制，不把人为三秒持锁时间当作真实业务性能提升。
     assert 'supremum pseudo-record' in result['upsert']['waits']
     assert not result['upsert']['completedBeforeHeldRollback']

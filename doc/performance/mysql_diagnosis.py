@@ -56,7 +56,7 @@ def diagnose(directory: Path) -> dict:
             for table in ('draw_participation', 'user_activity_quota')) + ';').strip(),
         'globalRows': sql(' UNION ALL '.join(
             f"SELECT '{table}',COUNT(*) FROM lottery.{table}"
-            for table in ('activity', 'draw_config_prize', 'award_stock_settlement')) + ';').strip(),
+            for table in ('activity', 'activity_prize', 'award_stock_settlement')) + ';').strip(),
         'orderStates': sql(' UNION ALL '.join(
             f"SELECT '{table}',stock_settlement_event_status,fulfillment_event_status,award_fulfillment_status,COUNT(*) FROM {table} GROUP BY stock_settlement_event_status,fulfillment_event_status,award_fulfillment_status"
             for table in tables) + ';').strip(),
@@ -84,9 +84,9 @@ def diagnose(directory: Path) -> dict:
         'orders': sql(f'SELECT COUNT(*),COUNT(DISTINCT order_id),COUNT(DISTINCT take_id),SUM(stock_settlement_event_status<>1),SUM(fulfillment_event_status<>1 OR award_fulfillment_status<>1),SUM(stock_settlement_event_status=4) FROM ({union}) o;').strip(),
         'takes': sql(f'SELECT COUNT(*),SUM(state=0),COUNT(*)-COUNT(DISTINCT take_id) FROM ({takes}) t;').strip(),
         'ledger': sql('SELECT COUNT(*),COUNT(DISTINCT order_id) FROM lottery.award_stock_settlement;').strip(),
-        'ledgerMismatch': sql(f'SELECT COUNT(*) FROM ({union}) o LEFT JOIN lottery.award_stock_settlement l ON o.order_id=l.order_id WHERE l.order_id IS NULL OR o.u_id<>l.u_id OR o.award_id<>l.award_id OR o.draw_config_id<>l.draw_config_id;').strip(),
+        'ledgerMismatch': sql(f'SELECT COUNT(*) FROM ({union}) o LEFT JOIN lottery.award_stock_settlement l ON o.order_id=l.order_id WHERE l.order_id IS NULL OR o.u_id<>l.u_id OR o.award_id<>l.award_id OR o.activity_id<>l.activity_id;').strip(),
         'takeMismatch': sql(f'SELECT COUNT(*) FROM ({union}) o LEFT JOIN ({takes}) t ON o.take_id=t.take_id WHERE t.take_id IS NULL OR o.u_id<>t.u_id OR o.activity_id<>t.activity_id OR t.state<>1;').strip(),
-        'negativeStock': sql('SELECT COUNT(*) FROM lottery.draw_config_prize WHERE award_surplus_count<0;').strip(),
+        'negativeStock': sql('SELECT COUNT(*) FROM lottery.activity_prize WHERE award_surplus_count<0;').strip(),
         'quota': sql('SELECT SUM(total_count-left_count),SUM(left_count<0) FROM lottery.user_activity_quota;').strip(),
         'ordersUnchangedDuringDiagnosis': sql(counts + ';').strip() == data['orderRows'],
     }

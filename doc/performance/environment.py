@@ -26,7 +26,7 @@ def sql(query):
     return process.stdout.decode()
 
 def initialize():
-    # 完整业务 Schema 自带八张业务表、补偿索引与请求唯一约束。
+    # 完整业务 Schema 自带七张业务表、补偿索引与请求唯一约束。
     assert sql("SELECT COUNT(*) FROM information_schema.schemata WHERE schema_name IN ('lottery','lottery_01','lottery_02');").strip() == '0', '初始化需要全新专用实例；已有结果须先保存'
     sql((ROOT / 'docs/sql/lottery-schema.sql').read_text())
 

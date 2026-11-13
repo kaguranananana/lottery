@@ -34,3 +34,5 @@
 ## 请求恢复
 
 接口增加 pendingRequestId。D007 表示其他请求仍未完成，requestId 仍回显本次 ID，客户端使用 pendingRequestId 恢复原操作；D008 表示归属不明并保留原机会。客户端未知结果必须继续原 ID，丢失 ID 可通过提交新 ID 获取未完成请求号，但没有未完成记录时会正常开始新一轮。详细契约见 [draw-request-idempotency.md](../../../docs/draw-request-idempotency.md)。
+
+中奖响应保留订单快照和原请求、参与、订单身份。`award.grantDate` 仅表示实际发奖完成时间，完成前为 null；V8 移除 `award.grantType` 与计划时间透传。

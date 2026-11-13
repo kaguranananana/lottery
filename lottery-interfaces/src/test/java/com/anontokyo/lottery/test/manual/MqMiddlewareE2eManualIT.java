@@ -7,7 +7,7 @@ import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
-import com.anontokyo.lottery.domain.draw.repository.IDrawConfigRepository;
+import com.anontokyo.lottery.domain.draw.repository.IActivityPrizeRepository;
 import com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao;
 import com.anontokyo.lottery.infrastructure.po.DrawOrder;
 import org.apache.kafka.clients.admin.AdminClient;
@@ -59,6 +59,8 @@ import static org.junit.Assert.*;
         webEnvironment = SpringBootTest.WebEnvironment.NONE)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 public class MqMiddlewareE2eManualIT {
+    // 可另开专用 Compose 项目，保留已有测试数据卷。
+    static final String PROJECT = System.getProperty("lottery.e2e.project", "lottery-mq-e2e");
     private static final String MYSQL = "jdbc:mysql://127.0.0.1:13309/";
     private static final AtomicLong IDS = new AtomicLong(System.currentTimeMillis());
     private static final String STOCK_TOPIC = "lottery_strategy_award_stock";
@@ -66,7 +68,7 @@ public class MqMiddlewareE2eManualIT {
 
     @Autowired private IDrawOrderDao orderDao;
     @Autowired private IOrderRepository orders;
-    @Autowired private IDrawConfigRepository strategies;
+    @Autowired private IActivityPrizeRepository strategies;
     @Autowired private LotteryScheduledTasks job;
     @Autowired private KafkaProducer producer;
     @Autowired private KafkaListenerEndpointRegistry listeners;
@@ -74,20 +76,20 @@ public class MqMiddlewareE2eManualIT {
     @Value("${lottery.kafka.consumer.invoice-group-id}") private String invoiceGroup;
     @Value("${lottery.kafka.consumer.strategy-award-stock-group-id}") private String stockGroup;
 
-    private long drawConfigId;
+    private long activityId;
     private CallbackProducer callbacks;
     private AdminClient admin;
 
     @BeforeClass
     public static void createSchema() throws Exception {
         // DROP 前核实 Docker 项目和端口，避免误连业务实例。
-        Process inspected = new ProcessBuilder("docker", "inspect", "lottery-mq-e2e-mysql-1", "--format",
+        Process inspected = new ProcessBuilder("docker", "inspect", PROJECT + "-mysql-1", "--format",
                 "{{index .Config.Labels \"com.docker.compose.project\"}}:{{index .Config.Labels \"com.docker.compose.service\"}}:{{(index (index .NetworkSettings.Ports \"3306/tcp\") 0).HostPort}}")
                 .redirectError(ProcessBuilder.Redirect.INHERIT).start();
         String identity = new String(org.springframework.util.StreamUtils.copyToByteArray(inspected.getInputStream()), StandardCharsets.UTF_8).trim();
         assertTrue("专用 MySQL 身份检查超时", inspected.waitFor(10, TimeUnit.SECONDS));
         assertEquals("专用 MySQL 身份检查失败", 0, inspected.exitValue());
-        assertEquals("必须使用专用 E2E MySQL", "lottery-mq-e2e:mysql:13309", identity);
+        assertEquals("必须使用专用 E2E MySQL", PROJECT + ":mysql:13309", identity);
         // 运行标识固定后，两个真实消费者组在本轮测试内保持一致且不沿用旧消费位点。
         System.setProperty("lottery.e2e.run", String.valueOf(IDS.get()));
         try (Connection connection = connect(); Statement statement = connection.createStatement()) {
@@ -95,16 +97,18 @@ public class MqMiddlewareE2eManualIT {
             statement.execute("DROP DATABASE IF EXISTS lottery");
             ScriptUtils.executeSqlScript(connection,
                     new org.springframework.core.io.FileSystemResource("../docs/sql/lottery-schema.sql"));
+            statement.execute("INSERT INTO lottery.award (award_id,award_type) VALUES ('C',3)");
         }
     }
 
     @Before
     public void startPipeline() throws Exception {
-        drawConfigId = IDS.incrementAndGet();
+        activityId = IDS.incrementAndGet();
+        sql("INSERT INTO lottery.activity(activity_id,state) VALUES (?,5)", activityId);
         // 本用例独立库存，MySQL 与 Redis 初始均为 100，真实 Redis 预扣后再异步结算。
-        sql("INSERT INTO lottery.draw_config_prize (draw_config_id,award_id,award_count,award_surplus_count,award_rate)"
-                + " VALUES (?, 'C', 100, 100, 1.00)", drawConfigId);
-        redis.opsForValue().set(Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_COUNT(drawConfigId, "C"), "100");
+        sql("INSERT INTO lottery.activity_prize (activity_id,award_id,award_count,award_surplus_count,award_rate)"
+                + " VALUES (?, 'C', 100, 100, 1.00)", activityId);
+        redis.opsForValue().set(Constants.RedisKey.KEY_LOTTERY_ACTIVITY_PRIZE_STOCK_COUNT(activityId, "C"), "100");
         callbacks = (CallbackProducer) producer;
         admin = AdminClient.create(Collections.singletonMap("bootstrap.servers", "127.0.0.1:19092"));
         listeners.start();
@@ -135,7 +139,7 @@ public class MqMiddlewareE2eManualIT {
             assertEquals(1, ledgerCount(row));
         }
         assertEquals(92, dbStock());
-        assertEquals("92", redis.opsForValue().get(Constants.RedisKey.KEY_LOTTERY_DRAW_CONFIG_PRIZE_STOCK_COUNT(drawConfigId, "C")));
+        assertEquals("92", redis.opsForValue().get(Constants.RedisKey.KEY_LOTTERY_ACTIVITY_PRIZE_STOCK_COUNT(activityId, "C")));
         awaitCommitted();
     }
 
@@ -287,7 +291,7 @@ public class MqMiddlewareE2eManualIT {
             assertTrue(rejected.getCause().getCause() instanceof org.apache.kafka.common.errors.TimeoutException);
         } finally {
             // 用真实容器健康检查等待 broker 恢复，不将恢复前的连接失败当成补偿结果。
-            compose("up", "-d", "--wait", "kafka");
+            compose("up", "-d", "--wait", "--wait-timeout", "120", "kafka");
         }
         age(row);
         job.recoverStock();
@@ -304,7 +308,7 @@ public class MqMiddlewareE2eManualIT {
         DrawOrder row = createOrder(null, 0, 0);
         Gate gate = callbacks.hold(STOCK_TOPIC, row.getOrderId());
         // 真实 Redis 已预扣且用户订单存在，但数据库库存损坏为零。
-        sql("UPDATE lottery.draw_config_prize SET award_surplus_count=0 WHERE draw_config_id=?", drawConfigId);
+        sql("UPDATE lottery.activity_prize SET award_surplus_count=0 WHERE activity_id=?", activityId);
         job.recoverStock();
         Attempt sent = gate.attempt(0);
         await("库存消费返回明确失败状态", () -> query(row).getStockSettlementEventStatus() == 2 || query(row).getStockSettlementEventStatus() == 4);
@@ -318,7 +322,7 @@ public class MqMiddlewareE2eManualIT {
         assertEquals(Integer.valueOf(0), query(row).getAwardFulfillmentStatus());
         awaitCommitted();
         // 只修复 fixture 的错误库存，显式按订单释放原有 Outbox 后继续原业务链。
-        sql("UPDATE lottery.draw_config_prize SET award_surplus_count=100 WHERE draw_config_id=?", drawConfigId);
+        sql("UPDATE lottery.activity_prize SET award_surplus_count=100 WHERE activity_id=?", activityId);
         sql("UPDATE " + "lottery.draw_order" + " SET stock_settlement_event_status=0,stock_retry_at=NOW(3),stock_attempt=stock_attempt+1 WHERE order_id=? AND stock_settlement_event_status=4", row.getOrderId());
         job.recoverStock();
         awaitCompleted(row);
@@ -329,12 +333,14 @@ public class MqMiddlewareE2eManualIT {
     }
 
     static void compose(String... arguments) throws Exception {
-        List<String> command = new ArrayList<>(Arrays.asList("docker", "compose", "-f",
+        List<String> command = new ArrayList<>(Arrays.asList("docker", "compose", "-p", PROJECT, "-f",
                 "src/test/resources/mq-e2e/docker-compose.yml"));
         command.addAll(Arrays.asList(arguments));
         // 生命周期命令仅操作本测试 compose，输出保留在测试日志中。
         Process process = new ProcessBuilder(command).inheritIO().start();
-        boolean finished = process.waitFor(60, TimeUnit.SECONDS);
+        // Kafka 恢复由 Compose 在 120 秒内按真实健康检查判定，父进程允许其输出结果。
+        long timeout = Arrays.asList(arguments).contains("--wait-timeout") ? 130 : 60;
+        boolean finished = process.waitFor(timeout, TimeUnit.SECONDS);
         if (!finished) {
             process.destroyForcibly();
         }
@@ -347,9 +353,8 @@ public class MqMiddlewareE2eManualIT {
         DrawOrder row = new DrawOrder();
         row.setuId(user == null ? "e2e" + id : user);
         row.setOrderId(id);
-        row.setActivityId(drawConfigId);
-        row.setDrawConfigId(drawConfigId);
-        row.setGrantType(1);
+        row.setActivityId(activityId);
+
         row.setAwardFulfillmentStatus(0);
         row.setAwardId("C");
         row.setAwardType(3);
@@ -358,7 +363,7 @@ public class MqMiddlewareE2eManualIT {
         row.setStockSettlementEventStatus(stockState);
         row.setFulfillmentEventStatus(invoiceState);
         // 真实 Redis 库存预扣，订单由生产 DAO 写入，之后完全走生产异步链路。
-        assertTrue(strategies.deductStockByRedis(drawConfigId, "C").isSuccess());
+        assertTrue(strategies.deductStockByRedis(activityId, "C").isSuccess());
         orderDao.insert(row);
         age(row);
         return row;
@@ -392,14 +397,14 @@ public class MqMiddlewareE2eManualIT {
     }
 
     private int dbStock() throws SQLException {
-        return number("SELECT award_surplus_count FROM lottery.draw_config_prize WHERE draw_config_id=? AND award_id='C'", drawConfigId);
+        return number("SELECT award_surplus_count FROM lottery.activity_prize WHERE activity_id=? AND award_id='C'", activityId);
     }
 
     private AwardStockSettlementVO stock(DrawOrder row) {
         AwardStockSettlementVO stock = new AwardStockSettlementVO();
         stock.setuId(row.getuId());
         stock.setOrderId(row.getOrderId());
-        stock.setDrawConfigId(drawConfigId);
+        stock.setActivityId(activityId);
         stock.setAwardId("C");
         return stock;
     }

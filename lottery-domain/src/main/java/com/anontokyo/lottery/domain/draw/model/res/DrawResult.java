@@ -23,9 +23,9 @@ public class DrawResult {
     private String uId;
 
     /**
-     * 抽奖配置ID
+     * 活动ID
      */
-    private Long drawConfigId;
+    private Long activityId;
 
     /**
      * 中奖状态：0未中奖、1已中奖、2兜底奖 Constants.DrawState
@@ -40,15 +40,15 @@ public class DrawResult {
     public DrawResult() {
     }
 
-    public DrawResult(String uId, Long drawConfigId, Integer drawState) {
+    public DrawResult(String uId, Long activityId, Integer drawState) {
         this.uId = uId;
-        this.drawConfigId = drawConfigId;
+        this.activityId = activityId;
         this.drawState = drawState;
     }
 
-    public DrawResult(String uId, Long drawConfigId, Integer drawState, DrawAwardInfo drawAwardInfo) {
+    public DrawResult(String uId, Long activityId, Integer drawState, DrawAwardInfo drawAwardInfo) {
         this.uId = uId;
-        this.drawConfigId = drawConfigId;
+        this.activityId = activityId;
         this.drawState = drawState;
         this.drawAwardInfo = drawAwardInfo;
     }
@@ -61,12 +61,12 @@ public class DrawResult {
         this.uId = uId;
     }
 
-    public Long getDrawConfigId() {
-        return drawConfigId;
+    public Long getActivityId() {
+        return activityId;
     }
 
-    public void setDrawConfigId(Long drawConfigId) {
-        this.drawConfigId = drawConfigId;
+    public void setActivityId(Long activityId) {
+        this.activityId = activityId;
     }
 
     public Integer getDrawState() {

@@ -7,13 +7,13 @@ import java.math.BigDecimal;
  * @author：anontokyo
  * @date: 2026/1/12
  */
-public class DrawConfigPrize {
+public class ActivityPrize {
 
     // 自增ID
     private String id;
 
-    // 抽奖配置ID
-    private Long drawConfigId;
+    // 活动ID
+    private Long activityId;
 
     // 奖品ID
     private String awardId;
@@ -42,12 +42,12 @@ public class DrawConfigPrize {
         this.id = id;
     }
 
-    public Long getDrawConfigId() {
-        return drawConfigId;
+    public Long getActivityId() {
+        return activityId;
     }
 
-    public void setDrawConfigId(Long drawConfigId) {
-        this.drawConfigId = drawConfigId;
+    public void setActivityId(Long activityId) {
+        this.activityId = activityId;
     }
 
     public String getAwardId() {

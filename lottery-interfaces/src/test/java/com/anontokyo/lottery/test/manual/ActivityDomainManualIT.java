@@ -7,8 +7,7 @@ import com.anontokyo.lottery.domain.activity.model.req.PartakeReq;
 import com.anontokyo.lottery.domain.activity.model.res.PartakeResult;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
 import com.anontokyo.lottery.domain.activity.model.vo.AwardVO;
-import com.anontokyo.lottery.domain.activity.model.vo.DrawConfigPrizeVO;
-import com.anontokyo.lottery.domain.activity.model.vo.DrawConfigVO;
+import com.anontokyo.lottery.domain.activity.model.vo.ActivityPrizeVO;
 import com.anontokyo.lottery.domain.activity.service.deploy.IActivityDeploy;
 import com.anontokyo.lottery.domain.activity.service.partake.IActivityPartake;
 import com.alibaba.fastjson.JSON;
@@ -59,58 +58,47 @@ public class ActivityDomainManualIT {
         activity.setBeginDateTime(new Date());
         activity.setEndDateTime(new Date());
         activity.setTakeCount(10);
-        activity.setState(Constants.ActivityState.EDIT.getCode());
+        activity.setState(Constants.ActivityState.DRAFT.getCode());
         activity.setCreator("xiaofuge");
 
-        DrawConfigVO drawConfig = new DrawConfigVO();
-        drawConfig.setDrawConfigId(10002L);
-        drawConfig.setDrawConfigDesc("抽奖策略");
-        drawConfig.setGrantType(1);
-        drawConfig.setScheduledAt(new Date());
 
-        DrawConfigPrizeVO drawConfigPrize_01 = new DrawConfigPrizeVO();
-        drawConfigPrize_01.setDrawConfigId(drawConfig.getDrawConfigId());
-        drawConfigPrize_01.setAwardId("101");
-        drawConfigPrize_01.setAwardCount(10);
-        drawConfigPrize_01.setAwardSurplusCount(10);
-        drawConfigPrize_01.setAwardRate(new BigDecimal("0.05"));
+        ActivityPrizeVO activityPrize_01 = new ActivityPrizeVO();
+        activityPrize_01.setAwardId("101");
+        activityPrize_01.setAwardCount(10);
+        activityPrize_01.setAwardSurplusCount(10);
+        activityPrize_01.setAwardRate(new BigDecimal("0.05"));
 
-        DrawConfigPrizeVO drawConfigPrize_02 = new DrawConfigPrizeVO();
-        drawConfigPrize_02.setDrawConfigId(drawConfig.getDrawConfigId());
-        drawConfigPrize_02.setAwardId("102");
-        drawConfigPrize_02.setAwardCount(20);
-        drawConfigPrize_02.setAwardSurplusCount(20);
-        drawConfigPrize_02.setAwardRate(new BigDecimal("0.15"));
+        ActivityPrizeVO activityPrize_02 = new ActivityPrizeVO();
+        activityPrize_02.setAwardId("102");
+        activityPrize_02.setAwardCount(20);
+        activityPrize_02.setAwardSurplusCount(20);
+        activityPrize_02.setAwardRate(new BigDecimal("0.15"));
 
-        DrawConfigPrizeVO drawConfigPrize_03 = new DrawConfigPrizeVO();
-        drawConfigPrize_03.setDrawConfigId(drawConfig.getDrawConfigId());
-        drawConfigPrize_03.setAwardId("103");
-        drawConfigPrize_03.setAwardCount(50);
-        drawConfigPrize_03.setAwardSurplusCount(50);
-        drawConfigPrize_03.setAwardRate(new BigDecimal("0.20"));
+        ActivityPrizeVO activityPrize_03 = new ActivityPrizeVO();
+        activityPrize_03.setAwardId("103");
+        activityPrize_03.setAwardCount(50);
+        activityPrize_03.setAwardSurplusCount(50);
+        activityPrize_03.setAwardRate(new BigDecimal("0.20"));
 
-        DrawConfigPrizeVO drawConfigPrize_04 = new DrawConfigPrizeVO();
-        drawConfigPrize_04.setDrawConfigId(drawConfig.getDrawConfigId());
-        drawConfigPrize_04.setAwardId("104");
-        drawConfigPrize_04.setAwardCount(100);
-        drawConfigPrize_04.setAwardSurplusCount(100);
-        drawConfigPrize_04.setAwardRate(new BigDecimal("0.25"));
+        ActivityPrizeVO activityPrize_04 = new ActivityPrizeVO();
+        activityPrize_04.setAwardId("104");
+        activityPrize_04.setAwardCount(100);
+        activityPrize_04.setAwardSurplusCount(100);
+        activityPrize_04.setAwardRate(new BigDecimal("0.25"));
 
-        DrawConfigPrizeVO drawConfigPrize_05 = new DrawConfigPrizeVO();
-        drawConfigPrize_05.setDrawConfigId(drawConfig.getDrawConfigId());
-        drawConfigPrize_05.setAwardId("104");
-        drawConfigPrize_05.setAwardCount(500);
-        drawConfigPrize_05.setAwardSurplusCount(500);
-        drawConfigPrize_05.setAwardRate(new BigDecimal("0.35"));
+        ActivityPrizeVO activityPrize_05 = new ActivityPrizeVO();
+        activityPrize_05.setAwardId("105");
+        activityPrize_05.setAwardCount(500);
+        activityPrize_05.setAwardSurplusCount(500);
+        activityPrize_05.setAwardRate(new BigDecimal("0.35"));
 
-        List<DrawConfigPrizeVO> drawConfigPrizeList = new ArrayList<>();
-        drawConfigPrizeList.add(drawConfigPrize_01);
-        drawConfigPrizeList.add(drawConfigPrize_02);
-        drawConfigPrizeList.add(drawConfigPrize_03);
-        drawConfigPrizeList.add(drawConfigPrize_04);
-        drawConfigPrizeList.add(drawConfigPrize_05);
+        List<ActivityPrizeVO> activityPrizeList = new ArrayList<>();
+        activityPrizeList.add(activityPrize_01);
+        activityPrizeList.add(activityPrize_02);
+        activityPrizeList.add(activityPrize_03);
+        activityPrizeList.add(activityPrize_04);
+        activityPrizeList.add(activityPrize_05);
 
-        drawConfig.setDrawConfigPrizeList(drawConfigPrizeList);
 
         AwardVO award_01 = new AwardVO();
         award_01.setAwardId("101");
@@ -149,7 +137,7 @@ public class ActivityDomainManualIT {
         awardList.add(award_04);
         awardList.add(award_05);
 
-        activityConfigRich = new ActivityConfigRich(activity, drawConfig, awardList);
+        activityConfigRich = new ActivityConfigRich(activity, activityPrizeList, awardList);
     }
 
     @Test

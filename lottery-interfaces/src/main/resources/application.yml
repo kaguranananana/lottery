@@ -126,9 +126,9 @@ lottery:
   cache:
     draw-inflight-redis-ttl-seconds: 3
     no-consumed-order-redis-ttl-seconds: 1800
-    # 抽奖策略快照：唯一的两级缓存（Caffeine L1 + Redis L2），高频读、低变更。
+    # 活动奖池快照：唯一的两级缓存（Caffeine L1 + Redis L2），高频读、低变更。
     # 一致性边界：快照为短 TTL 最终一致，运营变更配置后需等 TTL 过期生效；不做广播失效。
-    strategy-snapshot:
+    activity-prize-snapshot:
       local-expire-seconds: 60
       local-max-size: 10000
       redis-expire-seconds: 600

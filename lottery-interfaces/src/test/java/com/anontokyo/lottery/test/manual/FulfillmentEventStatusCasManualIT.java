@@ -11,7 +11,7 @@ import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository.OutboxKind;
 import com.anontokyo.lottery.application.mq.producer.OutboxDispatcher;
 import com.anontokyo.lottery.domain.award.service.fulfillment.impl.CouponFulfillmentHandler;
-import com.anontokyo.lottery.domain.draw.repository.IDrawConfigRepository;
+import com.anontokyo.lottery.domain.draw.repository.IActivityPrizeRepository;
 import com.anontokyo.lottery.infrastructure.po.DrawOrder;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.AfterClass;
@@ -64,8 +64,8 @@ public class FulfillmentEventStatusCasManualIT {
         jdbc = new JdbcTemplate(source);
         // 列与生产订单字段对应，保留 InnoDB 行锁及实际 MySQL 时间函数。
         jdbc.execute("CREATE TABLE draw_order (id BIGINT AUTO_INCREMENT PRIMARY KEY,"
-                + "u_id VARCHAR(32), order_id BIGINT, take_id BIGINT, activity_id BIGINT, draw_config_id BIGINT ,"
-                + "grant_type INT, scheduled_at DATETIME, fulfilled_at DATETIME, award_fulfillment_status INT, award_id VARCHAR(64), award_type INT,"
+                + "u_id VARCHAR(32), order_id BIGINT, take_id BIGINT, activity_id BIGINT,"
+                + "fulfilled_at DATETIME, award_fulfillment_status INT, award_id VARCHAR(64), award_type INT,"
                 + "award_name VARCHAR(64), award_content VARCHAR(128),"
                 + "fulfillment_event_status INT, stock_settlement_event_status INT, stock_retry_at DATETIME(3), stock_attempt INT DEFAULT 0,"
                 + "fulfillment_retry_at DATETIME(3), fulfillment_attempt INT DEFAULT 0, stock_settled_at DATETIME(3),"
@@ -94,7 +94,7 @@ public class FulfillmentEventStatusCasManualIT {
     public void order() {
         // 清理的是本测试 schema 的临时表，避免用例共享状态。
         jdbc.update("DELETE FROM draw_order");
-        jdbc.update("INSERT INTO draw_order (u_id,order_id,draw_config_id,award_id,award_type,award_fulfillment_status,"
+        jdbc.update("INSERT INTO draw_order (u_id,order_id,activity_id,award_id,award_type,award_fulfillment_status,"
                 + "stock_settlement_event_status,fulfillment_event_status,stock_retry_at,create_time,update_time) VALUES ('mq-test',1,10001,'C',3,0,0,0,NOW(3),NOW(),NOW())");
     }
 
@@ -322,11 +322,11 @@ public class FulfillmentEventStatusCasManualIT {
     }
 
     private void consumeStock(boolean expected) {
-        IDrawConfigRepository config = mock(IDrawConfigRepository.class);
+        IActivityPrizeRepository config = mock(IActivityPrizeRepository.class);
         when(config.settleAwardStock(any())).thenReturn(true);
         StockSettlementListener listener = new StockSettlementListener();
         ReflectionTestUtils.setField(listener, "orderRepository", repository);
-        ReflectionTestUtils.setField(listener, "drawConfigRepository", config);
+        ReflectionTestUtils.setField(listener, "activityPrizeRepository", config);
         ReflectionTestUtils.setField(listener, "outbox", mock(OutboxDispatcher.class));
         Acknowledgment ack = mock(Acknowledgment.class);
         AwardStockSettlementVO stock = new AwardStockSettlementVO();

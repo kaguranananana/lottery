@@ -1,9 +1,8 @@
 package com.anontokyo.lottery.domain.draw.service.snapshot;
 
-import com.anontokyo.lottery.domain.draw.model.aggregates.DrawConfigAggregate;
-import com.anontokyo.lottery.domain.draw.model.snapshot.DrawConfigSnapshot;
+import com.anontokyo.lottery.domain.draw.model.snapshot.ActivityPrizeSnapshot;
 import com.anontokyo.lottery.domain.draw.model.vo.AwardBriefVO;
-import com.anontokyo.lottery.domain.draw.model.vo.DrawConfigPrizeBriefVO;
+import com.anontokyo.lottery.domain.draw.model.vo.ActivityPrizeBriefVO;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -12,20 +11,19 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * 把抽奖配置（BigDecimal 概率）编译成整数权重快照。
+ * 把活动奖池概率（BigDecimal）编译成整数权重快照。
  * 精度 1e-6：支持 0.000001（0.0001%）到 100% 的任意概率，不再有 rate*100 的整型截断。
  * 概率总和不足 100% 时差额自动成为 NO_PRIZE；超过 100% 属于配置错误，直接抛出。
  * 快照一经构建视为不可变对象，抽奖线程只读访问。
  */
-public class DrawConfigSnapshotFactory {
+public class ActivityPrizeSnapshotFactory {
 
     /** 概率精度：1 权重 = 0.000001 */
     public static final long WEIGHT_SCALE = 1_000_000L;
 
-    public DrawConfigSnapshot build(DrawConfigAggregate rich, AwardInfoResolver awardInfoResolver) {
-        List<DrawConfigPrizeBriefVO> details = rich.getDrawConfigPrizeList();
+    public ActivityPrizeSnapshot build(Long activityId, List<ActivityPrizeBriefVO> details, AwardInfoResolver awardInfoResolver) {
         if (details == null || details.isEmpty()) {
-            throw new IllegalStateException("drawConfig has no award detail, drawConfigId:" + rich.getDrawConfigId());
+            throw new IllegalStateException("activity has no prize, activityId:" + activityId);
         }
 
         List<String> ids = new ArrayList<>(details.size());
@@ -33,10 +31,10 @@ public class DrawConfigSnapshotFactory {
         Map<String, AwardBriefVO> awardInfos = new LinkedHashMap<>(details.size() * 2);
         long sumWeight = 0L;
 
-        for (DrawConfigPrizeBriefVO detail : details) {
+        for (ActivityPrizeBriefVO detail : details) {
             BigDecimal rate = detail.getAwardRate();
             if (rate == null || rate.signum() < 0) {
-                throw new IllegalArgumentException("award rate must be >= 0, drawConfigId:" + rich.getDrawConfigId()
+                throw new IllegalArgumentException("award rate must be >= 0, activityId:" + activityId
                         + " awardId:" + detail.getAwardId() + " rate:" + rate);
             }
             long weight = rate.multiply(BigDecimal.valueOf(WEIGHT_SCALE))
@@ -47,24 +45,24 @@ public class DrawConfigSnapshotFactory {
 
             AwardBriefVO briefVO = awardInfoResolver.resolve(detail.getAwardId());
             if (briefVO == null) {
-                throw new IllegalStateException("award config missing, drawConfigId:" + rich.getDrawConfigId()
+                throw new IllegalStateException("award config missing, activityId:" + activityId
                         + " awardId:" + detail.getAwardId());
             }
 
             sumWeight += weight;
             if (sumWeight > WEIGHT_SCALE) {
                 throw new IllegalArgumentException(
-                        "total award probability exceeds 100%, drawConfigId:" + rich.getDrawConfigId());
+                        "total award probability exceeds 100%, activityId:" + activityId);
             }
             ids.add(detail.getAwardId());
             weights.add(weight);
             awardInfos.put(detail.getAwardId(), briefVO);
         }
 
-        return compile(rich, ids, weights, sumWeight, awardInfos);
+        return compile(activityId, ids, weights, sumWeight, awardInfos);
     }
 
-    private DrawConfigSnapshot compile(DrawConfigAggregate rich, List<String> ids, List<Long> weights,
+    private ActivityPrizeSnapshot compile(Long activityId, List<String> ids, List<Long> weights,
             long sumWeight, Map<String, AwardBriefVO> awardInfos) {
         long noPrizeWeight = WEIGHT_SCALE - sumWeight;
         int slots = ids.size() + (noPrizeWeight > 0 ? 1 : 0);
@@ -84,10 +82,8 @@ public class DrawConfigSnapshotFactory {
             prefix[ids.size()] = WEIGHT_SCALE;
         }
 
-        DrawConfigSnapshot snapshot = new DrawConfigSnapshot();
-        snapshot.setDrawConfigId(rich.getDrawConfigId());
-        snapshot.setGrantType(rich.getDrawConfig().getGrantType());
-        snapshot.setScheduledAt(rich.getDrawConfig().getScheduledAt());
+        ActivityPrizeSnapshot snapshot = new ActivityPrizeSnapshot();
+        snapshot.setActivityId(activityId);
         snapshot.setAwardIds(awardIds);
         snapshot.setCumulativeWeights(prefix);
         snapshot.setAwardInfos(awardInfos);

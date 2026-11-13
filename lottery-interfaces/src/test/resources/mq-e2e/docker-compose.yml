@@ -47,5 +47,6 @@ services:
     healthcheck:
       test: ["CMD", "/opt/kafka/bin/kafka-topics.sh", "--bootstrap-server", "kafka:29092", "--list"]
       interval: 5s
-      timeout: 10s
+      # ARM 宿主上的 amd64 Kafka 管理 CLI 实测可能超过 10 秒。
+      timeout: 20s
       retries: 20

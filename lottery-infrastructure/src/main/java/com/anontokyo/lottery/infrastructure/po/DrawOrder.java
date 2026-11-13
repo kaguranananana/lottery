@@ -3,7 +3,7 @@ package com.anontokyo.lottery.infrastructure.po;
 import java.util.Date;
 
 /**
- * @description: 用户策略计算结果表
+ * @description: 中奖订单、奖品快照与 Outbox
  * @author：anontokyo
  * @date: 2026/1/16
  */
@@ -18,12 +18,6 @@ public class DrawOrder {
     private Long orderId;
     /** 关联的用户参与记录ID（幂等回放用） */
     private Long takeId;
-    /** 抽奖配置ID */
-    private Long drawConfigId;
-    /** 发放奖品方式（1:即时、2:定时[含活动结束]、3:人工） */
-    private Integer grantType;
-    /** 发奖时间 */
-    private Date scheduledAt;
 
     /** 实际完成时间由发奖 CAS 写入。 */
     private Date fulfilledAt;
@@ -92,30 +86,6 @@ public class DrawOrder {
 
     public void setTakeId(Long takeId) {
         this.takeId = takeId;
-    }
-
-    public Long getDrawConfigId() {
-        return drawConfigId;
-    }
-
-    public void setDrawConfigId(Long drawConfigId) {
-        this.drawConfigId = drawConfigId;
-    }
-
-    public Integer getGrantType() {
-        return grantType;
-    }
-
-    public void setGrantType(Integer grantType) {
-        this.grantType = grantType;
-    }
-
-    public Date getScheduledAt() {
-        return scheduledAt;
-    }
-
-    public void setScheduledAt(Date scheduledAt) {
-        this.scheduledAt = scheduledAt;
     }
 
     public Integer getAwardFulfillmentStatus() {

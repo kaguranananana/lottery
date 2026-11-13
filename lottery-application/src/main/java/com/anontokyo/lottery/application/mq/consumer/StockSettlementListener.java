@@ -8,7 +8,7 @@ import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
-import com.anontokyo.lottery.domain.draw.repository.IDrawConfigRepository;
+import com.anontokyo.lottery.domain.draw.repository.IActivityPrizeRepository;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,7 +27,7 @@ public class StockSettlementListener {
     private final Logger logger = LoggerFactory.getLogger(StockSettlementListener.class);
 
     @Resource
-    private IDrawConfigRepository drawConfigRepository;
+    private IActivityPrizeRepository activityPrizeRepository;
 
     @Resource
     private IOrderRepository orderRepository;
@@ -60,13 +60,13 @@ public class StockSettlementListener {
                 return;
             }
 
-            // 由订单快照决定被扣减的奖品，避免陈旧消息带入其它配置或奖品。
+            // 由订单快照决定被扣减的奖品，旧消息的 strategyId 和新消息的 activityId 都不作为路由输入。
             AwardStockSettlementVO settlement = new AwardStockSettlementVO();
             BeanUtils.copyProperties(order, settlement);
-            if (!drawConfigRepository.settleAwardStock(settlement)) {
+            if (!activityPrizeRepository.settleAwardStock(settlement)) {
                 orderRepository.markStockSettlementFailed(order.getuId(), order.getOrderId());
-                logger.error("stock reconciliation required user:{} order:{} config:{} award:{}",
-                        order.getuId(), order.getOrderId(), order.getDrawConfigId(), order.getAwardId());
+                logger.error("stock reconciliation required user:{} order:{} activity:{} award:{}",
+                        order.getuId(), order.getOrderId(), order.getActivityId(), order.getAwardId());
                 ack.acknowledge();
                 return;
             }

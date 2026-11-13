@@ -163,11 +163,9 @@ public class LotteryController {
             award.setAwardType(awardInfo.getAwardType());
             award.setAwardName(awardInfo.getAwardName());
             award.setAwardContent(awardInfo.getAwardContent());
-            award.setGrantType(awardInfo.getGrantType());
-            // HTTP 的历史 grantDate 字段在结果回放时优先提供实际完成时间。
-            java.util.Date grantDate = awardInfo.getFulfilledAt() == null
-                    ? awardInfo.getScheduledAt() : awardInfo.getFulfilledAt();
-            award.setGrantDate(grantDate == null ? null : grantDate.toString());
+            // 保留旧客户端的 grantDate 字段，只表示已确认的实际发奖时间。
+            java.util.Date fulfilledAt = awardInfo.getFulfilledAt();
+            award.setGrantDate(fulfilledAt == null ? null : fulfilledAt.toString());
             response.setAward(award);
         }
         return response;

@@ -14,7 +14,6 @@ public class DrawParticipation {
     private Date participatedAt;
     private Date createTime;
     private Date updateTime;
-    private Long drawConfigId;
     private Integer state;
     /** 请求幂等号（UNIQUE 兜底） */
     private String requestId;
@@ -81,14 +80,6 @@ public class DrawParticipation {
 
     public void setUpdateTime(Date updateTime) {
         this.updateTime = updateTime;
-    }
-
-    public Long getDrawConfigId() {
-        return drawConfigId;
-    }
-
-    public void setDrawConfigId(Long drawConfigId) {
-        this.drawConfigId = drawConfigId;
     }
 
     public Integer getState() {

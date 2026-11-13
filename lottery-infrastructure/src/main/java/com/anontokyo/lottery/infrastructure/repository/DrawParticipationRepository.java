@@ -54,7 +54,6 @@ public class DrawParticipationRepository implements IDrawParticipationRepository
         drawParticipation.setActivityId(bill.getActivityId());
 
         drawParticipation.setParticipatedAt(participatedAt);
-        drawParticipation.setDrawConfigId(bill.getDrawConfigId());
         drawParticipation.setState(Constants.TaskState.NO_USED.getCode());
         drawParticipation.setRequestId(requestId);
 
@@ -137,7 +136,6 @@ public class DrawParticipationRepository implements IDrawParticipationRepository
         DrawParticipationVO drawParticipationVO = new DrawParticipationVO();
         drawParticipationVO.setActivityId(drawParticipation.getActivityId());
         drawParticipationVO.setTakeId(drawParticipation.getTakeId());
-        drawParticipationVO.setDrawConfigId(drawParticipation.getDrawConfigId());
         drawParticipationVO.setState(drawParticipation.getState());
         // 请求号必须随记录返回，否则无法区分恢复 A 与新请求 B。
         drawParticipationVO.setRequestId(drawParticipation.getRequestId());
