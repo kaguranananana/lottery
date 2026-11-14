@@ -11,7 +11,7 @@
 `20261013_invoice_compensation_index.sql` 在两库八表增加单列非唯一 `idx_award_fulfillment_status(award_fulfillment_status)`。`invoice_scan_compare.py <新目录> [--repeats 6]` 提取生产补偿 Mapper，在同一份八表数据上交替使用正常计划与仅忽略本次索引的诊断计划。执行前停止专用应用、排空义务，部署并核实索引；比较工具只读，不执行 DDL。初始化新性能环境会执行这份迁移；已有实例须显式迁移并核实 Schema。
 
 ## 3. 数据与消息契约
-次数存在性查询不代替 `left_count>0` 原子 UPDATE；首次初始化的唯一约束与参与记录回滚不变。库存使用 `(draw_config_id,award_id)` 条件索引，账本与扣减同一事务。库存扫描排除 COMPLETE，投递跳过逐条预读，claim/回调 CAS/消费者/账本仍保护重投。awardCount 的创建 VO、PO、快照为 Integer，不修改旧 NULL。
+次数存在性查询不代替 `left_count>0` 原子 UPDATE；首次初始化的唯一约束与参与记录回滚不变。V5/V7 历史库存索引使用 `(draw_config_id,award_id)`；当前 V8 库存位于 `activity_prize(activity_id,award_id)`，账本与扣减同一事务。库存扫描排除 COMPLETE，投递跳过逐条预读，claim/回调 CAS/消费者/账本仍保护重投。awardCount 的创建 VO、PO、快照为 Integer，不修改旧 NULL。
 
 发奖补偿保持 `stock_settlement_event_status=1 AND award_fulfillment_status!=1`、FAIL/超时 INIT、旧 COMPLETE/超时 SENT 的原谓词与投影，保留 NULL 的 SQL 三值逻辑；只改变访问路径。单列键避免 stock 状态多次推进时维护额外组合列，但仍增加插入/发奖状态更新和空间成本，须同负载验证。单次空扫描读零行只代表无候选时；有积压时读取未发奖义务，不保证任意积压规模下恒定成本。
 

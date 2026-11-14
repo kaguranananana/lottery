@@ -17,10 +17,10 @@
 | fulfillment_event_status | 发奖消费状态，新 COMPLETE 要求 award_fulfillment_status=1 | 历史 fulfillment_event_status=1 必然已实际发奖 |
 | award_fulfillment_status | 当前本地发奖状态 | 模拟渠道 CAS 等同真实外部恰好一次 |
 
-依据 [OrderRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java)、[StockSettlementListener.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/StockSettlementListener.java)、[LotteryXxlJob.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryXxlJob.java) 与 [DrawOrder_Mapper.xml](../../../lottery-interfaces/src/main/resources/mybatis/mapper/DrawOrder_Mapper.xml)。详细偏差见[应用规范](../backend/application-guidelines.md)。
+依据 [OrderRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java)、[ActivityPrizeRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityPrizeRepository.java)、[StockSettlementListener.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/StockSettlementListener.java)、[LotteryScheduledTasks.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryScheduledTasks.java) 与 [DrawOrder_Mapper.xml](../../../lottery-interfaces/src/main/resources/mybatis/mapper/DrawOrder_Mapper.xml)。详细偏差见[应用规范](../backend/application-guidelines.md)。
 
 ## 确认真正的提交边界
 
-用户次数与 take 同属用户分片事务；消费 take 与订单写入同属另一用户分片事务；账本与奖品数据库扣减在全局库事务。跨库状态更新、Redis 与数据库、Kafka 与数据库没有一个覆盖所有步骤的本地事务。改动只对已有提交边界负责，遇到 crash/replay 需求先定义实际恢复条件，不直接扩大事务范围或增加跨库事务方案。
+当前在线模型使用单一 MySQL 库。个人次数扣减与参与记录创建、take 消费与订单写入、奖品扣减与唯一结算账本分别在本地事务中提交；Redis 与 MySQL、Kafka 与 MySQL 之间没有覆盖所有步骤的本地事务。改动只对已有提交边界负责，遇到 crash/replay 需求先定义实际恢复条件，不直接扩大事务范围或引入跨库事务方案。
 
-文档与源码不一致时先读取具体实现与 Mapper，再记录证据。已有 V2 参与表注释与实际分库布局不一致，说明迁移不能仅从注释推断目标 schema，详见[数据库规范](../backend/database-guidelines.md)。
+文档与源码不一致时先读取具体实现与 Mapper，再记录证据。V2 参与表上的历史路由注释不代表当前部署仍使用分库；数据库迁移以当前单库 Schema 和按版本执行的迁移脚本为准，详见[数据库规范](../backend/database-guidelines.md)。

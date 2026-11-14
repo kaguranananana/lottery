@@ -6,7 +6,7 @@
 
 ## 1. 一句话定位
 
-这是一个单体部署的高并发抽奖系统。当前只保留用户个人参与次数和策略奖品库存两种约束，活动没有总抽奖名额。重构前的版本的问题是“架构复杂度放错了位置”——大量复杂度花在 Factory/State/RPC DTO 这些没有业务因果的样板代码上，而真正决定系统正确性的库存幂等和消费幂等反而存在真实缺陷。
+这是一个单体部署的高并发抽奖系统。当前约束是用户个人参与次数和活动独立奖池库存；活动直接持有奖品概率与库存，不再经过抽奖配置实体。重构前的版本的问题是“架构复杂度放错了位置”——大量复杂度花在 Factory/State/RPC DTO 这些没有业务因果的样板代码上，而真正决定系统正确性的库存幂等和消费幂等反而存在真实缺陷。
 
 ## 2. 原设计哪里有问题（我先做了审计）
 
@@ -36,17 +36,14 @@
 | 两套概率算法 + DrawConfig map | 统一为快照整数权重 + 二分采样；高精度、显式 NO_PRIZE、售罄不改概率 |
 | ShortCode / RandomNumeric / IdContext | 只有测试 demo 用。保留 Snowflake 直注 |
 | 活动总库存及历史 Partake 库存 MQ | 无全场名额需求，MySQL 活动余量缺完整结算；移除两列、Key 和参与预扣/回补 |
-| DONE Redis guard、no-stock Set、award/ruleTree 实体级 Caffeine | 事实来源移到 DB 后 guard 失去意义；实体全量 L1 是为了展示“二级缓存”，现在只有 DrawConfigSnapshot 值得 |
+| DONE Redis guard、no-stock Set、award/ruleTree 实体级 Caffeine | 事实来源移到 DB 后 guard 失去意义；实体全量 L1 是为了展示“二级缓存”，现在只有 ActivityPrizeSnapshot 值得 |
 
-留下的全部有明确职责：Redis（原子扣减+锁）、Kafka（慢操作剥离+重试）、Outbox（消息丢失）、Ledger（重复消费）、XXL-Job（集中调度分片补偿）、Caffeine（快照热点读）、分库分表（user-centric 数据路由）。
+当前保留的组件各有明确职责：Redis 做奖池原子预扣和请求锁；Kafka 剥离库存结算与发奖；Outbox 恢复提交后未发送的订单；唯一账本拦截重复结算；Spring 定时任务补偿到期义务；Caffeine 缓存活动奖池快照。MySQL 使用单库，不再做用户分片路由。
 
 ## 4. 每类一致性问题怎么解决
 
 ### 4.1 高并发库存
-Redis 在一个 Lua 脚本内检查库存存在且余量大于零后 DECR，售罄不写负数；
-活动启动时只用 SETNX 预热策略奖品 key，保留共享策略已经消耗的余额；运行期 Key 缺失显式报错：
-保留原 take 和请求号，不能用滞后的 MySQL 值回填。第二个共享活动启动会检查现存奖池，缺失时保持 PASS，不能借新活动启动复活库存。最终一致靠消费者事务里的
-条件更新 `surplus>0` 兜底，出现分歧则落 BLOCKED 状态等人工对账；发送 FAIL 仍参与补偿。
+Redis 在一个 Lua 脚本内检查活动奖池 Key 存在且余量大于零后 DECR，售罄不写负数。每个活动在 `activity_prize` 中有独立库存；活动就绪时按该活动的奖品库存预热 Key。运行期 Key 缺失显式报错，保留原 take 和请求号，不能用滞后的 MySQL 值回填。最终一致靠消费者事务里的 `activity_prize.award_surplus_count>0` 条件扣减兜底，出现分歧则落 BLOCKED 状态等人工对账；发送 FAIL 仍参与补偿。
 缺失奖品库存明确抛出并保留未消费 take；回补不创建缺失 Key，SQL 异常只在确认回滚或事务未开始时归还预扣。
 
 TX1 是“条件扣个人次数 + 创建 take”，TX2 是“消费 take + 中奖订单 + Outbox INIT”，TX3 是“唯一账本 + MySQL 奖品扣减”。三个本地事务没有合并。NO_PRIZE 和奖品售罄都消耗已取得的个人机会；次数用完才拒绝新参与。预扣后 JVM 退出、事务结果未知和回补失败仍需对账，不能声称 Redis/MySQL 原子一致。
@@ -68,8 +65,8 @@ TX1 是“条件扣个人次数 + 创建 take”，TX2 是“消费 take + 中�
 BEGIN;
 INSERT INTO award_stock_settlement(order_id, ...) ...;   -- UNIQUE(order_id)
 -- duplicate key? → COMMIT 提前结束：该订单早已结算，直接 SUCCESS
-UPDATE draw_config_prize SET award_surplus_count = award_surplus_count - 1
-WHERE draw_config_id=? AND award_id=? AND award_surplus_count > 0;
+UPDATE activity_prize SET award_surplus_count = award_surplus_count - 1
+WHERE activity_id=? AND award_id=? AND award_surplus_count > 0;
 COMMIT;
 ```
 
@@ -78,9 +75,7 @@ crash 发生在任何一步之后，redelivery 都会撞上唯一键——**同�
 PROCESSING Redis 锁保留为并发优化，但文档里明确它不是事实来源。
 
 ### 4.4 Outbox 可靠投递
-订单创建与 `stock_settlement_event_status=INIT` 在同一事务；调度任务扫 `IN(0,2)` 及超时 10 分钟的 SENT，发送成功条件推进 SENT；
-发送失败仅 INIT 转 FAIL，迟到失败不覆盖 SENT/COMPLETE，FAIL 下轮重投。crash 在“发送成功落 SENT 前”最多导致一次重复投递——由 4.3 的账本消化。
-`(stock_settlement_event_status, create_time)` 联合索引支撑扫描查询，invoice 补偿 scan 加了 LIMIT 防全表拖库。
+订单、库存 Outbox 与首发代数在同一事务提交。提交后由有界工作池实时发送，Spring 定时任务按独立重试时间领取到期义务；失败按代数退避，SENT 超时后允许重发。CAS 阻止迟到回调覆盖 COMPLETE/BLOCKED，重复消费由 4.3 的账本和订单状态收敛。索引、租期和批量边界见 [订单 Outbox](outbox-delivery.md)。
 
 ### 4.5 发奖幂等
 处理器层只留一层 `AwardFulfillmentHandler`（优惠券/兑换码/实物/虚拟的差异是真实业务差异），
@@ -98,6 +93,6 @@ domain 服务现在只描述业务动作；application 层保留编排价值（�
 ## 6. 目前还有哪些边界（主动交代）
 
 * Redis 全面故障时，运行中的活动无法继续抽奖（fail closed），需要人工执行恢复/对账，没有自动化的跨存储对账作业。
-* dbRouterForGem 只支持简单单表路由（正则替表名），JOIN 与非 2 的幂的分片数不可用——已知限制写在 architecture 文档，当前业务 SQL 全部单表可满足。
+* 历史分片库需要按 V5、V6、V7、V8 的旁路迁移步骤切换；新模型和新库使用单 MySQL 库。迁移步骤及停写边界见 [V8 切换](activity-prize-pool.md)。
 * 结算 FAIL 状态的处理目前是告警+人工对账，未做自动化差异修复。
-* 性能数字：仓库里没有任何宣称值；jmeter 目录保留脚本骨架供复现压测。
+* V8 实测在 120/150 RPS 长测中未通过持续容量门槛；当前性能证据与适用边界见 [V8 实测](activity-prize-pool.md#2026-11-13-实测) 和 [Outbox 回写实验](../doc/performance/v8-outbox-write-report.md)。

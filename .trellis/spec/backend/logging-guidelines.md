@@ -4,7 +4,7 @@
 
 沿用 SLF4J 参数化日志与现有 LoggerFactory。[LotteryController.java](../../../lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/LotteryController.java) 记录 requestId、userId、activityId；[ActivityProcessImpl.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java) 记录 takeId 复用、订单回放与慢调用；[KafkaProducer.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/producer/KafkaProducer.java)、[StockSettlementListener.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/StockSettlementListener.java)、[AwardFulfillmentListener.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/AwardFulfillmentListener.java) 用 orderId 关联消息和订单。
 
-新增抽奖诊断带上相关 requestId、uId、activityId，订单和异步事件带 orderId，库存事件增加 drawConfigId、awardId 或库存 key。字段足以串联实际处理步骤即可，不引入与定位无关的追踪框架。
+新增抽奖诊断带上相关 requestId、uId、activityId，订单和异步事件带 orderId，库存事件增加 activityId、awardId 或库存 key。字段足以串联实际处理步骤即可，不引入与定位无关的追踪框架。
 
 ## 日志级别与成本
 
@@ -17,6 +17,6 @@
 
 ## 当前可观测边界
 
-现有日志是业务标识与堆栈，没有统一 MDC 或分布式 Trace。MyBatis 在 [application.yml](../../../lottery-interfaces/src/main/resources/application.yml) 使用 NoLoggingImpl，不能依赖默认 SQL 日志定位路由；涉及分片问题应在任务内明确库、表、DAO 与相关订单。历史代码有完整 payload、awardContent 日志，新增日志只输出定位所需字段，避免复制过多业务正文。
+现有日志是业务标识与堆栈，没有统一 MDC 或分布式 Trace。MyBatis 在 [application.yml](../../../lottery-interfaces/src/main/resources/application.yml) 使用 NoLoggingImpl，不能依赖默认 SQL 日志定位查询；排查数据库问题应明确表、DAO 与相关订单。历史代码有完整 payload、awardContent 日志，新增日志只输出定位所需字段，避免复制过多业务正文。
 
 捕获后记录日志并不等于错误已正确传播；异常策略仍须遵循[错误处理](./error-handling.md)。

@@ -17,7 +17,7 @@ ActivityPartakeImpl   DrawExecutor ── AwardOrderImpl   (domain —— 业务
                │
        Repository 接口（domain 定义）
                │
-  ActivityRepository / DrawConfigRepository / DrawParticipationRepository /
+  ActivityRepository / ActivityPrizeRepository / DrawParticipationRepository /
   OrderRepository                       (infrastructure —— MyBatis+Redis+本地事务)
 ```
 

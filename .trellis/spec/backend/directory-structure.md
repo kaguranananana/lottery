@@ -5,9 +5,9 @@
 | 位置 | 内容与实例 |
 | --- | --- |
 | interfaces 的 interfaces/web、dto | HTTP adapter：[LotteryController.java](../../../lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/LotteryController.java)、[DrawRequest.java](../../../lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/dto/DrawRequest.java) |
-| application 的 process、mq、worker | 用例、消息、调度：[ActivityProcessImpl.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java)、[LotteryXxlJob.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryXxlJob.java) |
-| domain 的 activity、draw、award | 按业务域组织 model、repository、service：[IDrawConfigRepository.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/draw/repository/IDrawConfigRepository.java)、[DrawExecutor.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/draw/service/draw/impl/DrawExecutor.java) |
-| infrastructure 的 repository、dao、po、cache、lock、utils | 技术实现：[DrawConfigRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/DrawConfigRepository.java)、[RedisActivityDrawProcessGuard.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/lock/RedisActivityDrawProcessGuard.java) |
+| application 的 process、mq、worker | 用例、消息、调度：[ActivityProcessImpl.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java)、[LotteryScheduledTasks.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/worker/LotteryScheduledTasks.java) |
+| domain 的 activity、draw、award | 按业务域组织 model、repository、service：[IActivityPrizeRepository.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/draw/repository/IActivityPrizeRepository.java)、[DrawExecutor.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/draw/service/draw/impl/DrawExecutor.java) |
+| infrastructure 的 repository、dao、po、cache、lock、utils | 技术实现：[ActivityPrizeRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityPrizeRepository.java)、[RedisActivityDrawProcessGuard.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/lock/RedisActivityDrawProcessGuard.java) |
 | interfaces 的 resources/mybatis/mapper | DAO 对应 SQL：[DrawOrder_Mapper.xml](../../../lottery-interfaces/src/main/resources/mybatis/mapper/DrawOrder_Mapper.xml) |
 | common | 跨模块业务码、枚举与 key：[Constants.java](../../../lottery-common/src/main/java/com/anontokyo/lottery/common/Constants.java)、[Result.java](../../../lottery-common/src/main/java/com/anontokyo/lottery/common/Result.java) |
 | interfaces 的 src/test | 当前单元测试与手工集成测试，详见[质量规范](./quality-guidelines.md) |
@@ -16,9 +16,9 @@
 
 ## 职责与依赖边界
 
-业务判定放在 domain，用例步骤与 Kafka/调度放在 application。domain 定义 Repository 和 Guard 接口，infrastructure 提供实现。Controller 负责输入、DTO 转换和调用用例，不直接操作 DAO、库存或发奖。
+业务判定放在 domain，用例步骤与 Kafka/定时任务放在 application。domain 定义 Repository 和 Guard 接口，infrastructure 提供实现。Controller 负责输入、DTO 转换和调用用例，不直接操作 DAO、库存或发奖。
 
-新业务逻辑通过领域接口访问存储，避免 application/domain 直接导入 infrastructure 的 PO 或 DAO。事务与手动路由以 [OrderRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java) 和 [DrawParticipationRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/DrawParticipationRepository.java) 为参考。
+新业务逻辑通过领域接口访问存储，避免 application/domain 直接导入 infrastructure 的 PO 或 DAO。事务和同库 SQL 边界以 [OrderRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java) 和 [DrawParticipationRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/DrawParticipationRepository.java) 为参考。
 
 这是新改动的边界规则。现有 [ActivityDeployImpl.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/activity/service/deploy/Impl/ActivityDeployImpl.java) 使用声明式事务，[RedisConfig.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/support/redis/RedisConfig.java) 位于 domain，Maven 保留部分技术依赖；本次初始化不调整这些组织。
 

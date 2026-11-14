@@ -6,9 +6,9 @@
 | --- | --- |
 | [目录与依赖](./directory-structure.md) | 新增类、职责、模块依赖、公共类型 |
 | [HTTP 契约](./http-contract.md) | Controller、请求校验、响应字段、业务码 |
-| [应用编排与消息](./application-guidelines.md) | 抽奖用例、Kafka、Outbox、XXL-Job、消息 CAS 与超时补偿 |
+| [应用编排与消息](./application-guidelines.md) | 抽奖用例、Kafka、Outbox、Spring 定时任务、消息 CAS 与超时补偿 |
 | [领域规则](./domain-guidelines.md) | 参与资格、抽样概率、状态机、订单、发奖 |
-| [数据库与路由](./database-guidelines.md) | DAO/PO/XML、事务、分片、约束与迁移 |
+| [数据库与迁移](./database-guidelines.md) | DAO/PO/XML、事务、约束与迁移 |
 | [Redis 与缓存](./redis-guidelines.md) | 库存、锁、配置缓存、TTL 与预热 |
 | [错误处理](./error-handling.md) | 业务拒绝、异常传播、补偿、现有偏差 |
 | [日志](./logging-guidelines.md) | 请求关联、库存告警、消息与任务日志 |

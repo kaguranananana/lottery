@@ -4,11 +4,11 @@
 
 [Constants.java](../../../lottery-common/src/main/java/com/anontokyo/lottery/common/Constants.java) 与 [Result.java](../../../lottery-common/src/main/java/com/anontokyo/lottery/common/Result.java) 表示业务结果。DRAW_IN_PROGRESS、LOSING_DRAW、NO_UPDATE、INDEX_DUP 等已有返回码描述特定业务状态，不应统一转换为系统异常，也不能把不确定的系统错误转换成中奖或幂等成功。
 
-[DrawConfigSnapshotFactory.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/draw/service/snapshot/DrawConfigSnapshotFactory.java) 对非法概率显式抛异常；[RedisActivityDrawProcessGuard.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/lock/RedisActivityDrawProcessGuard.java) 获取锁失败记录 error 并带 cause 抛出；[LotteryController.java](../../../lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/LotteryController.java) 在 HTTP 边界记录标识与异常堆栈后返回错误 DTO。新错误优先在实际责任层暴露，保持原 cause 便于定位。
+[ActivityPrizeSnapshotFactory.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/draw/service/snapshot/ActivityPrizeSnapshotFactory.java) 对非法概率显式抛异常；[RedisActivityDrawProcessGuard.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/lock/RedisActivityDrawProcessGuard.java) 获取锁失败记录 error 并带 cause 抛出；[LotteryController.java](../../../lottery-interfaces/src/main/java/com/anontokyo/lottery/interfaces/web/LotteryController.java) 在 HTTP 边界记录标识与异常堆栈后返回错误 DTO。新错误优先在实际责任层暴露，保持原 cause 便于定位。
 
 ## 有依据的补偿
 
-TX1 的个人次数与参与记录在数据库内一起回滚，不涉及 Redis 回补；[ActivityProcessImpl.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java) 对明确的下单非成功业务码回补奖品库存。订单仓储的奖品异常回补依据下述事务完成状态，不捕获任意异常就加库存。[DrawConfigRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/DrawConfigRepository.java) 用唯一账本保证同订单结算可重放。
+TX1 的个人次数与参与记录在数据库内一起回滚，不涉及 Redis 回补；[ActivityProcessImpl.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java) 对明确的下单非成功业务码回补奖品库存。订单仓储的奖品异常回补依据下述事务完成状态，不捕获任意异常就加库存。[ActivityPrizeRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityPrizeRepository.java) 用唯一账本保证同订单结算可重放。
 
 ## 预扣后事务失败契约
 
@@ -27,7 +27,7 @@ TX1 的个人次数与参与记录在数据库内一起回滚，不涉及 Redis 
 | 源码 | 现有行为与边界 |
 | --- | --- |
 | [ActivityProcessImpl.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/process/draw/impl/ActivityProcessImpl.java) 的 findTakeByRequestId | 查询异常记录 error 并传播，禁止把 SQL 失败解释为无参与记录；消费 CAS 零更新回读最终结果 |
-| [DrawConfigRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/DrawConfigRepository.java) 的库存回补 | 原子检查现存 Key 后回补；失败抛出，缺失不创建。异常可见不等于补偿必达，Redis 不可用仍需对账 |
+| [ActivityPrizeRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityPrizeRepository.java) 的库存回补 | 原子检查现存 Key 后回补；失败抛出，缺失不创建。异常可见不等于补偿必达，Redis 不可用仍需对账 |
 | [TwoLevelCacheService.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/cache/TwoLevelCacheService.java) | 部分缓存写入、失效异常只记录日志；须与事实存储或库存错误区分 |
 | [StockSettlementListener.java](../../../lottery-application/src/main/java/com/anontokyo/lottery/application/mq/consumer/StockSettlementListener.java) 与 [DrawOrder_Mapper.xml](../../../lottery-interfaces/src/main/resources/mybatis/mapper/DrawOrder_Mapper.xml) | 库存分歧写 BLOCKED 并告警；持久化失败不 ack。FAIL 保留发送重试，对账后显式释放 BLOCKED 原订单 |
 | [AbstractAwardFulfillmentHandler.java](../../../lottery-domain/src/main/java/com/anontokyo/lottery/domain/award/service/fulfillment/impl/AbstractAwardFulfillmentHandler.java) | 本地 CAS 零更新也返回 SUCCESS；这仅是当前模拟渠道行为，不证明真实外部发奖已完成 |
