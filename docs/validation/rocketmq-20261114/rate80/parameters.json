@@ -1,0 +1,18 @@
+{
+  "session": "rocketmq-20261114",
+  "name": "rate80",
+  "id": 810180,
+  "threads": 72,
+  "duration": 205,
+  "warmup": 15,
+  "stock": 1000000,
+  "award_stock": -1,
+  "users": 65000,
+  "jmeter": "Apache JMeter 5.6.3",
+  "target_rps": 80.0,
+  "ramp": 5,
+  "quota": 10,
+  "single_user": false,
+  "slow_ms": 0,
+  "drain_timeout": 180
+}

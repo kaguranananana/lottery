@@ -1,0 +1,36 @@
+{
+  "quota": "65000\t16415\t0",
+  "takes": "16415\t0\t0",
+  "duplicateOrders": "0\t0",
+  "stock": "p810180_0\t1000000\t996715\np810180_1\t1000000\t996680\np810180_2\t1000000\t996758\np810180_3\t1000000\t996725\np810180_4\t1000000\t996707",
+  "ledger": "p810180_1\t3320\np810180_3\t3275\np810180_4\t3293\np810180_2\t3242\np810180_0\t3285",
+  "activity": "5\t10",
+  "pending": {
+    "orders": 16415,
+    "stockPending": 0,
+    "grantPending": 0,
+    "blocked": 0,
+    "stockDue": 0,
+    "fulfillmentDue": 0
+  },
+  "redisAwards": {
+    "p810180_0": "996715",
+    "p810180_1": "996680",
+    "p810180_2": "996758",
+    "p810180_3": "996725",
+    "p810180_4": "996707"
+  },
+  "rocketmq": {
+    "lottery-perf-stock": [
+      25795,
+      0,
+      8
+    ],
+    "lottery-perf-invoice": [
+      25795,
+      0,
+      8
+    ]
+  },
+  "pendingReservations": 0
+}

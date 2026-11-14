@@ -46,6 +46,11 @@ services:
     environment:
       JAVA_OPT_EXT: "-Xms256m -Xmx512m -Xmn128m"
     ports: ["127.0.0.1:10911:10911"]
+    healthcheck:
+      test: ["CMD", "bash", "-c", "true </dev/tcp/127.0.0.1/10911"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
     volumes:
       - ./broker.conf:/etc/rocketmq/broker.conf:ro
       - rocketmq-store:/home/rocketmq/store

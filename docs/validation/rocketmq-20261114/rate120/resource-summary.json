@@ -1,0 +1,36 @@
+{
+  "mysql": {
+    "cpuMean": 26.2075,
+    "cpuMax": 39.17,
+    "memoryPeak": "573.4MiB / 2GiB"
+  },
+  "redis": {
+    "cpuMean": 2.073125,
+    "cpuMax": 3.83,
+    "memoryPeak": "21.78MiB / 256MiB"
+  },
+  "broker": {
+    "cpuMean": 13.4775,
+    "cpuMax": 24.09,
+    "memoryPeak": "609.6MiB / 1GiB"
+  },
+  "mysqlStatuses": {
+    "maxConnections": 49,
+    "maxRunning": 28,
+    "rowLockWaitsDelta": 1173,
+    "rowLockTimeMsDelta": 9552
+  },
+  "rocketmqLag": {
+    "maxStockLag": 123,
+    "maxInvoiceLag": 11
+  },
+  "rocketmqCommittedPerSecond": {
+    "lottery-perf-stock": 119.34266044858983,
+    "lottery-perf-invoice": 119.35931601154785
+  },
+  "gcCountDelta": {
+    "G1 Young Generation": 24,
+    "G1 Old Generation": 0
+  },
+  "collectionMaxMs": 2424
+}

@@ -1,0 +1,44 @@
+{
+  "explicitCommit": {
+    "calls": 141263,
+    "seconds": 1845.8265,
+    "lockSeconds": 5.3646,
+    "examinedRows": 0,
+    "affectedRows": 0
+  },
+  "stockCas": {
+    "calls": 47201,
+    "seconds": 267.8636,
+    "lockSeconds": 0.2188,
+    "examinedRows": 47218,
+    "affectedRows": 47176
+  },
+  "grantCas": {
+    "calls": 47175,
+    "seconds": 264.76390000000004,
+    "lockSeconds": 0.23259999999999997,
+    "examinedRows": 47217,
+    "affectedRows": 47165
+  },
+  "stockDeduct": {
+    "calls": 47203,
+    "seconds": 34.718999999999994,
+    "lockSeconds": 30.3314,
+    "examinedRows": 47221,
+    "affectedRows": 47207
+  },
+  "orderInsert": {
+    "calls": 47174,
+    "seconds": 13.2535,
+    "lockSeconds": 0.0421,
+    "examinedRows": 0,
+    "affectedRows": 47133
+  },
+  "ledgerInsert": {
+    "calls": 47210,
+    "seconds": 3.2796999999999996,
+    "lockSeconds": 0.0262,
+    "examinedRows": 0,
+    "affectedRows": 47196
+  }
+}

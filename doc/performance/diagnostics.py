@@ -15,17 +15,20 @@ def summarize(directory):
     samples=[json.loads(l) for l in (directory/'resources.jsonl').read_text().splitlines()]
     measured=[s for s in samples if low<=s['app']['time']<high]
     resources={}
-    for container in ('mysql','redis','kafka'):
+    broker = 'rocketmq' if 'peakSampledRocketMqLag' in result else 'kafka'
+    project = 'lottery-rocketmq-perf' if broker == 'rocketmq' else 'lottery-single-perf'
+    broker_service = 'broker' if broker == 'rocketmq' else 'kafka'
+    for container in ('mysql','redis',broker_service):
         # Docker百分比以单核100%表示，与应用累计CPU时间统一口径。
-        values=[json.loads(v) for sample in measured for v in sample['docker'] if json.loads(v)['Name']==f'lottery-single-perf-{container}-1']
+        values=[json.loads(v) for sample in measured for v in sample['docker'] if json.loads(v)['Name']==f'{project}-{container}-1']
         resources[container]={'cpuMean':statistics.mean(float(x['CPUPerc'][:-1]) for x in values),'cpuMax':max(float(x['CPUPerc'][:-1]) for x in values),'memoryPeak':max(values,key=lambda x:float(x['MemPerc'][:-1]))['MemUsage']}
     statuses=[dict(line.split('\t') for line in s['mysql'].strip().splitlines()) for s in measured if 'mysql' in s]
     resources['mysqlStatuses']={'maxConnections':max(int(s['Threads_connected']) for s in statuses),'maxRunning':max(int(s['Threads_running']) for s in statuses),'rowLockWaitsDelta':int(statuses[-1]['Innodb_row_lock_waits'])-int(statuses[0]['Innodb_row_lock_waits']),'rowLockTimeMsDelta':int(statuses[-1]['Innodb_row_lock_time'])-int(statuses[0]['Innodb_row_lock_time'])}
-    resources['kafkaLag']={'maxStockLag':max(s['kafka']['lottery-perf-stock'][1] for s in measured if 'kafka' in s),'maxInvoiceLag':max(s['kafka']['lottery-perf-invoice'][1] for s in measured if 'kafka' in s)}
+    resources[broker+'Lag']={'maxStockLag':max(s[broker]['lottery-perf-stock'][1] for s in measured if broker in s),'maxInvoiceLag':max(s[broker]['lottery-perf-invoice'][1] for s in measured if broker in s)}
     # 消费速率基于真实已提交位点增量，可能包含at-least-once重放，不能当成独立订单数。
-    kafka_samples=[s for s in measured if 'kafka' in s]
-    interval=(kafka_samples[-1]['time']-kafka_samples[0]['time'])/1000
-    resources['kafkaCommittedPerSecond']={group:(kafka_samples[-1]['kafka'][group][0]-kafka_samples[0]['kafka'][group][0])/interval for group in ('lottery-perf-stock','lottery-perf-invoice')}
+    broker_samples=[s for s in measured if broker in s]
+    interval=(broker_samples[-1]['time']-broker_samples[0]['time'])/1000
+    resources[broker+'CommittedPerSecond']={group:(broker_samples[-1][broker][group][0]-broker_samples[0][broker][group][0])/interval for group in ('lottery-perf-stock','lottery-perf-invoice')}
     resources['gcCountDelta']={end[0]:end[1]-start[1] for start,end in zip(measured[0]['app']['gc'],measured[-1]['app']['gc'])}
     resources['collectionMaxMs']=max(s['collectionMs'] for s in measured)
     (directory/'resource-summary.json').write_text(json.dumps(resources,indent=2,ensure_ascii=False))

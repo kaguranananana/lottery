@@ -1,0 +1,96 @@
+{
+  "build": {
+    "java": "Amazon Corretto 1.8.0_482",
+    "springBoot": "2.3.5.RELEASE",
+    "artifact": "Lottery.war",
+    "rocketmqClient": "5.3.4"
+  },
+  "unitCount": 45,
+  "integrationCount": 56,
+  "suites": {
+    "DrawRequestIdempotencyTest": {
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "PartakeRequestOwnershipTest": {
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "SnowflakeNodeConfigurationTest": {
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "WeightedRandomSelectorTest": {
+      "tests": 7,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "CacheTransactionInvalidationTest": {
+      "tests": 3,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "RedisActivityDrawProcessGuardTest": {
+      "tests": 5,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "DrawAdmissionRedisManualIT": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "DrawRequestOwnershipManualIT": {
+      "tests": 10,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "FinalBusinessE2eManualIT": {
+      "tests": 30,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "FulfillmentEventStatusCasManualIT": {
+      "tests": 4,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "InvoiceCompensationIndexManualIT": {
+      "tests": 2,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "RedisStockFailureManualIT": {
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "MqCallbackStateTest": {
+      "tests": 9,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "DrawHttpOwnershipTest": {
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  }
+}

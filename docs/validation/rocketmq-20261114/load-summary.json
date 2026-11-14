@@ -1,0 +1,350 @@
+[
+  {
+    "ordersTotal": 8258,
+    "windowSeconds": 190.0,
+    "newDrawRps": 39.97894736842105,
+    "settlementRps": 39.9,
+    "fulfillmentRps": 39.88947368421053,
+    "p95Ms": 12,
+    "p99Ms": 108,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockLatencyBoundsMs": {
+      "0.5": [
+        3,
+        6
+      ],
+      "0.95": [
+        5,
+        8
+      ],
+      "0.99": [
+        187,
+        236
+      ]
+    },
+    "fulfillmentLatencyBoundsMs": {
+      "0.5": [
+        6,
+        8
+      ],
+      "0.95": [
+        9,
+        12
+      ],
+      "0.99": [
+        252,
+        311
+      ]
+    },
+    "drainSeconds": 4.391377210617065,
+    "peakSampledRocketMqLag": {
+      "lottery-perf-stock": 16,
+      "lottery-perf-invoice": 9
+    },
+    "outbox": {
+      "rejected": 0,
+      "sendFailures": 0
+    },
+    "mysqlDelta": {
+      "Aborted_connects": 0,
+      "Connections": 195,
+      "Innodb_buffer_pool_read_requests": 2132252,
+      "Innodb_buffer_pool_reads": 0,
+      "Innodb_row_lock_time": 1443,
+      "Innodb_row_lock_waits": 44,
+      "Innodb_rows_deleted": 0,
+      "Innodb_rows_inserted": 24774,
+      "Innodb_rows_read": 378615,
+      "Innodb_rows_updated": 41290,
+      "Questions": 190497,
+      "Slow_queries": 465,
+      "Threads_connected": 12,
+      "Threads_running": 0
+    },
+    "audit": "PASS",
+    "targetRps": 40.0,
+    "stable": true,
+    "pendingReservations": 0,
+    "grantBacklogPeak": 15,
+    "grantBacklogMeanGrowth": 1.7142857142857142,
+    "swap": {
+      "Swapins": 0,
+      "Swapouts": 0
+    },
+    "timestamps": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "sqlWrites": {
+      "explicitCommit": 24773,
+      "stockCas": 8258,
+      "grantCas": 8256,
+      "stockDeduct": 8253,
+      "orderInsert": 8256,
+      "ledgerInsert": 8249
+    }
+  },
+  {
+    "ordersTotal": 16415,
+    "windowSeconds": 190.0,
+    "newDrawRps": 79.99473684210527,
+    "settlementRps": 79.67894736842105,
+    "fulfillmentRps": 79.67368421052632,
+    "p95Ms": 72,
+    "p99Ms": 299,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockLatencyBoundsMs": {
+      "0.5": [
+        5,
+        7
+      ],
+      "0.95": [
+        158,
+        195
+      ],
+      "0.99": [
+        569,
+        685
+      ]
+    },
+    "fulfillmentLatencyBoundsMs": {
+      "0.5": [
+        9,
+        11
+      ],
+      "0.95": [
+        184,
+        213
+      ],
+      "0.99": [
+        603,
+        709
+      ]
+    },
+    "drainSeconds": 4.458252906799316,
+    "peakSampledRocketMqLag": {
+      "lottery-perf-stock": 21,
+      "lottery-perf-invoice": 10
+    },
+    "outbox": {
+      "rejected": 0,
+      "sendFailures": 0
+    },
+    "mysqlDelta": {
+      "Aborted_connects": 0,
+      "Connections": 239,
+      "Innodb_buffer_pool_read_requests": 4258249,
+      "Innodb_buffer_pool_reads": 34,
+      "Innodb_row_lock_time": 3569,
+      "Innodb_row_lock_waits": 357,
+      "Innodb_rows_deleted": 0,
+      "Innodb_rows_inserted": 59257,
+      "Innodb_rows_read": 1004010,
+      "Innodb_rows_updated": 82075,
+      "Questions": 388328,
+      "Slow_queries": 1445,
+      "Threads_connected": 22,
+      "Threads_running": 0
+    },
+    "audit": "PASS",
+    "targetRps": 80.0,
+    "stable": true,
+    "pendingReservations": 0,
+    "grantBacklogPeak": 4,
+    "grantBacklogMeanGrowth": 0.5714285714285714,
+    "swap": {
+      "Swapins": 0,
+      "Swapouts": 0
+    },
+    "timestamps": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "sqlWrites": {
+      "explicitCommit": 49193,
+      "stockCas": 16411,
+      "grantCas": 16409,
+      "stockDeduct": 16407,
+      "orderInsert": 16409,
+      "ledgerInsert": 16410
+    }
+  },
+  {
+    "ordersTotal": 24637,
+    "windowSeconds": 190.0,
+    "newDrawRps": 119.99473684210527,
+    "settlementRps": 119.99473684210527,
+    "fulfillmentRps": 119.98421052631579,
+    "p95Ms": 196,
+    "p99Ms": 417,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockLatencyBoundsMs": {
+      "0.5": [
+        6,
+        10
+      ],
+      "0.95": [
+        493,
+        550
+      ],
+      "0.99": [
+        695,
+        812
+      ]
+    },
+    "fulfillmentLatencyBoundsMs": {
+      "0.5": [
+        11,
+        16
+      ],
+      "0.95": [
+        513,
+        572
+      ],
+      "0.99": [
+        727,
+        838
+      ]
+    },
+    "drainSeconds": 4.486039638519287,
+    "peakSampledRocketMqLag": {
+      "lottery-perf-stock": 123,
+      "lottery-perf-invoice": 11
+    },
+    "outbox": {
+      "rejected": 0,
+      "sendFailures": 0
+    },
+    "mysqlDelta": {
+      "Aborted_connects": 0,
+      "Connections": 185,
+      "Innodb_buffer_pool_read_requests": 6134507,
+      "Innodb_buffer_pool_reads": 0,
+      "Innodb_row_lock_time": 9878,
+      "Innodb_row_lock_waits": 1240,
+      "Innodb_rows_deleted": 0,
+      "Innodb_rows_inserted": 73911,
+      "Innodb_rows_read": 1915869,
+      "Innodb_rows_updated": 123185,
+      "Questions": 567195,
+      "Slow_queries": 3647,
+      "Threads_connected": 2,
+      "Threads_running": 0
+    },
+    "audit": "PASS",
+    "targetRps": 120.0,
+    "stable": true,
+    "pendingReservations": 0,
+    "grantBacklogPeak": 117,
+    "grantBacklogMeanGrowth": 31.85714285714286,
+    "swap": {
+      "Swapins": 0,
+      "Swapouts": 0
+    },
+    "timestamps": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "sqlWrites": {
+      "explicitCommit": 73816,
+      "stockCas": 24632,
+      "grantCas": 24630,
+      "stockDeduct": 24635,
+      "orderInsert": 24614,
+      "ledgerInsert": 24627
+    }
+  },
+  {
+    "ordersTotal": 47229,
+    "windowSeconds": 300.0,
+    "newDrawRps": 149.83333333333334,
+    "settlementRps": 149.55666666666667,
+    "fulfillmentRps": 149.55333333333334,
+    "p95Ms": 338,
+    "p99Ms": 538,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockLatencyBoundsMs": {
+      "0.5": [
+        10,
+        17
+      ],
+      "0.95": [
+        821,
+        907
+      ],
+      "0.99": [
+        1127,
+        1163
+      ]
+    },
+    "fulfillmentLatencyBoundsMs": {
+      "0.5": [
+        18,
+        26
+      ],
+      "0.95": [
+        842,
+        926
+      ],
+      "0.99": [
+        1145,
+        1182
+      ]
+    },
+    "drainSeconds": 4.4971840381622314,
+    "peakSampledRocketMqLag": {
+      "lottery-perf-stock": 180,
+      "lottery-perf-invoice": 12
+    },
+    "outbox": {
+      "rejected": 0,
+      "sendFailures": 0
+    },
+    "mysqlDelta": {
+      "Aborted_connects": 0,
+      "Connections": 266,
+      "Innodb_buffer_pool_read_requests": 11812416,
+      "Innodb_buffer_pool_reads": 3,
+      "Innodb_row_lock_time": 43848,
+      "Innodb_row_lock_waits": 8337,
+      "Innodb_rows_deleted": 0,
+      "Innodb_rows_inserted": 141687,
+      "Innodb_rows_read": 4495101,
+      "Innodb_rows_updated": 236145,
+      "Questions": 1087043,
+      "Slow_queries": 10769,
+      "Threads_connected": 0,
+      "Threads_running": 0
+    },
+    "audit": "PASS",
+    "targetRps": 150.0,
+    "stable": true,
+    "pendingReservations": 0,
+    "grantBacklogPeak": 177,
+    "grantBacklogMeanGrowth": 50.42857142857142,
+    "swap": {
+      "Swapins": 0,
+      "Swapouts": 0
+    },
+    "timestamps": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "sqlWrites": {
+      "explicitCommit": 141263,
+      "stockCas": 47201,
+      "grantCas": 47175,
+      "stockDeduct": 47203,
+      "orderInsert": 47174,
+      "ledgerInsert": 47210
+    }
+  }
+]

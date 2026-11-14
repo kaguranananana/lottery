@@ -102,3 +102,10 @@
 - 将 `codex/activity-prize-pool` 快进合入 `main`，保留迁移历史，更新架构文档和当前 Trellis 规范中的已删除类名、分片事务及 XXL-Job 描述。
 - Java 8 `mvn clean package` 通过 53 项默认测试。隔离 MySQL 上的 V8 迁移验证通过：共享奖池、重复奖品和未排空订单会阻断目标库创建，新建与升级后的七表定义一致。
 - DBX 连接当前本机 V8 MySQL、Redis、Kafka 成功；MySQL 配置为 `lottery` 库只读账号。Kafka 容器恢复健康，DBX 显示七张表、265 个 Redis Key 和两个业务 Topic。
+
+
+## 2026-11-14 · RocketMQ 事务消息实验分支
+
+- RocketMqProducer 先发送库存 Half Message，再由 OrderRepository 在 TX2 锁参与、登记 Redis Lua 预扣并写订单。回查看订单、截止时间和参与锁。移除 Kafka 运行时依赖、库存应用首发、发送回写和代数；保留库存到期核对、发奖义务、BLOCKED 和账本/CAS。
+- Java 8 clean package、45 项默认单测、56 项真实集成通过。首次进程演练发现生产者启动未向 Broker 注册，修复后真实 SIGKILL 两处复演。提交前持锁回查 Unknown，重启约 1.97 秒回滚并回补；提交后重启约 1.83 秒回查 Commit 并完成原订单。
+- JMeter 40/80/120/150 RPS 持续窗口分别为 190/190/190/300 秒，全部通过原门槛，96,539 单逐笔对账。150 RPS 实际 149.83/s、HTTP P99 538 ms、库存和发奖 P95 上界 907/926 ms、4.50 秒排空。旧库、其他工作区和 Kafka 历史结果保留。对照边界与证据见 [重构报告](rocketmq-transactional-report.md)。

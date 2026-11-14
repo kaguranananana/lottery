@@ -3,13 +3,11 @@ import org.apache.ibatis.mapping.MappedStatement;
 import org.apache.ibatis.plugin.*;
 import org.apache.ibatis.session.ResultHandler;
 import org.apache.ibatis.session.RowBounds;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.support.Acknowledgment;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.LongAdder;
@@ -85,9 +83,7 @@ public class PerfTiming {
             // 按线程角色分别汇总后台和 HTTP SQL。
             String thread = Thread.currentThread().getName();
             String role = ROLE.get();
-            // 异步发送回调运行在生产者网络线程，单独计量其数据库状态写入。
-            if (role == null) role = thread.startsWith("http") ? "http"
-                    : thread.startsWith("kafka-producer-network-thread") ? "producer-callback" : "async";
+            if (role == null) role = thread.startsWith("http") ? "http" : "async";
             // 以事务连接的 catalog 记录实际使用的库。
             String schema = ((Executor) invocation.getTarget()).getTransaction().getConnection().getCatalog();
             String key = "sql/" + role + "/" + schema + "/" + statement.getId();
@@ -109,13 +105,24 @@ public class PerfTiming {
     /** 业务阶段为包含式计时，不能把嵌套方法耗时直接相加。 */
     @Aspect
     public static class StageTiming {
-        @Around("execution(* com.anontokyo.lottery.application.mq.producer.OutboxDispatcher.afterOrderCommit(..))")
+        @Around("execution(* com.anontokyo.lottery.infrastructure.repository.OrderRepository.saveDrawOrderWithTakeLock(..))")
         public Object holdAfterCommit(ProceedingJoinPoint call) throws Throwable {
-            // 仅故障演练进程使用，在事务已提交、入队之前暂停，供外部终止进程。
+            Object result = call.proceed();
+            // 此刻订单已提交，事务消息仍是 Half。只在故障演练启动器里暂停。
             if (Boolean.getBoolean("lottery.perf.hold-after-commit")) {
                 new java.util.concurrent.CountDownLatch(1).await();
             }
-            return call.proceed();
+            return result;
+        }
+
+        @Around("execution(* com.anontokyo.lottery.infrastructure.utils.RedisStockReservations.reserve(..))")
+        public Object holdAfterReserve(ProceedingJoinPoint call) throws Throwable {
+            Object result = call.proceed();
+            // 订单尚未 INSERT，持有 TX2 参与行锁。
+            if (Boolean.getBoolean("lottery.perf.hold-after-reserve")) {
+                new java.util.concurrent.CountDownLatch(1).await();
+            }
+            return result;
         }
 
         @Around("execution(* com.anontokyo.lottery.infrastructure.repository.DrawParticipationRepository.takeParticipation(..)) || "
@@ -123,28 +130,14 @@ public class PerfTiming {
                 + "execution(* com.anontokyo.lottery.infrastructure.repository.ActivityPrizeRepository.settleAwardStock(..)) || "
                 + "execution(* com.anontokyo.lottery.infrastructure.repository.OrderRepository.scan*(..)) || "
                 + "execution(* com.anontokyo.lottery.application.worker.LotteryScheduledTasks.*(..)) || "
-                + "execution(* com.anontokyo.lottery.application.mq.producer.KafkaProducer.send*(..)) || "
+                + "execution(* com.anontokyo.lottery.application.mq.producer.RocketMqProducer.place(..)) || "
                 + "execution(* com.anontokyo.lottery.application.mq.consumer.*.onMessage(..))")
         public Object time(ProceedingJoinPoint call) throws Throwable {
             String previous = ROLE.get();
             Object[] arguments = call.getArgs();
-            // 消费阶段直接使用真实 topic，不依赖 Spring 为监听器分配的线程编号。
-            if (arguments.length > 0 && arguments[0] instanceof ConsumerRecord) {
-                String topic = ((ConsumerRecord<?, ?>) arguments[0]).topic();
-                ROLE.set("consumer/" + topic);
-                // manual_immediate 的 acknowledge 包含同步位点提交，单独计量，避免误归因给数据库。
-                Acknowledgment original = (Acknowledgment) arguments[1];
-                arguments[1] = new Acknowledgment() {
-                    @Override public void acknowledge() {
-                        long start = System.nanoTime();
-                        boolean failed = true;
-                        try { original.acknowledge(); failed = false; }
-                        finally { record("ack/" + topic, start, failed); }
-                    }
-                    // nack 的原有语义也完整委托，不让测试计时器改变消息协议。
-                    @Override public void nack(long sleep) { original.nack(sleep); }
-                    @Override public void nack(int index, long sleep) { original.nack(index, sleep); }
-                };
+            // 消费阶段按实际业务监听器区分。
+            if (call.getSignature().getName().equals("onMessage")) {
+                ROLE.set("consumer/" + call.getSignature().getDeclaringType().getSimpleName());
             } else if (call.getSignature().getDeclaringTypeName().endsWith("LotteryScheduledTasks")) {
                 // 扫描和该任务线程上的逐条投递 SQL 使用同一个任务阶段标签。
                 ROLE.set("job/" + call.getSignature().getName());

@@ -1,5 +1,29 @@
 # Lottery 实际性能压测复现
 
+## 当前 RocketMQ 分支
+
+使用 MySQL 13349、Redis 17579、RocketMQ NameServer 29876 / Broker 20911 和应用 18190。压测启动器使用 JDK 17，应用仍以 Java 8 为编译目标。完整 JMeter 5.6.3 或等价的 Apache Maven 发行组件均可执行原 JMX。
+
+```bash
+python3 doc/performance/environment.py up
+bash lottery-interfaces/src/test/resources/mq-e2e/create-topics.sh lottery-rocketmq-perf-broker-1 20911
+python3 doc/performance/environment.py init
+bash doc/performance/build.sh
+bash doc/performance/start.sh doc/performance/results/rocketmq-run --lottery.draw.admission.enabled=false
+```
+
+在另一个终端执行，每轮使用新的活动号。40、80、120 的 duration 为 205，150 为 315；应用隔离测量关闭准入，生产阈值由主配置管理。
+
+```bash
+python3 doc/performance/run.py --session rocketmq-run --name rate40 --id 810140 --target-rps 40 --threads 72 --duration 205 --warmup 15 --ramp 5 --users 65000 --jmeter /path/to/jmeter
+python3 doc/performance/check_stability.py doc/performance/results/rocketmq-run/rate40
+python3 doc/performance/diagnostics.py doc/performance/results/rocketmq-run/rate40
+```
+
+阶段采集包括 JTL、MySQL digest、库存和发奖完成时间、RocketMQ 两组实际队列位点、Redis 与数据库终态对账。生产消费者位点周期性提交，采样 Lag 包含已处理但尚未提交位点的消息。历史 Kafka 报告使用当时的代码、启动器和采样口径。
+
+## Kafka 历史压测
+
 V8 使用七表和活动库存键；本轮对照见 [V8 实测](../../docs/activity-prize-pool.md#2026-11-13-实测)。V7 及更早的历史压测结果见 [单库与入口限流报告](../../docs/single-db-load-test.md)。历史报告使用当时的代码和数据，复现旧实验时检出对应历史版本。当前迁移顺序见 [V8 活动独立奖池](../../docs/activity-prize-pool.md)。
 
 后续定向优化、当前字段修复及压测驱动数据耗尽修复见 [优化报告](optimization-report.md) 和 [本轮证据/复现步骤](results/20261012-optimization/README.md)。本文的首次测量数字和 NULL 字段描述对应原始测试版本，原始结果未覆盖。

@@ -29,7 +29,7 @@ def command(args):
     return subprocess.check_output(args, stderr=subprocess.PIPE, timeout=20).decode()
 
 def redis(*args):
-    return command(['docker','exec','lottery-single-perf-redis-1','redis-cli','--raw',*args])
+    return command(['docker','exec','lottery-rocketmq-perf-redis-1','redis-cli','--raw',*args])
 
 def orders_query(id):
     return f'SELECT u_id,activity_id,order_id,take_id,award_id,stock_settlement_event_status,fulfillment_event_status,award_fulfillment_status,UNIX_TIMESTAMP(update_time)*1000 AS done_ms,CAST(UNIX_TIMESTAMP(create_time)*1000 AS UNSIGNED) AS created_ms,CAST(UNIX_TIMESTAMP(stock_settled_at)*1000 AS UNSIGNED) AS stock_done_ms,CAST(UNIX_TIMESTAMP(fulfilled_at)*1000 AS UNSIGNED) AS grant_done_ms FROM lottery.draw_order WHERE activity_id={id}'
@@ -62,7 +62,11 @@ def audit(id, directory):
     result={name:sql(query+';').strip() for name,query in queries}
     result['pending']=snapshot(id)
     result['redisAwards']={f'p{id}_{i}':redis('GET',f'lottery_activity_prize_stock_count_{id}_p{id}_{i}').strip() for i in range(5)}
-    result['kafka']=http('/__perf/lag')
+    # 每轮额外核对 Redis 中没有本活动残留的预扣。索引成员包含订单、参与和活动号。
+    pending_reservations = redis('ZRANGE', 'lottery_stock_reservations', '0', '-1').splitlines()
+    result['pendingReservations'] = sum(marker.split(':', 3)[2] == str(id)
+                                        for marker in pending_reservations if marker)
+    result['rocketmq']=http('/__perf/lag')
     write(directory/'audit.json',result)
     return result
 
@@ -104,7 +108,7 @@ def monitor(stop, directory, id):
                     sample['redis']=redis('INFO','ALL')
                     sample['redisLatency']=redis('LATENCY','LATEST')
                     sample['async']=snapshot(id)
-                    sample['kafka']=http('/__perf/lag')
+                    sample['rocketmq']=http('/__perf/lag')
                 sample['collectionMs']=round((time.time()-started)*1000)
                 output.write(json.dumps(sample,ensure_ascii=False)+'\n');output.flush()
                 index+=1

@@ -1,0 +1,9 @@
+{"event": "before-commit-hold", "take": [2121613276331769856, 0], "redis": 0, "transactionCheck": "UNKNOWN"}
+{"event": "process-exit", "pid": 5036, "signal": 9, "code": -9}
+{"event": "http-lost", "error": "curl: (52) Empty reply from server"}
+{"event": "before-commit-recovered", "seconds": 1.9699974579998525, "take": [2121613276331769856, 0], "redis": 1, "transactionCheck": "ROLLBACK"}
+{"event": "process-exit", "pid": 5088, "signal": 9, "code": -9}
+{"event": "http-lost", "error": "curl: (52) Empty reply from server"}
+{"event": "after-commit-recovered", "seconds": 1.8314980830000422, "orderId": 2121613476286824448, "transactionCheck": "COMMIT"}
+{"event": "original-request-replayed", "orderId": 2121613514907975680, "takeId": 2121613276331769856}
+{"event": "process-exit", "pid": 5115, "signal": 15, "code": 143}

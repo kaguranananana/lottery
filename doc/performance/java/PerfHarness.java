@@ -19,8 +19,8 @@ import com.zaxxer.hikari.metrics.IMetricsTracker;
 import org.springframework.boot.SpringApplication;
 import org.springframework.context.ConfigurableApplicationContext;
 import org.springframework.web.bind.annotation.*;
-import org.apache.kafka.clients.admin.*;
-import org.apache.kafka.common.TopicPartition;
+import com.anontokyo.lottery.application.mq.producer.RocketMqProducer;
+import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import java.lang.management.*;
 import java.math.BigDecimal;
 import java.sql.*;
@@ -34,7 +34,7 @@ public class PerfHarness {
     private static ConfigurableApplicationContext context;
     private static final List<HikariDataSource> pools = new ArrayList<>();
     private static final Map<String, PoolTiming> timings = new LinkedHashMap<>();
-    private static AdminClient admin;
+    private static DefaultMQProducer admin;
 
     /** Hikari 原生计时回调只做累加，避免采样线程改变连接获取行为。 */
     static class PoolTiming implements IMetricsTracker {
@@ -69,10 +69,10 @@ public class PerfHarness {
         PoolTiming timing = new PoolTiming();
         timings.put(pool.getPoolName(), timing);
         pool.setMetricsTrackerFactory((name, stats) -> timing);
-        admin = AdminClient.create(Collections.singletonMap("bootstrap.servers",
-                context.getEnvironment().getRequiredProperty("spring.kafka.bootstrap-servers")));
-        // 测量实际 Spring 调度，不额外启动压测调度器。
-        Runtime.getRuntime().addShutdownHook(new Thread(admin::close));
+        admin = new DefaultMQProducer("lottery-perf-inspect");
+        admin.setNamesrvAddr(context.getEnvironment().getRequiredProperty("lottery.rocketmq.nameserver"));
+        admin.start();
+        Runtime.getRuntime().addShutdownHook(new Thread(admin::shutdown));
     }
 
     @Bean
@@ -99,6 +99,7 @@ public class PerfHarness {
             @RequestParam(value="name", required=false) String name,
             @RequestParam(value="description", required=false) String description,
             @RequestParam(value="awardRate", defaultValue="0.20") BigDecimal awardRate,
+            @RequestParam(value="awardKinds", defaultValue="5") int awardKinds,
             @RequestParam(value="start", defaultValue="true") boolean start) throws Exception {
         ActivityVO activity = new ActivityVO();
         activity.setActivityId(id);
@@ -114,7 +115,7 @@ public class PerfHarness {
         List<AwardVO> awards = new ArrayList<>();
         // stock 仅作为每种奖品的默认总量；活动只有个人次数限制，没有总库存。
         // 五种等概率模拟券，压测默认总概率 100%；演示可留出未中奖概率。
-        for (int i = 0; i < 5; i++) {
+        for (int i = 0; i < awardKinds; i++) {
             ActivityPrizeVO detail = new ActivityPrizeVO();
             detail.setAwardId("p" + id + "_" + i);
             detail.setAwardCount(awardStock < 0 ? stock : awardStock);
@@ -168,12 +169,12 @@ public class PerfHarness {
         // 只重投已有订单；测试控制面不创建订单，也不修改库存或完成状态。
         if (invoice == null) throw new IllegalArgumentException("重投订单不存在 " + order);
         com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO stock = new com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO();
-        stock.setuId(user); stock.setOrderId(order); stock.setActivityId(activityId); stock.setAwardId(award);
-        com.anontokyo.lottery.application.mq.producer.KafkaProducer producer = context.getBean(com.anontokyo.lottery.application.mq.producer.KafkaProducer.class);
-        // 两次实际 broker 确认后返回，消费者仍由真实 Kafka 异步驱动。
+        stock.setTakeId(invoice.getTakeId()); stock.setuId(user); stock.setOrderId(order); stock.setActivityId(activityId); stock.setAwardId(award);
+        RocketMqProducer producer = context.getBean(RocketMqProducer.class);
+        // 两次实际 broker 确认后返回，消费者仍由真实 RocketMQ 异步驱动。
         for (int i = 0; i < 2; i++) {
-            producer.sendStockSettlement(stock).get(5, TimeUnit.SECONDS);
-            producer.sendAwardFulfillment(invoice).get(5, TimeUnit.SECONDS);
+            producer.sendStockSettlement(stock);
+            producer.sendAwardFulfillment(invoice);
         }
     }
 
@@ -208,13 +209,6 @@ public class PerfHarness {
         result.putAll(PerfTiming.scheduling());
         // 可选诊断仅在测试启动器中提供，业务阶段与 SQL 计时均为累计值。
         result.put("timing", PerfTiming.snapshot());
-        // 保存实际监听器提交策略，不能仅由配置文件推断 acknowledge 是否同步等待 broker。
-        Map<String, Object> listeners = new LinkedHashMap<>();
-        for (org.springframework.kafka.listener.MessageListenerContainer listener : context.getBean(org.springframework.kafka.config.KafkaListenerEndpointRegistry.class).getListenerContainers()) {
-            org.springframework.kafka.listener.ContainerProperties properties = listener.getContainerProperties();
-            listeners.put(listener.getListenerId(), Arrays.asList(properties.getAckMode().toString(), properties.isSyncCommits()));
-        }
-        result.put("listeners", listeners);
         Map<String, Object> tomcat = new LinkedHashMap<>();
         javax.management.MBeanServer server = ManagementFactory.getPlatformMBeanServer();
         for (javax.management.ObjectName name : server.queryNames(new javax.management.ObjectName("*:type=ThreadPool,*"), null)) {
@@ -227,22 +221,43 @@ public class PerfHarness {
     @GetMapping("/__perf/lag")
     public Map<String, Object> lag() throws Exception {
         Map<String, Object> result = new LinkedHashMap<>();
-        for (String group : Arrays.asList("lottery-perf-stock", "lottery-perf-invoice")) {
-            Map<TopicPartition, org.apache.kafka.clients.consumer.OffsetAndMetadata> offsets = admin.listConsumerGroupOffsets(group).partitionsToOffsetAndMetadata().get(5, TimeUnit.SECONDS);
-            Map<TopicPartition, OffsetSpec> requests = new HashMap<>();
-            for (TopicPartition partition : offsets.keySet()) requests.put(partition, OffsetSpec.latest());
-            Map<TopicPartition, ListOffsetsResult.ListOffsetsResultInfo> ends = admin.listOffsets(requests).all().get(5, TimeUnit.SECONDS);
-            long committed = 0, lag = 0;
-            for (TopicPartition partition : offsets.keySet()) {
-                committed += offsets.get(partition).offset();
-                lag += ends.get(partition).offset() - offsets.get(partition).offset();
-            }
-            result.put(group, Arrays.asList(committed, lag, offsets.size()));
-        }
+        result.put("lottery-perf-stock", queueLag("lottery-perf-stock", RocketMqProducer.STOCK_TOPIC));
+        result.put("lottery-perf-invoice", queueLag("lottery-perf-invoice", RocketMqProducer.FULFILLMENT_TOPIC));
         return result;
     }
 
+    private List<Long> queueLag(String group, String topic) throws Exception {
+        // 无消费的队列位点为零。直接读实际队列末尾与消费位点，统计总积压。
+        long committed = 0;
+        long lag = 0;
+        java.util.List<org.apache.rocketmq.common.message.MessageQueue> queues = admin.fetchPublishMessageQueues(topic);
+        for (org.apache.rocketmq.common.message.MessageQueue queue : queues) {
+            long end = admin.getDefaultMQProducerImpl().getmQClientFactory().getMQAdminImpl().maxOffset(queue);
+            if (end == 0) {
+                continue;
+            }
+            org.apache.rocketmq.remoting.protocol.header.QueryConsumerOffsetRequestHeader request =
+                    new org.apache.rocketmq.remoting.protocol.header.QueryConsumerOffsetRequestHeader();
+            request.setTopic(topic);
+            request.setConsumerGroup(group);
+            request.setQueueId(queue.getQueueId());
+            long consumed;
+            try {
+                consumed = admin.getDefaultMQProducerImpl().getmQClientFactory().getMQClientAPIImpl()
+                        .queryConsumerOffset("127.0.0.1:20911", request, 3000);
+            } catch (org.apache.rocketmq.client.exception.MQBrokerException e) {
+                if (e.getResponseCode() != org.apache.rocketmq.remoting.protocol.ResponseCode.QUERY_NOT_FOUND) {
+                    throw e;
+                }
+                consumed = 0;
+            }
+            committed += consumed;
+            lag += end - consumed;
+        }
+        return Arrays.asList(committed, lag, (long) queues.size());
+    }
+
     private static Connection connection() throws SQLException {
-        return DriverManager.getConnection("jdbc:mysql://127.0.0.1:13339/lottery?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true", "root", "perf-only");
+        return DriverManager.getConnection("jdbc:mysql://127.0.0.1:13349/lottery?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&rewriteBatchedStatements=true", "root", "perf-only");
     }
 }

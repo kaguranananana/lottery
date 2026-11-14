@@ -7,18 +7,15 @@ server:
       enabled: true
 spring:
   datasource:
-    url: jdbc:mysql://127.0.0.1:13339/lottery?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true
+    url: jdbc:mysql://127.0.0.1:13349/lottery?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai&useLocalSessionState=true
     password: perf-only
   redis:
     host: 127.0.0.1
-    port: 17479
+    port: 17579
     password: ''
-  kafka:
-    bootstrap-servers: 127.0.0.1:29192
-    consumer:
-      auto-offset-reset: earliest
 lottery:
-  kafka:
-    consumer:
-      invoice-group-id: lottery-perf-invoice
-      strategy-award-stock-group-id: lottery-perf-stock
+  rocketmq:
+    nameserver: 127.0.0.1:29876
+    producer-group: lottery-perf-tx
+    stock-group: lottery-perf-stock
+    fulfillment-group: lottery-perf-invoice

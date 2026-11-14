@@ -1,0 +1,64 @@
+# 独立压测栈；端口仅绑定本机，不挂载其它项目数据。
+name: lottery-rocketmq-perf
+services:
+  mysql:
+    image: mysql:8.0.46
+    # 本轮实际关闭超时触发了退出 137；保留持久化，延长正常关闭宽限。
+    stop_grace_period: 60s
+    cpus: 2
+    mem_limit: 2g
+    environment:
+      MYSQL_ROOT_PASSWORD: perf-only
+      TZ: Asia/Shanghai
+    ports: ['127.0.0.1:13349:3306']
+    command: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_unicode_ci', '--slow-query-log=ON', '--long-query-time=0.05', '--log-output=TABLE']
+    healthcheck:
+      test: ['CMD', 'mysqladmin', 'ping', '--protocol=TCP', '-h', '127.0.0.1', '-pperf-only']
+      interval: 5s
+      timeout: 3s
+      retries: 30
+  redis:
+    image: redis:7.2.16
+    cpus: 1
+    mem_limit: 256m
+    ports: ['127.0.0.1:17579:6379']
+    command: ['redis-server', '--latency-monitor-threshold', '1']
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      retries: 10
+  nameserver:
+    image: apache/rocketmq:5.3.4
+    command: ["sh", "mqnamesrv"]
+    environment:
+      JAVA_OPT_EXT: "-Xms128m -Xmx256m -Xmn64m"
+    ports: ["127.0.0.1:29876:9876"]
+  broker-store:
+    image: apache/rocketmq:5.3.4
+    user: "0"
+    entrypoint: ["/bin/sh", "-c", "chown 3000:3000 /home/rocketmq/store"]
+    volumes:
+      - rocketmq-store:/home/rocketmq/store
+  broker:
+    image: apache/rocketmq:5.3.4
+    command: ["sh", "mqbroker", "-n", "nameserver:9876", "-c", "/etc/rocketmq/broker.conf"]
+    depends_on:
+      nameserver:
+        condition: service_started
+      broker-store:
+        condition: service_completed_successfully
+    cpus: 2
+    mem_limit: 1g
+    environment:
+      JAVA_OPT_EXT: "-Xms256m -Xmx512m -Xmn128m"
+    ports: ["127.0.0.1:20911:20911"]
+    healthcheck:
+      test: ["CMD", "bash", "-c", "true </dev/tcp/127.0.0.1/20911"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+    volumes:
+      - ./broker.conf:/etc/rocketmq/broker.conf:ro
+      - rocketmq-store:/home/rocketmq/store
+volumes:
+  rocketmq-store:

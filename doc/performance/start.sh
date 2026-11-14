@@ -19,4 +19,4 @@ if [[ -n "$variant_classes" ]]; then
   classpath="$variant_classes:$classpath"
 fi
 # exec 保留真正应用 PID，方便资源采样和精确停止。
-exec java -Dlottery.perf.hold-after-commit="${PERF_HOLD_AFTER_COMMIT:-false}" -Xms512m -Xmx1024m -XX:ActiveProcessorCount=4 -Xlog:gc*:file="$output/gc.log":time,uptime,level,tags -cp "$classpath" PerfHarness --spring.config.additional-location="file:$PWD/doc/performance/application-perf.yml" "$@"
+exec java -Dlottery.perf.hold-after-reserve="${PERF_HOLD_AFTER_RESERVE:-false}" -Dlottery.perf.hold-after-commit="${PERF_HOLD_AFTER_COMMIT:-false}" -Xms512m -Xmx1024m -XX:ActiveProcessorCount=4 -Xlog:gc*:file="$output/gc.log":time,uptime,level,tags -cp "$classpath" PerfHarness --spring.config.additional-location="file:$PWD/doc/performance/application-perf.yml" "$@"

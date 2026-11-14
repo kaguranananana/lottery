@@ -78,7 +78,10 @@ def analyze(directory):
             award,total,left=line.split('\t')
             assert int(left)==seeded,'真实初始化库存与本轮fixture不符'
     assert audit['pending']['blocked']==audit['pending']['stockPending']==audit['pending']['grantPending']==0
-    assert all(group[1]==0 and group[2]==8 for group in audit['kafka'].values()),'Kafka最终Lag未归零或分区位点不全'
+    broker = 'rocketmq' if 'rocketmq' in audit else 'kafka'
+    if 'pendingReservations' in audit:
+        assert audit['pendingReservations'] == 0, '存在未收口的 Redis 预扣'
+    assert all(group[1]==0 and group[2]==8 for group in audit[broker].values()),'最终 Lag 未归零或队列位点不全'
     # 数据库 datetime 精度为秒：完成延迟给上下界，禁止把取整值冒充毫秒精度实测。
     bounds=[]
     for row in success:
@@ -135,8 +138,8 @@ def analyze(directory):
                                   or (r['responseCode']=='200' and r['businessCode']
                                       not in ('0000','D001','0004','D006','D007')) for r in measured)/len(measured)
     result['settledOrders']=len(ledger_rows)
-    result['peakSampledKafkaLag']={group:max((s['kafka'][group][1] for s in pending),default=0)
-                                   for group in audit['kafka']}
+    result['peakSampledRocketMqLag' if broker == 'rocketmq' else 'peakSampledKafkaLag']={
+        group:max((s[broker][group][1] for s in pending),default=0) for group in audit[broker]}
     before=json.loads((directory/'before.json').read_text())
     after=json.loads((directory/'after.json').read_text())
     def counters(row):
@@ -144,7 +147,7 @@ def analyze(directory):
     result['mysqlDelta']={key:value-counters(before)[key] for key,value in counters(after).items()}
     result['mysqlCpuMean']=sum(
         float(next(json.loads(row)['CPUPerc'] for row in s['docker']
-                   if json.loads(row)['Name']=='lottery-single-perf-mysql-1').rstrip('%'))
+                   if json.loads(row)['Name']==('lottery-rocketmq-perf-mysql-1' if broker == 'rocketmq' else 'lottery-single-perf-mysql-1')).rstrip('%'))
         for s in samples)/len(samples)
     result['mysqlConnectionsMax']=max((counters(s)['Threads_connected'] for s in pending),default=None)
     result['slowQueries']=int((directory/'slow-after.tsv').read_text().split()[0])-int((directory/'slow-before.tsv').read_text().split()[0])
