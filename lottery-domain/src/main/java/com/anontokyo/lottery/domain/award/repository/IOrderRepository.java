@@ -1,7 +1,6 @@
 package com.anontokyo.lottery.domain.award.repository;
 
 import com.anontokyo.lottery.common.Constants;
-import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
 import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 
@@ -21,12 +20,12 @@ public interface IOrderRepository {
     boolean markUserAwardGranted(String uId, Long orderId, String awardId);
 
     /**
-     * 条件推进发奖 MQ 状态：发送回调写 SENT/FAIL，消费确认发奖后写 COMPLETE。
+     * 条件推进发奖 MQ 状态：消费确认实际发奖后写 COMPLETE。
      */
     void updateFulfillmentEventStatus(String uId, Long orderId, Integer fulfillmentEventStatus);
 
     /**
-     * 条件推进库存 MQ 状态：发送失败不覆盖 SENT，所有发送回调不覆盖 COMPLETE。
+     * 条件推进库存 MQ 状态：消费后写 COMPLETE，并登记发奖义务。
      * @return true 表示本次推进状态，库存完成时同时领取首发发奖义务
      */
     boolean updateStockSettlementEventStatus(String uId, Long orderId, Integer stockSettlementEventStatus);
@@ -39,11 +38,8 @@ public interface IOrderRepository {
     /** 读取到期候选，投递前仍需在数据库领取本次发送。 */
     List<DrawOrderVO> scanOutbox(OutboxKind kind, int limit);
 
-    /** CAS 推进投递代数，并设置可恢复的发送租期。 */
-    boolean claimOutbox(OutboxKind kind, long orderId, int attempt, int leaseSeconds);
-
-    /** 只允许当前代数的回调更新下次重试时间。 */
-    void finishOutbox(OutboxKind kind, long orderId, int attempt, boolean sent, int delaySeconds);
+    /** 到期条件领取只移动下次核对时间，终态由消费者写入。 */
+    boolean claimOutbox(OutboxKind kind, long orderId, int leaseSeconds);
 
     DrawOrderVO findOrder(String uId, Long orderId);
 
@@ -66,7 +62,15 @@ public interface IOrderRepository {
      * 保存中奖订单并锁定对应参与记录（本地事务由 infrastructure 承担）。
      * @return SUCCESS / NO_UPDATE(锁定失败) / INDEX_DUP(订单重复)
      */
-    Constants.ResponseCode saveDrawOrderWithTakeLock(DrawOrderVO drawOrder);
+    Constants.ResponseCode saveDrawOrderWithTakeLock(DrawOrderVO drawOrder, long deadline);
+
+    enum StockTransactionState { COMMITTED, ROLLED_BACK, UNKNOWN }
+
+    /** 订单存在即证明已提交。过期的未决消息需在参与锁内判定。 */
+    StockTransactionState checkStockTransaction(String uId, long orderId, long takeId, long deadline);
+
+    /** 对账执行进程退出或回补失败遗留的 Redis 预扣。 */
+    void recoverStockReservations(int limit);
 
     /**
      * Whether stock settlement is already complete.

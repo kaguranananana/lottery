@@ -7,7 +7,8 @@ import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
 import com.anontokyo.lottery.domain.activity.model.vo.DrawParticipationVO;
 import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
-import com.anontokyo.lottery.domain.draw.repository.IActivityPrizeRepository;
+import com.anontokyo.lottery.infrastructure.utils.RedisStockReservations;
+import com.anontokyo.lottery.domain.award.service.order.IStockOrderTransaction;
 import com.anontokyo.lottery.domain.activity.service.partake.impl.ActivityPartakeImpl;
 import com.anontokyo.lottery.domain.award.service.order.impl.AwardOrderImpl;
 import com.anontokyo.lottery.domain.draw.model.res.DrawResult;
@@ -48,7 +49,7 @@ public class DrawRequestOwnershipManualIT {
     private static final AtomicLong ids = new AtomicLong(System.currentTimeMillis());
     private static DrawParticipationRepository takes;
     private static OrderRepository orders;
-    private IActivityPrizeRepository stockReservations;
+    private RedisStockReservations stockReservations;
     private ActivityProcessImpl process;
     private IDrawExec draw;
     private String user;
@@ -83,7 +84,6 @@ public class DrawRequestOwnershipManualIT {
         ReflectionTestUtils.setField(takes, "userActivityQuotaDao", countDao);
         ReflectionTestUtils.setField(orders, "drawParticipationDao", takeDao);
         ReflectionTestUtils.setField(orders, "drawOrderDao", orderDao);
-        ReflectionTestUtils.setField(orders, "events", mock(org.springframework.context.ApplicationEventPublisher.class));
         for (Object repository : Arrays.asList(takes, orders)) {
             ReflectionTestUtils.setField(repository, "transactionTemplate", transaction);
         }
@@ -102,8 +102,9 @@ public class DrawRequestOwnershipManualIT {
         bill.setEndDateTime(new java.util.Date(Long.MAX_VALUE));
         IActivityRepository activities = mock(IActivityRepository.class);
         // SQL 专项只模拟奖品预扣与回补，用户事务保持真实。
-        stockReservations = mock(IActivityPrizeRepository.class);
-        ReflectionTestUtils.setField(orders, "activityPrizeRepository", stockReservations);
+        stockReservations = mock(RedisStockReservations.class);
+        when(stockReservations.reserve(anyString(), anyLong(), anyLong(), anyString(), anyLong())).thenReturn(true);
+        ReflectionTestUtils.setField(orders, "reservations", stockReservations);
         when(activities.queryActivityBill(any())).thenReturn(bill);
         IdGenerator generator = ids::incrementAndGet;
         ActivityPartakeImpl partake = new ActivityPartakeImpl();
@@ -113,6 +114,8 @@ public class DrawRequestOwnershipManualIT {
         AwardOrderImpl awardOrder = new AwardOrderImpl();
         ReflectionTestUtils.setField(awardOrder, "orderRepository", orders);
         ReflectionTestUtils.setField(awardOrder, "idGenerator", generator);
+        ReflectionTestUtils.setField(awardOrder, "stockOrderTransaction",
+                (IStockOrderTransaction) order -> orders.saveDrawOrderWithTakeLock(order, Long.MAX_VALUE));
         draw = mock(IDrawExec.class);
         when(draw.doDrawExec(any())).thenReturn(new DrawResult(user, 10001L, Constants.DrawState.SUCCESS.getCode(),
                 new DrawAwardInfo("3", 3, "优惠券", "30元")));
@@ -263,7 +266,7 @@ public class DrawRequestOwnershipManualIT {
         DrawParticipationVO unfinished = takes.queryParticipationByRequestId(100001L, user, "A");
         assertEquals(Constants.TaskState.NO_USED.getCode(), unfinished.getState());
         // 已确认回滚只回补本次预扣一次；真实 Redis 行为另由 HTTP E2E 验证。
-        verify(stockReservations).recoverActivityPrizeStockByRedis(100001L, "3");
+        verify(stockReservations).resolve(anyString(), eq(unfinished.getTakeId()), eq(100001L), eq("3"), eq(false));
         assertEquals(9, leftCount());
         assertEquals(0, orderCount());
         DrawProcessResult resumed = request("A");

@@ -1,5 +1,8 @@
 # 单实例调度与订单 Outbox
 
+本文记录 Kafka 版本的投递协议。当前实验分支见 [RocketMQ 事务消息](rocketmq-transactional-report.md)。
+
+
 Spring 默认用三个调度线程，每个任务采用独立的 10 秒固定延迟。活动扫描查询到期的 READY 和 RUNNING 行，生命周期服务在数据库行锁内复核状态并预热 Redis。单条活动异常记录活动号后继续处理同一页。扫描任务异常由 Spring 记录，下一轮继续调度。配置项见 `application.yml` 的 `spring.task.scheduling` 和 `lottery.scheduling`。
 
 ## 投递与重试

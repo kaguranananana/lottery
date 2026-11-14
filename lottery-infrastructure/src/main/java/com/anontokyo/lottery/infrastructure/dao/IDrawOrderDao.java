@@ -18,6 +18,8 @@ public interface IDrawOrderDao {
      * 新增数据
      * @param drawOrderRow 中奖订单
      */
+    boolean hasOrderForTake(@Param("orderId") long orderId, @Param("takeId") long takeId);
+
     void insert(DrawOrder drawOrderRow);
 
     /**
@@ -61,10 +63,6 @@ public interface IDrawOrderDao {
     List<DrawOrder> scanFulfillmentEventStatus(@Param("limit") int limit);
 
     int claimOutbox(@Param("kind") OutboxKind kind, @Param("orderId") long orderId,
-            @Param("attempt") int attempt,
             @Param("leaseSeconds") int leaseSeconds);
 
-    int finishOutbox(@Param("kind") OutboxKind kind, @Param("orderId") long orderId,
-            @Param("attempt") int attempt, @Param("sent") boolean sent,
-            @Param("delaySeconds") int delaySeconds);
 }

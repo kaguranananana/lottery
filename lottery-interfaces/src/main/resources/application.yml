@@ -31,57 +31,6 @@ spring:
         max-idle: 32
         min-idle: 8
 
-  kafka:
-    # Kafka服务器地址
-    bootstrap-servers: localhost:9092
-
-    # 生产者配置
-    producer:
-      # 发生错误后，消息重发的次数
-      retries: 1
-      # 当有多个消息需要被发送到同一个分区时，生产者会把它们放在同一个批次里
-      # 该参数指定了一个批次可以使用的内存大小，按照字节数计算
-      batch-size: 16384
-      # 设置生产者内存缓冲区的大小
-      buffer-memory: 33554432
-      # 键的序列化方式
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      # 值的序列化方式
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-      # acks=0：生产者在成功写入消息之前不会等待任何来自服务器的响应
-      # acks=1：只要集群的首领节点收到消息，生产者就会收到一个来自服务器成功响应
-      # acks=all：只有当所有参与复制的节点全部收到消息时，生产者才会收到一个来自服务器的成功响应
-      acks: 1
-      properties:
-        max.block.ms: 1000
-        request.timeout.ms: 10000
-        delivery.timeout.ms: 30000
-
-    # 消费者配置
-    consumer:
-      # 自动提交的时间间隔（在Spring Boot 2.X 版本中这里采用的是值的类型为Duration）
-      auto-commit-interval: 1S
-      # 该属性指定了消费者在读取一个没有偏移量的分区或者偏移量无效的情况下该作何处理：
-      # latest（默认值）：在偏移量无效的情况下，消费者将从最新的记录开始读取数据
-      # earliest：在偏移量无效的情况下，消费者将从起始位置读取分区的记录
-      auto-offset-reset: latest
-      # 是否自动提交偏移量，默认值是true
-      # 为了避免出现重复数据和数据丢失，可以把它设置为false，然后手动提交偏移量
-      enable-auto-commit: false
-      # 键的反序列化方式
-      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-      # 值的反序列化方式
-      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
-
-    # 监听器配置
-    listener:
-      # 在侦听器容器中运行的线程数
-      concurrency: 5
-      # listener负责ack，每调用一次，就立即commit
-      ack-mode: manual_immediate
-      # 如果至少有一个topic不存在，是否启动失败
-      missing-topics-fatal: false
-
 lottery:
   scheduling:
     activity-delay-ms: 10000
@@ -90,10 +39,7 @@ lottery:
   outbox:
     workers: 6
     max-in-flight: 128
-    lease-seconds: 45
-    consume-timeout-seconds: 600
-    scan-batch-size: 100
-    scan-batches: 3
+    scan-batch-size: 32
   draw:
     # HTTP 限流共享 Redis 配额，本机并发阈值独立配置。
     admission:
@@ -108,21 +54,12 @@ lottery:
     worker-id: ${LOTTERY_WORKER_ID:0}
     # 同一数据中心共用该值，不同数据中心使用不同的 0..31 编号。
     datacenter-id: ${LOTTERY_DATACENTER_ID:1}
-  kafka:
-    invoice:
-      enabled: true
-    topic:
-      invoice:
-        partitions: 8
-        replicas: 1
-      strategy-award-stock:
-        partitions: 8
-        replicas: 1
-    consumer:
-      invoice-group-id: lottery-invoice-20260315
-      strategy-award-stock-group-id: lottery-strategy-award-stock-20260315
-      invoice-concurrency: 4
-      strategy-award-stock-concurrency: 4
+  rocketmq:
+    nameserver: ${LOTTERY_ROCKETMQ_NAMESERVER:127.0.0.1:9876}
+    producer-group: ${LOTTERY_ROCKETMQ_PRODUCER_GROUP:lottery-order-tx}
+    stock-group: ${LOTTERY_ROCKETMQ_STOCK_GROUP:lottery-stock}
+    fulfillment-group: ${LOTTERY_ROCKETMQ_FULFILLMENT_GROUP:lottery-fulfillment}
+    consumer-threads: 4
   cache:
     draw-inflight-redis-ttl-seconds: 3
     no-consumed-order-redis-ttl-seconds: 1800

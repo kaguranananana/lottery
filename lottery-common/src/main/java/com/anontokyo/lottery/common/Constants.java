@@ -13,6 +13,7 @@ public class Constants {
         ILLEGAL_PARAMETER("0002", "非法参数"),
         INDEX_DUP("0003", "主键冲突"),
         NO_UPDATE("0004", "SQL操作无更新"),
+        AWARD_SOLD_OUT("D009", "命中奖品已售罄"),
         LOSING_DRAW("D001", "未中奖"),
         NOT_CONSUMED_TAKE("D003", "未消费活动领取记录"),
         DRAW_IN_PROGRESS("D006", "抽奖处理中，请使用原请求号重试"),
@@ -265,7 +266,7 @@ public class Constants {
      * 消息投递状态（0初始待投递、1消费完成、2投递失败待重试、3已投递等待消费结果）
      */
     public enum FulfillmentEventStatus {
-        INIT(0), COMPLETE(1), FAIL(2), SENT(3);
+        INIT(0), COMPLETE(1);
 
         private final Integer code;
 
@@ -280,7 +281,7 @@ public class Constants {
 
     /** 库存消息投递、结算事实与人工对账状态。 */
     public enum StockSettlementEventStatus {
-        INIT(0), COMPLETE(1), FAIL(2), SENT(3), BLOCKED(4);
+        INIT(0), COMPLETE(1), BLOCKED(4);
 
         private final Integer code;
 

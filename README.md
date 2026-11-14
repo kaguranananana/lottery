@@ -5,12 +5,12 @@
 ![Java](https://img.shields.io/badge/Java-8-ED8B00?logo=openjdk&logoColor=white)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-2.3.5-6DB33F?logo=springboot&logoColor=white)
 ![Redis](https://img.shields.io/badge/Redis-Cache%20%26%20Inventory-DC382D?logo=redis&logoColor=white)
-![Kafka](https://img.shields.io/badge/Apache%20Kafka-Async%20Messaging-231F20?logo=apachekafka&logoColor=white)
+![RocketMQ](https://img.shields.io/badge/Apache%20RocketMQ-Transactional%20Messaging-4E6EF2)
 ![MySQL](https://img.shields.io/badge/MySQL-Single%20DB%20%26%20Ledger-4479A1?logo=mysql&logoColor=white)
 
 **Lottery 是一个以学习和技术实践为目的的 Java 后端项目，并非实际生产部署的商业系统。** 项目模拟营销抽奖业务，涵盖活动配置、参与资格校验、概率抽奖、中奖订单和异步发奖，重点研究系统在重复请求、库存竞争、消息重投及部分组件故障下如何维持业务正确性。
 
-技术栈：**Spring Boot · MyBatis · MySQL · Redis · Caffeine · Kafka · Spring Scheduling · Maven · JMeter**
+技术栈：**Spring Boot · MyBatis · MySQL · Redis · Caffeine · RocketMQ · Spring Scheduling · Maven · JMeter**
 
 ## 网页演示
 
@@ -25,7 +25,7 @@
 | 参与约束 | 用户受个人 `take_count` 限制，活动没有独立的总抽奖名额 |
 | 奖品库存 | Redis 原子预扣控制活动奖品库存，MySQL 条件更新完成持久化结算 |
 | 请求幂等 | `requestId` 标识一次逻辑抽奖，配合数据库唯一约束、未完成参与恢复和结果回放 |
-| 可靠异步结算 | 中奖订单和待投递状态在同一事务写入，通过 Transactional Outbox + Kafka 异步结算 |
+| 可靠异步结算 | 订单 TX2 通过 RocketMQ 事务消息驱动异步库存结算，回查读取已提交订单 |
 | 消费幂等与补偿 | `UNIQUE(order_id)` 结算账本、状态 CAS 和 Spring 定时扫描处理重复消费与失败恢复 |
 | 缓存与数据组织 | Caffeine + Redis 两级奖池缓存，单 MySQL 库和七张业务表 |
 | 验证与性能 | 单元测试、真实中间件 E2E、JMeter 压测及 SQL 执行计划对照实验 |
@@ -41,10 +41,11 @@ flowchart TD
     APP --> DOMAIN[Domain：资格校验与概率抽样]
     APP --> REDIS[Redis：库存预扣与并发控制]
     DOMAIN --> CACHE[Caffeine + Redis：活动奖池快照]
-    APP --> DB[(MySQL：参与记录 / 中奖订单 / Outbox)]
-    DB --> JOB[提交后立即投递，Spring 定时补偿]
-    JOB --> MQ[Kafka：库存结算事件]
-    MQ --> SETTLE[结算消费者：唯一账本 + 条件扣库存]
+    APP --> MQ[RocketMQ Half Message]
+    MQ --> DB[(MySQL：TX2 消费参与并创建订单)]
+    DB -->|提交或回查| MQ
+    DB --> JOB[定时核对未完成订单]
+    MQ -->|Commit 后| SETTLE[结算消费者：唯一账本 + 条件扣库存]
     SETTLE --> DB
     SETTLE --> AWARD[发奖消息与模拟发奖处理]
     JOB -. 发奖失败补偿 .-> AWARD
@@ -55,9 +56,9 @@ flowchart TD
 1. HTTP 校验认证用户，按本机并发与 Redis 配额准入，再进入应用层编排。
 2. 通过短时并发锁、请求号及参与记录，判断是新请求、结果回放还是未完成请求恢复。
 3. 校验活动状态和时间；TX1 在同一个本地事务中条件扣减个人次数并创建参与记录。
-4. 读取活动奖池快照进行加权随机抽样；命中奖品后预扣其 Redis 库存。未中奖或命中已售罄奖品时消费参与记录，仍消耗一次个人机会。
-5. TX2 在同一个本地事务中消费参与记录、创建中奖订单并写入 `stock_settlement_event_status=INIT`。
-6. 提交后实时投递 Outbox 至 Kafka，Spring 调度补偿未完成义务；TX3 在本地事务中插入唯一账本、条件扣减 MySQL 奖品库存，再发送发奖消息。三个事务独立提交。
+4. 读取活动奖池快照进行加权随机抽样。命中奖品先发送 Half Message，Broker 确认后进入 TX2。
+5. TX2 用参与 CAS 取得行锁，在 Redis 原子预扣并登记对账记录，再提交中奖订单。未中奖和真实售罄仍消费一次参与。
+6. RocketMQ 收到 Commit 后投递库存消息。TX3 写唯一账本并条件扣减 MySQL，库存终态 CAS 同时登记发奖义务。
 
 ## 关键技术设计
 
@@ -70,7 +71,7 @@ flowchart TD
 
 系统仅保留“用户个人参与次数”和“活动奖品库存”两种限制。旧活动总库存的 MySQL 剩余量没有完整结算链路，本次取消全场名额限制并移除两列及 Redis 预扣/回补；详见 [业务简化与迁移](docs/activity-stock-removal.md)。
 
-Redis 预扣与 MySQL 下单不是跨存储原子事务。明确业务拒绝与确认回滚时保留现有奖品回补；预扣后 JVM 退出、事务结果未知或回补失败仍可能遗留预留，需要按订单和账本对账。
+Redis Lua 将预扣和对账索引一起写入。JVM 退出或提交结果未知时，通过 MySQL 参与锁和订单检查决定归还预扣或清除记录。同请求重试也会清理该参与已回滚的预扣。
 
 ### 2. 请求幂等：同一次抽奖只消耗一次机会
 
@@ -83,18 +84,11 @@ Redis 预扣与 MySQL 下单不是跨存储原子事务。明确业务拒绝与�
 
 相关设计见 [抽奖请求幂等说明](docs/draw-request-idempotency.md)。
 
-### 3. Transactional Outbox + Kafka：异步结算与可恢复投递
+### 3. 事务消息、结算与发奖补偿
 
-抽奖下单与“待发送库存结算消息”状态写入同一数据库事务，避免订单已提交但消息义务丢失。事务提交后实时投递，Spring 按独立重试时间扫描补偿。详见 [投递与重试](docs/outbox-delivery.md)。
+RocketMQ 根据 TX2 的提交结果释放或回滚库存 Half Message。进程重启后，同一生产者组以订单事实处理 Broker 回查。库存条件扣减和唯一账本在 TX3 提交，消费重放继续由账本和订单 CAS 去重。
 
-Kafka 按 `orderId` 发送结算事件，消费端将两项操作放在同一个 MySQL 本地事务中：
-
-1. 插入 `award_stock_settlement` 结算账本，`order_id` 唯一。
-2. 对奖品库存执行带剩余量条件的扣减。
-
-即使 Kafka 重复投递，已存在的订单账本也能阻止同一订单重复扣库存。消息状态通过 SQL 条件更新（CAS）推进，避免迟到的发送回调覆盖已完成状态。
-
-发送失败可以重试；数据库库存分歧则进入 **BLOCKED** 待对账状态，防止对不可自动修复的业务异常无限重投。
+库存分歧进入 **BLOCKED**，对账后才能重新投递。订单还保留库存超时核对，以及库存完成后需要发送的发奖义务。四种发奖处理器当前只写本地模拟状态。 [事务协议与验证](docs/rocketmq-transactional-report.md)
 
 ### 4. 概率抽奖与热点缓存
 
@@ -104,13 +98,13 @@ Kafka 按 `orderId` 发送结算事件，消费端将两项操作放在同一个
 
 ### 5. 单库与抽奖准入
 
-七张业务表共用一个 MySQL 数据库和一个 Hikari 连接池。订单号、参与号、请求归属和库存账本分别由唯一约束保护。已有 V7 单库可按 [活动独立奖池与 V8 切换](docs/activity-prize-pool.md) 旁路升级。新建库直接使用当前 Schema。
+七张业务表共用一个 MySQL 数据库和一个 Hikari 连接池。订单号、参与号、请求归属和库存账本分别由唯一约束保护。RocketMQ 分支使用当前 Schema 新建隔离库。
 
 抽奖使用 Servlet 认证身份。Controller 先获取本机 Semaphore 许可，再用一条 Redis Lua 同时检查全局和用户活动令牌桶。429 或限流 Redis 故障返回 503 时，可以用原请求号重试。详见 [抽奖 HTTP 契约](.trellis/spec/backend/http-contract.md)。
 
 ## 性能测试与优化
 
-项目使用 JMeter 和独立 Docker 中间件环境测试 **HTTP → Redis → MySQL 本地事务 → Outbox → Kafka → 库存账本 → 本地模拟发奖** 的真实链路，并针对 SQL 扫描和 JDBC 往返做定向分析。
+项目使用 JMeter 和独立 Docker 中间件环境测试 **HTTP → RocketMQ 事务消息 → MySQL 库存账本 → 本地模拟发奖** 的真实链路，并针对 SQL 扫描和 JDBC 往返做定向分析。
 
 ### 补偿任务查询优化
 
@@ -125,7 +119,7 @@ Kafka 按 `orderId` 发送结算事件，消费端将两项操作放在同一个
 
 ### 完整链路持续负载
 
-以下为 2026-10 的历史双库存实现数据。当前单库结果见 [本轮压测](docs/single-db-load-test.md)。在当时的本地单应用、单 Kafka Broker、模拟发奖条件下：
+以下为 2026-10 的历史双库存实现数据。RocketMQ 四档数据见 [重构报告](docs/rocketmq-transactional-report.md)。在当时的本地单应用、单 Kafka Broker、模拟发奖条件下：
 
 - **150 RPS** 完成两次连续 **300 秒** 的完整异步链路验收，满足预设 HTTP、积压增长、异步完成和最终业务审计条件。
 - 更高的 **180 / 200 RPS** 长时间测试未全部满足稳定性条件；150 RPS 的早期一次测试也未通过，因此不能据此认定最大稳定容量。
@@ -143,7 +137,7 @@ Kafka 按 `orderId` 发送结算事件，消费端将两项操作放在同一个
 ### 环境依赖
 
 - Java 8、Maven 3.x（项目使用 Spring Boot 2.3.5.RELEASE）
-- MySQL、Redis、Kafka / ZooKeeper
+- MySQL 8.0、Redis、RocketMQ 5.3.4
 
 ### 本地构建
 
@@ -163,9 +157,10 @@ mvn clean package
 ### 数据初始化与应用启动
 
 1. 准备独立的 MySQL 测试实例。
-2. 空实例执行 [完整 Schema](docs/sql/lottery-schema.sql) 创建 `lottery`，可选加载 [演示数据](docs/sql/lottery-demo-seed.sql)。已有单库按 [V8 切换](docs/activity-prize-pool.md) 演练。已有分片库先按 [V6 升级说明](docs/single-database.md) 完成合库，再走 V8。
-3. 根据本地环境配置 `lottery-interfaces/src/main/resources/application.yml`，包括 MySQL、Redis、Kafka 地址及凭据；默认配置的 MySQL 端口为 `13306`、Redis 为 `6379`、Kafka 为 `9092`。
-4. 启动所需中间件与应用；活动应按正常状态流转完成库存预热，不能仅将数据库状态改为运行中来跳过预热。
+2. 执行 [完整 Schema](docs/sql/lottery-schema.sql)，可选加载 [演示数据](docs/sql/lottery-demo-seed.sql)。
+3. 配置 MySQL、Redis 和 RocketMQ NameServer。默认端口分别为 13306、6379、9876。
+4. 预建库存事务 Topic 与发奖普通 Topic 后启动应用。活动按正常状态流转完成预热。 [独立环境命令](docs/rocketmq-transactional-report.md)
+
 
 本地单实例的 Snowflake 节点默认 `LOTTERY_WORKER_ID=0`、`LOTTERY_DATACENTER_ID=1`。多实例部署必须给同一数据中心内每个实例分配不同的 0..31 worker-id；节点号不再从 IP 推导，也没有自动注册分配。
 
@@ -187,7 +182,7 @@ curl -X POST http://localhost:8080/api/v1/draw \
 
 ## 测试与验证
 
-仓库提供概率抽样、请求幂等、并发锁、状态推进和消息回调等单元测试，以及使用真实 MySQL、Redis、Kafka 的集成与 E2E 测试。
+仓库提供概率抽样、请求幂等、并发锁、状态推进和消息回调等单元测试，以及使用真实 MySQL、Redis、RocketMQ 的集成与 E2E 测试。
 
 - 默认单元测试通过 Maven `mvn clean test` 执行。
 - `*ManualIT` 集成测试需要专用中间件、数据库初始化和测试配置；部分场景会修改专用测试库或停启 Broker，**不要直接对现有业务环境批量运行**。
@@ -200,7 +195,7 @@ curl -X POST http://localhost:8080/api/v1/draw \
 
 ```text
 lottery-interfaces        Spring Boot 启动入口、抽奖网页、HTTP API、测试
-lottery-application       抽奖流程编排、Kafka 生产/消费、Spring 定时任务
+lottery-application       抽奖流程编排、RocketMQ 生产/消费、Spring 定时任务
 lottery-domain            资格校验、奖池抽样、活动与订单业务规则
 lottery-infrastructure    MyBatis / Redis / Repository / 缓存实现
 lottery-common            统一结果、枚举与公共常量

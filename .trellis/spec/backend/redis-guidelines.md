@@ -6,9 +6,9 @@
 
 ## 库存扣减与预热
 
-活动总库存及对应 Key、预扣、回补和响应码已移除。[ActivityPrizeRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityPrizeRepository.java) 只预扣活动奖品库存。奖品 Key 缺失或 Redis 异常抛 IllegalStateException 并保留 cause，不能转换为未中奖并消费 take；只有真实售罄才返回 soldOut。最终奖品库存通过唯一账本在 MySQL 结算。
+TX2 取得参与行锁后，[RedisStockReservations.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/utils/RedisStockReservations.java) 在同一 Lua 中检查活动奖品库存、登记参与和订单的待对账索引、扣减库存。缺键抛异常并保留未消费参与，只有真实售罄才提交未中奖。串联 MySQL 行锁与 Redis Lua 的协议要求同一 Redis 实例持有库存和预扣索引。
 
-[RedisUtil.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/utils/RedisUtil.java) 的 `long deductStock(String key)` 在一个 Lua 脚本中读取、检查存在性及余量，再 DECR：非负结果是剩余量，-2 为售罄，缺失或命令错误抛出。`void recoverStock(String key)` 仅对现存 Key 原子 INCR，缺失时不创建 Key 并抛出；仓储回补日志后继续传播异常。不能恢复为 GET→DECR→负数 INCR 的分步实现，也不能在热路径按 MySQL 剩余值回填，异步结算滞后的值会恢复已预扣库存。真实 Redis 覆盖见 RedisStockFailureManualIT。
+补偿在参与行锁内读取订单，有订单清除索引，无订单按原标记归还一次库存。库存缺键时保留未完成标记并记录异常。同一参与重试先处理其遗留标记。运行期不能用 MySQL 滞后余额直接回填库存。
 
 warmupAwardStockForActivity 仅允许 READY 活动，与启动共用活动行锁。READY→RUNNING 锁内检查 begin <= now < end，只以本活动 MySQL 奖品余额 SETNX。RUNNING/CLOSED 禁止预热，缺键必须对账；一个活动的库存缺键不影响其他奖池。部分预热成功可在 READY 重试，保留现存余额。见 [V8 契约](../../../docs/activity-prize-pool.md)。
 

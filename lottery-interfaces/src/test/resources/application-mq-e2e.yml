@@ -1,4 +1,4 @@
-# 只用于独立 Docker 测试栈，生产 application.yml 保持原样。
+# 仅连接独立 RocketMQ E2E 栈。
 spring:
   datasource:
     url: jdbc:mysql://127.0.0.1:13309/lottery?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
@@ -9,23 +9,12 @@ spring:
     host: 127.0.0.1
     port: 16379
     password: ""
-  kafka:
-    bootstrap-servers: 127.0.0.1:19092
-    producer:
-      properties:
-        # 停机验证使用真实 Kafka 超时，不让测试等待默认的数分钟。
-        delivery.timeout.ms: 5000
-        request.timeout.ms: 1000
-        max.block.ms: 5000
-    consumer:
-      auto-offset-reset: earliest
-    listener:
-      # 建表和 fixture 准备完成后由测试启动真实监听容器。
-      auto-startup: false
 lottery:
-  kafka:
-    consumer:
-      invoice-group-id: lottery-e2e-invoice-${lottery.e2e.run}
-      strategy-award-stock-group-id: lottery-e2e-stock-${lottery.e2e.run}
-
-lottery.scheduling.enabled: false
+  rocketmq:
+    nameserver: 127.0.0.1:19876
+    producer-group: lottery-e2e-tx
+    stock-group: lottery-e2e-stock
+    fulfillment-group: lottery-e2e-fulfillment
+    consumers-auto-start: false
+  scheduling:
+    enabled: false

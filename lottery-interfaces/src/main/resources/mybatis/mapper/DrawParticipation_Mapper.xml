@@ -23,6 +23,15 @@
          #{state}, #{requestId}, now(), now())
     </insert>
 
+    <select id="databaseTimeMillis" resultType="long">
+        SELECT CAST(UNIX_TIMESTAMP(CURRENT_TIMESTAMP(3)) * 1000 AS UNSIGNED)
+    </select>
+
+    <!-- 回查与预扣对账共用 TX2 锁；正在执行时立即退回 UNKNOWN。 -->
+    <select id="lockTakeNowait" resultType="long">
+        SELECT take_id FROM draw_participation WHERE take_id = #{takeId} FOR UPDATE NOWAIT
+    </select>
+
     <update id="consumeParticipation">
         UPDATE draw_participation SET state = 1
         WHERE u_id = #{uId} AND activity_id = #{activityId} AND take_id = #{takeId} AND state = 0

@@ -1,4 +1,4 @@
--- MySQL 8.0.16+ 全新单库；已有 V7 单库使用 V8__activity_prize.py 旁路升级。
+-- MySQL 8.0.16+，RocketMQ 版本全新库。
 SET NAMES utf8mb4;
 CREATE DATABASE lottery CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
 
@@ -106,12 +106,10 @@ CREATE TABLE `draw_order` (
   `award_name` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '奖品名称',
   `award_content` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '奖品内容「文字描述、Key、码」',
   `legacy_uuid` varchar(128) CHARACTER SET utf8mb4 COLLATE utf8mb4_bin DEFAULT NULL COMMENT '历史防重标识',
-  `fulfillment_event_status` tinyint DEFAULT NULL COMMENT '发奖事件：0待投递、1消费完成、2投递失败、3已投递',
-  `stock_settlement_event_status` tinyint NOT NULL DEFAULT '1' COMMENT '库存结算事件：0待投递、1结算完成、2投递失败、3已投递、4待对账',
-  `stock_retry_at` datetime(3) DEFAULT NULL COMMENT '库存消息下一次可投递时间',
-  `stock_attempt` int NOT NULL DEFAULT 0 COMMENT '库存投递次数和回调代数',
-  `fulfillment_retry_at` datetime(3) DEFAULT NULL COMMENT '发奖消息下一次可投递时间',
-  `fulfillment_attempt` int NOT NULL DEFAULT 0 COMMENT '发奖投递次数和回调代数',
+  `fulfillment_event_status` tinyint DEFAULT NULL COMMENT '发奖事件：0待完成、1消费完成',
+  `stock_settlement_event_status` tinyint NOT NULL DEFAULT '1' COMMENT '库存结算事件：0待完成、1结算完成、4待对账',
+  `stock_retry_at` datetime(3) DEFAULT NULL COMMENT '未完成库存的下次核对时间',
+  `fulfillment_retry_at` datetime(3) DEFAULT NULL COMMENT '未完成发奖的下次核对时间',
   `stock_settled_at` datetime(3) DEFAULT NULL COMMENT '库存完成状态写入时间',
   `create_time` datetime(3) DEFAULT CURRENT_TIMESTAMP(3) COMMENT '创建时间',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '更新时间',

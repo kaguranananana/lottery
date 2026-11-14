@@ -46,7 +46,7 @@ public class InvoiceCompensationIndexManualIT {
                 + "u_id VARCHAR(32),order_id BIGINT,take_id BIGINT,activity_id BIGINT,award_id VARCHAR(64),award_type INT,"
                 + "award_name VARCHAR(64),award_content VARCHAR(128),"
                 + "award_fulfillment_status TINYINT,fulfillment_event_status TINYINT,stock_settlement_event_status TINYINT,create_time DATETIME,update_time DATETIME,"
-                + "fulfillment_retry_at DATETIME(3), stock_attempt INT DEFAULT 0, fulfillment_attempt INT DEFAULT 0,"
+                + "fulfillment_retry_at DATETIME(3),"
                 + "INDEX idx_stock_settlement_event_status_create_time(stock_settlement_event_status,create_time)) ENGINE=InnoDB");
         SqlSessionFactoryBean bean = new SqlSessionFactoryBean();
         bean.setDataSource(source);
@@ -103,17 +103,17 @@ public class InvoiceCompensationIndexManualIT {
     @Test
     public void indexPreservesAllCompensationEligibility() throws Exception {
         // 退避时间独立于订单 update_time。到期未完成候选才可投递。
-        insert(6001, 1, 0, 2, -1);
+        insert(6001, 1, 0, 0, -1);
         insert(6002, 1, 0, 0, -1);
-        insert(6003, 1, 0, 3, -1);
-        insert(6004, 1, 2, 2, -1);
-        insert(6005, 1, null, 2, -1);
+        insert(6003, 1, 0, 0, -1);
+        insert(6004, 1, 2, 0, -1);
+        insert(6005, 1, null, 0, -1);
         insert(6011, 1, 0, 0, 10);
-        insert(6012, 1, 0, 2, 10);
-        insert(6013, 1, 0, 3, 10);
-        insert(6014, 0, 0, 2, -1);
-        insert(6015, 4, 0, 2, -1);
-        insert(6016, 1, 1, 2, -1);
+        insert(6012, 1, 0, 0, 10);
+        insert(6013, 1, 0, 0, 10);
+        insert(6014, 0, 0, 0, -1);
+        insert(6015, 4, 0, 0, -1);
+        insert(6016, 1, 1, 0, -1);
         insert(6017, 1, 1, 1, -1);
         Set<Long> expected = new HashSet<>(Arrays.asList(6001L, 6002L, 6003L, 6004L, 6005L));
         Set<Long> before = orders();

@@ -7,6 +7,7 @@ import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
 import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
 import com.anontokyo.lottery.domain.award.service.order.IAwardOrder;
+import com.anontokyo.lottery.domain.award.service.order.IStockOrderTransaction;
 import com.anontokyo.lottery.domain.support.ids.IdGenerator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,8 +16,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.Resource;
 
 /**
- * 中奖订单领域服务：锁定参与记录 + 创建订单必须在一个数据库事务内完成（Outbox 写入点），
- * 事务细节由 infrastructure 仓储实现承担。
+ * 中奖订单领域服务构造订单快照，由库存事务消息协调 TX2。
  */
 @Service
 public class AwardOrderImpl implements IAwardOrder {
@@ -27,13 +27,16 @@ public class AwardOrderImpl implements IAwardOrder {
     private IOrderRepository orderRepository;
 
     @Resource
+    private IStockOrderTransaction stockOrderTransaction;
+
+    @Resource
     private IdGenerator idGenerator;
 
     @Override
     public AwardOrderResult placeOrder(AwardOrderReq awardOrderReq) {
         DrawOrderVO drawOrder = buildDrawOrder(awardOrderReq);
 
-        Constants.ResponseCode code = orderRepository.saveDrawOrderWithTakeLock(drawOrder);
+        Constants.ResponseCode code = stockOrderTransaction.place(drawOrder);
         if (code == Constants.ResponseCode.SUCCESS) {
             AwardOrderResult successResult = new AwardOrderResult(
                     Constants.ResponseCode.SUCCESS.getCode(),

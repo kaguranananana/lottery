@@ -2,7 +2,6 @@ package com.anontokyo.lottery.domain.draw.repository;
 
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.draw.model.snapshot.ActivityPrizeSnapshot;
-import com.anontokyo.lottery.domain.draw.model.vo.ActivityPrizeStockDeductResultVO;
 
 /**
  * 活动奖池仓储。活动奖池快照是抽奖主链路唯一的配置读取入口，
@@ -22,13 +21,4 @@ public interface IActivityPrizeRepository {
      */
     boolean settleAwardStock(AwardStockSettlementVO settlement);
 
-    /**
-     * Redis 条件原子扣减奖品库存。
-     */
-    ActivityPrizeStockDeductResultVO deductStockByRedis(Long activityId, String awardId);
-
-    /**
-     * 回补 Redis 奖品剩余库存（下单失败回滚用）。
-     */
-    void recoverActivityPrizeStockByRedis(Long activityId, String awardId);
 }

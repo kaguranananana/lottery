@@ -1,6 +1,5 @@
 package com.anontokyo.lottery.application.mq.consumer;
 
-import com.alibaba.fastjson.JSON;
 import com.anontokyo.lottery.application.mq.producer.OutboxDispatcher;
 import com.anontokyo.lottery.common.Constants.AwardFulfillmentStatus;
 import com.anontokyo.lottery.common.Constants.StockSettlementEventStatus;
@@ -9,14 +8,9 @@ import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
 import com.anontokyo.lottery.domain.draw.repository.IActivityPrizeRepository;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.support.Acknowledgment;
-import org.springframework.kafka.support.KafkaHeaders;
-import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.Resource;
@@ -35,55 +29,36 @@ public class StockSettlementListener {
     @Resource
     private OutboxDispatcher outbox;
 
-    @KafkaListener(topics = "lottery_strategy_award_stock",
-            groupId = "${lottery.kafka.consumer.strategy-award-stock-group-id:lottery-strategy-award-stock}",
-            concurrency = "${lottery.kafka.consumer.strategy-award-stock-concurrency:4}")
-    public void onMessage(ConsumerRecord<?, ?> record, Acknowledgment ack,
-            @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
-        if (record.value() == null) {
-            ack.acknowledge();
+    public void onMessage(AwardStockSettlementVO message) {
+        DrawOrderVO order = orderRepository.findOrder(message.getuId(), message.getOrderId());
+        if (order == null) {
+            logger.warn("stock event order missing user:{} order:{}", message.getuId(), message.getOrderId());
             return;
         }
-        try {
-            AwardStockSettlementVO message = JSON.parseObject((String) record.value(), AwardStockSettlementVO.class);
-            DrawOrderVO order = orderRepository.findOrder(message.getuId(), message.getOrderId());
-            if (order == null) {
-                logger.warn("stock event order missing user:{} order:{}", message.getuId(), message.getOrderId());
-                ack.acknowledge();
-                return;
-            }
-            Integer state = order.getStockSettlementEventStatus();
-            if (StockSettlementEventStatus.COMPLETE.getCode().equals(state)
-                    || StockSettlementEventStatus.BLOCKED.getCode().equals(state)) {
-                // 阻断订单只能由对账恢复。迟到或重复消息不重新尝试扣减。
-                ack.acknowledge();
-                return;
-            }
+        Integer state = order.getStockSettlementEventStatus();
+        if (StockSettlementEventStatus.COMPLETE.getCode().equals(state)
+                || StockSettlementEventStatus.BLOCKED.getCode().equals(state)) {
+            // 阻断订单只能由对账恢复。迟到或重复消息不重新尝试扣减。
+            return;
+        }
 
-            // 由订单快照决定被扣减的奖品，旧消息的 strategyId 和新消息的 activityId 都不作为路由输入。
-            AwardStockSettlementVO settlement = new AwardStockSettlementVO();
-            BeanUtils.copyProperties(order, settlement);
-            if (!activityPrizeRepository.settleAwardStock(settlement)) {
-                orderRepository.markStockSettlementFailed(order.getuId(), order.getOrderId());
-                logger.error("stock reconciliation required user:{} order:{} activity:{} award:{}",
-                        order.getuId(), order.getOrderId(), order.getActivityId(), order.getAwardId());
-                ack.acknowledge();
-                return;
-            }
+        // 由订单快照决定被扣减的奖品，旧消息的 strategyId 和新消息的 activityId 都不作为路由输入。
+        AwardStockSettlementVO settlement = new AwardStockSettlementVO();
+        BeanUtils.copyProperties(order, settlement);
+        if (!activityPrizeRepository.settleAwardStock(settlement)) {
+            orderRepository.markStockSettlementFailed(order.getuId(), order.getOrderId());
+            logger.error("stock reconciliation required user:{} order:{} activity:{} award:{}",
+                    order.getuId(), order.getOrderId(), order.getActivityId(), order.getAwardId());
+            return;
+        }
 
-            // 只有推进库存终态的消费者取得发奖首发资格，并在同一 SQL 中登记代数及补偿时间。
-            if (orderRepository.updateStockSettlementEventStatus(order.getuId(), order.getOrderId(),
-                    StockSettlementEventStatus.COMPLETE.getCode())
-                    && !AwardFulfillmentStatus.COMPLETE.getCode().equals(order.getAwardFulfillmentStatus())) {
-                AwardFulfillmentEvent award = new AwardFulfillmentEvent();
-                BeanUtils.copyProperties(order, award);
-                // 库存完成前发奖不可领取，订单快照上的代数正是这次推进前的值。
-                outbox.afterStockSettled(award, order.getFulfillmentAttempt() + 1);
-            }
-            ack.acknowledge();
-        } catch (RuntimeException e) {
-            logger.error("stock consume failed topic:{} key:{}", topic, record.key(), e);
-            throw e;
+        // 只有推进库存终态的消费者取得发奖首发资格，并在同一 SQL 中登记补偿时间。
+        if (orderRepository.updateStockSettlementEventStatus(order.getuId(), order.getOrderId(),
+                StockSettlementEventStatus.COMPLETE.getCode())
+                && !AwardFulfillmentStatus.COMPLETE.getCode().equals(order.getAwardFulfillmentStatus())) {
+            AwardFulfillmentEvent award = new AwardFulfillmentEvent();
+            BeanUtils.copyProperties(order, award);
+            outbox.afterStockSettled(award);
         }
     }
 }

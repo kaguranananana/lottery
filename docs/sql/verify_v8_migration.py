@@ -46,7 +46,7 @@ def verify(mysql, suffix):
         print(f'冲突已阻断：{issue}')
 
     print(sql(v8.migration(source, target)))
-    sql(schema('lottery-schema.sql', fresh))
+    sql(schema('lottery-v8-schema.sql', fresh))
     sql((BASE / 'lottery-demo-seed.sql').read_text().replace('USE lottery;', f'USE {fresh};'))
     tables = sql(f'SHOW TABLES FROM {target};').splitlines()
     assert len(tables) == 7 and tables == sql(f'SHOW TABLES FROM {fresh};').splitlines()

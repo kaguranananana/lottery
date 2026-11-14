@@ -1,19 +1,8 @@
 package com.anontokyo.lottery.test.manual;
 
-import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.infrastructure.dao.IDrawOrderDao;
-import com.anontokyo.lottery.infrastructure.repository.OrderRepository;
-import com.alibaba.fastjson.JSON;
-import com.anontokyo.lottery.application.mq.consumer.AwardFulfillmentListener;
-import com.anontokyo.lottery.application.mq.consumer.StockSettlementListener;
-import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
-import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository.OutboxKind;
-import com.anontokyo.lottery.application.mq.producer.OutboxDispatcher;
-import com.anontokyo.lottery.domain.award.service.fulfillment.impl.CouponFulfillmentHandler;
-import com.anontokyo.lottery.domain.draw.repository.IActivityPrizeRepository;
-import com.anontokyo.lottery.infrastructure.po.DrawOrder;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import com.anontokyo.lottery.infrastructure.repository.OrderRepository;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -25,12 +14,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import org.springframework.kafka.support.Acknowledgment;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Date;
 import java.util.List;
 import java.util.concurrent.*;
 import java.sql.Connection;
@@ -38,12 +23,10 @@ import java.sql.DriverManager;
 import java.sql.Statement;
 
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
 
 /**
  * 隔离 MySQL 测试：生产 Mapper 与 Repository 的真实 SQL，不使用数据库 Mock。
- * 不装配分片插件，表放在专用测试库；不证明八分表路由或 Kafka/Redis 端到端正确性。
+ * 测试表放在专用 MySQL，直接检查订单 CAS 与到期领取。
  */
 public class FulfillmentEventStatusCasManualIT {
     private static JdbcTemplate jdbc;
@@ -67,8 +50,8 @@ public class FulfillmentEventStatusCasManualIT {
                 + "u_id VARCHAR(32), order_id BIGINT, take_id BIGINT, activity_id BIGINT,"
                 + "fulfilled_at DATETIME, award_fulfillment_status INT, award_id VARCHAR(64), award_type INT,"
                 + "award_name VARCHAR(64), award_content VARCHAR(128),"
-                + "fulfillment_event_status INT, stock_settlement_event_status INT, stock_retry_at DATETIME(3), stock_attempt INT DEFAULT 0,"
-                + "fulfillment_retry_at DATETIME(3), fulfillment_attempt INT DEFAULT 0, stock_settled_at DATETIME(3),"
+                + "fulfillment_event_status INT, stock_settlement_event_status INT, stock_retry_at DATETIME(3),"
+                + "fulfillment_retry_at DATETIME(3), stock_settled_at DATETIME(3),"
                 + "create_time DATETIME(3), update_time DATETIME) ENGINE=InnoDB");
         SqlSessionFactoryBean factory = new SqlSessionFactoryBean();
         factory.setDataSource(source);
@@ -99,272 +82,54 @@ public class FulfillmentEventStatusCasManualIT {
     }
 
     @Test
-    public void completedStockCannotBeOverwrittenByLateCallbacks() {
-        // 消费先完成，再收到发送成功和失败通知。
-        repository.updateStockSettlementEventStatus("mq-test", 1L, Constants.StockSettlementEventStatus.COMPLETE.getCode());
-        repository.updateStockSettlementEventStatus("mq-test", 1L, Constants.StockSettlementEventStatus.SENT.getCode());
-        assertEquals(1, stockState());
-        repository.updateStockSettlementEventStatus("mq-test", 1L, Constants.StockSettlementEventStatus.FAIL.getCode());
-        assertEquals(1, stockState());
-    }
-
-    @Test
-    public void stockStateMatrixAllowsRetriesAndProtectsSentAndComplete() {
-        // 库存加入 BLOCKED=4；通用发送入口不能写入或解除待对账状态。
-        int[][] expected = {{0, 1, 2, 3, 0}, {1, 1, 1, 1, 1}, {2, 1, 2, 3, 2}, {3, 1, 3, 3, 3}, {4, 4, 4, 4, 4}};
-        for (int from = 0; from < 5; from++) {
-            for (int target = 0; target < 5; target++) {
-                jdbc.update("UPDATE draw_order SET stock_settlement_event_status=?", from);
-                repository.updateStockSettlementEventStatus("mq-test", 1L, target);
-                assertEquals("库存转换 " + from + "→" + target, expected[from][target], stockState());
-            }
-        }
-    }
-
-    @Test
-    public void invoiceStateMatrixRequiresGrantFactForCompletion() {
-        int[][] expected = {{0, 1, 2, 3}, {1, 1, 1, 1}, {2, 1, 2, 3}, {3, 1, 3, 3}};
-        for (int from = 0; from < 4; from++) {
-            for (int target = 0; target < 4; target++) {
-                jdbc.update("UPDATE draw_order SET fulfillment_event_status=?,award_fulfillment_status=1", from);
-                repository.updateFulfillmentEventStatus("mq-test", 1L, target);
-                assertEquals("发奖转换 " + from + "→" + target, expected[from][target], invoiceState());
-            }
-            jdbc.update("UPDATE draw_order SET fulfillment_event_status=?,award_fulfillment_status=0", from);
-            repository.updateFulfillmentEventStatus("mq-test", 1L, 1);
-            assertEquals("未发奖不能标记消费完成", from, invoiceState());
-        }
-    }
-
-    @Test
-    public void stockGapBlocksCallbacksAndRequiresReconciliation() {
-        for (int from = 0; from < 5; from++) {
-            jdbc.update("UPDATE draw_order SET stock_settlement_event_status=?", from);
-            repository.markStockSettlementFailed("mq-test", 1L);
-            assertEquals(from == 1 ? 1 : 4, stockState());
-            if (from != 1) {
-                // 业务分歧必须先经过显式对账释放。
-                repository.updateStockSettlementEventStatus("mq-test", 1L, 3);
-                assertEquals(4, stockState());
-                repository.updateStockSettlementEventStatus("mq-test", 1L, 2);
-                assertEquals(4, stockState());
-                repository.updateStockSettlementEventStatus("mq-test", 1L, 1);
-                assertEquals(4, stockState());
-            }
-        }
-    }
-
-    @Test
-    public void duplicateAndLateEventsDoNotPostponeTimeout() {
-        assertTrue(repository.claimOutbox(OutboxKind.STOCK, 1, 0, 45));
-        expire("stock");
-        assertTrue(repository.claimOutbox(OutboxKind.STOCK, 1, 1, 45));
-        repository.finishOutbox(OutboxKind.STOCK, 1, 2, true, 600);
-        java.sql.Timestamp deadline = retry("stock");
-        repository.finishOutbox(OutboxKind.STOCK, 1, 1, false, 5);
-        repository.finishOutbox(OutboxKind.STOCK, 1, 1, true, 600);
-        assertEquals(3, stockState());
-        assertEquals(deadline, retry("stock"));
-    }
-
-    @Test
-    public void realScanSqlRecoversDueStatesAndExcludesTerminalOrders() {
-        for (int state : Arrays.asList(0, 2, 3, 1, 4)) {
-            jdbc.update("UPDATE draw_order SET stock_settlement_event_status=?,stock_retry_at=TIMESTAMPADD(MINUTE,5,NOW(3))", state);
-            assertTrue(repository.scanOutbox(OutboxKind.STOCK, 10).isEmpty());
-            expire("stock");
-            assertEquals(state == 1 || state == 4 ? 0 : 1, repository.scanOutbox(OutboxKind.STOCK, 10).size());
-        }
-        jdbc.update("UPDATE draw_order SET stock_settlement_event_status=1,fulfillment_event_status=2,award_fulfillment_status=0");
-        expire("fulfillment");
-        assertEquals(1, repository.scanOutbox(OutboxKind.FULFILLMENT, 10).size());
-        jdbc.update("UPDATE draw_order SET award_fulfillment_status=1");
-        assertTrue(repository.scanOutbox(OutboxKind.FULFILLMENT, 10).isEmpty());
-    }
-
-    @Test
-    public void stockConsumerCompletesBeforeProducerCallbacks() {
-        assertTrue(repository.claimOutbox(OutboxKind.STOCK, 1, 0, 45));
-        consumeStock(true);
-        assertEquals(1, stockState());
-        repository.finishOutbox(OutboxKind.STOCK, 1, 1, true, 600);
-        repository.finishOutbox(OutboxKind.STOCK, 1, 1, false, 5);
-        assertEquals(1, stockState());
-        assertNull(retry("stock"));
-        consumeStock(false);
-    }
-
-    @Test
-    public void onlyOneRecoveryClaimsDueStockAndInitialCallbackCannotOverwriteIt() throws Exception {
-        // 用生产 INSERT 创建订单，先验证首发代数和到期前不可补偿。
-        jdbc.update("DELETE FROM draw_order");
-        DrawOrder row = new DrawOrder();
-        row.setuId("mq-test");
-        row.setOrderId(1L);
-        row.setStockSettlementEventStatus(0);
-        dao.insert(row);
-        assertEquals(Integer.valueOf(1), jdbc.queryForObject("SELECT stock_attempt FROM draw_order", Integer.class));
-        assertFalse(repository.claimOutbox(OutboxKind.STOCK, 1, 1, 45));
-        expire("stock");
-        ExecutorService pool = Executors.newFixedThreadPool(2);
-        CountDownLatch start = new CountDownLatch(1);
-        try {
-            Callable<Boolean> recover = () -> {
-                start.await();
-                return repository.claimOutbox(OutboxKind.STOCK, 1, 1, 45);
-            };
-            Future<Boolean> first = pool.submit(recover);
-            Future<Boolean> second = pool.submit(recover);
-            start.countDown();
-            assertNotEquals(first.get(10, TimeUnit.SECONDS), second.get(10, TimeUnit.SECONDS));
-            assertTrue(repository.scanOutbox(OutboxKind.STOCK, 10).isEmpty());
-            java.sql.Timestamp deadline = retry("stock");
-            // 首发晚到的回调既不能推状态，也不能改补偿租期。
-            repository.finishOutbox(OutboxKind.STOCK, 1, 1, true, 600);
-            assertEquals(0, stockState());
-            assertEquals(deadline, retry("stock"));
-            expire("stock");
-            assertTrue(repository.claimOutbox(OutboxKind.STOCK, 1, 2, 45));
-        } finally {
-            pool.shutdownNow();
-        }
-    }
-
-    @Test
-    public void timedOutStockFailureKeepsSentAndUsesBackoff() {
-        jdbc.update("UPDATE draw_order SET stock_settlement_event_status=3");
-        assertTrue(repository.claimOutbox(OutboxKind.STOCK, 1, 0, 45));
-        repository.finishOutbox(OutboxKind.STOCK, 1, 1, false, 5);
-        assertEquals(3, stockState());
+    public void stockCompletionRegistersOnlyOneFulfillmentObligation() {
+        assertTrue(repository.updateStockSettlementEventStatus("mq-test", 1L, 1));
+        assertFalse(repository.updateStockSettlementEventStatus("mq-test", 1L, 1));
+        assertNotNull(jdbc.queryForObject("SELECT fulfillment_retry_at FROM draw_order", java.sql.Timestamp.class));
+        assertNull(jdbc.queryForObject("SELECT stock_retry_at FROM draw_order", java.sql.Timestamp.class));
         assertTrue(repository.scanOutbox(OutboxKind.STOCK, 10).isEmpty());
-        expire("stock");
-        assertTrue(repository.claimOutbox(OutboxKind.STOCK, 1, 1, 45));
-        repository.finishOutbox(OutboxKind.STOCK, 1, 2, true, 600);
-        consumeStock(true);
-        assertEquals(1, stockState());
     }
 
     @Test
-    public void invoiceConsumerAndLateCallbacksShareRealCas() {
-        jdbc.update("UPDATE draw_order SET stock_settlement_event_status=1,fulfillment_event_status=2");
-        expire("fulfillment");
-        assertTrue(repository.claimOutbox(OutboxKind.FULFILLMENT, 1, 0, 45));
-        consumeInvoice();
-        repository.finishOutbox(OutboxKind.FULFILLMENT, 1, 1, true, 600);
-        assertEquals(1, invoiceState());
-        assertTrue(repository.isAwardCompleted("mq-test", 1L));
-        assertNull(retry("fulfillment"));
-        consumeInvoice();
-        assertTrue(repository.scanOutbox(OutboxKind.FULFILLMENT, 10).isEmpty());
+    public void blockedOrderRequiresExplicitReconciliation() {
+        repository.markStockSettlementFailed("mq-test", 1L);
+        repository.markStockSettlementFailed("mq-test", 1L);
+        assertFalse(repository.updateStockSettlementEventStatus("mq-test", 1L, 1));
+        assertFalse(repository.claimOutbox(OutboxKind.STOCK, 1L, 600));
+        assertTrue(repository.scanOutbox(OutboxKind.STOCK, 10).isEmpty());
+        jdbc.update("UPDATE draw_order SET stock_settlement_event_status=0, stock_retry_at=NOW(3)");
+        assertEquals(1, repository.scanOutbox(OutboxKind.STOCK, 10).size());
+        assertTrue(repository.updateStockSettlementEventStatus("mq-test", 1L, 1));
     }
 
     @Test
-    public void invoiceRetriesIgnoreOldFailuresAfterNewSuccess() {
-        jdbc.update("UPDATE draw_order SET stock_settlement_event_status=1,fulfillment_event_status=2");
-        expire("fulfillment");
-        assertTrue(repository.claimOutbox(OutboxKind.FULFILLMENT, 1, 0, 45));
-        expire("fulfillment");
-        assertTrue(repository.claimOutbox(OutboxKind.FULFILLMENT, 1, 1, 45));
-        repository.finishOutbox(OutboxKind.FULFILLMENT, 1, 2, true, 600);
-        java.sql.Timestamp deadline = retry("fulfillment");
-        repository.finishOutbox(OutboxKind.FULFILLMENT, 1, 1, false, 5);
-        assertEquals(3, invoiceState());
-        assertEquals(deadline, retry("fulfillment"));
-        consumeInvoice();
-        assertEquals(1, invoiceState());
-    }
-
-    @Test
-    public void legacyInvoiceCompleteWithoutGrantIsRecoverableAfterMigration() throws Exception {
-        jdbc.update("UPDATE draw_order SET stock_settlement_event_status=1,fulfillment_event_status=1,award_fulfillment_status=0,"
-                + "update_time=DATE_SUB(NOW(),INTERVAL 11 MINUTE)");
-        String migration = new String(java.nio.file.Files.readAllBytes(java.nio.file.Paths.get("../docs/sql/V7__outbox_retry.sql")),
-                java.nio.charset.StandardCharsets.UTF_8);
-        jdbc.execute(migration.split("-- BEGIN OUTBOX BACKFILL\n")[1]);
-        assertEquals(1, repository.scanOutbox(OutboxKind.FULFILLMENT, 10).size());
-        consumeInvoice();
-        assertTrue(repository.isAwardCompleted("mq-test", 1L));
-    }
-
-    @Test
-    public void concurrentSqlUpdatesNeverUndoConsumption() throws Exception {
-        ExecutorService pool = Executors.newFixedThreadPool(12);
+    public void concurrentRecoveryClaimsOnlyOneDueObligation() throws Exception {
+        ExecutorService pool = Executors.newFixedThreadPool(8);
         try {
-            // 每轮真正由独立连接竞争同一行锁，Future.get 会传播工作线程异常。
-            for (int round = 0; round < 20; round++) {
-                jdbc.update("UPDATE draw_order SET stock_settlement_event_status=0,fulfillment_event_status=0,award_fulfillment_status=1");
-                CountDownLatch start = new CountDownLatch(1);
-                List<Future<?>> actions = new ArrayList<>();
-                for (int index = 0; index < 12; index++) {
-                    final int event = index % 4;
-                    actions.add(pool.submit(() -> {
-                        start.await();
-                        if (event == 3) {
-                            repository.updateStockSettlementEventStatus("mq-test", 1L, 1);
-                        } else {
-                            repository.updateStockSettlementEventStatus("mq-test", 1L, new int[]{1, 2, 3}[event]);
-                        }
-                        repository.updateFulfillmentEventStatus("mq-test", 1L, new int[]{1, 2, 3, 2}[event]);
-                        return null;
-                    }));
-                }
-                start.countDown();
-                // 所有事件返回之后检查终态，不吞任何 SQL 或线程失败。
-                for (Future<?> action : actions) {
-                    action.get(30, TimeUnit.SECONDS);
-                }
-                assertEquals(1, stockState());
-                assertEquals(1, invoiceState());
+            List<Callable<Boolean>> claims = new ArrayList<>();
+            for (int i = 0; i < 8; i++) {
+                claims.add(() -> repository.claimOutbox(OutboxKind.STOCK, 1L, 600));
             }
+            int won = 0;
+            for (Future<Boolean> result : pool.invokeAll(claims)) {
+                if (result.get()) won++;
+            }
+            assertEquals(1, won);
+            assertTrue(repository.scanOutbox(OutboxKind.STOCK, 10).isEmpty());
         } finally {
             pool.shutdownNow();
         }
     }
 
-    private void consumeStock(boolean expected) {
-        IActivityPrizeRepository config = mock(IActivityPrizeRepository.class);
-        when(config.settleAwardStock(any())).thenReturn(true);
-        StockSettlementListener listener = new StockSettlementListener();
-        ReflectionTestUtils.setField(listener, "orderRepository", repository);
-        ReflectionTestUtils.setField(listener, "activityPrizeRepository", config);
-        ReflectionTestUtils.setField(listener, "outbox", mock(OutboxDispatcher.class));
-        Acknowledgment ack = mock(Acknowledgment.class);
-        AwardStockSettlementVO stock = new AwardStockSettlementVO();
-        stock.setuId("mq-test");
-        stock.setOrderId(1L);
-        listener.onMessage(new ConsumerRecord<>("lottery_strategy_award_stock", 0, 0, "1", JSON.toJSONString(stock)),
-                ack, "lottery_strategy_award_stock");
-        verify(ack).acknowledge();
-        verify(config, times(expected ? 1 : 0)).settleAwardStock(any());
-    }
-
-    private void consumeInvoice() {
-        CouponFulfillmentHandler handler = new CouponFulfillmentHandler();
-        ReflectionTestUtils.setField(handler, "orderRepository", repository);
-        AwardFulfillmentListener listener = new AwardFulfillmentListener();
-        ReflectionTestUtils.setField(listener, "orderRepository", repository);
-        ReflectionTestUtils.setField(listener, "fulfillmentHandlers", Collections.singletonList(handler));
-        listener.initRegistry();
-        AwardFulfillmentEvent invoice = new AwardFulfillmentEvent();
-        invoice.setuId("mq-test"); invoice.setOrderId(1L);
-        Acknowledgment ack = mock(Acknowledgment.class);
-        listener.onMessage(new ConsumerRecord<>("lottery_invoice", 0, 0, "1", JSON.toJSONString(invoice)), ack, "lottery_invoice");
-        verify(ack).acknowledge();
-    }
-
-    private void expire(String kind) {
-        jdbc.update("UPDATE draw_order SET " + kind + "_retry_at=TIMESTAMPADD(SECOND,-1,NOW(3))");
-    }
-
-    private java.sql.Timestamp retry(String kind) {
-        return jdbc.queryForObject("SELECT " + kind + "_retry_at FROM draw_order WHERE order_id=1", java.sql.Timestamp.class);
-    }
-
-    private int invoiceState() {
-        return jdbc.queryForObject("SELECT fulfillment_event_status FROM draw_order WHERE order_id=1", Integer.class);
-    }
-
-    private int stockState() {
-        return jdbc.queryForObject("SELECT stock_settlement_event_status FROM draw_order WHERE order_id=1", Integer.class);
+    @Test
+    public void fulfillmentRequiresStockCompletionAndIsIdempotent() {
+        assertThrows(IllegalStateException.class, () -> repository.markUserAwardGranted("mq-test", 1L, "C"));
+        repository.updateFulfillmentEventStatus("mq-test", 1L, 1);
+        assertEquals(Integer.valueOf(0), jdbc.queryForObject("SELECT fulfillment_event_status FROM draw_order", Integer.class));
+        assertTrue(repository.updateStockSettlementEventStatus("mq-test", 1L, 1));
+        assertTrue(repository.markUserAwardGranted("mq-test", 1L, "C"));
+        assertFalse(repository.markUserAwardGranted("mq-test", 1L, "C"));
+        assertEquals(Integer.valueOf(1), jdbc.queryForObject("SELECT fulfillment_event_status FROM draw_order", Integer.class));
+        assertNull(jdbc.queryForObject("SELECT fulfillment_retry_at FROM draw_order", java.sql.Timestamp.class));
     }
 }

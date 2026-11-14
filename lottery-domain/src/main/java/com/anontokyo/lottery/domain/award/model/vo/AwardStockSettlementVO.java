@@ -8,6 +8,7 @@ public class AwardStockSettlementVO {
 
     private String uId;
     private Long orderId;
+    private Long takeId;
     private Long activityId;
     private String awardId;
 
@@ -26,6 +27,10 @@ public class AwardStockSettlementVO {
     public void setOrderId(Long orderId) {
         this.orderId = orderId;
     }
+
+    public Long getTakeId() { return takeId; }
+
+    public void setTakeId(Long takeId) { this.takeId = takeId; }
 
     public Long getActivityId() {
         return activityId;

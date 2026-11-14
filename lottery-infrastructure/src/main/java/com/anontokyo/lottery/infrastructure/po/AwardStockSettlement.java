@@ -5,7 +5,7 @@ import java.util.Date;
 /**
  * 奖品库存结算幂等账本（全局库 lottery，与 activity_prize 同库、同事务）。
  * order_id 唯一约束是「同一个订单只允许扣一次数据库库存」的最终事实来源；
- * Kafka 重复投递、消费者 crash 重放都会在此被 duplicate-key 拦截。
+ * RocketMQ 重复投递、消费者 crash 重放都会在此被 duplicate-key 拦截。
  */
 public class AwardStockSettlement {
 

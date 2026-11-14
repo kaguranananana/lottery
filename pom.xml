@@ -68,7 +68,7 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>2.20</version>
                 <configuration>
-                    <!-- *ManualIT 需要本机 MySQL/Redis/Kafka 环境，作为手工集成测试，不进入 mvn test 门禁 -->
+                    <!-- *ManualIT 需要本机 MySQL/Redis/RocketMQ 环境，作为手工集成测试，不进入 mvn test 门禁 -->
                     <excludes>
                         <exclude>**/*ManualIT.java</exclude>
                         <exclude>**/test/dao/*.java</exclude>

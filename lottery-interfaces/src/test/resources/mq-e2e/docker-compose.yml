@@ -1,5 +1,5 @@
 # 独立端到端测试栈，不挂载现有部署数据，不复用业务容器名称。
-name: lottery-mq-e2e
+name: lottery-rocketmq-e2e
 services:
   mysql:
     image: mysql:8.0
@@ -7,46 +7,47 @@ services:
       MYSQL_ROOT_PASSWORD: root
       TZ: Asia/Shanghai
     ports:
-      - "13309:3306"
+      - "127.0.0.1:13309:3306"
     command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-proot"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-proot"]
       interval: 5s
       timeout: 3s
       retries: 30
   redis:
     image: redis:7.2
     ports:
-      - "16379:6379"
+      - "127.0.0.1:16379:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s
       timeout: 3s
       retries: 10
-  zookeeper:
-    image: zookeeper:3.8
-  kafka:
-    # 延续现有部署的 Kafka 2.8 系列，Mac ARM 上由 Docker 执行 amd64 镜像。
-    image: wurstmeister/kafka:2.13-2.8.1
-    platform: linux/amd64
-    # 完整关闭 Kafka 并释放 ZooKeeper 会话；默认 10 秒会提前强杀模拟运行的 JVM。
-    stop_grace_period: 40s
-    depends_on:
-      - zookeeper
-    ports:
-      - "19092:9092"
+  nameserver:
+    image: apache/rocketmq:5.3.4
+    command: ["sh", "mqnamesrv"]
     environment:
-      KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
-      KAFKA_LISTENERS: INTERNAL://0.0.0.0:29092,EXTERNAL://0.0.0.0:9092
-      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092,EXTERNAL://localhost:19092
-      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
-      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
-      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
-    healthcheck:
-      test: ["CMD", "/opt/kafka/bin/kafka-topics.sh", "--bootstrap-server", "kafka:29092", "--list"]
-      interval: 5s
-      # ARM 宿主上的 amd64 Kafka 管理 CLI 实测可能超过 10 秒。
-      timeout: 20s
-      retries: 20
+      JAVA_OPT_EXT: "-Xms128m -Xmx256m -Xmn64m"
+    ports: ["127.0.0.1:19876:9876"]
+  broker-store:
+    image: apache/rocketmq:5.3.4
+    user: "0"
+    entrypoint: ["/bin/sh", "-c", "chown 3000:3000 /home/rocketmq/store"]
+    volumes:
+      - rocketmq-store:/home/rocketmq/store
+  broker:
+    image: apache/rocketmq:5.3.4
+    command: ["sh", "mqbroker", "-n", "nameserver:9876", "-c", "/etc/rocketmq/broker.conf"]
+    depends_on:
+      nameserver:
+        condition: service_started
+      broker-store:
+        condition: service_completed_successfully
+    environment:
+      JAVA_OPT_EXT: "-Xms256m -Xmx512m -Xmn128m"
+    ports: ["127.0.0.1:10911:10911"]
+    volumes:
+      - ./broker.conf:/etc/rocketmq/broker.conf:ro
+      - rocketmq-store:/home/rocketmq/store
+volumes:
+  rocketmq-store:

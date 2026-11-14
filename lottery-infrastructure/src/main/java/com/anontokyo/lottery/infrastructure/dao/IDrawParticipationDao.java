@@ -12,5 +12,9 @@ public interface IDrawParticipationDao {
     DrawParticipation queryUnfinishedParticipation(DrawParticipation drawParticipation);
     DrawParticipation queryParticipationByRequestId(DrawParticipation drawParticipation);
 
+    long databaseTimeMillis();
+
+    Long lockTakeNowait(long takeId);
+
     int consumeParticipation(DrawParticipation drawParticipation);
 }

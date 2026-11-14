@@ -171,12 +171,5 @@ public class DrawOrderVO {
                 '}';
     }
 
-    // 投递代数由数据库 CAS 管理，随扫描候选读取。
-    private int stockAttempt;
-    private int fulfillmentAttempt;
 
-    public int getStockAttempt() { return stockAttempt; }
-    public void setStockAttempt(int stockAttempt) { this.stockAttempt = stockAttempt; }
-    public int getFulfillmentAttempt() { return fulfillmentAttempt; }
-    public void setFulfillmentAttempt(int fulfillmentAttempt) { this.fulfillmentAttempt = fulfillmentAttempt; }
 }

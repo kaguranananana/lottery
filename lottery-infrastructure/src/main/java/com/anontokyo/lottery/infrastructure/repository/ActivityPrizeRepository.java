@@ -4,7 +4,6 @@ import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.draw.model.snapshot.ActivityPrizeSnapshot;
 import com.anontokyo.lottery.domain.draw.model.vo.AwardBriefVO;
-import com.anontokyo.lottery.domain.draw.model.vo.ActivityPrizeStockDeductResultVO;
 import com.anontokyo.lottery.domain.draw.model.vo.ActivityPrizeBriefVO;
 import com.anontokyo.lottery.domain.draw.repository.IActivityPrizeRepository;
 import com.anontokyo.lottery.domain.draw.service.snapshot.ActivityPrizeSnapshotFactory;
@@ -15,7 +14,6 @@ import com.anontokyo.lottery.infrastructure.dao.IActivityPrizeDao;
 import com.anontokyo.lottery.infrastructure.po.AwardStockSettlement;
 import com.anontokyo.lottery.infrastructure.po.Award;
 import com.anontokyo.lottery.infrastructure.po.ActivityPrize;
-import com.anontokyo.lottery.infrastructure.utils.RedisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DuplicateKeyException;
@@ -48,9 +46,6 @@ public class ActivityPrizeRepository implements IActivityPrizeRepository {
 
     @Resource
     private IAwardDao awardDao;
-
-    @Resource
-    private RedisUtil redisUtil;
 
     @Resource
     private TwoLevelCacheService twoLevelCacheService;
@@ -100,38 +95,6 @@ public class ActivityPrizeRepository implements IActivityPrizeRepository {
             return true;
         });
         return Boolean.TRUE.equals(settled);
-    }
-
-    /**
-     * Redis 原子预扣奖品库存。key 不存在时不回填 MySQL（结算滞后值会造成库存复活）：
-     * 抛出状态异常并保留原参与，由人工对账恢复后使用原请求继续。
-     */
-    @Override
-    public ActivityPrizeStockDeductResultVO deductStockByRedis(Long activityId, String awardId) {
-        String stockKey = Constants.RedisKey.KEY_LOTTERY_ACTIVITY_PRIZE_STOCK_COUNT(activityId, awardId);
-        try {
-            // Lua 将存在性检查与条件扣减合并；缺失 Key 抛出，只有真实售罄才返回 soldOut。
-            long remaining = redisUtil.deductStock(stockKey);
-            return remaining < 0 ? ActivityPrizeStockDeductResultVO.soldOut()
-                    : ActivityPrizeStockDeductResultVO.success();
-        } catch (Exception e) {
-            logger.error("deduct activity prize stock failed, activityId:{} awardId:{} key:{}",
-                    activityId, awardId, stockKey, e);
-            throw new IllegalStateException("activity prize stock state unavailable", e);
-        }
-    }
-
-    @Override
-    public void recoverActivityPrizeStockByRedis(Long activityId, String awardId) {
-        String stockKey = Constants.RedisKey.KEY_LOTTERY_ACTIVITY_PRIZE_STOCK_COUNT(activityId, awardId);
-        try {
-            redisUtil.recoverStock(stockKey);
-        } catch (Exception e) {
-            logger.error("recover activity prize stock by redis failed, activityId:{} awardId:{}", activityId,
-                    awardId, e);
-            // 回补失败必须暴露，不能只写日志就让调用方认为补偿已完成。
-            throw e;
-        }
     }
 
     private List<ActivityPrizeBriefVO> toActivityPrizeVOList(List<ActivityPrize> list) {

@@ -20,7 +20,7 @@ TX1 的个人次数与参与记录在数据库内一起回滚，不涉及 Redis 
 6. **验证**：StockReservationTransactionsTest 覆盖回滚、开始失败、提交未知、回滚失败、双重故障及业务拒绝；FinalBusinessE2eManualIT 使用真实 MySQL trigger 令 take/order INSERT 失败，分别断言 TX1 次数回滚、TX2 奖品只回补一次和同请求恢复。
 7. **错误与正确**：错误是上层 `catch(Exception)` 无条件 INCR，或者只处理非成功业务码而漏掉 SQL 异常。正确是事务层观察结果，确认可回补后执行，结果未知显式留给对账。
 
-消息消费者的异常日志与再抛出是交还 Kafka 重投的处理路径，Outbox 使用明确的数据库状态恢复投递。修改 ack、异常或状态终点时同时检查[应用规范](./application-guidelines.md)。
+消息消费者的异常日志与再抛出是交还 RocketMQ 重投的处理路径，定时任务通过数据库持久义务恢复超时投递。修改 ack、异常或状态终点时同时检查[应用规范](./application-guidelines.md)。
 
 ## 现存行为不作为新增代码范例
 

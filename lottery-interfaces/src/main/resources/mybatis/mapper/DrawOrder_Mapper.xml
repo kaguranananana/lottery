@@ -16,24 +16,25 @@
         <result column="award_content" property="awardContent"/>
         <result column="fulfillment_event_status" property="fulfillmentEventStatus"/>
         <result column="stock_settlement_event_status" property="stockSettlementEventStatus"/>
-        <result column="stock_attempt" property="stockAttempt"/>
-        <result column="fulfillment_attempt" property="fulfillmentAttempt"/>
         <result column="create_time" property="createTime"/>
         <result column="update_time" property="updateTime"/>
     </resultMap>
+
+    <select id="hasOrderForTake" resultType="boolean">
+        SELECT EXISTS (SELECT 1 FROM draw_order WHERE order_id=#{orderId} AND take_id=#{takeId})
+    </select>
 
     <insert id="insert" parameterType="com.anontokyo.lottery.infrastructure.po.DrawOrder">
         INSERT INTO draw_order
         (u_id, activity_id, order_id, take_id,
          award_fulfillment_status, award_id, award_type,
-         award_name, award_content, fulfillment_event_status, stock_settlement_event_status, stock_attempt, stock_retry_at, create_time, update_time)
+         award_name, award_content, fulfillment_event_status, stock_settlement_event_status, stock_retry_at, create_time, update_time)
         VALUES
         (#{uId},#{activityId},#{orderId},#{takeId},
          #{awardFulfillmentStatus},#{awardId},#{awardType},
          #{awardName},#{awardContent},#{fulfillmentEventStatus},#{stockSettlementEventStatus},
-         <!-- TX2 直接登记库存首发代数，提交后无需再写一次领取。保留原有两秒补偿时间。 -->
-         CASE WHEN #{stockSettlementEventStatus} IN (0,2,3) THEN 1 ELSE 0 END,
-         CASE WHEN #{stockSettlementEventStatus} IN (0,2,3) THEN TIMESTAMPADD(SECOND,2,NOW(3)) ELSE NULL END, NOW(3), NOW())
+         <!-- 首发由事务消息负责。预留十分钟后的对账义务，覆盖 Broker 到期丢弃和消费进入死信。 -->
+         CASE WHEN #{stockSettlementEventStatus}=0 THEN TIMESTAMPADD(MINUTE,10,NOW(3)) ELSE NULL END, NOW(3), NOW())
     </insert>
     <update id="markUserAwardGranted">
         UPDATE draw_order SET award_fulfillment_status = #{awardFulfillmentStatus}, fulfilled_at = NOW(3),
@@ -43,39 +44,25 @@
           AND COALESCE(award_fulfillment_status,0) != #{awardFulfillmentStatus}
     </update>
     <update id="updateFulfillmentEventStatus">
-        UPDATE draw_order SET fulfillment_event_status = #{fulfillmentEventStatus}, update_time = NOW(),
-            fulfillment_retry_at = CASE WHEN #{fulfillmentEventStatus}=1 THEN NULL ELSE fulfillment_retry_at END
+        <!-- 只有实际发奖事实能将事件推进为完成。 -->
+        UPDATE draw_order SET fulfillment_event_status = 1, update_time = NOW(), fulfillment_retry_at = NULL
         WHERE u_id = #{uId} AND order_id = #{orderId}
-          <!-- 消费完成必须有本地发奖事实；终态与重复事件不再更新。 -->
-          AND ((#{fulfillmentEventStatus} = 1 AND award_fulfillment_status = 1 AND fulfillment_event_status IN (0, 2, 3))
-          <!-- 任意一次发送成功可推进失败状态；迟到成功不能刷新 SENT 的补偿时间。 -->
-           OR (#{fulfillmentEventStatus} = 3 AND fulfillment_event_status IN (0, 2))
-          <!-- 发送失败不能覆盖已发送或已消费；FAIL 重复通知也不刷新时间。 -->
-           OR (#{fulfillmentEventStatus} = 2 AND fulfillment_event_status = 0))
+          AND #{fulfillmentEventStatus}=1 AND award_fulfillment_status=1 AND fulfillment_event_status=0
     </update>
     <update id="updateStockSettlementEventStatus">
-        UPDATE draw_order SET stock_settlement_event_status = #{stockSettlementEventStatus}, update_time = NOW(),
-            stock_retry_at = CASE WHEN #{stockSettlementEventStatus}=1 THEN NULL ELSE stock_retry_at END,
-            stock_settled_at = CASE WHEN #{stockSettlementEventStatus}=1 THEN NOW(3) ELSE stock_settled_at END,
-            <!-- 首次完成库存时一起领取发奖首发，重复消费无法通过下方的状态 CAS。 -->
-            fulfillment_attempt = CASE WHEN #{stockSettlementEventStatus}=1 AND COALESCE(award_fulfillment_status,0) != 1
-                THEN fulfillment_attempt+1 ELSE fulfillment_attempt END,
-            fulfillment_retry_at = CASE WHEN #{stockSettlementEventStatus}=1 AND COALESCE(award_fulfillment_status,0) != 1
-                THEN TIMESTAMPADD(SECOND,2,NOW(3)) ELSE fulfillment_retry_at END
+        <!-- 结算 CAS 同时登记发奖义务，进程在发奖发送前退出时可恢复。 -->
+        UPDATE draw_order SET stock_settlement_event_status = 1, update_time = NOW(), stock_retry_at = NULL,
+            stock_settled_at = NOW(3),
+            fulfillment_retry_at = CASE WHEN COALESCE(award_fulfillment_status,0) != 1
+                THEN TIMESTAMPADD(SECOND,5,NOW(3)) ELSE NULL END
         WHERE u_id = #{uId} AND order_id = #{orderId}
-          <!-- 消费可能早于发送回调，所以允许从所有未完成状态直接收口。 -->
-          AND ((#{stockSettlementEventStatus} = 1 AND stock_settlement_event_status IN (0, 2, 3))
-          <!-- 重试成功可从 FAIL 推进 SENT；不能覆盖 COMPLETE 或刷新已有 SENT。 -->
-           OR (#{stockSettlementEventStatus} = 3 AND stock_settlement_event_status IN (0, 2))
-          <!-- 这里只处理发送失败，迟到失败不能推翻任何一次发送成功。 -->
-           OR (#{stockSettlementEventStatus} = 2 AND stock_settlement_event_status = 0))
+          AND #{stockSettlementEventStatus}=1 AND stock_settlement_event_status=0
     </update>
     <update id="markStockSettlementFailed">
-        <!-- 消费侧库存分歧是真实业务失败，与发送失败回调分开处理。 -->
+        <!-- 库存分歧由人工核对库存和账本后释放。 -->
         UPDATE draw_order SET stock_settlement_event_status = 4, stock_retry_at = NULL, update_time = NOW()
         WHERE u_id = #{uId} AND order_id = #{orderId}
-          <!-- 条件扣减失败进入待对账；任何发送回调均不能将 4 改回可重试状态。 -->
-          AND stock_settlement_event_status IN (0, 2, 3)
+          AND stock_settlement_event_status=0
     </update>
 
     <select id="queryDrawOrderByUId" parameterType="java.lang.String" resultMap="drawOrderRowMap">
@@ -91,7 +78,7 @@
         SELECT id, u_id, activity_id, order_id, take_id,
                fulfilled_at, award_fulfillment_status, award_id, award_type,
                award_name, award_content, fulfillment_event_status, stock_settlement_event_status,
-               fulfillment_attempt, create_time, update_time
+               create_time, update_time
         FROM draw_order
         WHERE u_id = #{uId}
           AND order_id = #{orderId}
@@ -115,12 +102,6 @@
             <otherwise>fulfillment_retry_at</otherwise>
         </choose>
     </sql>
-    <sql id="attempt">
-        <choose>
-            <when test="kind.name() == 'STOCK'">stock_attempt</when>
-            <otherwise>fulfillment_attempt</otherwise>
-        </choose>
-    </sql>
     <sql id="eventState">
         <choose>
             <when test="kind.name() == 'STOCK'">stock_settlement_event_status</when>
@@ -128,48 +109,34 @@
         </choose>
     </sql>
     <sql id="canDispatch">
-        <include refid="eventState"/> IN (0,2,3)
+        <include refid="eventState"/>=0
         <if test="kind.name() == 'FULFILLMENT'">
             AND stock_settlement_event_status = 1 AND COALESCE(award_fulfillment_status,0) != 1
         </if>
     </sql>
 
     <select id="scanStockSettlementEventStatus" resultMap="drawOrderRowMap">
-        SELECT u_id, order_id, activity_id, award_id, stock_attempt
+        SELECT u_id, order_id, activity_id, take_id, award_id
         FROM draw_order
-        WHERE stock_retry_at &lt;= NOW(3) AND stock_settlement_event_status IN (0,2,3)
+        WHERE stock_retry_at &lt;= NOW(3) AND stock_settlement_event_status=0
         ORDER BY stock_retry_at, order_id
         LIMIT #{limit}
     </select>
     <select id="scanFulfillmentEventStatus" resultMap="drawOrderRowMap">
-        SELECT u_id, order_id, take_id, award_id, award_type, award_name, award_content,
-               fulfillment_attempt
+        SELECT u_id, order_id, take_id, award_id, award_type, award_name, award_content
         FROM draw_order
-        WHERE fulfillment_retry_at &lt;= NOW(3) AND fulfillment_event_status IN (0,2,3)
+        WHERE fulfillment_retry_at &lt;= NOW(3) AND fulfillment_event_status=0
           AND stock_settlement_event_status=1 AND COALESCE(award_fulfillment_status,0) != 1
         ORDER BY fulfillment_retry_at, order_id
         LIMIT #{limit}
     </select>
 
     <update id="claimOutbox">
-        <!-- 代数与截止时间在同一条 CAS 递增。进程在发送前退出时，租期到期后仍能领取。 -->
+        <!-- 仅领取到期且未完成的义务；并发扫描只有一个能推进时间。 -->
         UPDATE draw_order
-        SET <include refid="attempt"/> = <include refid="attempt"/> + 1,
-            <include refid="retryAt"/> = TIMESTAMPADD(SECOND,#{leaseSeconds},NOW(3))
-        WHERE order_id = #{orderId} AND <include refid="attempt"/> = #{attempt}
-          AND <include refid="canDispatch"/>
+        SET <include refid="retryAt"/> = TIMESTAMPADD(SECOND,#{leaseSeconds},NOW(3))
+        WHERE order_id = #{orderId} AND <include refid="canDispatch"/>
           AND <include refid="retryAt"/> &lt;= NOW(3)
-    </update>
-
-    <update id="finishOutbox">
-        <!-- 完成/待对账为终态。上一轮回调即使晚到，也无法修改本轮截止时间。 -->
-        UPDATE draw_order
-        SET <include refid="eventState"/> =
-            CASE WHEN #{sent} THEN 3 WHEN <include refid="eventState"/> IN (0,2) THEN 2
-                 ELSE <include refid="eventState"/> END,
-            <include refid="retryAt"/> = TIMESTAMPADD(SECOND,#{delaySeconds},NOW(3))
-        WHERE order_id = #{orderId} AND <include refid="attempt"/> = #{attempt}
-          AND <include refid="canDispatch"/>
     </update>
 
 </mapper>

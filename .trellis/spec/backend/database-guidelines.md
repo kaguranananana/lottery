@@ -12,7 +12,7 @@ domain 定义 Repository，infrastructure 实现 VO/PO 转换与 DAO 调用；My
 
 ## 事务与幂等
 
-[DrawParticipationRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/DrawParticipationRepository.java) 的 takeParticipation 在 TX1 本地事务内扣剩余次数并插入 take；先普通读取确认次数行，只有不存在才 initializeCount，再使用 left_count>0 的条件 UPDATE，零影响行数与唯一冲突会回滚。普通读取仅判断存在性，不将读取的余量用于覆盖写回。无变化 upsert 在 MySQL 8.0.46/RR 可使不同已有用户竞争 PRIMARY supremum；真实复现与测试见[独立优化契约](./performance-optimization.md)。[OrderRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java) 的 saveDrawOrderWithTakeLock 在 TX2 本地事务内用 state=0 条件消费 take，然后插入订单和初始 Outbox 状态。
+[DrawParticipationRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/DrawParticipationRepository.java) 的 takeParticipation 在 TX1 本地事务内扣剩余次数并插入 take；先普通读取确认次数行，只有不存在才 initializeCount，再使用 left_count>0 的条件 UPDATE，零影响行数与唯一冲突会回滚。普通读取仅判断存在性，不将读取的余量用于覆盖写回。无变化 upsert 在 MySQL 8.0.46/RR 可使不同已有用户竞争 PRIMARY supremum；真实复现与测试见[独立优化契约](./performance-optimization.md)。[OrderRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java) 的 saveDrawOrderWithTakeLock 在 Half Message 确认后执行 TX2，通过 state=0 条件消费 take、持锁登记 Redis 预扣并插入订单。库存首发由事务消息提交触发。
 
 [ActivityPrizeRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityPrizeRepository.java) 的 settleAwardStock 在 TX3 本地事务中插入 UNIQUE(order_id) 的账本并条件扣减活动奖品库存；重复账本返回已处理，库存不足回滚本次账本插入。[ActivityPrize_Mapper.xml](../../../lottery-interfaces/src/main/resources/mybatis/mapper/ActivityPrize_Mapper.xml) 的扣减条件包含 award_surplus_count > 0，不能改成查询后无条件写回。
 

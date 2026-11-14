@@ -5,6 +5,7 @@ import com.anontokyo.lottery.common.Constants.ActivityState;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
 import com.anontokyo.lottery.domain.activity.service.deploy.IActivityDeploy;
 import com.anontokyo.lottery.domain.activity.service.lifecycle.ActivityLifecycleService;
+import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository.OutboxKind;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,11 +21,14 @@ public class LotteryScheduledTasks {
     private final IActivityDeploy activities;
     private final ActivityLifecycleService lifecycle;
     private final OutboxDispatcher outbox;
+    private final IOrderRepository orders;
 
-    public LotteryScheduledTasks(IActivityDeploy activities, ActivityLifecycleService lifecycle, OutboxDispatcher outbox) {
+    public LotteryScheduledTasks(IActivityDeploy activities, ActivityLifecycleService lifecycle,
+                                 OutboxDispatcher outbox, IOrderRepository orders) {
         this.activities = activities;
         this.lifecycle = lifecycle;
         this.outbox = outbox;
+        this.orders = orders;
     }
 
     @Scheduled(fixedDelayString = "${lottery.scheduling.activity-delay-ms:10000}")
@@ -55,6 +59,7 @@ public class LotteryScheduledTasks {
     @Scheduled(fixedDelayString = "${lottery.scheduling.stock-delay-ms:10000}")
     public void recoverStock() {
         outbox.recover(OutboxKind.STOCK);
+        orders.recoverStockReservations(100);
     }
 
     @Scheduled(fixedDelayString = "${lottery.scheduling.fulfillment-delay-ms:10000}")

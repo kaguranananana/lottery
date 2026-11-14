@@ -1,5 +1,8 @@
 # Kafka 消息状态修复的 Docker 端到端验证
 
+本文记录 Kafka 版本的历史 E2E。当前实验分支的 RocketMQ 验证见 [重构报告](rocketmq-transactional-report.md)。
+
+
 > 此记录对应历史分片与 XXL 调度版本。当前单库验证见 [最终实测](single-db-load-test.md)。
 
 > 本文保留此前验证记录；当前库存业务分歧已改为 BLOCKED=4，HTTP 和预热故障验证已补齐，最新契约与结果以[最终报告](final-correctness-e2e.md)为准。

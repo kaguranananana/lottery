@@ -153,8 +153,14 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
             AwardOrderResult orderResult = awardOrder.placeOrder(buildAwardOrderReq(req, takeId, drawAwardInfo));
             settleCostMs = elapsedMillis(stageStart);
             if (!Constants.ResponseCode.SUCCESS.getCode().equals(orderResult.getCode())) {
-                drawExec.recoverDrawAwardStock(req.getActivityId(), drawAwardInfo.getAwardId());
-                // 下单竞争失败已回补本线程预扣库存，回放取得消费权的线程提交的结果。
+                // TX2 已消费真实售罄的参与记录，Half Message 回滚。
+                if (Constants.ResponseCode.AWARD_SOLD_OUT.getCode().equals(orderResult.getCode())) {
+                    DrawProcessResult result = new DrawProcessResult(Constants.ResponseCode.LOSING_DRAW.getCode(),
+                            Constants.ResponseCode.LOSING_DRAW.getInfo());
+                    result.setTakeId(takeId);
+                    return result;
+                }
+                // 参与 CAS 冲突时回放已提交的中奖或未中奖结果。
                 if (Constants.ResponseCode.NO_UPDATE.getCode().equals(orderResult.getCode())) {
                     return replayAfterConsumptionConflict(req);
                 }
@@ -250,7 +256,7 @@ public class ActivityProcessImpl implements IActivityDrawProcess {
             return;
         }
         logger.warn(
-                "slow draw process uId:{} activityId:{} requestId:{} resultCode:{} total={}ms partake={}ms draw={}ms settle={}ms stockDispatch=async",
+                "slow draw process uId:{} activityId:{} requestId:{} resultCode:{} total={}ms partake={}ms draw={}ms settle={}ms stockSettlement=async",
                 req.getuId(), req.getActivityId(), req.getRequestId(), resultCode, totalCostMs, partakeCostMs, drawCostMs, settleCostMs);
     }
 

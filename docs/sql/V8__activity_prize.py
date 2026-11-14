@@ -76,7 +76,7 @@ def migration(source, target):
     src, dest = identifier(source), identifier(target)
     if source == target or not target.startswith('lottery_v8'):
         raise ValueError('目标必须是新的 lottery_v8* 库，且与源库不同')
-    ddl = (BASE / 'lottery-schema.sql').read_text()
+    ddl = (BASE / 'lottery-v8-schema.sql').read_text()
     ddl = ddl.replace('CREATE DATABASE lottery ', f'CREATE DATABASE {dest} ').replace('USE lottery;', f'USE {dest};')
     copy, verify = [], []
     for table, definition in re.findall(r'CREATE TABLE `(\w+)` \(\n(.*?)\n\) ENGINE=', ddl, re.S):

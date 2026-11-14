@@ -1,19 +1,13 @@
 package com.anontokyo.lottery.application.mq.consumer;
 
-import com.alibaba.fastjson.JSON;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 import com.anontokyo.lottery.domain.award.repository.IOrderRepository;
 import com.anontokyo.lottery.domain.award.service.fulfillment.AwardFulfillmentHandler;
 import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
 import org.springframework.beans.BeanUtils;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.support.Acknowledgment;
-import org.springframework.kafka.support.KafkaHeaders;
-import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -51,54 +45,35 @@ public class AwardFulfillmentListener {
         logger.info("award fulfillment handlers registered: {}", handlerRegistry.keySet());
     }
 
-    @KafkaListener(topics = "lottery_invoice",
-            groupId = "${lottery.kafka.consumer.invoice-group-id:lottery-invoice}",
-            concurrency = "${lottery.kafka.consumer.invoice-concurrency:4}")
-    public void onMessage(ConsumerRecord<?, ?> record, Acknowledgment ack,
-            @Header(KafkaHeaders.RECEIVED_TOPIC) String topic) {
-        if (record.value() == null) {
-            ack.acknowledge();
+    public void onMessage(AwardFulfillmentEvent message) {
+        DrawOrderVO order = orderRepository.findOrder(message.getuId(), message.getOrderId());
+        if (order == null) {
+            logger.warn("fulfillment event order missing user:{} order:{}", message.getuId(), message.getOrderId());
             return;
         }
-        try {
-            AwardFulfillmentEvent message = JSON.parseObject((String) record.value(), AwardFulfillmentEvent.class);
-            DrawOrderVO order = orderRepository.findOrder(message.getuId(), message.getOrderId());
-            if (order == null) {
-                logger.warn("fulfillment event order missing user:{} order:{}", message.getuId(), message.getOrderId());
-                ack.acknowledge();
-                return;
+        if (!Constants.StockSettlementEventStatus.COMPLETE.getCode().equals(order.getStockSettlementEventStatus())) {
+            // 旧消息可能在库存完成前抵达，后续库存 CAS 会持久登记发奖义务。
+            return;
+        }
+        if (Constants.AwardFulfillmentStatus.COMPLETE.getCode().equals(order.getAwardFulfillmentStatus())) {
+            if (!Constants.FulfillmentEventStatus.COMPLETE.getCode().equals(order.getFulfillmentEventStatus())) {
+                // 已经有历史发奖事实时只修复消息状态。
+                orderRepository.updateFulfillmentEventStatus(order.getuId(), order.getOrderId(),
+                        Constants.FulfillmentEventStatus.COMPLETE.getCode());
             }
-            if (!Constants.StockSettlementEventStatus.COMPLETE.getCode().equals(order.getStockSettlementEventStatus())) {
-                // 旧消息可能在库存完成前抵达，后续库存 CAS 会持久登记发奖义务。
-                ack.acknowledge();
-                return;
-            }
-            if (Constants.AwardFulfillmentStatus.COMPLETE.getCode().equals(order.getAwardFulfillmentStatus())) {
-                if (!Constants.FulfillmentEventStatus.COMPLETE.getCode().equals(order.getFulfillmentEventStatus())) {
-                    // 已经有历史发奖事实时只修复消息状态。
-                    orderRepository.updateFulfillmentEventStatus(order.getuId(), order.getOrderId(),
-                            Constants.FulfillmentEventStatus.COMPLETE.getCode());
-                }
-                ack.acknowledge();
-                return;
-            }
+            return;
+        }
 
-            AwardFulfillmentHandler handler = handlerRegistry.get(order.getAwardType());
-            if (handler == null) {
-                throw new IllegalStateException("unsupported award type " + order.getAwardType() + ", order " + order.getOrderId());
-            }
-            // 当前四种处理器只写本地 CAS。同一订单的 Kafka key 保证同分区顺序。
-            AwardFulfillmentEvent event = new AwardFulfillmentEvent();
-            BeanUtils.copyProperties(order, event);
-            Constants.AwardState state = handler.fulfill(event).getState();
-            if (state != Constants.AwardState.SUCCESS) {
-                throw new IllegalStateException("award fulfillment failed, order " + order.getOrderId() + ": " + state.getInfo());
-            }
-            // 本地发奖事实和消息终态由同一条 SQL 写入，成功后才确认消息。
-            ack.acknowledge();
-        } catch (RuntimeException e) {
-            logger.error("fulfillment consume failed topic:{} key:{}", topic, record.key(), e);
-            throw e;
+        AwardFulfillmentHandler handler = handlerRegistry.get(order.getAwardType());
+        if (handler == null) {
+            throw new IllegalStateException("unsupported award type " + order.getAwardType() + ", order " + order.getOrderId());
+        }
+        // 当前四种处理器只写本地 CAS。多个消费者可能并发到达，由本地发奖 CAS 收口。
+        AwardFulfillmentEvent event = new AwardFulfillmentEvent();
+        BeanUtils.copyProperties(order, event);
+        Constants.AwardState state = handler.fulfill(event).getState();
+        if (state != Constants.AwardState.SUCCESS) {
+            throw new IllegalStateException("award fulfillment failed, order " + order.getOrderId() + ": " + state.getInfo());
         }
     }
 }

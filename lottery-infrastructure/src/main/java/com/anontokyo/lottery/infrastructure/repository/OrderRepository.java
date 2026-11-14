@@ -1,12 +1,13 @@
 package com.anontokyo.lottery.infrastructure.repository;
 
 import com.anontokyo.lottery.common.Constants;
-import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
 import com.anontokyo.lottery.domain.award.model.vo.DrawOrderVO;
-import com.anontokyo.lottery.domain.draw.repository.IActivityPrizeRepository;
+import com.anontokyo.lottery.infrastructure.utils.RedisStockReservations;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.PessimisticLockingFailureException;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.beans.BeanUtils;
-import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.transaction.support.TransactionTemplate;
 import javax.annotation.Resource;
@@ -34,41 +35,122 @@ public class OrderRepository implements IOrderRepository {
     private TransactionTemplate transactionTemplate;
 
     @Resource
-    private IActivityPrizeRepository activityPrizeRepository;
+    private RedisStockReservations reservations;
 
-    @Autowired
-    private ApplicationEventPublisher events;
+    private static final Logger logger = LoggerFactory.getLogger(OrderRepository.class);
 
     @Override
-    public Constants.ResponseCode saveDrawOrderWithTakeLock(DrawOrderVO drawOrder) {
-        // TX2 将参与记录消费与携带 Outbox 状态的订单写入同一事务。
-        return StockReservationTransactions.execute(transactionTemplate, status -> {
-            DrawParticipation lockReq = new DrawParticipation();
-            lockReq.setuId(drawOrder.getuId());
-            lockReq.setActivityId(drawOrder.getActivityId());
-            lockReq.setTakeId(drawOrder.getTakeId());
-            int lockCount = drawParticipationDao.consumeParticipation(lockReq);
-            if (lockCount == 0) {
-                status.setRollbackOnly();
-                return Constants.ResponseCode.NO_UPDATE;
+    public Constants.ResponseCode saveDrawOrderWithTakeLock(DrawOrderVO order, long deadline) {
+        // TX2 必须独立提交，否则本地回调可能在外层事务提交前通知 Broker。
+        if (TransactionSynchronizationManager.isActualTransactionActive()) {
+            throw new IllegalStateException("库存消息回调禁止加入外层事务，orderId=" + order.getOrderId());
+        }
+        String marker = order.getOrderId() + ":" + order.getTakeId() + ":" + order.getActivityId() + ":" + order.getAwardId();
+        boolean[] reservationAttempted = {false};
+        Constants.ResponseCode result;
+        try {
+            result = transactionTemplate.execute(status -> {
+                DrawParticipation take = new DrawParticipation();
+                take.setuId(order.getuId());
+                take.setActivityId(order.getActivityId());
+                take.setTakeId(order.getTakeId());
+                // 先 CAS 获取参与行锁。回查及回补使用相同的行锁判定事务是否结束。
+                if (drawParticipationDao.consumeParticipation(take) == 0) {
+                    return Constants.ResponseCode.NO_UPDATE;
+                }
+                // 必须在取得行锁后检查截止时间。回查做出回滚决定后，迟到的回调不能下单。
+                if (drawParticipationDao.databaseTimeMillis() >= deadline) {
+                    throw new IllegalStateException("库存事务已过期，orderId=" + order.getOrderId());
+                }
+                // CAS 成功表示此前的 TX2 没有消费此参与。重试先回收进程退出留下的预扣，
+                // 避免一件库存被上次同请求占住，导致这次误判售罄。
+                String previous = reservations.findByTake(order.getTakeId());
+                if (previous != null) {
+                    resolveUnderTakeLock(previous);
+                }
+                // Lua 可能已执行但响应丢失，先记录调用意图，依靠待对账记录判断是否实际预扣。
+                reservationAttempted[0] = true;
+                if (!reservations.reserve(marker, order.getTakeId(), order.getActivityId(), order.getAwardId(), deadline)) {
+                    return Constants.ResponseCode.AWARD_SOLD_OUT;
+                }
+                insertDrawOrder(order);
+                return Constants.ResponseCode.SUCCESS;
+            });
+        } catch (RuntimeException failure) {
+            if (reservationAttempted[0]) {
+                try {
+                    reconcileReservation(marker);
+                } catch (RuntimeException recoveryFailure) {
+                    // 提交结果未知或 Redis 不可用时保留预扣记录，定时任务在真实状态可查后处理。
+                    failure.addSuppressed(recoveryFailure);
+                }
             }
-
-            try {
-                insertDrawOrder(drawOrder);
-                // 事务内发布事件。监听器只在真实提交后安排发送。
-                AwardStockSettlementVO settlement = new AwardStockSettlementVO();
-                BeanUtils.copyProperties(drawOrder, settlement);
-                events.publishEvent(settlement);
-            } catch (DuplicateKeyException e) {
-                status.setRollbackOnly();
+            if (failure instanceof DuplicateKeyException) {
                 return Constants.ResponseCode.INDEX_DUP;
             }
+            throw failure;
+        }
+        if (result == Constants.ResponseCode.SUCCESS) {
+            try {
+                reservations.resolve(marker, order.getTakeId(), order.getActivityId(), order.getAwardId(), true);
+            } catch (RuntimeException e) {
+                // 订单已提交，照常通知 Broker；过期预扣对账会按订单事实清理索引。
+                logger.error("已提交订单的预扣记录清理失败 marker:{}", marker, e);
+            }
+        }
+        return result;
+    }
 
-            return Constants.ResponseCode.SUCCESS;
-        }, () -> activityPrizeRepository.recoverActivityPrizeStockByRedis(
-                drawOrder.getActivityId(), drawOrder.getAwardId()),
-                "award uId=" + drawOrder.getuId() + " takeId=" + drawOrder.getTakeId()
-                        + " orderId=" + drawOrder.getOrderId());
+    @Override
+    public StockTransactionState checkStockTransaction(String uId, long orderId, long takeId, long deadline) {
+        if (findOrder(uId, orderId) != null) {
+            return StockTransactionState.COMMITTED;
+        }
+        if (drawParticipationDao.databaseTimeMillis() < deadline) {
+            return StockTransactionState.UNKNOWN;
+        }
+        try {
+            return transactionTemplate.execute(status -> {
+                // NOWAIT 区分执行中和已结束。锁在手时重新读取，避免以旧快照判定回滚。
+                drawParticipationDao.lockTakeNowait(takeId);
+                return findOrder(uId, orderId) != null
+                        ? StockTransactionState.COMMITTED : StockTransactionState.ROLLED_BACK;
+            });
+        } catch (PessimisticLockingFailureException busy) {
+            return StockTransactionState.UNKNOWN;
+        }
+    }
+
+    @Override
+    public void recoverStockReservations(int limit) {
+        long now = System.currentTimeMillis();
+        for (String marker : reservations.expired(now, limit)) {
+            try {
+                reconcileReservation(marker);
+            } catch (RuntimeException e) {
+                logger.error("库存预扣对账未完成 marker:{}", marker, e);
+                // 保留原预扣记录，下轮扫描继续检查。
+            }
+        }
+    }
+
+    private void reconcileReservation(String marker) {
+        long takeId = Long.parseLong(marker.split(":", 4)[1]);
+        transactionTemplate.executeWithoutResult(status -> {
+            drawParticipationDao.lockTakeNowait(takeId);
+            resolveUnderTakeLock(marker);
+        });
+    }
+
+    private void resolveUnderTakeLock(String marker) {
+        // 奖品号可包含冒号，所以只分隔前三个字段。
+        String[] identity = marker.split(":", 4);
+        long orderId = Long.parseLong(identity[0]);
+        long takeId = Long.parseLong(identity[1]);
+        long activityId = Long.parseLong(identity[2]);
+        // 回补前在参与锁内检查订单。提交结果未知也走同一条路径。
+        boolean committed = drawOrderDao.hasOrderForTake(orderId, takeId);
+        reservations.resolve(marker, takeId, activityId, identity[3], committed);
     }
 
     @Override
@@ -156,13 +238,8 @@ public class OrderRepository implements IOrderRepository {
     }
 
     @Override
-    public boolean claimOutbox(OutboxKind kind, long orderId, int attempt, int leaseSeconds) {
-        return drawOrderDao.claimOutbox(kind, orderId, attempt, leaseSeconds) == 1;
-    }
-
-    @Override
-    public void finishOutbox(OutboxKind kind, long orderId, int attempt, boolean sent, int delaySeconds) {
-        drawOrderDao.finishOutbox(kind, orderId, attempt, sent, delaySeconds);
+    public boolean claimOutbox(OutboxKind kind, long orderId, int leaseSeconds) {
+        return drawOrderDao.claimOutbox(kind, orderId, leaseSeconds) == 1;
     }
 
     @Override
