@@ -694,6 +694,38 @@ public class FinalBusinessE2eManualIT {
     }
 
     @Test
+    public void committedStockIsNotDeductedAgainWhenOrderCasFails() throws Exception {
+        long id = createStarted(10, 3);
+        String user = "cas" + IDS.incrementAndGet();
+        DrawResponse result = draw(user, id, "cas-failure");
+        assertWin(result);
+        AwardStockSettlementVO event = settlement(user, id, result.getOrderId());
+        java.util.concurrent.atomic.AtomicBoolean acknowledged = new java.util.concurrent.atomic.AtomicBoolean();
+        // 仅对本订单完成 CAS 注入 SQL 异常，TX3 账本和库存仍真实提交。
+        String trigger = "lottery.stock_cas_it_" + id;
+        update("CREATE TRIGGER " + trigger + " BEFORE UPDATE ON lottery.draw_order FOR EACH ROW "
+                + "BEGIN IF OLD.order_id=" + result.getOrderId() + " AND NEW.stock_settlement_event_status=1 THEN "
+                + "SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT='injected order CAS failure'; END IF; END");
+        try {
+            assertThrows(org.springframework.dao.DataAccessException.class, () -> stockListener.onMessage(
+                    new ConsumerRecord<>("lottery_strategy_award_stock", 0, 0, String.valueOf(result.getOrderId()), JSON.toJSONString(event)),
+                    () -> acknowledged.set(true), "lottery_strategy_award_stock"));
+            assertFalse(acknowledged.get());
+            assertEquals(Integer.valueOf(0), order(user, result.getOrderId()).getStockSettlementEventStatus());
+            assertEquals(1, value("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE order_id=?", result.getOrderId()));
+            assertEquals(9, value("SELECT award_surplus_count FROM lottery.activity_prize WHERE activity_id=?", id));
+        } finally {
+            update("DROP TRIGGER " + trigger);
+        }
+        // 真实补偿消息读到原账本，只完成订单 CAS 与发奖。
+        recoverStock();
+        awaitComplete(user, result.getOrderId());
+        assertEquals(1, value("SELECT COUNT(*) FROM lottery.award_stock_settlement WHERE order_id=?", result.getOrderId()));
+        assertEquals(9, value("SELECT award_surplus_count FROM lottery.activity_prize WHERE activity_id=?", id));
+        assertEquals("9", redis.opsForValue().get(awardKey(id)));
+    }
+
+    @Test
     public void expiredPassedAndRunningActivitiesCloseWithoutWarmup() throws Exception {
         ActivityConfigReq passed = config(10, 3, -120000);
         deploy.createActivity(passed);

@@ -1,0 +1,92 @@
+[
+  {
+    "event": "before-commit-hold",
+    "pending": {
+      "orders": 0,
+      "stockPending": 0,
+      "grantPending": 0,
+      "blocked": 0,
+      "stockDue": 0,
+      "fulfillmentDue": 0
+    }
+  },
+  {
+    "event": "process-exit",
+    "signal": 9,
+    "code": -9
+  },
+  {
+    "event": "before-commit-http",
+    "error": "curl: (52) Empty reply from server\n"
+  },
+  {
+    "event": "before-commit-observed",
+    "pending": {
+      "orders": 0,
+      "stockPending": 0,
+      "grantPending": 0,
+      "blocked": 0,
+      "stockDue": 0,
+      "fulfillmentDue": 0
+    },
+    "redisStocks": {
+      "0": 10,
+      "1": 10,
+      "2": 10,
+      "3": 10,
+      "4": 9
+    },
+    "ledger": 0,
+    "unfinishedParticipation": 1
+  },
+  {
+    "event": "after-commit-order",
+    "orderId": "2121420199344340992",
+    "pending": {
+      "orders": 1,
+      "stockPending": 1,
+      "grantPending": 1,
+      "blocked": 0,
+      "stockDue": 0,
+      "fulfillmentDue": 0
+    }
+  },
+  {
+    "event": "process-exit",
+    "signal": 9,
+    "code": -9
+  },
+  {
+    "event": "after-commit-http",
+    "error": "curl: (52) Empty reply from server\n"
+  },
+  {
+    "event": "after-commit-recovered",
+    "secondsAfterReady": 1.5815357079991372,
+    "orderId": "2121420199344340992",
+    "pending": {
+      "orders": 1,
+      "stockPending": 0,
+      "grantPending": 0,
+      "blocked": 0,
+      "stockDue": 0,
+      "fulfillmentDue": 0
+    }
+  },
+  {
+    "event": "before-commit-manually-reconciled",
+    "pending": {
+      "orders": 1,
+      "stockPending": 0,
+      "grantPending": 0,
+      "blocked": 0,
+      "stockDue": 0,
+      "fulfillmentDue": 0
+    }
+  },
+  {
+    "event": "process-exit",
+    "signal": 15,
+    "code": 143
+  }
+]

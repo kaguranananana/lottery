@@ -1,8 +1,10 @@
 # Lottery 项目状态
 
-更新时间：2026-11-12
+更新时间：2026-11-14
 
 ## 当前状态
+
+- V8 订单发送确认写入实验完成。双路径回写合批和仅合批库存回写均少写 SQL 与事务，但持续稳定性没有可复现改善。保留原生产代码和三个通过原版回归的故障用例。22 轮共 980,640 笔订单最终对账通过。后段原版最高重复通过 150 RPS（两次各约 190 秒），220 RPS 单轮通过。详见 [V8 回写实验](../doc/performance/v8-outbox-write-report.md)。
 
 - Lottery 由五个 Maven 模块组成，Spring Boot 首页提供同源的抽奖前端；模块边界、技术栈和抽奖/异步链路见 `.trellis/spec/project-context.md`。
 - 当前没有进行中的 Trellis task；已有任务都在 `.trellis/tasks/archive/`。旧的 Trellis workspace 日志保留在 `.trellis/workspace/`。

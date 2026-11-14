@@ -1,0 +1,4720 @@
+{
+  "a215-1": {
+    "stable": false,
+    "failedStabilityChecks": [
+      "入口结束后15秒内收敛"
+    ],
+    "windowSeconds": 190.0,
+    "orders": 44079,
+    "audit": "PASS",
+    "httpRps": 214.97894736842105,
+    "stockRps": 208.57894736842104,
+    "grantRps": 208.56842105263158,
+    "httpP95Ms": 42,
+    "httpP99Ms": 293,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 1822,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 185.42857142857142,
+    "grantBacklogPeak": 1204,
+    "stockBacklogFirstLast60s": [
+      19.833333333333332,
+      203.85714285714286
+    ],
+    "drainSeconds": 59.07223296165466,
+    "mysqlCommitMeanMs": 4.738678484364239,
+    "tx3Commit": {
+      "count": 39105,
+      "totalMs": 166529.422389,
+      "meanMs": 4.258519943459916,
+      "errors": 0,
+      "p95BucketUpperMs": 8.192,
+      "p99BucketUpperMs": 16.384
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 308442,
+      "trx_rw_commits": 309121,
+      "mysqlCommitP95UpperMs": 8.317637711,
+      "mysqlCommitP99UpperMs": 39.810717055,
+      "histogramCommitCalls": 132272
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 131211,
+        "seconds": 614.3339999999989,
+        "lockSeconds": 1.204499999999996,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 43958,
+        "seconds": 287.4485999999997,
+        "lockSeconds": 114.37159999999994,
+        "examinedRows": 44047,
+        "affectedRows": 43967
+      },
+      "stockResult": {
+        "calls": 43964,
+        "seconds": 195.60190000000011,
+        "lockSeconds": 0.2362000000000002,
+        "examinedRows": 44034,
+        "affectedRows": 43912
+      },
+      "stockCas": {
+        "calls": 43981,
+        "seconds": 177.15970000000016,
+        "lockSeconds": 0.13000000000000256,
+        "examinedRows": 44054,
+        "affectedRows": 43976
+      },
+      "grantResult": {
+        "calls": 43975,
+        "seconds": 178.74479999999994,
+        "lockSeconds": 2.0516000000000005,
+        "examinedRows": 44050,
+        "affectedRows": 43321
+      },
+      "stockDeduct": {
+        "calls": 44015,
+        "seconds": 25.573100000000068,
+        "lockSeconds": 16.51909999999998,
+        "examinedRows": 44066,
+        "affectedRows": 44026
+      },
+      "orderInsert": {
+        "calls": 44047,
+        "seconds": 21.109399999999994,
+        "lockSeconds": 0.0815999999999999,
+        "examinedRows": 0,
+        "affectedRows": 44035
+      },
+      "ledgerInsert": {
+        "calls": 44019,
+        "seconds": 7.887100000000004,
+        "lockSeconds": 0.056400000000000006,
+        "examinedRows": 0,
+        "affectedRows": 43999
+      },
+      "stockClaim": {
+        "calls": 493,
+        "seconds": 1.113900000000001,
+        "lockSeconds": 0.0003999999999999837,
+        "examinedRows": 497,
+        "affectedRows": 490
+      },
+      "grantClaim": {
+        "calls": 24,
+        "seconds": 0.18219999999999992,
+        "lockSeconds": 0.0,
+        "examinedRows": 25,
+        "affectedRows": 25
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 28,
+      "activity_prize": 8
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 23
+      },
+      {
+        "waiting": "other",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 3
+      },
+      {
+        "waiting": "grantSingleResult",
+        "blocking": "grantCas",
+        "blockingState": "waiting for handler commit",
+        "samples": 2
+      }
+    ],
+    "globalLockWaits": 48763,
+    "globalLockWaitMs": 132754,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 48,
+        "maxWaiting": 34,
+        "acquireMeanMs": 0.28313668508998613,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 641,
+      "lottery-perf-invoice": 4
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 208.48056537102474,
+      "lottery-perf-invoice": 208.45291616206862
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 126.5778220165121,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 216294,
+        "readMs": 3651.583593776,
+        "readBytes": 3543760896,
+        "writeOps": 29642,
+        "writeMs": 1319.816982224,
+        "writeBytes": 522813440,
+        "miscOps": 15396,
+        "miscMs": 19478.177844236
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 7825,
+        "writeMs": 508.112078396,
+        "writeBytes": 485064704,
+        "miscOps": 7824,
+        "miscMs": 14847.253305704
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 330545,
+        "writeMs": 4227.419708656,
+        "writeBytes": 602986496,
+        "miscOps": 170643,
+        "miscMs": 145932.766786944
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 118809,
+        "writeMs": 2328.105672568,
+        "writeBytes": 170459345,
+        "miscOps": 117926,
+        "miscMs": 129643.100520296
+      }
+    },
+    "outbox": {
+      "scans": 64,
+      "candidates": 551,
+      "scanNanos": 82885836,
+      "retries": 526,
+      "rejected": 526,
+      "recoveryThrottled": 2,
+      "sendFailures": 0
+    }
+  },
+  "b215-1": {
+    "stable": false,
+    "failedStabilityChecks": [
+      "积压峰值不超过10秒请求量",
+      "首尾平均积压增长不超过1秒请求量",
+      "异步P95保守上界低于10秒",
+      "入口结束后15秒内收敛"
+    ],
+    "windowSeconds": 190.0,
+    "orders": 44009,
+    "audit": "PASS",
+    "httpRps": 214.52105263157895,
+    "stockRps": 186.06315789473683,
+    "grantRps": 186.05263157894737,
+    "httpP95Ms": 146,
+    "httpP99Ms": 399,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 28049,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 2748.714285714286,
+    "grantBacklogPeak": 4876,
+    "stockBacklogFirstLast60s": [
+      8.5,
+      3064.6666666666665
+    ],
+    "drainSeconds": 29.716914892196655,
+    "mysqlCommitMeanMs": 8.503363800647207,
+    "tx3Commit": {
+      "count": 35057,
+      "totalMs": 187980.052848,
+      "meanMs": 5.362126047522606,
+      "errors": 0,
+      "p95BucketUpperMs": 16.384,
+      "p99BucketUpperMs": 65.536
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 273440,
+      "trx_rw_commits": 285439,
+      "mysqlCommitP95UpperMs": 26.302679918,
+      "mysqlCommitP99UpperMs": 109.647819614,
+      "histogramCommitCalls": 132062
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 130809,
+        "seconds": 1070.1280000000006,
+        "lockSeconds": 4.697800000000001,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 43888,
+        "seconds": 323.6997000000001,
+        "lockSeconds": 101.85480000000007,
+        "examinedRows": 43949,
+        "affectedRows": 43850
+      },
+      "stockCas": {
+        "calls": 43885,
+        "seconds": 223.5966999999996,
+        "lockSeconds": 0.5117999999999974,
+        "examinedRows": 43972,
+        "affectedRows": 43849
+      },
+      "stockResult": {
+        "calls": 29520,
+        "seconds": 132.81619999999998,
+        "lockSeconds": 0.13110000000000005,
+        "examinedRows": 44009,
+        "affectedRows": 44007
+      },
+      "grantResult": {
+        "calls": 35833,
+        "seconds": 145.49210000000002,
+        "lockSeconds": 35.5899,
+        "examinedRows": 44009,
+        "affectedRows": 27638
+      },
+      "stockDeduct": {
+        "calls": 43960,
+        "seconds": 36.06809999999996,
+        "lockSeconds": 28.21659999999997,
+        "examinedRows": 43978,
+        "affectedRows": 43942
+      },
+      "orderInsert": {
+        "calls": 43948,
+        "seconds": 15.18059999999997,
+        "lockSeconds": 0.05130000000000012,
+        "examinedRows": 0,
+        "affectedRows": 43946
+      },
+      "ledgerInsert": {
+        "calls": 43936,
+        "seconds": 6.722000000000008,
+        "lockSeconds": 0.04520000000000002,
+        "examinedRows": 0,
+        "affectedRows": 43928
+      },
+      "stockClaim": {
+        "calls": 0,
+        "seconds": 0.0,
+        "lockSeconds": 0.0,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantClaim": {
+        "calls": 0,
+        "seconds": 0.0,
+        "lockSeconds": 0.0,
+        "examinedRows": 0,
+        "affectedRows": 0
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 32,
+      "activity_prize": 9
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantBatchResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 25
+      },
+      {
+        "waiting": "grantBatchResult",
+        "blocking": "grantCas",
+        "blockingState": "waiting for handler commit",
+        "samples": 5
+      },
+      {
+        "waiting": "other",
+        "blocking": "grantBatchResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 2
+      }
+    ],
+    "globalLockWaits": 45409,
+    "globalLockWaitMs": 165130,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 48,
+        "maxWaiting": 34,
+        "acquireMeanMs": 0.42426335292288714,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 5048,
+      "lottery-perf-invoice": 5
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 186.84249688061632,
+      "lottery-perf-invoice": 186.83104960106232
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 112.95681628261043,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 221755,
+        "readMs": 2686.657309692,
+        "readBytes": 3633233920,
+        "writeOps": 23286,
+        "writeMs": 1013.60419234,
+        "writeBytes": 410419200,
+        "miscOps": 12176,
+        "miscMs": 22135.084824604
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 5892,
+        "writeMs": 389.716471304,
+        "writeBytes": 381124608,
+        "miscOps": 5891,
+        "miscMs": 16666.393419976
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 670150,
+        "writeMs": 8472.684254344,
+        "writeBytes": 684128768,
+        "miscOps": 156573,
+        "miscMs": 148568.949149456
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 103681,
+        "writeMs": 2946.800609304,
+        "writeBytes": 143202120,
+        "miscOps": 101437,
+        "miscMs": 123821.093489152
+      }
+    },
+    "outbox": {
+      "scans": 48,
+      "candidates": 0,
+      "scanNanos": 441955336,
+      "retries": 0,
+      "rejected": 0,
+      "recoveryThrottled": 0,
+      "sendFailures": 0
+    }
+  },
+  "b215-2": {
+    "stable": true,
+    "failedStabilityChecks": [],
+    "windowSeconds": 189.976,
+    "orders": 44064,
+    "audit": "PASS",
+    "httpRps": 214.95346780645977,
+    "stockRps": 214.56920874215692,
+    "grantRps": 214.55868109655955,
+    "httpP95Ms": 90,
+    "httpP99Ms": 227,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 1635,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 144.14285714285714,
+    "grantBacklogPeak": 325,
+    "stockBacklogFirstLast60s": [
+      20,
+      189.5
+    ],
+    "drainSeconds": 0.6448869705200195,
+    "mysqlCommitMeanMs": 5.820827424853477,
+    "tx3Commit": {
+      "count": 40351,
+      "totalMs": 169757.326756,
+      "meanMs": 4.207016598250353,
+      "errors": 0,
+      "p95BucketUpperMs": 8.192,
+      "p99BucketUpperMs": 32.768
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 279302,
+      "trx_rw_commits": 290925,
+      "mysqlCommitP95UpperMs": 13.803842646,
+      "mysqlCommitP99UpperMs": 83.17637711,
+      "histogramCommitCalls": 132227
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 131366,
+        "seconds": 774.3293000000012,
+        "lockSeconds": 2.5024000000000015,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 43969,
+        "seconds": 251.8755999999994,
+        "lockSeconds": 79.00720000000001,
+        "examinedRows": 44010,
+        "affectedRows": 43948
+      },
+      "stockCas": {
+        "calls": 44000,
+        "seconds": 174.59510000000046,
+        "lockSeconds": 0.5942000000000007,
+        "examinedRows": 44040,
+        "affectedRows": 43980
+      },
+      "stockResult": {
+        "calls": 33584,
+        "seconds": 126.58329999999998,
+        "lockSeconds": 0.11080000000000001,
+        "examinedRows": 44064,
+        "affectedRows": 44064
+      },
+      "grantResult": {
+        "calls": 36975,
+        "seconds": 121.30479999999997,
+        "lockSeconds": 27.1593,
+        "examinedRows": 44064,
+        "affectedRows": 28798
+      },
+      "stockDeduct": {
+        "calls": 44016,
+        "seconds": 25.11760000000004,
+        "lockSeconds": 18.168700000000058,
+        "examinedRows": 44048,
+        "affectedRows": 44021
+      },
+      "orderInsert": {
+        "calls": 44021,
+        "seconds": 12.192900000000009,
+        "lockSeconds": 0.030100000000000016,
+        "examinedRows": 0,
+        "affectedRows": 44008
+      },
+      "ledgerInsert": {
+        "calls": 44002,
+        "seconds": 4.9491999999999905,
+        "lockSeconds": 0.04339999999999988,
+        "examinedRows": 0,
+        "affectedRows": 44000
+      },
+      "stockClaim": {
+        "calls": 0,
+        "seconds": 0.0,
+        "lockSeconds": 0.0,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantClaim": {
+        "calls": 0,
+        "seconds": 0.0,
+        "lockSeconds": 0.0,
+        "examinedRows": 0,
+        "affectedRows": 0
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 24,
+      "activity_prize": 4
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantBatchResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 16
+      },
+      {
+        "waiting": "grantBatchResult",
+        "blocking": "grantCas",
+        "blockingState": "waiting for handler commit",
+        "samples": 7
+      },
+      {
+        "waiting": "stockCas",
+        "blocking": "stockBatchResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 1
+      }
+    ],
+    "globalLockWaits": 46188,
+    "globalLockWaitMs": 124497,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 48,
+        "maxWaiting": 7,
+        "acquireMeanMs": 0.13800210059516863,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 323,
+      "lottery-perf-invoice": 5
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 212.91975217078763,
+      "lottery-perf-invoice": 212.93116235551852
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 115.13719834324118,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 236340,
+        "readMs": 3041.408616536,
+        "readBytes": 3872194560,
+        "writeOps": 24196,
+        "writeMs": 929.136651788,
+        "writeBytes": 429457408,
+        "miscOps": 12721,
+        "miscMs": 18045.923482512
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 6157,
+        "writeMs": 331.667374588,
+        "writeBytes": 395902976,
+        "miscOps": 6157,
+        "miscMs": 13005.103665116
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 738372,
+        "writeMs": 5259.661567708,
+        "writeBytes": 748825088,
+        "miscOps": 182582,
+        "miscMs": 144359.113502728
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 122278,
+        "writeMs": 2845.056926532,
+        "writeBytes": 155635328,
+        "miscOps": 120669,
+        "miscMs": 124071.641632172
+      }
+    },
+    "outbox": {
+      "scans": 42,
+      "candidates": 0,
+      "scanNanos": 86222044,
+      "retries": 0,
+      "rejected": 0,
+      "recoveryThrottled": 0,
+      "sendFailures": 0
+    }
+  },
+  "a215-2": {
+    "stable": false,
+    "failedStabilityChecks": [
+      "首尾平均积压增长不超过1秒请求量",
+      "入口结束后15秒内收敛"
+    ],
+    "windowSeconds": 190.0,
+    "orders": 44054,
+    "audit": "PASS",
+    "httpRps": 214.86315789473684,
+    "stockRps": 208.04736842105262,
+    "grantRps": 207.97894736842105,
+    "httpP95Ms": 51,
+    "httpP99Ms": 340,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 3594,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 321.2857142857143,
+    "grantBacklogPeak": 837,
+    "stockBacklogFirstLast60s": [
+      4,
+      320.14285714285717
+    ],
+    "drainSeconds": 20.340085983276367,
+    "mysqlCommitMeanMs": 4.975207529344054,
+    "tx3Commit": {
+      "count": 39487,
+      "totalMs": 136434.443259,
+      "meanMs": 3.4551736839719402,
+      "errors": 0,
+      "p95BucketUpperMs": 8.192,
+      "p99BucketUpperMs": 16.384
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 307981,
+      "trx_rw_commits": 308837,
+      "mysqlCommitP95UpperMs": 9.120108393,
+      "mysqlCommitP99UpperMs": 75.857757502,
+      "histogramCommitCalls": 132197
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 131678,
+        "seconds": 620.4265999999989,
+        "lockSeconds": 2.191900000000004,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 44007,
+        "seconds": 219.9970000000003,
+        "lockSeconds": 86.72379999999976,
+        "examinedRows": 44040,
+        "affectedRows": 44002
+      },
+      "stockCas": {
+        "calls": 44014,
+        "seconds": 139.2437,
+        "lockSeconds": 0.15830000000000055,
+        "examinedRows": 44041,
+        "affectedRows": 43995
+      },
+      "stockResult": {
+        "calls": 44007,
+        "seconds": 179.50999999999976,
+        "lockSeconds": 0.3732999999999995,
+        "examinedRows": 44033,
+        "affectedRows": 43957
+      },
+      "grantResult": {
+        "calls": 44009,
+        "seconds": 131.10190000000011,
+        "lockSeconds": 1.4424999999999955,
+        "examinedRows": 44038,
+        "affectedRows": 43156
+      },
+      "stockDeduct": {
+        "calls": 44032,
+        "seconds": 18.234899999999925,
+        "lockSeconds": 12.812000000000012,
+        "examinedRows": 44045,
+        "affectedRows": 44036
+      },
+      "orderInsert": {
+        "calls": 44036,
+        "seconds": 9.530300000000011,
+        "lockSeconds": 0.03649999999999998,
+        "examinedRows": 0,
+        "affectedRows": 44033
+      },
+      "ledgerInsert": {
+        "calls": 44020,
+        "seconds": 4.2423,
+        "lockSeconds": 0.033600000000000074,
+        "examinedRows": 0,
+        "affectedRows": 44019
+      },
+      "stockClaim": {
+        "calls": 391,
+        "seconds": 2.0785999999999945,
+        "lockSeconds": 0.0002999999999999947,
+        "examinedRows": 391,
+        "affectedRows": 390
+      },
+      "grantClaim": {
+        "calls": 25,
+        "seconds": 0.15050000000000097,
+        "lockSeconds": 0.0,
+        "examinedRows": 25,
+        "affectedRows": 25
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 23,
+      "activity_prize": 3
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 22
+      },
+      {
+        "waiting": "other",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 1
+      }
+    ],
+    "globalLockWaits": 46343,
+    "globalLockWaitMs": 100855,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 48,
+        "maxWaiting": 37,
+        "acquireMeanMs": 0.2758720930232558,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 683,
+      "lottery-perf-invoice": 4
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 209.6360280868815,
+      "lottery-perf-invoice": 209.60872746333527
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 145.24725191923386,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 263139,
+        "readMs": 2568.817850528,
+        "readBytes": 4311269376,
+        "writeOps": 28753,
+        "writeMs": 949.163479484,
+        "writeBytes": 504119296,
+        "miscOps": 14826,
+        "miscMs": 17743.495808248
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 7580,
+        "writeMs": 367.444543368,
+        "writeBytes": 470630400,
+        "miscOps": 7579,
+        "miscMs": 13406.932714824
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 1909830,
+        "writeMs": 5375.4925667,
+        "writeBytes": 1328792576,
+        "miscOps": 254332,
+        "miscMs": 153289.508252128
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 154761,
+        "writeMs": 3650.434365896,
+        "writeBytes": 172811010,
+        "miscOps": 150857,
+        "miscMs": 123010.362365248
+      }
+    },
+    "outbox": {
+      "scans": 54,
+      "candidates": 430,
+      "scanNanos": 55671075,
+      "retries": 418,
+      "rejected": 418,
+      "recoveryThrottled": 2,
+      "sendFailures": 0
+    }
+  },
+  "a220-2": {
+    "stable": true,
+    "failedStabilityChecks": [],
+    "windowSeconds": 190.0,
+    "orders": 45053,
+    "audit": "PASS",
+    "httpRps": 219.54736842105262,
+    "stockRps": 218.84736842105264,
+    "grantRps": 218.81578947368422,
+    "httpP95Ms": 28,
+    "httpP99Ms": 72,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 253,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 43.42857142857143,
+    "grantBacklogPeak": 179,
+    "stockBacklogFirstLast60s": [
+      8.5,
+      50
+    ],
+    "drainSeconds": 0.6906998157501221,
+    "mysqlCommitMeanMs": 3.445172923329525,
+    "tx3Commit": {
+      "count": 41327,
+      "totalMs": 142709.423609,
+      "meanMs": 3.453176461127108,
+      "errors": 0,
+      "p95BucketUpperMs": 8.192,
+      "p99BucketUpperMs": 16.384
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 315006,
+      "trx_rw_commits": 315489,
+      "mysqlCommitP95UpperMs": 6.309573444,
+      "mysqlCommitP99UpperMs": 12.589254117,
+      "histogramCommitCalls": 135194
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 134205,
+        "seconds": 472.3670000000002,
+        "lockSeconds": 0.5736999999999988,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 44968,
+        "seconds": 237.7163999999998,
+        "lockSeconds": 94.85209999999984,
+        "examinedRows": 45028,
+        "affectedRows": 44971
+      },
+      "stockResult": {
+        "calls": 44959,
+        "seconds": 164.60359999999991,
+        "lockSeconds": 0.1200000000000001,
+        "examinedRows": 45014,
+        "affectedRows": 44911
+      },
+      "stockCas": {
+        "calls": 44955,
+        "seconds": 146.9982,
+        "lockSeconds": 0.10599999999999987,
+        "examinedRows": 45028,
+        "affectedRows": 44945
+      },
+      "grantResult": {
+        "calls": 44956,
+        "seconds": 148.28909999999996,
+        "lockSeconds": 1.125399999999999,
+        "examinedRows": 45007,
+        "affectedRows": 44474
+      },
+      "stockDeduct": {
+        "calls": 45007,
+        "seconds": 19.021699999999953,
+        "lockSeconds": 11.854599999999948,
+        "examinedRows": 45041,
+        "affectedRows": 45015
+      },
+      "orderInsert": {
+        "calls": 45025,
+        "seconds": 10.486499999999992,
+        "lockSeconds": 0.03589999999999999,
+        "examinedRows": 0,
+        "affectedRows": 45018
+      },
+      "stockClaim": {
+        "calls": 68,
+        "seconds": 0.292199999999994,
+        "lockSeconds": 0.00010000000000000286,
+        "examinedRows": 68,
+        "affectedRows": 68
+      },
+      "ledgerInsert": {
+        "calls": 44988,
+        "seconds": 5.9986999999999995,
+        "lockSeconds": 0.04570000000000002,
+        "examinedRows": 0,
+        "affectedRows": 44981
+      },
+      "grantClaim": {
+        "calls": 5,
+        "seconds": 0.018400000000001526,
+        "lockSeconds": 0.0,
+        "examinedRows": 5,
+        "affectedRows": 5
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 31,
+      "activity_prize": 2
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 25
+      },
+      {
+        "waiting": "other",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 6
+      }
+    ],
+    "globalLockWaits": 48929,
+    "globalLockWaitMs": 107770,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 21,
+        "maxWaiting": 0,
+        "acquireMeanMs": 0.08123541867772557,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 136,
+      "lottery-perf-invoice": 18
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 216.92077695089642,
+      "lottery-perf-invoice": 216.82184432401533
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 126.23655450638115,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 129952,
+        "readMs": 1588.1614421,
+        "readBytes": 2129133568,
+        "writeOps": 28892,
+        "writeMs": 943.00212576,
+        "writeBytes": 506396672,
+        "miscOps": 14851,
+        "miscMs": 14425.853201156
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 7592,
+        "writeMs": 372.697310944,
+        "writeBytes": 472842240,
+        "miscOps": 7591,
+        "miscMs": 10469.374156948
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 912046,
+        "writeMs": 4176.948513036,
+        "writeBytes": 873612800,
+        "miscOps": 205274,
+        "miscMs": 145201.00808524
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 139423,
+        "writeMs": 2945.339710156,
+        "writeBytes": 177032586,
+        "miscOps": 137970,
+        "miscMs": 126038.403631612
+      }
+    },
+    "outbox": {
+      "scans": 42,
+      "candidates": 74,
+      "scanNanos": 35362963,
+      "retries": 73,
+      "rejected": 73,
+      "recoveryThrottled": 1,
+      "sendFailures": 0
+    }
+  },
+  "b220-1": {
+    "stable": false,
+    "failedStabilityChecks": [
+      "积压峰值不超过10秒请求量",
+      "首尾平均积压增长不超过1秒请求量",
+      "异步P95保守上界低于10秒",
+      "入口结束后15秒内收敛"
+    ],
+    "windowSeconds": 189.998,
+    "orders": 45018,
+    "audit": "PASS",
+    "httpRps": 219.54967947031022,
+    "stockRps": 194.14941209907474,
+    "grantRps": 194.14414888577775,
+    "httpP95Ms": 154,
+    "httpP99Ms": 393,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 23537,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 3191.5714285714284,
+    "grantBacklogPeak": 4647,
+    "stockBacklogFirstLast60s": [
+      8,
+      3197.285714285714
+    ],
+    "drainSeconds": 23.073587894439697,
+    "mysqlCommitMeanMs": 9.093277145322626,
+    "tx3Commit": {
+      "count": 36780,
+      "totalMs": 197926.040546,
+      "meanMs": 5.381349661392061,
+      "errors": 0,
+      "p95BucketUpperMs": 16.384,
+      "p99BucketUpperMs": 32.768
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 280795,
+      "trx_rw_commits": 293678,
+      "mysqlCommitP95UpperMs": 27.542287033,
+      "mysqlCommitP99UpperMs": 109.647819614,
+      "histogramCommitCalls": 135089
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 133888,
+        "seconds": 1112.9339,
+        "lockSeconds": 4.448800000000002,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 44910,
+        "seconds": 327.84670000000006,
+        "lockSeconds": 103.22640000000001,
+        "examinedRows": 44949,
+        "affectedRows": 44868
+      },
+      "stockResult": {
+        "calls": 31907,
+        "seconds": 145.3231,
+        "lockSeconds": 0.1318,
+        "examinedRows": 45018,
+        "affectedRows": 45017
+      },
+      "stockCas": {
+        "calls": 44891,
+        "seconds": 226.7896999999998,
+        "lockSeconds": 0.5088000000000008,
+        "examinedRows": 44977,
+        "affectedRows": 44864
+      },
+      "grantResult": {
+        "calls": 36634,
+        "seconds": 148.3552,
+        "lockSeconds": 36.5187,
+        "examinedRows": 45018,
+        "affectedRows": 27592
+      },
+      "stockDeduct": {
+        "calls": 44971,
+        "seconds": 34.81190000000004,
+        "lockSeconds": 26.911500000000046,
+        "examinedRows": 45004,
+        "affectedRows": 44974
+      },
+      "orderInsert": {
+        "calls": 44987,
+        "seconds": 15.444100000000006,
+        "lockSeconds": 0.039000000000000035,
+        "examinedRows": 0,
+        "affectedRows": 44946
+      },
+      "stockClaim": {
+        "calls": 0,
+        "seconds": 0.0,
+        "lockSeconds": 0.0,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "ledgerInsert": {
+        "calls": 44950,
+        "seconds": 7.133599999999994,
+        "lockSeconds": 0.0484,
+        "examinedRows": 0,
+        "affectedRows": 44936
+      },
+      "grantClaim": {
+        "calls": 0,
+        "seconds": 0.0,
+        "lockSeconds": 0.0,
+        "examinedRows": 0,
+        "affectedRows": 0
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 40,
+      "activity_prize": 2
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantBatchResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 27
+      },
+      {
+        "waiting": "grantBatchResult",
+        "blocking": "grantCas",
+        "blockingState": "waiting for handler commit",
+        "samples": 9
+      },
+      {
+        "waiting": "other",
+        "blocking": "grantBatchResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 3
+      },
+      {
+        "waiting": "grantCas",
+        "blocking": "grantBatchResult",
+        "blockingState": "updating",
+        "samples": 1
+      }
+    ],
+    "globalLockWaits": 46818,
+    "globalLockWaitMs": 166266,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 48,
+        "maxWaiting": 32,
+        "acquireMeanMs": 0.4229208751535818,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 4543,
+      "lottery-perf-invoice": 4
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 192.15430631183375,
+      "lottery-perf-invoice": 192.1597843831144
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 110.99381087506711,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 141983,
+        "readMs": 1996.220165608,
+        "readBytes": 2326249472,
+        "writeOps": 27452,
+        "writeMs": 1187.012216748,
+        "writeBytes": 482803712,
+        "miscOps": 14337,
+        "miscMs": 26143.3836252
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 7088,
+        "writeMs": 463.077935316,
+        "writeBytes": 449249280,
+        "miscOps": 7088,
+        "miscMs": 19612.817872864
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 579681,
+        "writeMs": 8253.695317828,
+        "writeBytes": 663636480,
+        "miscOps": 154037,
+        "miscMs": 156666.261022156
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 103252,
+        "writeMs": 3193.786562736,
+        "writeBytes": 152322214,
+        "miscOps": 101096,
+        "miscMs": 132193.522929836
+      }
+    },
+    "outbox": {
+      "scans": 46,
+      "candidates": 0,
+      "scanNanos": 39525172,
+      "retries": 0,
+      "rejected": 0,
+      "recoveryThrottled": 0,
+      "sendFailures": 0
+    }
+  },
+  "b220-2": {
+    "stable": false,
+    "failedStabilityChecks": [
+      "积压峰值不超过10秒请求量",
+      "首尾平均积压增长不超过1秒请求量",
+      "异步P95保守上界低于10秒",
+      "入口结束后15秒内收敛"
+    ],
+    "windowSeconds": 190.0,
+    "orders": 45106,
+    "audit": "PASS",
+    "httpRps": 219.9842105263158,
+    "stockRps": 189.9,
+    "grantRps": 189.90526315789472,
+    "httpP95Ms": 142,
+    "httpP99Ms": 435,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 27704,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 3875.0,
+    "grantBacklogPeak": 5407,
+    "stockBacklogFirstLast60s": [
+      18.166666666666668,
+      4192.5
+    ],
+    "drainSeconds": 25.94555902481079,
+    "mysqlCommitMeanMs": 9.571510796178401,
+    "tx3Commit": {
+      "count": 35769,
+      "totalMs": 199787.666345,
+      "meanMs": 5.585497675221561,
+      "errors": 0,
+      "p95BucketUpperMs": 16.384,
+      "p99BucketUpperMs": 32.768
+    },
+    "mysqlCommits": null,
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 134068,
+        "seconds": 1203.432999999999,
+        "lockSeconds": 3.6499999999999986,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 44962,
+        "seconds": 329.41650000000027,
+        "lockSeconds": 102.67790000000014,
+        "examinedRows": 45058,
+        "affectedRows": 44959
+      },
+      "stockResult": {
+        "calls": 31393,
+        "seconds": 146.13459999999998,
+        "lockSeconds": 0.12210000000000001,
+        "examinedRows": 45107,
+        "affectedRows": 45103
+      },
+      "stockCas": {
+        "calls": 44990,
+        "seconds": 226.42830000000004,
+        "lockSeconds": 0.38319999999999865,
+        "examinedRows": 45076,
+        "affectedRows": 44990
+      },
+      "grantResult": {
+        "calls": 36626,
+        "seconds": 148.6653,
+        "lockSeconds": 35.146300000000004,
+        "examinedRows": 45106,
+        "affectedRows": 27915
+      },
+      "stockDeduct": {
+        "calls": 45048,
+        "seconds": 38.58889999999997,
+        "lockSeconds": 30.74279999999999,
+        "examinedRows": 45089,
+        "affectedRows": 45055
+      },
+      "orderInsert": {
+        "calls": 45064,
+        "seconds": 11.746199999999988,
+        "lockSeconds": 0.13479999999999998,
+        "examinedRows": 0,
+        "affectedRows": 45042
+      },
+      "stockClaim": {
+        "calls": 3,
+        "seconds": 0.04440000000001021,
+        "lockSeconds": 0.0204,
+        "examinedRows": 3,
+        "affectedRows": 1
+      },
+      "ledgerInsert": {
+        "calls": 45045,
+        "seconds": 6.325500000000005,
+        "lockSeconds": 0.04859999999999998,
+        "examinedRows": 0,
+        "affectedRows": 45027
+      },
+      "grantClaim": {
+        "calls": 1,
+        "seconds": 0.0237999999999996,
+        "lockSeconds": 0.021800000000000003,
+        "examinedRows": 1,
+        "affectedRows": 0
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 42,
+      "activity_prize": 12
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantBatchResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 30
+      },
+      {
+        "waiting": "grantBatchResult",
+        "blocking": "grantCas",
+        "blockingState": "waiting for handler commit",
+        "samples": 10
+      },
+      {
+        "waiting": "other",
+        "blocking": "grantBatchResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 2
+      }
+    ],
+    "globalLockWaits": 47114,
+    "globalLockWaitMs": 168319,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 48,
+        "maxWaiting": 34,
+        "acquireMeanMs": 0.8166695598264104,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 5430,
+      "lottery-perf-invoice": 5
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 189.3715373372761,
+      "lottery-perf-invoice": 189.3545426736005
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 105.74523639577173,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 144445,
+        "readMs": 2269.290674036,
+        "readBytes": 2366586880,
+        "writeOps": 23630,
+        "writeMs": 1107.45196678,
+        "writeBytes": 428441600,
+        "miscOps": 12412,
+        "miscMs": 20948.987279868
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 5976,
+        "writeMs": 441.670783644,
+        "writeBytes": 386564096,
+        "miscOps": 5975,
+        "miscMs": 15028.658197092
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 348019,
+        "writeMs": 8153.077019688,
+        "writeBytes": 543507968,
+        "miscOps": 144176,
+        "miscMs": 150596.325062132
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 99320,
+        "writeMs": 2815.856034012,
+        "writeBytes": 147162875,
+        "miscOps": 97404,
+        "miscMs": 126663.3512934
+      }
+    },
+    "outbox": {
+      "scans": 48,
+      "candidates": 4,
+      "scanNanos": 393228004,
+      "retries": 1,
+      "rejected": 0,
+      "recoveryThrottled": 0,
+      "sendFailures": 0
+    }
+  },
+  "a220-3": {
+    "stable": false,
+    "failedStabilityChecks": [
+      "积压峰值不超过10秒请求量",
+      "首尾平均积压增长不超过1秒请求量",
+      "异步P95保守上界低于10秒",
+      "入口结束后15秒内收敛"
+    ],
+    "windowSeconds": 189.994,
+    "orders": 45102,
+    "audit": "PASS",
+    "httpRps": 220.0016842637136,
+    "stockRps": 194.79036180089898,
+    "grantRps": 194.79036180089898,
+    "httpP95Ms": 114,
+    "httpP99Ms": 383,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 22628,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 2312,
+    "grantBacklogPeak": 4323,
+    "stockBacklogFirstLast60s": [
+      9.833333333333334,
+      2679.6666666666665
+    ],
+    "drainSeconds": 61.38498091697693,
+    "mysqlCommitMeanMs": 7.685538136835255,
+    "tx3Commit": {
+      "count": 36754,
+      "totalMs": 193123.513492,
+      "meanMs": 5.254489674375578,
+      "errors": 0,
+      "p95BucketUpperMs": 16.384,
+      "p99BucketUpperMs": 32.768
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 315065,
+      "trx_rw_commits": 316622,
+      "mysqlCommitP95UpperMs": 19.952623149,
+      "mysqlCommitP99UpperMs": 87.096358995,
+      "histogramCommitCalls": 135341
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 134057,
+        "seconds": 969.3335999999999,
+        "lockSeconds": 3.649099999999997,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 44963,
+        "seconds": 360.09209999999985,
+        "lockSeconds": 145.6633999999999,
+        "examinedRows": 45059,
+        "affectedRows": 44961
+      },
+      "stockResult": {
+        "calls": 44940,
+        "seconds": 284.9889000000003,
+        "lockSeconds": 0.6148999999999996,
+        "examinedRows": 45023,
+        "affectedRows": 44856
+      },
+      "stockCas": {
+        "calls": 44966,
+        "seconds": 228.36900000000014,
+        "lockSeconds": 0.3200000000000003,
+        "examinedRows": 45059,
+        "affectedRows": 44944
+      },
+      "grantResult": {
+        "calls": 44962,
+        "seconds": 206.92100000000028,
+        "lockSeconds": 2.7013999999999996,
+        "examinedRows": 45050,
+        "affectedRows": 43415
+      },
+      "stockDeduct": {
+        "calls": 45057,
+        "seconds": 34.07130000000001,
+        "lockSeconds": 25.460399999999993,
+        "examinedRows": 45093,
+        "affectedRows": 45060
+      },
+      "orderInsert": {
+        "calls": 45062,
+        "seconds": 18.968000000000018,
+        "lockSeconds": 0.07189999999999996,
+        "examinedRows": 0,
+        "affectedRows": 45030
+      },
+      "stockClaim": {
+        "calls": 807,
+        "seconds": 7.768999999999991,
+        "lockSeconds": 0.020599999999999993,
+        "examinedRows": 811,
+        "affectedRows": 800
+      },
+      "ledgerInsert": {
+        "calls": 45040,
+        "seconds": 7.5926000000000045,
+        "lockSeconds": 0.0514,
+        "examinedRows": 0,
+        "affectedRows": 45029
+      },
+      "grantClaim": {
+        "calls": 47,
+        "seconds": 0.45030000000000037,
+        "lockSeconds": 9.999999999999593e-05,
+        "examinedRows": 48,
+        "affectedRows": 48
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 29,
+      "activity_prize": 7
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 27
+      },
+      {
+        "waiting": "other",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 1
+      },
+      {
+        "waiting": "grantSingleResult",
+        "blocking": "grantCas",
+        "blockingState": "waiting for handler commit",
+        "samples": 1
+      }
+    ],
+    "globalLockWaits": 49893,
+    "globalLockWaitMs": 173614,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 48,
+        "maxWaiting": 34,
+        "acquireMeanMs": 0.4498835863826518,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 3717,
+      "lottery-perf-invoice": 4
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 195.4665513001503,
+      "lottery-perf-invoice": 195.36408761783323
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 118.08500216312218,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 162806,
+        "readMs": 2671.77391244,
+        "readBytes": 2667413504,
+        "writeOps": 25290,
+        "writeMs": 1205.479520952,
+        "writeBytes": 447381504,
+        "miscOps": 13335,
+        "miscMs": 24138.175930668
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 6451,
+        "writeMs": 482.083671748,
+        "writeBytes": 413827072,
+        "miscOps": 6451,
+        "miscMs": 18135.874053056
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 424262,
+        "writeMs": 7298.736761928,
+        "writeBytes": 609374208,
+        "miscOps": 146789,
+        "miscMs": 149416.786036272
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 100991,
+        "writeMs": 2824.967989676,
+        "writeBytes": 161161803,
+        "miscOps": 98910,
+        "miscMs": 129171.679699116
+      }
+    },
+    "outbox": {
+      "scans": 69,
+      "candidates": 919,
+      "scanNanos": 109458126,
+      "retries": 863,
+      "rejected": 865,
+      "recoveryThrottled": 5,
+      "sendFailures": 0
+    }
+  },
+  "b225-1": {
+    "stable": false,
+    "failedStabilityChecks": [
+      "积压峰值不超过10秒请求量",
+      "首尾平均积压增长不超过1秒请求量",
+      "异步P95保守上界低于10秒",
+      "入口结束后15秒内收敛"
+    ],
+    "windowSeconds": 189.995,
+    "orders": 46129,
+    "audit": "PASS",
+    "httpRps": 224.99539461564777,
+    "stockRps": 201.23687465459616,
+    "grantRps": 201.23161135819362,
+    "httpP95Ms": 191,
+    "httpP99Ms": 470,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 20808,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 2658.714285714286,
+    "grantBacklogPeak": 4206,
+    "stockBacklogFirstLast60s": [
+      24.166666666666668,
+      2871.1666666666665
+    ],
+    "drainSeconds": 17.9322669506073,
+    "mysqlCommitMeanMs": 8.666892723451404,
+    "tx3Commit": {
+      "count": 37960,
+      "totalMs": 192688.678387,
+      "meanMs": 5.076097955400421,
+      "errors": 0,
+      "p95BucketUpperMs": 16.384,
+      "p99BucketUpperMs": 32.768
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 286930,
+      "trx_rw_commits": 300157,
+      "mysqlCommitP95UpperMs": 23.98832919,
+      "mysqlCommitP99UpperMs": 120.226443461,
+      "histogramCommitCalls": 138422
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 137205,
+        "seconds": 1129.7237999999998,
+        "lockSeconds": 4.457000000000001,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 46012,
+        "seconds": 303.41740000000027,
+        "lockSeconds": 91.95420000000013,
+        "examinedRows": 46083,
+        "affectedRows": 45994
+      },
+      "stockResult": {
+        "calls": 32115,
+        "seconds": 138.8864,
+        "lockSeconds": 0.13129999999999997,
+        "examinedRows": 46129,
+        "affectedRows": 46129
+      },
+      "stockCas": {
+        "calls": 46037,
+        "seconds": 215.44979999999987,
+        "lockSeconds": 0.5076999999999998,
+        "examinedRows": 46084,
+        "affectedRows": 45991
+      },
+      "grantResult": {
+        "calls": 37357,
+        "seconds": 140.27919999999997,
+        "lockSeconds": 36.166700000000006,
+        "examinedRows": 46129,
+        "affectedRows": 28057
+      },
+      "stockDeduct": {
+        "calls": 46097,
+        "seconds": 33.58250000000004,
+        "lockSeconds": 25.787599999999998,
+        "examinedRows": 46113,
+        "affectedRows": 46080
+      },
+      "orderInsert": {
+        "calls": 46088,
+        "seconds": 23.72800000000001,
+        "lockSeconds": 0.11430000000000007,
+        "examinedRows": 0,
+        "affectedRows": 46060
+      },
+      "stockClaim": {
+        "calls": 0,
+        "seconds": 0.0,
+        "lockSeconds": 0.0,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "ledgerInsert": {
+        "calls": 46079,
+        "seconds": 7.867999999999995,
+        "lockSeconds": 0.04400000000000004,
+        "examinedRows": 0,
+        "affectedRows": 46049
+      },
+      "grantClaim": {
+        "calls": 0,
+        "seconds": 0.0,
+        "lockSeconds": 0.0,
+        "examinedRows": 0,
+        "affectedRows": 0
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 35,
+      "activity_prize": 9
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantBatchResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 31
+      },
+      {
+        "waiting": "grantBatchResult",
+        "blocking": "grantCas",
+        "blockingState": "waiting for handler commit",
+        "samples": 3
+      },
+      {
+        "waiting": "other",
+        "blocking": "grantBatchResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 1
+      }
+    ],
+    "globalLockWaits": 47635,
+    "globalLockWaitMs": 153831,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 48,
+        "maxWaiting": 32,
+        "acquireMeanMs": 0.7058494109124185,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 4218,
+      "lottery-perf-invoice": 4
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 201.28963411173044,
+      "lottery-perf-invoice": 201.3009865246858
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 108.2347128407143,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 168273,
+        "readMs": 1961.102937916,
+        "readBytes": 2756984832,
+        "writeOps": 26283,
+        "writeMs": 1447.576774864,
+        "writeBytes": 463650816,
+        "miscOps": 13531,
+        "miscMs": 26702.403872588
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 7017,
+        "writeMs": 536.283876324,
+        "writeBytes": 430161920,
+        "miscOps": 7015,
+        "miscMs": 22863.300052836
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 705867,
+        "writeMs": 7683.115388612,
+        "writeBytes": 724701184,
+        "miscOps": 159604,
+        "miscMs": 149930.964595608
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 106397,
+        "writeMs": 3138.783982844,
+        "writeBytes": 152852415,
+        "miscOps": 104093,
+        "miscMs": 125444.623555148
+      }
+    },
+    "outbox": {
+      "scans": 46,
+      "candidates": 0,
+      "scanNanos": 87838874,
+      "retries": 0,
+      "rejected": 0,
+      "recoveryThrottled": 0,
+      "sendFailures": 0
+    }
+  },
+  "a225-1": {
+    "stable": false,
+    "failedStabilityChecks": [
+      "积压峰值不超过10秒请求量",
+      "首尾平均积压增长不超过1秒请求量",
+      "异步P95保守上界低于10秒",
+      "入口结束后15秒内收敛"
+    ],
+    "windowSeconds": 190.0,
+    "orders": 46127,
+    "audit": "PASS",
+    "httpRps": 224.9842105263158,
+    "stockRps": 206.42105263157896,
+    "grantRps": 206.42105263157896,
+    "httpP95Ms": 55,
+    "httpP99Ms": 255,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 19182,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 2099.142857142857,
+    "grantBacklogPeak": 3709,
+    "stockBacklogFirstLast60s": [
+      39.166666666666664,
+      2141.714285714286
+    ],
+    "drainSeconds": 19.74745774269104,
+    "mysqlCommitMeanMs": 6.426084532103749,
+    "tx3Commit": {
+      "count": 38689,
+      "totalMs": 208729.420407,
+      "meanMs": 5.395058554291918,
+      "errors": 0,
+      "p95BucketUpperMs": 16.384,
+      "p99BucketUpperMs": 32.768
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 322216,
+      "trx_rw_commits": 323343,
+      "mysqlCommitP95UpperMs": 12.022644346,
+      "mysqlCommitP99UpperMs": 52.480746024,
+      "histogramCommitCalls": 138416
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 137049,
+        "seconds": 845.2389000000003,
+        "lockSeconds": 1.3888000000000034,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 45968,
+        "seconds": 391.6819999999998,
+        "lockSeconds": 162.1178,
+        "examinedRows": 46076,
+        "affectedRows": 45978
+      },
+      "stockResult": {
+        "calls": 45972,
+        "seconds": 269.5407,
+        "lockSeconds": 0.2812000000000001,
+        "examinedRows": 46087,
+        "affectedRows": 45939
+      },
+      "stockCas": {
+        "calls": 46000,
+        "seconds": 238.60959999999977,
+        "lockSeconds": 0.177500000000002,
+        "examinedRows": 46092,
+        "affectedRows": 45966
+      },
+      "grantResult": {
+        "calls": 45958,
+        "seconds": 233.5994999999998,
+        "lockSeconds": 2.383099999999999,
+        "examinedRows": 46078,
+        "affectedRows": 44846
+      },
+      "stockDeduct": {
+        "calls": 46062,
+        "seconds": 37.144799999999975,
+        "lockSeconds": 26.937700000000007,
+        "examinedRows": 46094,
+        "affectedRows": 46064
+      },
+      "orderInsert": {
+        "calls": 46075,
+        "seconds": 16.373099999999994,
+        "lockSeconds": 0.05289999999999995,
+        "examinedRows": 0,
+        "affectedRows": 46050
+      },
+      "stockClaim": {
+        "calls": 384,
+        "seconds": 3.156800000000004,
+        "lockSeconds": 0.00040000000000001146,
+        "examinedRows": 382,
+        "affectedRows": 379
+      },
+      "ledgerInsert": {
+        "calls": 46045,
+        "seconds": 10.010599999999997,
+        "lockSeconds": 0.06059999999999999,
+        "examinedRows": 0,
+        "affectedRows": 46029
+      },
+      "grantClaim": {
+        "calls": 22,
+        "seconds": 0.1678999999999995,
+        "lockSeconds": 0.0,
+        "examinedRows": 22,
+        "affectedRows": 22
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 38,
+      "activity_prize": 9
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 36
+      },
+      {
+        "waiting": "grantSingleResult",
+        "blocking": "grantCas",
+        "blockingState": "waiting for handler commit",
+        "samples": 2
+      }
+    ],
+    "globalLockWaits": 52462,
+    "globalLockWaitMs": 191151,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 48,
+        "maxWaiting": 34,
+        "acquireMeanMs": 0.28583576067881244,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 3606,
+      "lottery-perf-invoice": 13
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 204.7126417694824,
+      "lottery-perf-invoice": 204.7071066017945
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 134.81476727387457,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 175377,
+        "readMs": 2998.661466116,
+        "readBytes": 2873376768,
+        "writeOps": 28332,
+        "writeMs": 1407.592481648,
+        "writeBytes": 497221632,
+        "miscOps": 14502,
+        "miscMs": 21071.972462096
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 7470,
+        "writeMs": 663.769513296,
+        "writeBytes": 463667200,
+        "miscOps": 7465,
+        "miscMs": 17504.337984964
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 295225,
+        "writeMs": 6658.411163912,
+        "writeBytes": 575933952,
+        "miscOps": 140245,
+        "miscMs": 155303.894888512
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 94911,
+        "writeMs": 2731.191244772,
+        "writeBytes": 172122994,
+        "miscOps": 93163,
+        "miscMs": 132840.661819336
+      }
+    },
+    "outbox": {
+      "scans": 54,
+      "candidates": 417,
+      "scanNanos": 66037001,
+      "retries": 408,
+      "rejected": 408,
+      "recoveryThrottled": 1,
+      "sendFailures": 0
+    }
+  },
+  "a225-2": {
+    "stable": false,
+    "failedStabilityChecks": [
+      "入口结束后15秒内收敛"
+    ],
+    "windowSeconds": 190.0,
+    "orders": 46129,
+    "audit": "PASS",
+    "httpRps": 225.00526315789475,
+    "stockRps": 219.82105263157894,
+    "grantRps": 219.81052631578947,
+    "httpP95Ms": 40,
+    "httpP99Ms": 89,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 3586,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 204.28571428571428,
+    "grantBacklogPeak": 899,
+    "stockBacklogFirstLast60s": [
+      23.333333333333332,
+      257.6666666666667
+    ],
+    "drainSeconds": 19.01771903038025,
+    "mysqlCommitMeanMs": 4.186946536234228,
+    "tx3Commit": {
+      "count": 41238,
+      "totalMs": 184906.472117,
+      "meanMs": 4.483885545298026,
+      "errors": 0,
+      "p95BucketUpperMs": 8.192,
+      "p99BucketUpperMs": 32.768
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 322423,
+      "trx_rw_commits": 323034,
+      "mysqlCommitP95UpperMs": 9.120108393,
+      "mysqlCommitP99UpperMs": 27.542287033,
+      "histogramCommitCalls": 138422
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 137183,
+        "seconds": 614.0774000000001,
+        "lockSeconds": 0.5763999999999996,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 45998,
+        "seconds": 320.85769999999957,
+        "lockSeconds": 129.6252999999997,
+        "examinedRows": 46091,
+        "affectedRows": 46000
+      },
+      "stockResult": {
+        "calls": 46005,
+        "seconds": 214.8843999999999,
+        "lockSeconds": 0.17820000000000036,
+        "examinedRows": 46078,
+        "affectedRows": 45958
+      },
+      "stockCas": {
+        "calls": 46010,
+        "seconds": 194.0861,
+        "lockSeconds": 0.09679999999999822,
+        "examinedRows": 46094,
+        "affectedRows": 45989
+      },
+      "grantResult": {
+        "calls": 46012,
+        "seconds": 196.2255,
+        "lockSeconds": 1.943400000000004,
+        "examinedRows": 46094,
+        "affectedRows": 45398
+      },
+      "stockDeduct": {
+        "calls": 46086,
+        "seconds": 28.877899999999954,
+        "lockSeconds": 19.826700000000017,
+        "examinedRows": 46106,
+        "affectedRows": 46073
+      },
+      "orderInsert": {
+        "calls": 46096,
+        "seconds": 11.842899999999986,
+        "lockSeconds": 0.04500000000000004,
+        "examinedRows": 0,
+        "affectedRows": 46084
+      },
+      "stockClaim": {
+        "calls": 85,
+        "seconds": 0.640500000000003,
+        "lockSeconds": 0.0,
+        "examinedRows": 85,
+        "affectedRows": 84
+      },
+      "ledgerInsert": {
+        "calls": 46062,
+        "seconds": 7.193300000000008,
+        "lockSeconds": 0.061799999999999966,
+        "examinedRows": 0,
+        "affectedRows": 46048
+      },
+      "grantClaim": {
+        "calls": 1,
+        "seconds": 0.007199999999999207,
+        "lockSeconds": 0.0,
+        "examinedRows": 1,
+        "affectedRows": 1
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 36,
+      "activity_prize": 6
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 36
+      }
+    ],
+    "globalLockWaits": 52154,
+    "globalLockWaitMs": 151250,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 31,
+        "maxWaiting": 0,
+        "acquireMeanMs": 0.005071049335626964,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 942,
+      "lottery-perf-invoice": 4
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 218.82104031150823,
+      "lottery-perf-invoice": 218.80415944540727
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 132.34399322514574,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 190646,
+        "readMs": 2900.879722492,
+        "readBytes": 3123544064,
+        "writeOps": 26184,
+        "writeMs": 1155.052468688,
+        "writeBytes": 466157568,
+        "miscOps": 13700,
+        "miscMs": 15217.906641708
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 6627,
+        "writeMs": 356.86151766,
+        "writeBytes": 428408832,
+        "miscOps": 6627,
+        "miscMs": 10652.955786816
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 342264,
+        "writeMs": 4713.071530804,
+        "writeBytes": 613208576,
+        "miscOps": 162595,
+        "miscMs": 145958.928540708
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 111569,
+        "writeMs": 2410.25912586,
+        "writeBytes": 175322806,
+        "miscOps": 110619,
+        "miscMs": 129051.835281236
+      }
+    },
+    "outbox": {
+      "scans": 47,
+      "candidates": 87,
+      "scanNanos": 68366918,
+      "retries": 86,
+      "rejected": 86,
+      "recoveryThrottled": 1,
+      "sendFailures": 0
+    }
+  },
+  "b225-2": {
+    "stable": true,
+    "failedStabilityChecks": [],
+    "windowSeconds": 190.0,
+    "orders": 46170,
+    "audit": "PASS",
+    "httpRps": 225.2157894736842,
+    "stockRps": 227.23157894736843,
+    "grantRps": 227.23157894736843,
+    "httpP95Ms": 34,
+    "httpP99Ms": 49,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 399,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 3996,
+      "stockDoneBeforeOrderCreate": 11,
+      "maxCreatedAfterHttpMs": 175
+    },
+    "grantBacklogGrowth": 3.0,
+    "grantBacklogPeak": 73,
+    "stockBacklogFirstLast60s": [
+      32.166666666666664,
+      34.714285714285715
+    ],
+    "drainSeconds": 0.8408689498901367,
+    "mysqlCommitMeanMs": 3.536141437083874,
+    "tx3Commit": {
+      "count": 42717,
+      "totalMs": 175542.63993,
+      "meanMs": 4.109432776880399,
+      "errors": 0,
+      "p95BucketUpperMs": 8.192,
+      "p99BucketUpperMs": 16.384
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 293145,
+      "trx_rw_commits": 306044,
+      "mysqlCommitP95UpperMs": 6.60693448,
+      "mysqlCommitP99UpperMs": 12.589254117,
+      "histogramCommitCalls": 138545
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 137315,
+        "seconds": 503.78359999999884,
+        "lockSeconds": 0.10660000000000025,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 45997,
+        "seconds": 247.57990000000063,
+        "lockSeconds": 73.88420000000042,
+        "examinedRows": 46103,
+        "affectedRows": 46014
+      },
+      "stockCas": {
+        "calls": 46055,
+        "seconds": 173.84270000000015,
+        "lockSeconds": 0.33089999999999975,
+        "examinedRows": 46135,
+        "affectedRows": 46033
+      },
+      "stockResult": {
+        "calls": 37060,
+        "seconds": 139.2781,
+        "lockSeconds": 0.05679999999999999,
+        "examinedRows": 46170,
+        "affectedRows": 46169
+      },
+      "grantResult": {
+        "calls": 38091,
+        "seconds": 126.28450000000001,
+        "lockSeconds": 29.145199999999996,
+        "examinedRows": 46170,
+        "affectedRows": 28895
+      },
+      "stockDeduct": {
+        "calls": 46113,
+        "seconds": 25.094100000000026,
+        "lockSeconds": 16.074700000000007,
+        "examinedRows": 46152,
+        "affectedRows": 46115
+      },
+      "orderInsert": {
+        "calls": 46138,
+        "seconds": 10.859300000000019,
+        "lockSeconds": 0.04300000000000004,
+        "examinedRows": 0,
+        "affectedRows": 46137
+      },
+      "stockClaim": {
+        "calls": 0,
+        "seconds": 0.0,
+        "lockSeconds": 0.0,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "ledgerInsert": {
+        "calls": 46088,
+        "seconds": 6.801599999999993,
+        "lockSeconds": 0.06110000000000004,
+        "examinedRows": 0,
+        "affectedRows": 46094
+      },
+      "grantClaim": {
+        "calls": 0,
+        "seconds": 0.0,
+        "lockSeconds": 0.0,
+        "examinedRows": 0,
+        "affectedRows": 0
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 34,
+      "activity_prize": 5
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantBatchResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 22
+      },
+      {
+        "waiting": "grantBatchResult",
+        "blocking": "grantCas",
+        "blockingState": "waiting for handler commit",
+        "samples": 11
+      },
+      {
+        "waiting": "grantCas",
+        "blocking": "grantBatchResult",
+        "blockingState": "updating",
+        "samples": 1
+      }
+    ],
+    "globalLockWaits": 48912,
+    "globalLockWaitMs": 119234,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 31,
+        "maxWaiting": 0,
+        "acquireMeanMs": 0.005089552732930907,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 93,
+      "lottery-perf-invoice": 5
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 224.20813342344408,
+      "lottery-perf-invoice": 224.20813342344408
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 133.72748004624694,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 207656,
+        "readMs": 3880.878857608,
+        "readBytes": 3402235904,
+        "writeOps": 26380,
+        "writeMs": 1040.81050546,
+        "writeBytes": 469368832,
+        "miscOps": 13151,
+        "miscMs": 12736.33486212
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 6671,
+        "writeMs": 314.92449578,
+        "writeBytes": 431620096,
+        "miscOps": 6671,
+        "miscMs": 9295.915576168
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 329138,
+        "writeMs": 3439.562804804,
+        "writeBytes": 600744448,
+        "miscOps": 171568,
+        "miscMs": 143537.42257144
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 117869,
+        "writeMs": 2194.522208288,
+        "writeBytes": 166376593,
+        "miscOps": 117489,
+        "miscMs": 127225.774914336
+      }
+    },
+    "outbox": {
+      "scans": 42,
+      "candidates": 0,
+      "scanNanos": 47828709,
+      "retries": 0,
+      "rejected": 0,
+      "recoveryThrottled": 0,
+      "sendFailures": 0
+    }
+  },
+  "a220-4": {
+    "stable": false,
+    "failedStabilityChecks": [
+      "首尾平均积压增长不超过1秒请求量",
+      "入口结束后15秒内收敛"
+    ],
+    "windowSeconds": 190.0,
+    "orders": 45107,
+    "audit": "PASS",
+    "httpRps": 220.0,
+    "stockRps": 216.39473684210526,
+    "grantRps": 216.4,
+    "httpP95Ms": 108,
+    "httpP99Ms": 368,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 4014,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 441.42857142857144,
+    "grantBacklogPeak": 722,
+    "stockBacklogFirstLast60s": [
+      6.333333333333333,
+      438.2857142857143
+    ],
+    "drainSeconds": 20.67379093170166,
+    "mysqlCommitMeanMs": 6.7851518989027815,
+    "tx3Commit": {
+      "count": 41083,
+      "totalMs": 177005.528672,
+      "meanMs": 4.308485959447946,
+      "errors": 0,
+      "p95BucketUpperMs": 16.384,
+      "p99BucketUpperMs": 32.768
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 315197,
+      "trx_rw_commits": 316575,
+      "mysqlCommitP95UpperMs": 19.952623149,
+      "mysqlCommitP99UpperMs": 87.096358995,
+      "histogramCommitCalls": 135356
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 134542,
+        "seconds": 858.0928999999996,
+        "lockSeconds": 2.904600000000002,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 45023,
+        "seconds": 278.70400000000063,
+        "lockSeconds": 110.94429999999966,
+        "examinedRows": 45082,
+        "affectedRows": 45017
+      },
+      "stockCas": {
+        "calls": 45048,
+        "seconds": 179.6166000000003,
+        "lockSeconds": 0.2120999999999995,
+        "examinedRows": 45087,
+        "affectedRows": 45026
+      },
+      "stockResult": {
+        "calls": 45013,
+        "seconds": 242.8828999999996,
+        "lockSeconds": 0.44570000000000043,
+        "examinedRows": 45060,
+        "affectedRows": 44927
+      },
+      "grantResult": {
+        "calls": 45028,
+        "seconds": 160.1835000000001,
+        "lockSeconds": 2.1609999999999943,
+        "examinedRows": 45078,
+        "affectedRows": 43667
+      },
+      "stockDeduct": {
+        "calls": 45070,
+        "seconds": 25.75019999999995,
+        "lockSeconds": 19.81239999999991,
+        "examinedRows": 45096,
+        "affectedRows": 45070
+      },
+      "orderInsert": {
+        "calls": 45068,
+        "seconds": 12.552300000000002,
+        "lockSeconds": 0.0411999999999999,
+        "examinedRows": 0,
+        "affectedRows": 45067
+      },
+      "ledgerInsert": {
+        "calls": 45064,
+        "seconds": 4.509999999999991,
+        "lockSeconds": 0.0374000000000001,
+        "examinedRows": 0,
+        "affectedRows": 45068
+      },
+      "stockClaim": {
+        "calls": 716,
+        "seconds": 3.052800000000019,
+        "lockSeconds": 0.0005000000000000004,
+        "examinedRows": 718,
+        "affectedRows": 709
+      },
+      "grantClaim": {
+        "calls": 64,
+        "seconds": 0.37679999999999936,
+        "lockSeconds": 9.999999999999593e-05,
+        "examinedRows": 64,
+        "affectedRows": 63
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 32,
+      "activity_prize": 7
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 32
+      }
+    ],
+    "globalLockWaits": 48770,
+    "globalLockWaitMs": 132769,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 48,
+        "maxWaiting": 27,
+        "acquireMeanMs": 0.34641067714960116,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 694,
+      "lottery-perf-invoice": 4
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 215.26905232011055,
+      "lottery-perf-invoice": 215.23641684208238
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 112.6580617789599,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 326118,
+        "readMs": 3137.6766057,
+        "readBytes": 5343117312,
+        "writeOps": 25833,
+        "writeMs": 1049.219377096,
+        "writeBytes": 460406784,
+        "miscOps": 13555,
+        "miscMs": 22628.164860604
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 6540,
+        "writeMs": 353.76252068,
+        "writeBytes": 422723584,
+        "miscOps": 6539,
+        "miscMs": 16442.671390312
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 996614,
+        "writeMs": 6684.508432528,
+        "writeBytes": 912955904,
+        "miscOps": 197343,
+        "miscMs": 153672.301552924
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 131450,
+        "writeMs": 3380.750849204,
+        "writeBytes": 177209355,
+        "miscOps": 128517,
+        "miscMs": 131000.872076724
+      }
+    },
+    "outbox": {
+      "scans": 60,
+      "candidates": 797,
+      "scanNanos": 104887335,
+      "retries": 785,
+      "rejected": 786,
+      "recoveryThrottled": 0,
+      "sendFailures": 0
+    }
+  },
+  "c220-1": {
+    "stable": false,
+    "failedStabilityChecks": [
+      "首尾平均积压增长不超过1秒请求量"
+    ],
+    "windowSeconds": 190.0,
+    "orders": 45092,
+    "audit": "PASS",
+    "httpRps": 219.83684210526314,
+    "stockRps": 213.87894736842105,
+    "grantRps": 213.8684210526316,
+    "httpP95Ms": 165,
+    "httpP99Ms": 406,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 6076,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 917.0,
+    "grantBacklogPeak": 1138,
+    "stockBacklogFirstLast60s": [
+      3.8333333333333335,
+      921.5714285714286
+    ],
+    "drainSeconds": 6.5428338050842285,
+    "mysqlCommitMeanMs": 7.960808017345469,
+    "tx3Commit": {
+      "count": 40344,
+      "totalMs": 179998.457349,
+      "meanMs": 4.461591744720405,
+      "errors": 0,
+      "p95BucketUpperMs": 16.384,
+      "p99BucketUpperMs": 32.768
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 305587,
+      "trx_rw_commits": 305758,
+      "mysqlCommitP95UpperMs": 26.302679918,
+      "mysqlCommitP99UpperMs": 114.815362149,
+      "histogramCommitCalls": 135311
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 134717,
+        "seconds": 991.4971000000005,
+        "lockSeconds": 4.378699999999995,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 45035,
+        "seconds": 317.03449999999975,
+        "lockSeconds": 140.47659999999996,
+        "examinedRows": 45068,
+        "affectedRows": 45014
+      },
+      "stockCas": {
+        "calls": 45027,
+        "seconds": 185.98700000000008,
+        "lockSeconds": 0.6320000000000014,
+        "examinedRows": 45073,
+        "affectedRows": 45001
+      },
+      "stockResult": {
+        "calls": 35166,
+        "seconds": 127.69240000000002,
+        "lockSeconds": 0.11179999999999993,
+        "examinedRows": 45092,
+        "affectedRows": 45087
+      },
+      "grantResult": {
+        "calls": 45019,
+        "seconds": 190.07570000000032,
+        "lockSeconds": 1.169700000000006,
+        "examinedRows": 45072,
+        "affectedRows": 44847
+      },
+      "stockDeduct": {
+        "calls": 45053,
+        "seconds": 27.047800000000052,
+        "lockSeconds": 21.24000000000001,
+        "examinedRows": 45079,
+        "affectedRows": 45049
+      },
+      "orderInsert": {
+        "calls": 45073,
+        "seconds": 12.383800000000008,
+        "lockSeconds": 0.04160000000000008,
+        "examinedRows": 0,
+        "affectedRows": 45061
+      },
+      "ledgerInsert": {
+        "calls": 45048,
+        "seconds": 4.699200000000019,
+        "lockSeconds": 0.03390000000000004,
+        "examinedRows": 0,
+        "affectedRows": 45048
+      },
+      "stockClaim": {
+        "calls": 0,
+        "seconds": 0.0,
+        "lockSeconds": 0.0,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantClaim": {
+        "calls": 0,
+        "seconds": 0.0,
+        "lockSeconds": 0.0,
+        "examinedRows": 0,
+        "affectedRows": 0
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 33,
+      "activity_prize": 9
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 32
+      },
+      {
+        "waiting": "other",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 1
+      }
+    ],
+    "globalLockWaits": 49776,
+    "globalLockWaitMs": 162933,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 48,
+        "maxWaiting": 21,
+        "acquireMeanMs": 0.5122404942533957,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 1225,
+      "lottery-perf-invoice": 4
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 213.09914121040617,
+      "lottery-perf-invoice": 213.08272075928164
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 127.16992868050727,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 313587,
+        "readMs": 2699.363885096,
+        "readBytes": 5137809408,
+        "writeOps": 26418,
+        "writeMs": 1034.95286136,
+        "writeBytes": 465862656,
+        "miscOps": 13616,
+        "miscMs": 23526.67844516
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 6861,
+        "writeMs": 356.027587556,
+        "writeBytes": 432308224,
+        "miscOps": 6861,
+        "miscMs": 18258.444187696
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 1489183,
+        "writeMs": 6866.186104012,
+        "writeBytes": 1129468928,
+        "miscOps": 211818,
+        "miscMs": 157847.08416532
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 130859,
+        "writeMs": 3560.445195968,
+        "writeBytes": 173247507,
+        "miscOps": 126951,
+        "miscMs": 128869.548022936
+      }
+    },
+    "outbox": {
+      "scans": 44,
+      "candidates": 0,
+      "scanNanos": 33670833,
+      "retries": 0,
+      "rejected": 0,
+      "recoveryThrottled": 0,
+      "sendFailures": 0
+    }
+  },
+  "c220-2": {
+    "stable": false,
+    "failedStabilityChecks": [
+      "积压峰值不超过10秒请求量",
+      "首尾平均积压增长不超过1秒请求量",
+      "异步P95保守上界低于10秒"
+    ],
+    "windowSeconds": 190.0,
+    "orders": 45020,
+    "audit": "PASS",
+    "httpRps": 219.3684210526316,
+    "stockRps": 207.99473684210525,
+    "grantRps": 207.9842105263158,
+    "httpP95Ms": 227,
+    "httpP99Ms": 508,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 12503,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 1301.2380952380954,
+    "grantBacklogPeak": 2213,
+    "stockBacklogFirstLast60s": [
+      55.166666666666664,
+      1524.8333333333333
+    ],
+    "drainSeconds": 13.701452016830444,
+    "mysqlCommitMeanMs": 8.725010291580851,
+    "tx3Commit": {
+      "count": 38988,
+      "totalMs": 207858.59435,
+      "meanMs": 5.331347962193496,
+      "errors": 0,
+      "p95BucketUpperMs": 16.384,
+      "p99BucketUpperMs": 32.768
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 300498,
+      "trx_rw_commits": 300736,
+      "mysqlCommitP95UpperMs": 31.622776601,
+      "mysqlCommitP99UpperMs": 109.647819614,
+      "histogramCommitCalls": 135095
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 133936,
+        "seconds": 1158.3558000000012,
+        "lockSeconds": 5.089799999999997,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 44868,
+        "seconds": 378.1220999999987,
+        "lockSeconds": 161.0346000000004,
+        "examinedRows": 44962,
+        "affectedRows": 44859
+      },
+      "stockCas": {
+        "calls": 44896,
+        "seconds": 224.74179999999978,
+        "lockSeconds": 0.40919999999999845,
+        "examinedRows": 44984,
+        "affectedRows": 44851
+      },
+      "stockResult": {
+        "calls": 30568,
+        "seconds": 147.50770000000006,
+        "lockSeconds": 0.13269999999999998,
+        "examinedRows": 45020,
+        "affectedRows": 45020
+      },
+      "grantResult": {
+        "calls": 44882,
+        "seconds": 235.89449999999988,
+        "lockSeconds": 2.3780999999999963,
+        "examinedRows": 44979,
+        "affectedRows": 44643
+      },
+      "stockDeduct": {
+        "calls": 44958,
+        "seconds": 35.68029999999999,
+        "lockSeconds": 27.05529999999999,
+        "examinedRows": 45000,
+        "affectedRows": 44956
+      },
+      "orderInsert": {
+        "calls": 44971,
+        "seconds": 17.3947,
+        "lockSeconds": 0.040999999999999925,
+        "examinedRows": 0,
+        "affectedRows": 44945
+      },
+      "ledgerInsert": {
+        "calls": 44916,
+        "seconds": 6.788499999999999,
+        "lockSeconds": 0.05610000000000004,
+        "examinedRows": 0,
+        "affectedRows": 44910
+      },
+      "stockClaim": {
+        "calls": 3,
+        "seconds": 0.01849999999998886,
+        "lockSeconds": 9.999999999998899e-05,
+        "examinedRows": 3,
+        "affectedRows": 3
+      },
+      "grantClaim": {
+        "calls": 0,
+        "seconds": 0.0,
+        "lockSeconds": 0.0,
+        "examinedRows": 0,
+        "affectedRows": 0
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 45,
+      "activity_prize": 8
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 42
+      },
+      {
+        "waiting": "grantSingleResult",
+        "blocking": "grantCas",
+        "blockingState": "waiting for handler commit",
+        "samples": 2
+      },
+      {
+        "waiting": "other",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 1
+      }
+    ],
+    "globalLockWaits": 51763,
+    "globalLockWaitMs": 190139,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 48,
+        "maxWaiting": 35,
+        "acquireMeanMs": 0.9537896605332702,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 2314,
+      "lottery-perf-invoice": 4
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 205.64956878544572,
+      "lottery-perf-invoice": 205.64384596455284
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 127.90189768740808,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 292591,
+        "readMs": 5204.309592528,
+        "readBytes": 4793810944,
+        "writeOps": 25430,
+        "writeMs": 1551.317496392,
+        "writeBytes": 445546496,
+        "miscOps": 13237,
+        "miscMs": 27126.444408432
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 6595,
+        "writeMs": 494.587871332,
+        "writeBytes": 416186368,
+        "miscOps": 6595,
+        "miscMs": 19189.861204388
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 371954,
+        "writeMs": 5957.431802756,
+        "writeBytes": 582183424,
+        "miscOps": 139288,
+        "miscMs": 147047.023958512
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 96343,
+        "writeMs": 2547.901903112,
+        "writeBytes": 161409134,
+        "miscOps": 94518,
+        "miscMs": 126218.63595208
+      }
+    },
+    "outbox": {
+      "scans": 46,
+      "candidates": 3,
+      "scanNanos": 48002376,
+      "retries": 3,
+      "rejected": 3,
+      "recoveryThrottled": 0,
+      "sendFailures": 0
+    }
+  },
+  "a220-5": {
+    "stable": false,
+    "failedStabilityChecks": [
+      "积压峰值不超过10秒请求量",
+      "首尾平均积压增长不超过1秒请求量",
+      "异步P95保守上界低于10秒",
+      "入口结束后15秒内收敛"
+    ],
+    "windowSeconds": 189.961,
+    "orders": 45096,
+    "audit": "PASS",
+    "httpRps": 220.00305325830038,
+    "stockRps": 198.19857760277108,
+    "grantRps": 198.19331336432214,
+    "httpP95Ms": 139,
+    "httpP99Ms": 282,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 19013,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 2987.285714285714,
+    "grantBacklogPeak": 4379,
+    "stockBacklogFirstLast60s": [
+      3.5,
+      3253.6666666666665
+    ],
+    "drainSeconds": 41.59225106239319,
+    "mysqlCommitMeanMs": 8.467063143164635,
+    "tx3Commit": {
+      "count": 37531,
+      "totalMs": 193918.927047,
+      "meanMs": 5.166900083850684,
+      "errors": 0,
+      "p95BucketUpperMs": 16.384,
+      "p99BucketUpperMs": 65.536
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 314824,
+      "trx_rw_commits": 316655,
+      "mysqlCommitP95UpperMs": 30.199517204,
+      "mysqlCommitP99UpperMs": 91.201083935,
+      "histogramCommitCalls": 135323
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 134422,
+        "seconds": 1037.1107999999986,
+        "lockSeconds": 4.3887,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 45003,
+        "seconds": 333.07360000000153,
+        "lockSeconds": 131.3100999999997,
+        "examinedRows": 45062,
+        "affectedRows": 44982
+      },
+      "stockCas": {
+        "calls": 45006,
+        "seconds": 220.80429999999978,
+        "lockSeconds": 0.3474000000000004,
+        "examinedRows": 45077,
+        "affectedRows": 44991
+      },
+      "stockResult": {
+        "calls": 44938,
+        "seconds": 294.9354000000003,
+        "lockSeconds": 0.8145000000000007,
+        "examinedRows": 45042,
+        "affectedRows": 44898
+      },
+      "grantResult": {
+        "calls": 44990,
+        "seconds": 191.52260000000024,
+        "lockSeconds": 3.5925999999999974,
+        "examinedRows": 45060,
+        "affectedRows": 43177
+      },
+      "stockDeduct": {
+        "calls": 45044,
+        "seconds": 33.307399999999916,
+        "lockSeconds": 25.363700000000108,
+        "examinedRows": 45077,
+        "affectedRows": 45036
+      },
+      "orderInsert": {
+        "calls": 45054,
+        "seconds": 13.588599999999985,
+        "lockSeconds": 0.047800000000000065,
+        "examinedRows": 0,
+        "affectedRows": 45033
+      },
+      "ledgerInsert": {
+        "calls": 45042,
+        "seconds": 7.311700000000002,
+        "lockSeconds": 0.04559999999999986,
+        "examinedRows": 0,
+        "affectedRows": 45015
+      },
+      "stockClaim": {
+        "calls": 878,
+        "seconds": 7.505599999999987,
+        "lockSeconds": 0.013900000000000023,
+        "examinedRows": 876,
+        "affectedRows": 867
+      },
+      "grantClaim": {
+        "calls": 60,
+        "seconds": 0.6527999999999992,
+        "lockSeconds": 0.00010000000000000286,
+        "examinedRows": 59,
+        "affectedRows": 58
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 39,
+      "activity_prize": 7
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 36
+      },
+      {
+        "waiting": "other",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 2
+      },
+      {
+        "waiting": "grantSingleResult",
+        "blocking": "grantCas",
+        "blockingState": "waiting for handler commit",
+        "samples": 1
+      }
+    ],
+    "globalLockWaits": 49210,
+    "globalLockWaitMs": 159911,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 48,
+        "maxWaiting": 31,
+        "acquireMeanMs": 0.347967779480738,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 3925,
+      "lottery-perf-invoice": 10
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 195.09555217317777,
+      "lottery-perf-invoice": 195.09555217317777
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 127.91433282597667,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 316580,
+        "readMs": 3436.160056516,
+        "readBytes": 5186846720,
+        "writeOps": 26057,
+        "writeMs": 1133.288793764,
+        "writeBytes": 459948032,
+        "miscOps": 13723,
+        "miscMs": 25468.8239584
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 6692,
+        "writeMs": 453.698410056,
+        "writeBytes": 426393600,
+        "miscOps": 6692,
+        "miscMs": 19385.68671726
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 916763,
+        "writeMs": 7889.341059484,
+        "writeBytes": 840301056,
+        "miscOps": 162961,
+        "miscMs": 153008.52216052
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 107327,
+        "writeMs": 3109.996053712,
+        "writeBytes": 161884017,
+        "miscOps": 104385,
+        "miscMs": 128331.899787608
+      }
+    },
+    "outbox": {
+      "scans": 69,
+      "candidates": 1015,
+      "scanNanos": 117804793,
+      "retries": 944,
+      "rejected": 947,
+      "recoveryThrottled": 1,
+      "sendFailures": 0
+    }
+  },
+  "a200-1": {
+    "stable": false,
+    "failedStabilityChecks": [
+      "首尾平均积压增长不超过1秒请求量",
+      "入口结束后15秒内收敛"
+    ],
+    "windowSeconds": 300.0,
+    "orders": 63013,
+    "audit": "PASS",
+    "httpRps": 199.99666666666667,
+    "stockRps": 198.33333333333334,
+    "grantRps": 198.31666666666666,
+    "httpP95Ms": 165,
+    "httpP99Ms": 417,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 4341,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 635.2857142857142,
+    "grantBacklogPeak": 765,
+    "stockBacklogFirstLast60s": [
+      3.6666666666666665,
+      673.5
+    ],
+    "drainSeconds": 33.52459001541138,
+    "mysqlCommitMeanMs": 7.944165181784363,
+    "tx3Commit": {
+      "count": 58609,
+      "totalMs": 275485.495325,
+      "meanMs": 4.700395763875855,
+      "errors": 0,
+      "p95BucketUpperMs": 16.384,
+      "p99BucketUpperMs": 65.536
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 440121,
+      "trx_rw_commits": 442346,
+      "mysqlCommitP95UpperMs": 27.542287033,
+      "mysqlCommitP99UpperMs": 114.815362149,
+      "histogramCommitCalls": 189078
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 188216,
+        "seconds": 1445.5089999999982,
+        "lockSeconds": 6.555499999999995,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 62944,
+        "seconds": 414.16290000000026,
+        "lockSeconds": 166.0084999999999,
+        "examinedRows": 62986,
+        "affectedRows": 62921
+      },
+      "stockCas": {
+        "calls": 62961,
+        "seconds": 267.5681999999997,
+        "lockSeconds": 0.4515999999999991,
+        "examinedRows": 63001,
+        "affectedRows": 62936
+      },
+      "stockResult": {
+        "calls": 62915,
+        "seconds": 380.5029000000004,
+        "lockSeconds": 1.0523000000000007,
+        "examinedRows": 62968,
+        "affectedRows": 62816
+      },
+      "grantResult": {
+        "calls": 62938,
+        "seconds": 230.1306999999997,
+        "lockSeconds": 3.605400000000003,
+        "examinedRows": 62988,
+        "affectedRows": 60697
+      },
+      "stockDeduct": {
+        "calls": 62985,
+        "seconds": 39.068700000000035,
+        "lockSeconds": 31.814599999999928,
+        "examinedRows": 63001,
+        "affectedRows": 62981
+      },
+      "orderInsert": {
+        "calls": 62996,
+        "seconds": 42.36930000000001,
+        "lockSeconds": 0.23939999999999984,
+        "examinedRows": 0,
+        "affectedRows": 62966
+      },
+      "ledgerInsert": {
+        "calls": 62967,
+        "seconds": 6.602800000000002,
+        "lockSeconds": 0.04459999999999997,
+        "examinedRows": 0,
+        "affectedRows": 62964
+      },
+      "stockClaim": {
+        "calls": 1110,
+        "seconds": 9.910899999999998,
+        "lockSeconds": 0.025000000000000022,
+        "examinedRows": 1118,
+        "affectedRows": 1105
+      },
+      "grantClaim": {
+        "calls": 83,
+        "seconds": 1.5472000000000001,
+        "lockSeconds": 0.004200000000000002,
+        "examinedRows": 84,
+        "affectedRows": 84
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 60,
+      "activity_prize": 8
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 56
+      },
+      {
+        "waiting": "other",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 2
+      },
+      {
+        "waiting": "grantSingleResult",
+        "blocking": "grantCas",
+        "blockingState": "waiting for handler commit",
+        "samples": 2
+      }
+    ],
+    "globalLockWaits": 66933,
+    "globalLockWaitMs": 201147,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 48,
+        "maxWaiting": 34,
+        "acquireMeanMs": 0.5512568605336406,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 778,
+      "lottery-perf-invoice": 5
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 196.95850243186743,
+      "lottery-perf-invoice": 196.92698795096345
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 119.27959402345375,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 424416,
+        "readMs": 3946.906688764,
+        "readBytes": 6953615360,
+        "writeOps": 43832,
+        "writeMs": 1690.337721424,
+        "writeBytes": 771817472,
+        "miscOps": 22602,
+        "miscMs": 41074.292883976
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 11749,
+        "writeMs": 774.299808112,
+        "writeBytes": 717307904,
+        "miscOps": 11748,
+        "miscMs": 33600.2062485
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 2121778,
+        "writeMs": 10904.78283664,
+        "writeBytes": 1622223360,
+        "miscOps": 331559,
+        "miscMs": 242996.081252024
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 201171,
+        "writeMs": 5971.789106244,
+        "writeBytes": 251815259,
+        "miscOps": 195064,
+        "miscMs": 196784.854959024
+      }
+    },
+    "outbox": {
+      "scans": 92,
+      "candidates": 1270,
+      "scanNanos": 1175687333,
+      "retries": 1207,
+      "rejected": 1209,
+      "recoveryThrottled": 2,
+      "sendFailures": 0
+    }
+  },
+  "a200-2": {
+    "stable": false,
+    "failedStabilityChecks": [
+      "积压峰值不超过10秒请求量",
+      "首尾平均积压增长不超过1秒请求量",
+      "异步P95保守上界低于10秒",
+      "入口结束后15秒内收敛"
+    ],
+    "windowSeconds": 300.0,
+    "orders": 63010,
+    "audit": "PASS",
+    "httpRps": 200.0,
+    "stockRps": 185.03333333333333,
+    "grantRps": 184.96,
+    "httpP95Ms": 155,
+    "httpP99Ms": 364,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 20548,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 3059.8571428571427,
+    "grantBacklogPeak": 4361,
+    "stockBacklogFirstLast60s": [
+      8.833333333333334,
+      3222.3333333333335
+    ],
+    "drainSeconds": 101.71625709533691,
+    "mysqlCommitMeanMs": 8.458534907021136,
+    "tx3Commit": {
+      "count": 55255,
+      "totalMs": 297938.202618,
+      "meanMs": 5.392058684607727,
+      "errors": 0,
+      "p95BucketUpperMs": 16.384,
+      "p99BucketUpperMs": 65.536
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 440429,
+      "trx_rw_commits": 442384,
+      "mysqlCommitP95UpperMs": 27.542287033,
+      "mysqlCommitP99UpperMs": 104.712854805,
+      "histogramCommitCalls": 189069
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 187484,
+        "seconds": 1522.4143000000004,
+        "lockSeconds": 6.5571000000000055,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 62830,
+        "seconds": 492.72850000000017,
+        "lockSeconds": 198.55040000000008,
+        "examinedRows": 62957,
+        "affectedRows": 62843
+      },
+      "stockCas": {
+        "calls": 62868,
+        "seconds": 314.14630000000034,
+        "lockSeconds": 0.43870000000000076,
+        "examinedRows": 62954,
+        "affectedRows": 62821
+      },
+      "stockResult": {
+        "calls": 62819,
+        "seconds": 419.5544,
+        "lockSeconds": 1.1033999999999988,
+        "examinedRows": 62921,
+        "affectedRows": 62681
+      },
+      "grantResult": {
+        "calls": 62818,
+        "seconds": 284.1513,
+        "lockSeconds": 3.685200000000002,
+        "examinedRows": 62957,
+        "affectedRows": 60914
+      },
+      "stockDeduct": {
+        "calls": 62952,
+        "seconds": 48.73540000000003,
+        "lockSeconds": 36.75610000000006,
+        "examinedRows": 62990,
+        "affectedRows": 62959
+      },
+      "orderInsert": {
+        "calls": 62965,
+        "seconds": 26.259799999999984,
+        "lockSeconds": 0.07300000000000018,
+        "examinedRows": 0,
+        "affectedRows": 62931
+      },
+      "ledgerInsert": {
+        "calls": 62923,
+        "seconds": 10.784600000000012,
+        "lockSeconds": 0.07319999999999993,
+        "examinedRows": 0,
+        "affectedRows": 62919
+      },
+      "stockClaim": {
+        "calls": 1170,
+        "seconds": 5.320999999999998,
+        "lockSeconds": 0.0010999999999999899,
+        "examinedRows": 1180,
+        "affectedRows": 1155
+      },
+      "grantClaim": {
+        "calls": 73,
+        "seconds": 0.7306000000000008,
+        "lockSeconds": 0.0,
+        "examinedRows": 73,
+        "affectedRows": 73
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 61,
+      "activity_prize": 16
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 58
+      },
+      {
+        "waiting": "other",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 3
+      }
+    ],
+    "globalLockWaits": 68852,
+    "globalLockWaitMs": 238576,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 48,
+        "maxWaiting": 38,
+        "acquireMeanMs": 0.47073803468061254,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 3487,
+      "lottery-perf-invoice": 8
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 184.866204681527,
+      "lottery-perf-invoice": 184.78241896350085
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 116.1006140794917,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 439324,
+        "readMs": 6774.260628916,
+        "readBytes": 7197900800,
+        "writeOps": 40709,
+        "writeMs": 1937.612044768,
+        "writeBytes": 716521472,
+        "miscOps": 21306,
+        "miscMs": 38601.105715936
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 10571,
+        "writeMs": 674.048704328,
+        "writeBytes": 666255360,
+        "miscOps": 10570,
+        "miscMs": 29217.17199778
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 781310,
+        "writeMs": 11785.58263866,
+        "writeBytes": 985528832,
+        "miscOps": 244567,
+        "miscMs": 241637.673764492
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 166120,
+        "writeMs": 4463.081786648,
+        "writeBytes": 243939494,
+        "miscOps": 162828,
+        "miscMs": 206565.092887844
+      }
+    },
+    "outbox": {
+      "scans": 107,
+      "candidates": 1510,
+      "scanNanos": 599748585,
+      "retries": 1264,
+      "rejected": 1276,
+      "recoveryThrottled": 5,
+      "sendFailures": 0
+    }
+  },
+  "a175-1": {
+    "stable": false,
+    "failedStabilityChecks": [
+      "入口结束后15秒内收敛"
+    ],
+    "windowSeconds": 190.0,
+    "orders": 35867,
+    "audit": "PASS",
+    "httpRps": 174.78947368421052,
+    "stockRps": 173.23157894736843,
+    "grantRps": 173.18947368421053,
+    "httpP95Ms": 87,
+    "httpP99Ms": 448,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 1663,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 163.85714285714286,
+    "grantBacklogPeak": 339,
+    "stockBacklogFirstLast60s": [
+      3.6666666666666665,
+      192.16666666666666
+    ],
+    "drainSeconds": 27.7328200340271,
+    "mysqlCommitMeanMs": 6.382753377883971,
+    "tx3Commit": {
+      "count": 32818,
+      "totalMs": 135510.174985,
+      "meanMs": 4.129141781491864,
+      "errors": 0,
+      "p95BucketUpperMs": 16.384,
+      "p99BucketUpperMs": 32.768
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 250718,
+      "trx_rw_commits": 251411,
+      "mysqlCommitP95UpperMs": 15.135612484,
+      "mysqlCommitP99UpperMs": 100.0,
+      "histogramCommitCalls": 107636
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 106995,
+        "seconds": 653.3103999999985,
+        "lockSeconds": 2.245500000000007,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 35825,
+        "seconds": 205.31039999999848,
+        "lockSeconds": 80.8376000000003,
+        "examinedRows": 35846,
+        "affectedRows": 35813
+      },
+      "stockCas": {
+        "calls": 35827,
+        "seconds": 132.683,
+        "lockSeconds": 0.14819999999999922,
+        "examinedRows": 35848,
+        "affectedRows": 35809
+      },
+      "stockResult": {
+        "calls": 35794,
+        "seconds": 182.89729999999963,
+        "lockSeconds": 0.27839999999999954,
+        "examinedRows": 35835,
+        "affectedRows": 35738
+      },
+      "grantResult": {
+        "calls": 35812,
+        "seconds": 121.28999999999996,
+        "lockSeconds": 1.7848000000000042,
+        "examinedRows": 35852,
+        "affectedRows": 35139
+      },
+      "stockDeduct": {
+        "calls": 35848,
+        "seconds": 18.295400000000086,
+        "lockSeconds": 13.074699999999893,
+        "examinedRows": 35861,
+        "affectedRows": 35843
+      },
+      "orderInsert": {
+        "calls": 35829,
+        "seconds": 8.692600000000027,
+        "lockSeconds": 0.0262,
+        "examinedRows": 0,
+        "affectedRows": 35830
+      },
+      "ledgerInsert": {
+        "calls": 35820,
+        "seconds": 4.089999999999975,
+        "lockSeconds": 0.03420000000000001,
+        "examinedRows": 0,
+        "affectedRows": 35813
+      },
+      "stockClaim": {
+        "calls": 282,
+        "seconds": 1.243600000000015,
+        "lockSeconds": 0.0002999999999999947,
+        "examinedRows": 284,
+        "affectedRows": 282
+      },
+      "grantClaim": {
+        "calls": 18,
+        "seconds": 0.14199999999999946,
+        "lockSeconds": 0.0,
+        "examinedRows": 18,
+        "affectedRows": 17
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 34,
+      "activity_prize": 7
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 29
+      },
+      {
+        "waiting": "other",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 4
+      },
+      {
+        "waiting": "grantSingleResult",
+        "blocking": "grantCas",
+        "blockingState": "waiting for handler commit",
+        "samples": 1
+      }
+    ],
+    "globalLockWaits": 37730,
+    "globalLockWaitMs": 95589,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 48,
+        "maxWaiting": 37,
+        "acquireMeanMs": 0.3941668507067138,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 300,
+      "lottery-perf-invoice": 5
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 174.41761821544307,
+      "lottery-perf-invoice": 174.3667181323063
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 106.4162461754243,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 323797,
+        "readMs": 3698.956125888,
+        "readBytes": 5305090048,
+        "writeOps": 22806,
+        "writeMs": 865.49176986,
+        "writeBytes": 402554880,
+        "miscOps": 11531,
+        "miscMs": 17492.090642188
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 5925,
+        "writeMs": 304.226130444,
+        "writeBytes": 373260288,
+        "miscOps": 5924,
+        "miscMs": 12711.143887032
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 662352,
+        "writeMs": 5635.374299212,
+        "writeBytes": 650994176,
+        "miscOps": 192773,
+        "miscMs": 137526.347504032
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 128529,
+        "writeMs": 2518.02581316,
+        "writeBytes": 137745220,
+        "miscOps": 126886,
+        "miscMs": 116798.371293204
+      }
+    },
+    "outbox": {
+      "scans": 52,
+      "candidates": 318,
+      "scanNanos": 64337249,
+      "retries": 302,
+      "rejected": 302,
+      "recoveryThrottled": 4,
+      "sendFailures": 0
+    }
+  },
+  "a175-2": {
+    "stable": true,
+    "failedStabilityChecks": [],
+    "windowSeconds": 189.836,
+    "orders": 35834,
+    "audit": "PASS",
+    "httpRps": 174.9246718219937,
+    "stockRps": 173.43391137613517,
+    "grantRps": 173.40230514760108,
+    "httpP95Ms": 160,
+    "httpP99Ms": 416,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 1362,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 160.14285714285714,
+    "grantBacklogPeak": 347,
+    "stockBacklogFirstLast60s": [
+      1.1666666666666667,
+      156.57142857142858
+    ],
+    "drainSeconds": 10.784053087234497,
+    "mysqlCommitMeanMs": 9.572437576642413,
+    "tx3Commit": {
+      "count": 32876,
+      "totalMs": 164186.472484,
+      "meanMs": 4.994113410512227,
+      "errors": 0,
+      "p95BucketUpperMs": 16.384,
+      "p99BucketUpperMs": 65.536
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 250094,
+      "trx_rw_commits": 251435,
+      "mysqlCommitP95UpperMs": 43.651583224,
+      "mysqlCommitP99UpperMs": 125.892541179,
+      "histogramCommitCalls": 107537
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 106984,
+        "seconds": 935.1654000000017,
+        "lockSeconds": 2.6270999999999987,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 35795,
+        "seconds": 238.63130000000092,
+        "lockSeconds": 91.53669999999966,
+        "examinedRows": 35817,
+        "affectedRows": 35775
+      },
+      "stockCas": {
+        "calls": 35801,
+        "seconds": 161.6154000000006,
+        "lockSeconds": 0.5588000000000015,
+        "examinedRows": 35826,
+        "affectedRows": 35792
+      },
+      "stockResult": {
+        "calls": 35767,
+        "seconds": 259.84040000000005,
+        "lockSeconds": 0.5065000000000008,
+        "examinedRows": 35812,
+        "affectedRows": 35706
+      },
+      "grantResult": {
+        "calls": 35790,
+        "seconds": 128.3768999999993,
+        "lockSeconds": 1.8147999999999982,
+        "examinedRows": 35825,
+        "affectedRows": 34460
+      },
+      "stockDeduct": {
+        "calls": 35816,
+        "seconds": 24.20569999999998,
+        "lockSeconds": 19.909400000000005,
+        "examinedRows": 35829,
+        "affectedRows": 35817
+      },
+      "orderInsert": {
+        "calls": 35810,
+        "seconds": 10.092399999999998,
+        "lockSeconds": 0.02859999999999996,
+        "examinedRows": 0,
+        "affectedRows": 35801
+      },
+      "ledgerInsert": {
+        "calls": 35785,
+        "seconds": 3.3607000000000085,
+        "lockSeconds": 0.026499999999999968,
+        "examinedRows": 0,
+        "affectedRows": 35789
+      },
+      "stockClaim": {
+        "calls": 510,
+        "seconds": 4.140299999999996,
+        "lockSeconds": 0.0020000000000000018,
+        "examinedRows": 516,
+        "affectedRows": 510
+      },
+      "grantClaim": {
+        "calls": 38,
+        "seconds": 0.28689999999999927,
+        "lockSeconds": 0.0,
+        "examinedRows": 38,
+        "affectedRows": 38
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 41,
+      "activity_prize": 9
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 39
+      },
+      {
+        "waiting": "other",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 2
+      }
+    ],
+    "globalLockWaits": 37284,
+    "globalLockWaitMs": 113394,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 48,
+        "maxWaiting": 38,
+        "acquireMeanMs": 0.39558484894447277,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 203,
+      "lottery-perf-invoice": 5
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 173.46061372809973,
+      "lottery-perf-invoice": 173.4222762597966
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 106.05882282065184,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 349784,
+        "readMs": 2844.48989908,
+        "readBytes": 5730861056,
+        "writeOps": 23172,
+        "writeMs": 877.782380628,
+        "writeBytes": 404422656,
+        "miscOps": 11927,
+        "miscMs": 26289.40601192
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 6040,
+        "writeMs": 343.525513856,
+        "writeBytes": 379256832,
+        "miscOps": 6040,
+        "miscMs": 20706.299321992
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 1009705,
+        "writeMs": 6976.350204888,
+        "writeBytes": 823611392,
+        "miscOps": 196486,
+        "miscMs": 153466.957415284
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 119131,
+        "writeMs": 3068.438064444,
+        "writeBytes": 141320112,
+        "miscOps": 116042,
+        "miscMs": 124633.01285716
+      }
+    },
+    "outbox": {
+      "scans": 54,
+      "candidates": 592,
+      "scanNanos": 358826378,
+      "retries": 557,
+      "rejected": 558,
+      "recoveryThrottled": 3,
+      "sendFailures": 0
+    }
+  },
+  "a150-1": {
+    "stable": true,
+    "failedStabilityChecks": [],
+    "windowSeconds": 190.0,
+    "orders": 30781,
+    "audit": "PASS",
+    "httpRps": 150.0,
+    "stockRps": 150.0,
+    "grantRps": 149.98947368421054,
+    "httpP95Ms": 24,
+    "httpP99Ms": 165,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 59,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 5.428571428571429,
+    "grantBacklogPeak": 16,
+    "stockBacklogFirstLast60s": [
+      0.8333333333333334,
+      6
+    ],
+    "drainSeconds": 1.180373191833496,
+    "mysqlCommitMeanMs": 3.1124196106286823,
+    "tx3Commit": {
+      "count": 28110,
+      "totalMs": 68273.097603,
+      "meanMs": 2.4287832658484527,
+      "errors": 0,
+      "p95BucketUpperMs": 8.192,
+      "p99BucketUpperMs": 16.384
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 215254,
+      "trx_rw_commits": 215512,
+      "mysqlCommitP95UpperMs": 5.495408738,
+      "mysqlCommitP99UpperMs": 47.863009232,
+      "histogramCommitCalls": 92378
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 92205,
+        "seconds": 270.4599999999991,
+        "lockSeconds": 0.6644999999999897,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 30766,
+        "seconds": 103.39120000000003,
+        "lockSeconds": 39.090799999999945,
+        "examinedRows": 30775,
+        "affectedRows": 30764
+      },
+      "stockCas": {
+        "calls": 30773,
+        "seconds": 66.01399999999921,
+        "lockSeconds": 0.09949999999999903,
+        "examinedRows": 30780,
+        "affectedRows": 30771
+      },
+      "stockResult": {
+        "calls": 30771,
+        "seconds": 89.1875,
+        "lockSeconds": 0.15729999999999933,
+        "examinedRows": 30769,
+        "affectedRows": 30753
+      },
+      "grantResult": {
+        "calls": 30773,
+        "seconds": 65.3734000000004,
+        "lockSeconds": 0.4615000000000009,
+        "examinedRows": 30776,
+        "affectedRows": 30513
+      },
+      "stockDeduct": {
+        "calls": 30772,
+        "seconds": 7.770099999999957,
+        "lockSeconds": 4.307300000000055,
+        "examinedRows": 30780,
+        "affectedRows": 30777
+      },
+      "orderInsert": {
+        "calls": 30778,
+        "seconds": 4.378799999999956,
+        "lockSeconds": 0.014399999999999968,
+        "examinedRows": 0,
+        "affectedRows": 30773
+      },
+      "ledgerInsert": {
+        "calls": 30771,
+        "seconds": 2.5319000000000074,
+        "lockSeconds": 0.02190000000000003,
+        "examinedRows": 0,
+        "affectedRows": 30766
+      },
+      "stockClaim": {
+        "calls": 3,
+        "seconds": 0.21180000000001087,
+        "lockSeconds": 0.0011999999999999789,
+        "examinedRows": 3,
+        "affectedRows": 3
+      },
+      "grantClaim": {
+        "calls": 1,
+        "seconds": 0.07000000000000028,
+        "lockSeconds": 0.0,
+        "examinedRows": 1,
+        "affectedRows": 1
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 14
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 12
+      },
+      {
+        "waiting": "other",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 2
+      }
+    ],
+    "globalLockWaits": 29442,
+    "globalLockWaitMs": 43784,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 48,
+        "maxWaiting": 20,
+        "acquireMeanMs": 0.020405724068869723,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 57,
+      "lottery-perf-invoice": 3
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 149.7006317247901,
+      "lottery-perf-invoice": 149.7006317247901
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 144.11648367357037,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 356315,
+        "readMs": 3169.320930932,
+        "readBytes": 5837881344,
+        "writeOps": 22416,
+        "writeMs": 494.846687288,
+        "writeBytes": 387907584,
+        "miscOps": 10977,
+        "miscMs": 9257.085471228
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 5814,
+        "writeMs": 182.900888464,
+        "writeBytes": 366936064,
+        "miscOps": 5814,
+        "miscMs": 7007.84717718
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 1516327,
+        "writeMs": 3512.977916124,
+        "writeBytes": 1011063808,
+        "miscOps": 295090,
+        "miscMs": 130282.32511882
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 156617,
+        "writeMs": 2369.039110464,
+        "writeBytes": 121558097,
+        "miscOps": 154560,
+        "miscMs": 95551.413650876
+      }
+    },
+    "outbox": {
+      "scans": 42,
+      "candidates": 4,
+      "scanNanos": 62021416,
+      "retries": 4,
+      "rejected": 4,
+      "recoveryThrottled": 0,
+      "sendFailures": 0
+    }
+  },
+  "a150-2": {
+    "stable": true,
+    "failedStabilityChecks": [],
+    "windowSeconds": 190.0,
+    "orders": 30780,
+    "audit": "PASS",
+    "httpRps": 150.0,
+    "stockRps": 149.7263157894737,
+    "grantRps": 149.7157894736842,
+    "httpP95Ms": 205,
+    "httpP99Ms": 349,
+    "httpErrorRate": 0.0,
+    "systemErrorRate": 0.0,
+    "stockP95UpperMs": 893,
+    "timestampChecks": {
+      "createdAfterHttpResponse": 0,
+      "stockDoneBeforeOrderCreate": 0,
+      "maxCreatedAfterHttpMs": 0
+    },
+    "grantBacklogGrowth": 75.71428571428572,
+    "grantBacklogPeak": 193,
+    "stockBacklogFirstLast60s": [
+      1.1666666666666667,
+      74.14285714285714
+    ],
+    "drainSeconds": 8.833564043045044,
+    "mysqlCommitMeanMs": 10.274212971217105,
+    "tx3Commit": {
+      "count": 28040,
+      "totalMs": 134653.750866,
+      "meanMs": 4.802202242011412,
+      "errors": 0,
+      "p95BucketUpperMs": 16.384,
+      "p99BucketUpperMs": 65.536
+    },
+    "mysqlCommits": {
+      "trx_commits_insert_update": 214895,
+      "trx_rw_commits": 215692,
+      "mysqlCommitP95UpperMs": 63.095734448,
+      "mysqlCommitP99UpperMs": 131.825673855,
+      "histogramCommitCalls": 92375
+    },
+    "fullRunSql": {
+      "explicitCommit": {
+        "calls": 92081,
+        "seconds": 853.1919000000016,
+        "lockSeconds": 4.13730000000001,
+        "examinedRows": 0,
+        "affectedRows": 0
+      },
+      "grantCas": {
+        "calls": 30760,
+        "seconds": 186.78410000000076,
+        "lockSeconds": 74.35710000000017,
+        "examinedRows": 30773,
+        "affectedRows": 30755
+      },
+      "stockCas": {
+        "calls": 30749,
+        "seconds": 129.96399999999994,
+        "lockSeconds": 0.7349999999999994,
+        "examinedRows": 30779,
+        "affectedRows": 30756
+      },
+      "stockResult": {
+        "calls": 30728,
+        "seconds": 218.40949999999975,
+        "lockSeconds": 0.7606999999999999,
+        "examinedRows": 30758,
+        "affectedRows": 30696
+      },
+      "grantResult": {
+        "calls": 30759,
+        "seconds": 102.76649999999972,
+        "lockSeconds": 2.7364000000000033,
+        "examinedRows": 30771,
+        "affectedRows": 29973
+      },
+      "stockDeduct": {
+        "calls": 30770,
+        "seconds": 16.320299999999975,
+        "lockSeconds": 13.252100000000041,
+        "examinedRows": 30775,
+        "affectedRows": 30764
+      },
+      "orderInsert": {
+        "calls": 30770,
+        "seconds": 9.25260000000003,
+        "lockSeconds": 0.023700000000000054,
+        "examinedRows": 0,
+        "affectedRows": 30756
+      },
+      "ledgerInsert": {
+        "calls": 30767,
+        "seconds": 2.489599999999996,
+        "lockSeconds": 0.01849999999999996,
+        "examinedRows": 0,
+        "affectedRows": 30761
+      },
+      "stockClaim": {
+        "calls": 186,
+        "seconds": 2.406199999999984,
+        "lockSeconds": 0.005600000000000022,
+        "examinedRows": 185,
+        "affectedRows": 184
+      },
+      "grantClaim": {
+        "calls": 8,
+        "seconds": 0.03480000000000061,
+        "lockSeconds": 0.0,
+        "examinedRows": 8,
+        "affectedRows": 8
+      }
+    },
+    "sampledLockEdges": {
+      "draw_order": 25,
+      "activity_prize": 4
+    },
+    "orderLockPairs": [
+      {
+        "waiting": "grantCas",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 23
+      },
+      {
+        "waiting": "other",
+        "blocking": "grantSingleResult",
+        "blockingState": "waiting for handler commit",
+        "samples": 2
+      }
+    ],
+    "globalLockWaits": 30674,
+    "globalLockWaitMs": 90631,
+    "hikari": {
+      "HikariPool-1": {
+        "url": "lottery",
+        "maxActive": 48,
+        "maxWaiting": 34,
+        "acquireMeanMs": 0.21215800759552536,
+        "timeouts": 0
+      }
+    },
+    "kafkaPeakLag": {
+      "lottery-perf-stock": 181,
+      "lottery-perf-invoice": 5
+    },
+    "kafkaCommittedPerSecond": {
+      "lottery-perf-stock": 148.2741430973941,
+      "lottery-perf-invoice": 148.26866505612253
+    },
+    "swapMiB": {
+      "Swapins": 0.0,
+      "Swapouts": 0.0,
+      "maxCombinedMiBPerSample": 0.0
+    },
+    "mysqlCpuPercentOfOneCore": 67.44798873714714,
+    "mysqlIo": {
+      "wait/io/file/innodb/innodb_data_file": {
+        "readOps": 365414,
+        "readMs": 3422.851355732,
+        "readBytes": 5986942976,
+        "writeOps": 21743,
+        "writeMs": 723.857166032,
+        "writeBytes": 376881152,
+        "miscOps": 10650,
+        "miscMs": 24766.136637028
+      },
+      "wait/io/file/innodb/innodb_dblwr_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 5657,
+        "writeMs": 301.827758136,
+        "writeBytes": 355909632,
+        "miscOps": 5657,
+        "miscMs": 19454.71041918
+      },
+      "wait/io/file/innodb/innodb_log_file": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 515639,
+        "writeMs": 6418.847963728,
+        "writeBytes": 540506624,
+        "miscOps": 182704,
+        "miscMs": 136004.099011984
+      },
+      "wait/io/file/sql/binlog": {
+        "readOps": 0,
+        "readMs": 0.0,
+        "readBytes": 0,
+        "writeOps": 121019,
+        "writeMs": 2559.476341076,
+        "writeBytes": 121300546,
+        "miscOps": 119386,
+        "miscMs": 114400.840585164
+      }
+    },
+    "outbox": {
+      "scans": 46,
+      "candidates": 198,
+      "scanNanos": 32414831,
+      "retries": 194,
+      "rejected": 194,
+      "recoveryThrottled": 1,
+      "sendFailures": 0
+    }
+  }
+}

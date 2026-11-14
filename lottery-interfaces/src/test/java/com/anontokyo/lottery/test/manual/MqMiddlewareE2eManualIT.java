@@ -2,6 +2,7 @@ package com.anontokyo.lottery.test.manual;
 
 import com.anontokyo.lottery.LotteryApplication;
 import com.anontokyo.lottery.application.mq.producer.KafkaProducer;
+import com.anontokyo.lottery.application.mq.producer.OutboxDispatcher;
 import com.anontokyo.lottery.application.worker.LotteryScheduledTasks;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.domain.award.model.vo.AwardStockSettlementVO;
@@ -49,7 +50,7 @@ import java.util.function.BooleanSupplier;
 import static org.junit.Assert.*;
 
 /**
- * Docker 端到端验证：真实 Spring 组件、Kafka broker/消费者、Redis、MySQL 两库八表及库存事务。
+ * Docker 端到端验证：真实 Spring 组件、Kafka broker/消费者、Redis、V8 单库及库存事务。
  * 只延迟生产者返回的 Future 通知，消息仍由生产 KafkaProducer 真实发送；失败通知为显式故障注入。
  * 从持久化订单 Outbox 开始，不覆盖 HTTP 抽奖入口、外部发奖渠道或 XXL-Job admin 调度。
  */
@@ -71,6 +72,7 @@ public class MqMiddlewareE2eManualIT {
     @Autowired private IActivityPrizeRepository strategies;
     @Autowired private LotteryScheduledTasks job;
     @Autowired private KafkaProducer producer;
+    @Autowired private OutboxDispatcher dispatcher;
     @Autowired private KafkaListenerEndpointRegistry listeners;
     @Autowired private StringRedisTemplate redis;
     @Value("${lottery.kafka.consumer.invoice-group-id}") private String invoiceGroup;
@@ -140,6 +142,55 @@ public class MqMiddlewareE2eManualIT {
         }
         assertEquals(92, dbStock());
         assertEquals("92", redis.opsForValue().get(Constants.RedisKey.KEY_LOTTERY_ACTIVITY_PRIZE_STOCK_COUNT(activityId, "C")));
+        awaitCommitted();
+    }
+
+    @Test
+    public void brokerSuccessBeforeBothConsumersPersistsSentAndDefersRecovery() throws Exception {
+        // 先停止真实消费者，确保收到 Broker 确认时订单仍未结算。
+        topicContainer(STOCK_TOPIC).stop();
+        topicContainer(INVOICE_TOPIC).stop();
+        DrawOrder row = createOrder(null, 0, 0);
+        // 使用生产实时入口和 INSERT 登记的代数，验证首发成功通知。
+        sql("UPDATE lottery.draw_order SET stock_retry_at=NOW(3) + INTERVAL 2 SECOND WHERE order_id=?", row.getOrderId());
+        Gate stock = callbacks.hold(STOCK_TOPIC, row.getOrderId());
+        Gate invoice = callbacks.hold(INVOICE_TOPIC, row.getOrderId());
+        dispatcher.afterOrderCommit(stock(row));
+        stock.attempt(0).success();
+        await("库存发送已落 SENT 并延长补偿期限", () -> query(row).getStockSettlementEventStatus() == 3);
+        assertEquals(0, ledgerCount(row));
+        assertEquals(1, number("SELECT stock_retry_at > NOW(3) + INTERVAL 500 SECOND FROM lottery.draw_order WHERE order_id=?", row.getOrderId()));
+
+        topicContainer(STOCK_TOPIC).start();
+        invoice.attempt(0).success();
+        await("发奖发送已落 SENT 并延长补偿期限", () -> query(row).getFulfillmentEventStatus() == 3);
+        assertEquals(Integer.valueOf(0), query(row).getAwardFulfillmentStatus());
+        assertEquals(1, number("SELECT fulfillment_retry_at > NOW(3) + INTERVAL 500 SECOND FROM lottery.draw_order WHERE order_id=?", row.getOrderId()));
+        topicContainer(INVOICE_TOPIC).start();
+        awaitCompleted(row);
+        assertEquals(1, ledgerCount(row));
+        awaitCommitted();
+    }
+
+    @Test
+    public void lostSuccessCallbackLeavesDurableRecoveryEligibility() throws Exception {
+        // Broker 接收首发，测试故意不转交其 Future 通知，消费者也暂未执行。
+        topicContainer(STOCK_TOPIC).stop();
+        DrawOrder row = createOrder(null, 0, 0);
+        Gate stock = callbacks.hold(STOCK_TOPIC, row.getOrderId());
+        dispatcher.afterOrderCommit(stock(row));
+        stock.attempt(0);
+        assertEquals(Integer.valueOf(0), query(row).getStockSettlementEventStatus());
+        // 已到期的首发义务仍可由调度领取，新代数独立写入发送结果。
+        job.recoverStock();
+        stock.attempt(1).success();
+        await("补偿发送已落 SENT", () -> query(row).getStockSettlementEventStatus() == 3);
+        assertEquals(2, number("SELECT stock_attempt FROM lottery.draw_order WHERE order_id=?", row.getOrderId()));
+        topicContainer(STOCK_TOPIC).start();
+        awaitCompleted(row);
+        // 老回调全程未转交，两条真实 Kafka 消息只产生一条库存账本。
+        assertEquals(1, ledgerCount(row));
+        assertEquals(99, dbStock());
         awaitCommitted();
     }
 
