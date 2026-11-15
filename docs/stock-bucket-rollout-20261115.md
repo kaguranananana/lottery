@@ -4,7 +4,7 @@
 
 本改动为按活动奖品库存写入路径分桶。中奖概率与奖品种类不变，入口 Redis 仍维护每件奖品的总库存，RocketMQ 投递结算事件，唯一结算账本和库存扣减仍处于同一个 MySQL 本地事务。仅新建奖品受 LOTTERY_STOCK_BUCKET_COUNT 影响，存量奖品遵循数据库持久化的 stock_bucket_count 标记。
 
-配置为 0（默认）时使用旧的 activity_prize 单行扣减；配置为 8（此次实测值）时，新奖品创建 8 个桶，实际结算只更新 award_stock_bucket.remaining_count。允许配置 0–64；8 并不代表所有环境的最优值。
+配置为 0 时使用旧的 activity_prize 单行扣减；配置为 8（现已设为新活动默认值，此次实测值）时，新奖品创建 8 个桶，实际结算只更新 award_stock_bucket.remaining_count。允许配置 0–64；8 并不代表所有环境的最优值。
 
 **重要：分桶活动的 activity_prize.award_surplus_count 列不再逐笔更新！** 它在此模式下保存初始化时的值，不能据此查询实时剩余库存。统一查询视图 v_activity_prize_stock_balance.remaining_count 才是正确读模型；活动奖池内部 Mapper 已按桶求和。
 
@@ -12,8 +12,8 @@
 
 1. 备份 MySQL，确认版本、消息和补偿状态；绝不能用压测脚本直接操作业务生产库。
 2. 先在目标库执行 docs/sql/V9__stock_buckets.sql **一次**，增加库存模式字段、桶表、外键/检查约束、统一查询视图。旧行默认 0，原库存保持不变。此脚本为单次版本迁移，不支持无条件重复执行。
-3. 部署新应用时保持 LOTTERY_STOCK_BUCKET_COUNT=0，验证老活动的库存结算、库存读取和发奖逻辑不变。
-4. 确认兼容后，设置 LOTTERY_STOCK_BUCKET_COUNT=8 创建**新活动**，不要直接修改已经运行的活动模式。新活动奖品与桶在同一 DB 事务创建，READY→RUNNING 前会检查桶数及初始总量守恒，再预热 Redis。
+3. 兼容性验收阶段可显式设置 LOTTERY_STOCK_BUCKET_COUNT=0，验证老活动的库存结算、库存读取和发奖逻辑不变。
+4. 正常部署无需配置即可使用默认 8 桶；建议显式设置 LOTTERY_STOCK_BUCKET_COUNT=8，创建**新活动**并核对库存桶。不要直接修改已经运行的活动模式。新活动奖品与桶在同一 DB 事务创建，READY→RUNNING 前会检查桶数及初始总量守恒，再预热 Redis。
 5. 在无在途消息、无待补偿订单的收敛状态下，对比库存总量、唯一结算账本数量、Redis 余额，应满足“初始总量－数据库逻辑剩余＝结算账本数”，以及 Redis 余额等于数据库逻辑剩余。
 
 **启动安全检查**：桶缺失或初始总量不等于奖品库存时拒绝活动启动，避免 Redis 预热部分库存。禁止直接把数据库状态改为 RUNNING 绕过生命周期。
@@ -55,3 +55,7 @@ V9 是前向兼容数据库变更，不是可以在分桶活动运行中无损 D
 ## 性能证据与限制
 
 详情见 docs/stock-bucket-ab-20261115.md 和本地原始数据 doc/performance/results/stock-buckets-ab-20261115/。此次 300 RPS 使用隔离 MySQL、Redis、RocketMQ、单个 Spring 进程，并关闭 HTTP 入口限流；生产默认入口限流需要独立校验。任何单次压测结果都不能直接推导真实线上 SLA。
+
+## 默认配置的真实链路烟雾测试（2026-11-15）
+
+生产 application.yml 已将 `LOTTERY_STOCK_BUCKET_COUNT` 缺省值设为 **8**；现有 mq-e2e 测试配置显式设为 0，以继续验证老活动单行库存兼容性。合并前使用独立压测启动器且**未传入库存桶配置参数**，自动创建 5 种奖品共 40 个桶。以 40 RPS、约 70 秒进行了真实 HTTP→RocketMQ→Redis/MySQL→发奖链路测试，2,820 笔订单逐笔对账通过，无 HTTP 业务错误、无持续消息积压；9 项稳定性门槛中仅“至少 180 秒测量”因短测试失败，故标注为**烟雾验证通过、正式长期容量未认证**。原始证据位于忽略追踪的本机 `doc/performance/results/default-eight-merge-20261115/`。

@@ -12,7 +12,7 @@
 - `ActivityRepository.addActivityPrizeList` 在 `ActivityDeployImpl.createActivity` 的同一业务事务中插入所有桶，库存按商与余数精确分配，不能遗漏初始库存。
 - `ActivityPrizeRepository.settleAwardStock` 先插入 `award_stock_settlement` 唯一账本，按持久化模式走单行或桶更新；相同事务提交与回滚。目标桶耗尽时探测其他桶，所有桶均为零才回滚新账本并返回 `false`。
 - 分桶模式不再更新 `activity_prize.award_surplus_count` 物理字段。**该列在分桶模式是初始值，不是剩余库存的直接来源**；生产查询 `queryActivityPrizeList` 与压测审计通过 `SUM(award_stock_bucket.remaining_count)` 读取逻辑余额。若要正式投产，必须评估所有直接 SQL/报表/运维查询，并为存量活动规划迁移及对账。
-- 数据库迁移脚本 `docs/sql/V9__stock_buckets.sql` 先行；默认新活动不开分桶（`lottery.stock.bucket-count=0`），专用测试启动器显式传 8。
+- 数据库迁移脚本 `docs/sql/V9__stock_buckets.sql` 先行；最初 PoC 的默认值为 0，正式合并前已改为 8；PoC 原始对照基线测试显式传 0、分桶测试显式传 8，历史结果未改变。
 
 ### 测试与验收
 

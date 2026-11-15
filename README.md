@@ -23,7 +23,7 @@
 | 主题 | 设计与实现 |
 | --- | --- |
 | 参与约束 | 用户受个人 `take_count` 限制，活动没有独立的总抽奖名额 |
-| 奖品库存 | Redis 原子预扣控制活动奖品库存，MySQL 条件更新完成持久化结算 |
+| 奖品库存 | Redis 原子预扣控制活动奖品库存；新建奖品默认 8 个 MySQL 库存桶分散热点写入，唯一账本和扣减同事务；旧活动仍可使用单行库存 |
 | 请求幂等 | `requestId` 标识一次逻辑抽奖，配合数据库唯一约束、未完成参与恢复和结果回放 |
 | 可靠异步结算 | 订单 TX2 通过 RocketMQ 事务消息驱动异步库存结算，回查读取已提交订单 |
 | 消费幂等与补偿 | `UNIQUE(order_id)` 结算账本、状态 CAS 和 Spring 定时扫描处理重复消费与失败恢复 |
@@ -65,7 +65,7 @@ flowchart TD
 ### 1. 库存一致性：Redis 预扣与 MySQL 结算
 
 - **Redis** 按 `activityId + awardId` 原子预扣奖品库存，避免每次中奖直接竞争 MySQL 库存行；活动自身不维护库存。
-- **MySQL** 保留持久化记录，奖品库存采用 `surplus > 0` 条件更新，阻止并发结算导致负库存。
+- **MySQL** 新建奖品默认分成 8 个库存桶，通过桶内 `remaining_count > 0` 条件扣减分散行锁竞争；某个桶耗尽会探测其他桶，唯一账本和库存扣减在同一个事务中提交。原单行模式仍兼容。
 - 活动启动在活动行锁内检查 READY 和时间窗口，以 MySQL 奖品余量 SETNX 预热后 CAS 到 RUNNING。各活动引用同一奖品时使用独立概率和库存。
 - 奖品库存 Key 缺失时明确报错，保留原未消费 take 与 requestId；只有真实售罄才视为未中奖。已运行或关闭的活动缺 Key 须先对账，不能用滞后 MySQL 值回填。
 
@@ -132,6 +132,10 @@ RocketMQ 根据 TX2 的提交结果释放或回滚库存 Half Message。进程�
 - [JDBC 与持续负载验证记录](doc/performance/results/20261013-jdbc-session/README.md)
 - [稳定性验收标准](doc/performance/stability.md)
 
+### 库存热点行优化实验
+
+在相同单机 300 RPS 负载下，两组交错顺序对照表明，8 桶方案相较单行库存的 MySQL 行锁等待次数分别下降 **86.61%** 和 **86.07%**。八组实验的库存和订单最终对账通过，但部分场次出现消息积压，**不能声称已长期稳定达到 300 RPS**；最终结论及失败实验见 [分桶优化对照报告](docs/stock-bucket-closure-evidence-20261115.md)。生产环境部署、迁移及回退边界见 [分桶运维说明](docs/stock-bucket-rollout-20261115.md)。
+
 ## 构建与运行
 
 ### 环境依赖
@@ -157,7 +161,7 @@ mvn clean package
 ### 数据初始化与应用启动
 
 1. 准备独立的 MySQL 测试实例。
-2. 执行 [完整 Schema](docs/sql/lottery-schema.sql)，可选加载 [演示数据](docs/sql/lottery-demo-seed.sql)。
+2. **新建库**执行 [完整 Schema](docs/sql/lottery-schema.sql)，可选加载 [演示数据](docs/sql/lottery-demo-seed.sql)；**已采用 V8 的旧库**必须先备份并执行一次 [V9 库存分桶迁移](docs/sql/V9__stock_buckets.sql)，再启动新版应用。默认新活动启用 8 桶（`LOTTERY_STOCK_BUCKET_COUNT=8`），如需新活动暂用旧模式可设为 0，已创建活动不受这个开关影响。
 3. 配置 MySQL、Redis 和 RocketMQ NameServer。默认端口分别为 13306、6379、9876。
 4. 预建库存事务 Topic 与发奖普通 Topic 后启动应用。活动按正常状态流转完成预热。 [独立环境命令](docs/rocketmq-transactional-report.md)
 

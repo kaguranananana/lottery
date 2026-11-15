@@ -33,9 +33,9 @@ spring:
 
 lottery:
   stock:
-    # 仅对新建奖品生效；0=兼容原单行库存。启用前先执行 V9__stock_buckets.sql。
+    # 默认新建奖品采用 8 桶（设 LOTTERY_STOCK_BUCKET_COUNT=0 可回退旧模式）；必须先执行 V9__stock_buckets.sql。
     # 已有活动库存模式存储在 MySQL，不受后续配置调整影响。
-    bucket-count: ${LOTTERY_STOCK_BUCKET_COUNT:0}
+    bucket-count: ${LOTTERY_STOCK_BUCKET_COUNT:8}
   scheduling:
     activity-delay-ms: 10000
     stock-delay-ms: 10000

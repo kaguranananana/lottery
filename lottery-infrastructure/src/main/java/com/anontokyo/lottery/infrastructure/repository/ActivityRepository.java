@@ -52,7 +52,7 @@ public class ActivityRepository implements IActivityRepository {
     private IAwardStockBucketDao awardStockBucketDao;
 
     /** 只影响新创建的奖品，存量奖品采用 DB 持久化的 stock_bucket_count。 */
-    @Value("${lottery.stock.bucket-count:0}")
+    @Value("${lottery.stock.bucket-count:8}")
     private int stockBucketCount;
 
     @Resource
