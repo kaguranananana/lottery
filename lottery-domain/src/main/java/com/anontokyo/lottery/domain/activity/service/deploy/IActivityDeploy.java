@@ -20,13 +20,6 @@ public interface IActivityDeploy {
      */
     void createActivity(ActivityConfigReq req);
 
-
-    /**
-     * 修改活动信息
-     * @param req
-     */
-    void updateActivity(ActivityConfigReq req);
-
     /**
      * 扫描待处理的活动列表
      * @param id

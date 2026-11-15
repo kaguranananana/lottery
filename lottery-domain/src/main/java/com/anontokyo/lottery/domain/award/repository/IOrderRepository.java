@@ -7,9 +7,7 @@ import com.anontokyo.lottery.domain.award.model.vo.AwardFulfillmentEvent;
 import java.util.List;
 
 /**
- * @description: 奖品表仓储服务接口
- * @author：anontokyo
- * @date: 2026/1/10
+ * 中奖订单的持久化、事务回查与结算推进。
  */
 public interface IOrderRepository {
 
@@ -25,12 +23,12 @@ public interface IOrderRepository {
     void updateFulfillmentEventStatus(String uId, Long orderId, Integer fulfillmentEventStatus);
 
     /**
-     * 条件推进库存 MQ 状态：消费后写 COMPLETE，并登记发奖义务。
-     * @return true 表示本次推进状态，库存完成时同时领取首发发奖义务
+     * 有匹配账本才完成库存结算并登记发奖义务。
+     * @return true 表示首次完成，false 表示库存已完成或已进入人工对账
      */
-    boolean updateStockSettlementEventStatus(String uId, Long orderId, Integer stockSettlementEventStatus);
+    boolean completeStockSettlement(String uId, Long orderId);
 
-    /** 库存条件扣减失败：INIT/FAIL/SENT 转 BLOCKED 等待对账；持久化失败抛出，COMPLETE 不回退。 */
+    /** 库存条件扣减失败：待结算转 BLOCKED；持久化失败抛出，COMPLETE 不回退。 */
     void markStockSettlementFailed(String uId, Long orderId);
 
     enum OutboxKind { STOCK, FULFILLMENT }

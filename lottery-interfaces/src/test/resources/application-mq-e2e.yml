@@ -2,6 +2,8 @@
 spring:
   datasource:
     url: jdbc:mysql://127.0.0.1:13309/lottery?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=Asia/Shanghai
+    username: root
+    password: root
     hikari:
       maximum-pool-size: 8
       minimum-idle: 1
@@ -10,9 +12,6 @@ spring:
     port: 16379
     password: ""
 lottery:
-  stock:
-    # 现有 E2E 回归专门覆盖 V8 单行路径；分桶走独立全链路压测与账本校验。
-    bucket-count: 0
   rocketmq:
     nameserver: 127.0.0.1:19876
     producer-group: lottery-e2e-tx

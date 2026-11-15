@@ -35,7 +35,7 @@ Java 8 打包通过 45 项默认单测及 56 项独立集成测试，均无失�
 
 ```bash
 docker compose -f lottery-interfaces/src/test/resources/mq-e2e/docker-compose.yml up -d --wait
-bash lottery-interfaces/src/test/resources/mq-e2e/create-topics.sh lottery-rocketmq-e2e-broker-1 10911
+bash lottery-interfaces/src/test/resources/mq-e2e/create-topics.sh lottery-rocketmq-e2e-broker-1 19911
 mvn clean package
 mvn -pl lottery-interfaces -am -Dtest=FinalBusinessE2eManualIT,RedisStockFailureManualIT,DrawAdmissionRedisManualIT \
   -Dlottery.it.redis.port=16379 -Dsurefire.failIfNoSpecifiedTests=false test

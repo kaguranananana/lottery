@@ -78,6 +78,18 @@ public class RedisStockFailureManualIT {
     }
 
     @Test
+    public void staleScannerCannotReinsertResolvedReservation() {
+        redis.opsForValue().set(awardKey, "1");
+        assertTrue(reserve(id));
+        resolve(id);
+        long retryAt = System.currentTimeMillis() + 60000;
+        reservations.deferReconciliation(marker(id), retryAt);
+        assertFalse(reservations.expired(retryAt, 1000).contains(marker(id)));
+        assertNull(reservations.findByTake(id));
+        assertEquals("1", redis.opsForValue().get(awardKey));
+    }
+
+    @Test
     public void awardRecoveryFailureMustReachTheCaller() {
         // 使用真实 Redis WRONGTYPE 错误，验证回补异常没有被日志吞掉。
         redis.opsForValue().set(awardKey, "10");

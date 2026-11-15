@@ -8,6 +8,8 @@ import com.anontokyo.lottery.domain.activity.model.vo.ActivityBillVO;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityVO;
 import com.anontokyo.lottery.domain.activity.model.vo.AwardVO;
 import com.anontokyo.lottery.domain.activity.model.vo.ActivityPrizeVO;
+import com.anontokyo.lottery.domain.activity.model.vo.ActivityQuotaVO;
+import com.anontokyo.lottery.domain.activity.model.vo.PublicActivityPrizeVO;
 
 import java.util.List;
 
@@ -22,7 +24,13 @@ public interface IActivityRepository {
 
     boolean alterStatus(Long activityId, Constants.ActivityState beforeState, Constants.ActivityState afterState);
 
+    /** 活动不存在时返回 null；存储错误直接传播。 */
     ActivityBillVO queryActivityBill(PartakeReq req);
+
+    /** 只读：尚无额度行时返回该活动的初始额度，活动不存在时返回 null。 */
+    ActivityQuotaVO queryEffectiveQuota(String userId, Long activityId);
+
+    List<PublicActivityPrizeVO> queryPublicPrizes(Long activityId);
 
     List<ActivityVO> scanToDoActivityList(Long id);
 

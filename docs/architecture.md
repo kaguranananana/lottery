@@ -33,7 +33,7 @@ MyBatis 与 `TransactionTemplate` 使用同一个 Hikari 数据源，事务在�
 
 ## 当前业务约束与事务主链路
 
-系统只限制每位用户的参与次数与当前活动的奖品库存。活动保存名称、时间、状态和个人次数；独立奖池通过 activity_id 关联活动。同一目录奖品可用于多个活动，概率和库存各自独立。见[七表模型与 V8 切换](activity-prize-pool.md)。
+系统只限制每位用户的参与次数与当前活动的奖品库存。活动保存名称、时间、状态和个人次数；独立奖池通过 activity_id 关联活动。同一目录奖品可用于多个活动，概率和库存各自独立。见[V8 活动奖池切换](activity-prize-pool.md)与[V9 库存分桶](stock-bucket-rollout-20261115.md)。
 
 ```mermaid
 flowchart TD
@@ -68,7 +68,7 @@ Redis 不承担任何“最终是否处理过”的事实判定：DONE 类 guard
 
 ### RocketMQ 与订单对账
 
-库存事务消息连接 TX2 提交与库存首发。发奖走普通消息，库存完成 CAS 持久登记发奖义务。定时扫描承担发奖首发失败与库存超过回查或重投窗口后的恢复。领取只更新下次核对时间，业务终态通过消费者 CAS 推进。 [事务协议与验证](rocketmq-transactional-report.md)
+库存事务消息连接 TX2 提交与库存首发。发奖走普通消息。库存完成 CAS 校验匹配的已提交账本，同时登记发奖义务。定时扫描承担发奖首发失败与库存超过回查或重投窗口后的恢复。领取只更新下次核对时间，业务终态通过消费者 CAS 推进。 [事务协议与验证](rocketmq-transactional-report.md)
 
 ### 库存账本
 
@@ -107,7 +107,7 @@ DRAFT(1) ──确认就绪──▶ READY(4) ──到开始时间──▶ RUN
 | 层级 | 内容 | 环境 |
 | --- | --- | --- |
 | 单元测试（CI 门禁） | WeightedRandomSelectorTest（微精度概率、NO_PRIZE、越界拒绝、边界采样）；RedisActivityDrawProcessGuardTest（锁 token/Lua 释放）；DrawRequestIdempotencyTest（编排层幂等：全流程一次/回放已消费 take/复用未完成 take/异常时释放锁） | 无需外部环境 |
-| 真实中间件回归 | FinalBusinessE2eManualIT、RedisStockFailureManualIT 与 SQL 专项覆盖并发、库存、订单和故障恢复 | 专用 MySQL、Redis、RocketMQ；见 [回归复现](rocketmq-transactional-report.md) |
+| 真实中间件回归 | FinalBusinessE2eManualIT、RedisStockFailureManualIT 与 SQL 专项覆盖并发、库存、订单和故障恢复 | 专用 MySQL、Redis、RocketMQ；见[快速及完整回归](../.trellis/spec/backend/quality-guidelines.md) |
 
 运行使用 MySQL 8.0、Redis 和 RocketMQ。RocketMQ 分支从当前完整 Schema 建新库。
 

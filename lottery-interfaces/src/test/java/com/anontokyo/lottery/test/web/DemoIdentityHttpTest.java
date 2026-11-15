@@ -1,14 +1,12 @@
 package com.anontokyo.lottery.test.web;
 
-import com.anontokyo.lottery.infrastructure.dao.IActivityPrizeDao;
-import com.anontokyo.lottery.infrastructure.dao.IUserActivityQuotaDao;
-import com.anontokyo.lottery.infrastructure.po.UserActivityQuota;
+import com.anontokyo.lottery.domain.activity.model.vo.ActivityQuotaVO;
+import com.anontokyo.lottery.domain.activity.repository.IActivityRepository;
 import com.anontokyo.lottery.interfaces.web.ActivityDetailsController;
 import com.anontokyo.lottery.interfaces.web.DrawAdmission;
 import com.anontokyo.lottery.interfaces.web.DrawIdentity;
 import com.anontokyo.lottery.interfaces.web.LotteryController;
 import org.junit.Test;
-import org.mockito.ArgumentCaptor;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -17,7 +15,6 @@ import org.springframework.test.web.servlet.request.MockHttpServletRequestBuilde
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import static org.junit.Assert.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -25,7 +22,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /** 验证 Servlet 会话边界以及新额度接口的身份来源。 */
 public class DemoIdentityHttpTest {
     private final DrawAdmission admission = mock(DrawAdmission.class);
-    private final IUserActivityQuotaDao quotas = mock(IUserActivityQuotaDao.class);
+    private final IActivityRepository activities = mock(IActivityRepository.class);
 
     @Test
     public void sessionSwitchIsWhitelistedAndIndependent() throws Exception {
@@ -61,10 +58,7 @@ public class DemoIdentityHttpTest {
                 .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("A002"));
         verifyZeroInteractions(admission);
 
-        UserActivityQuota stored = new UserActivityQuota();
-        stored.setTotalCount(4);
-        stored.setLeftCount(1);
-        when(quotas.queryEffectiveQuota(any())).thenReturn(stored);
+        when(activities.queryEffectiveQuota("demo-b", 1L)).thenReturn(new ActivityQuotaVO("demo-b", 4, 1));
         mvc.perform(get("/api/v1/activities/1/quota?userId=demo-a").session(session).header("X-User-Id", "demo-a"))
                 .andExpect(status().isOk())
                 .andExpect(header().string("Cache-Control", "no-store"))
@@ -72,11 +66,8 @@ public class DemoIdentityHttpTest {
                 .andExpect(jsonPath("$.totalCount").value(4))
                 .andExpect(jsonPath("$.usedCount").value(3))
                 .andExpect(jsonPath("$.remainingCount").value(1));
-        ArgumentCaptor<UserActivityQuota> scope = ArgumentCaptor.forClass(UserActivityQuota.class);
-        verify(quotas).queryEffectiveQuota(scope.capture());
-        assertEquals("demo-b", scope.getValue().getuId());
-        assertEquals(Long.valueOf(1), scope.getValue().getActivityId());
-        verifyNoMoreInteractions(quotas);
+        verify(activities).queryEffectiveQuota("demo-b", 1L);
+        verifyNoMoreInteractions(activities);
     }
 
     @Test
@@ -103,7 +94,7 @@ public class DemoIdentityHttpTest {
         disabled.perform(get("/api/v1/draw/identity").session(demo)).andExpect(status().isUnauthorized());
         disabled.perform(get("/api/v1/activities/1/quota").header("X-User-Id", "demo-a"))
                 .andExpect(status().isUnauthorized());
-        verifyZeroInteractions(quotas);
+        verifyZeroInteractions(activities);
         assertThrows(IllegalStateException.class, () -> new DrawIdentity(true, "", "0.0.0.0"));
         assertThrows(IllegalStateException.class, () -> new DrawIdentity(false, "legacy", ""));
     }
@@ -123,7 +114,7 @@ public class DemoIdentityHttpTest {
         ReflectionTestUtils.setField(draw, "drawIdentity", identity);
         ReflectionTestUtils.setField(draw, "drawAdmission", admission);
         return MockMvcBuilders.standaloneSetup(draw,
-                new ActivityDetailsController(identity, quotas, mock(IActivityPrizeDao.class))).build();
+                new ActivityDetailsController(identity, activities)).build();
     }
 
     private MockHttpServletRequestBuilder change(String userId) {

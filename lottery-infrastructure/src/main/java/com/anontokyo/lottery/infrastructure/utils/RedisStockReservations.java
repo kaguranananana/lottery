@@ -6,6 +6,7 @@ import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Set;
 
 /** 库存和待对账记录在同一个 Redis Lua 命令内修改。 */
@@ -34,6 +35,10 @@ public class RedisStockReservations {
             + "redis.call('HDEL', KEYS[3], ARGV[3]); end; "
             + "return redis.call('ZREM', KEYS[2], ARGV[1]);", Long.class);
 
+    // XX 不重建已被并发对账删除的成员，GT 不把已延期的成员提前。
+    private static final DefaultRedisScript<Long> DEFER = new DefaultRedisScript<>(
+            "return redis.call('ZADD', KEYS[1], 'XX', 'GT', ARGV[1], ARGV[2]);", Long.class);
+
     private final StringRedisTemplate redis;
 
     public RedisStockReservations(StringRedisTemplate redis) {
@@ -61,6 +66,10 @@ public class RedisStockReservations {
 
     public String findByTake(long takeId) {
         return (String) redis.opsForHash().get(BY_TAKE, Long.toString(takeId));
+    }
+
+    public void deferReconciliation(String marker, long retryAt) {
+        redis.execute(DEFER, Collections.singletonList(PENDING), Long.toString(retryAt), marker);
     }
 
     public Set<String> expired(long now, int limit) {

@@ -18,7 +18,8 @@ public class Constants {
         NOT_CONSUMED_TAKE("D003", "未消费活动领取记录"),
         DRAW_IN_PROGRESS("D006", "抽奖处理中，请使用原请求号重试"),
         UNFINISHED_DRAW("D007", "存在未完成抽奖，请恢复原请求"),
-        TAKE_STATE_ERROR("D008", "参与记录归属或状态异常，请联系服务端核查");
+        TAKE_STATE_ERROR("D008", "参与记录归属或状态异常，请联系服务端核查"),
+        ACTIVITY_NOT_FOUND("D010", "活动不存在");
 
 
         private String code;

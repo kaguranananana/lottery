@@ -50,10 +50,10 @@ public interface IDrawOrderDao {
     int updateFulfillmentEventStatus(DrawOrder drawOrderRow);
 
     /**
-     * 按发送或完成事件条件更新库存消息状态，不允许覆盖 COMPLETE。
+     * 仅待结算订单且存在匹配账本时完成库存并登记发奖义务。
      * @return 1 表示状态推进；0 表示重复事件或不满足源状态条件
      */
-    int updateStockSettlementEventStatus(DrawOrder drawOrderRow);
+    int completeStockSettlement(@Param("uId") String uId, @Param("orderId") Long orderId);
 
     /** 消费失败按用户与订单定位，以条件更新保留并发完成的终态。 */
     int markStockSettlementFailed(DrawOrder drawOrderRow);

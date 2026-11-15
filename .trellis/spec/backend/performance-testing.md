@@ -2,7 +2,7 @@
 
 ## 1. 范围与触发
 
-新增/修改性能脚本时阅读。实现位于doc/performance；直接执行生产HTTP、Redis、MySQL 本地事务、Outbox与Kafka组件，不把Mock或历史JMX作为实测证据。报告见[最终实测](../../../docs/single-db-load-test.md)。
+新增/修改性能脚本时阅读。实现位于doc/performance；直接执行生产HTTP、Redis、MySQL 本地事务、RocketMQ 事务消息和订单补偿，不把Mock或历史JMX作为实测证据。报告见[RocketMQ 实测](../../../docs/rocketmq-transactional-report.md)。
 
 ## 2. 命令与接口
 
@@ -14,11 +14,11 @@
 
 ## 3. 数据与环境契约
 
-MySQL/Redis/Kafka专用端口13339/17479/29192；应用18190绑定127.0.0.1。init只接受空schema，创建完整单库 DDL；清理须核实Docker项目/service/端口。通过生产活动创建与PASS→DOING初始化Redis，不直接写DOING或回填运行期库存。用户预置在单表，每次新操作用新requestId。
+MySQL、Redis、RocketMQ NameServer、Broker 专用端口依次为 13349、17579、29876、20911；应用18190绑定127.0.0.1。init只接受空schema，创建完整单库 DDL；清理须核实Docker项目/service/端口。通过生产活动创建与READY→RUNNING初始化Redis，不直接写DOING或回填运行期库存。用户预置在单表，每次新操作用新requestId。
 
-当前启动器使用真实 Spring 调度、提交后实时投递和 Kafka 消费者。历史一秒扫描数据仅作为对照。到达与完成速率分别计算，业务码和 HTTP 状态分开，库存时延保留 INSERT 与 HTTP 返回推导出的上下界。保存原始 JTL、参数、执行 JMX、指标及逐 ID 关联。
+当前启动器使用真实 Spring 调度、RocketMQ 事务库存消息和普通发奖消息。历史一秒扫描数据仅作为对照。到达与完成速率分别计算，业务码和 HTTP 状态分开，库存时延保留 INSERT 与 HTTP 返回推导出的上下界。保存原始 JTL、参数、执行 JMX、指标及逐 ID 关联。
 
-预检保存 vm_stat 原文并从输出读取页大小，计算连续 Swap-in/out 增量；保存背景实例限制与端口，不记录环境变量凭据。mysql_diagnosis 的耗时来自 MySQL 8 执行树根节点，最深层索引迭代器行数不是 SQL digest 的 rows_examined；逐表重复的耗时不得换算为完整链路收益。MySQL 核对明确不包含 Redis/Kafka。
+预检保存 vm_stat 原文并从输出读取页大小，计算连续 Swap-in/out 增量；保存背景实例限制与端口，不记录环境变量凭据。mysql_diagnosis 的耗时来自 MySQL 8 执行树根节点，最深层索引迭代器行数不是 SQL digest 的 rows_examined；逐表重复的耗时不得换算为完整链路收益。MySQL 核对明确不包含 Redis/RocketMQ。
 
 ## 4. 校验与错误
 
@@ -43,7 +43,7 @@ MySQL/Redis/Kafka专用端口13339/17479/29192；应用18190绑定127.0.0.1。in
 
 ## 6. 验证断言
 
-逐ID核对HTTP→take→order→ledger；参与数等于个人次数消耗，各奖品Redis/MySQL消耗等于中奖订单与账本。检查重复订单、重复take订单、未消费记录、负库存、BLOCKED、最终消息/发奖状态及Kafka八分区Lag。稳定标准在持续测试前写定，入口峰值和最大通过的端到端速率分别报告。
+逐ID核对HTTP→take→order→ledger；参与数等于个人次数消耗，各奖品Redis/MySQL消耗等于中奖订单与账本。检查重复订单、重复take订单、未消费记录、负库存、BLOCKED、最终消息/发奖状态及RocketMQ 消费组 Lag。稳定标准在持续测试前写定，入口峰值和最大通过的端到端速率分别报告。
 
 只读工具验证检查：Swap 汇总等于首末原始计数增量；精确订单数量与实际扫描行数可核对；计划 SQL 与 Mapper 条件一致；持久化与业务计数前后一致。仅 MySQL 核对不得标记完整链路通过。
 

@@ -363,6 +363,10 @@ function revealResult(result, draw, key) {
             delete session.pending[key];
             showResult("error", "无法参加抽奖", "请检查用户 ID 和所选活动。");
             break;
+        case "D010":
+            delete session.pending[key];
+            showResult("error", "活动不存在", "请刷新活动并重新选择。");
+            break;
         case "L001":
         case "L002":
         case "L003":

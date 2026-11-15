@@ -51,6 +51,9 @@ public class ActivityRepository implements IActivityRepository {
     @Resource
     private IAwardStockBucketDao awardStockBucketDao;
 
+    @Resource
+    private IUserActivityQuotaDao userActivityQuotaDao;
+
     /** 只影响新创建的奖品，存量奖品采用 DB 持久化的 stock_bucket_count。 */
     @Value("${lottery.stock.bucket-count:8}")
     private int stockBucketCount;
@@ -161,6 +164,9 @@ public class ActivityRepository implements IActivityRepository {
                 cacheConfigProperties.getActivity(),
                 () -> activityDao.queryActivityById(req.getActivityId()));
 
+        if (activity == null) {
+            return null;
+        }
         ActivityBillVO activityBillVO = new ActivityBillVO();
         activityBillVO.setuId(req.getuId());
         activityBillVO.setActivityId(req.getActivityId());
@@ -170,6 +176,26 @@ public class ActivityRepository implements IActivityRepository {
         activityBillVO.setTakeCount(activity.getTakeCount());
         activityBillVO.setState(activity.getState());
         return activityBillVO;
+    }
+
+    @Override
+    public ActivityQuotaVO queryEffectiveQuota(String userId, Long activityId) {
+        UserActivityQuota scope = new UserActivityQuota();
+        scope.setuId(userId);
+        scope.setActivityId(activityId);
+        UserActivityQuota quota = userActivityQuotaDao.queryEffectiveQuota(scope);
+        return quota == null ? null : new ActivityQuotaVO(userId, quota.getTotalCount(), quota.getLeftCount());
+    }
+
+    @Override
+    public List<PublicActivityPrizeVO> queryPublicPrizes(Long activityId) {
+        List<Award> awards = activityPrizeDao.queryPublicPrizes(activityId);
+        List<PublicActivityPrizeVO> prizes = new ArrayList<>(awards.size());
+        for (Award award : awards) {
+            prizes.add(new PublicActivityPrizeVO(award.getAwardId(), award.getAwardName(),
+                    award.getAwardType(), award.getAwardContent()));
+        }
+        return prizes;
     }
 
     @Override

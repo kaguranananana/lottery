@@ -27,7 +27,7 @@
 | 请求幂等 | `requestId` 标识一次逻辑抽奖，配合数据库唯一约束、未完成参与恢复和结果回放 |
 | 可靠异步结算 | 订单 TX2 通过 RocketMQ 事务消息驱动异步库存结算，回查读取已提交订单 |
 | 消费幂等与补偿 | `UNIQUE(order_id)` 结算账本、状态 CAS 和 Spring 定时扫描处理重复消费与失败恢复 |
-| 缓存与数据组织 | Caffeine + Redis 两级奖池缓存，单 MySQL 库和七张业务表 |
+| 缓存与数据组织 | Caffeine + Redis 两级奖池缓存，单 MySQL 库与 V9 库存分桶 |
 | 验证与性能 | 单元测试、真实中间件 E2E、JMeter 压测及 SQL 执行计划对照实验 |
 
 ## 系统架构
@@ -98,7 +98,7 @@ RocketMQ 根据 TX2 的提交结果释放或回滚库存 Half Message。进程�
 
 ### 5. 单库与抽奖准入
 
-七张业务表共用一个 MySQL 数据库和一个 Hikari 连接池。订单号、参与号、请求归属和库存账本分别由唯一约束保护。RocketMQ 分支使用当前 Schema 新建隔离库。
+业务表共用一个 MySQL 数据库和一个 Hikari 连接池。订单号、参与号、请求归属和库存账本分别由唯一约束保护。库存完成 CAS 校验订单的匹配账本，并登记发奖义务。
 
 抽奖使用 Servlet 认证身份。Controller 先获取本机 Semaphore 许可，再用一条 Redis Lua 同时检查全局和用户活动令牌桶。429 或限流 Redis 故障返回 503 时，可以用原请求号重试。详见 [抽奖 HTTP 契约](.trellis/spec/backend/http-contract.md)。
 
@@ -190,7 +190,7 @@ curl -X POST http://127.0.0.1:8080/api/v1/draw \
 
 - 默认单元测试通过 Maven `mvn clean test` 执行。
 - `*ManualIT` 集成测试需要专用中间件、数据库初始化和测试配置；部分场景会修改专用测试库或停启 Broker，**不要直接对现有业务环境批量运行**。
-- 完整 E2E 覆盖真实 HTTP 请求、多个用户的请求归属、库存结算、消息重复投递、故障恢复和本地模拟发奖。
+- 默认八桶快速回归：`bash lottery-interfaces/src/test/resources/mq-e2e/verify.sh`。它在独立 Compose 上运行；全套命令和隔离端口见[质量规范](.trellis/spec/backend/quality-guidelines.md)。
 
 本次业务简化的实际命令、结果和覆盖边界见 [2026-11-02 重构验证](docs/activity-stock-removal.md)。历史测试环境与证据见 [正确性与 E2E 验证](docs/final-correctness-e2e.md)。
 后续库存异常、事务回补与缓存时序修复，以及当前剩余 failure case，见 [2026-10-24 故障评估](docs/failure-review-20261024.md)。
@@ -215,7 +215,7 @@ docs                      架构、幂等、一致性与 E2E 设计文档
 本项目主要用于学习后端系统在并发、异步和故障场景下的工程设计，当前仍有以下边界：
 
 - 发奖处理为 **本地模拟适配器**，未接入真实优惠券、物流或第三方发奖平台。
-- Kafka 测试环境采用单 Broker / 单副本，不代表生产级高可用或跨机房容灾。
+- RocketMQ 测试环境使用单 Broker，不代表生产级高可用或跨机房容灾。
 - Redis 运行期库存 Key 丢失需要独立对账恢复，尚无自动化跨存储对账流程。
 - 压测数字仅对应所记录的本地环境、数据量及测试方法，不代表生产 SLA 或确定的最大吞吐上限。
 
@@ -225,6 +225,6 @@ docs                      架构、幂等、一致性与 E2E 设计文档
 - [架构设计与组件取舍](docs/architecture.md)
 - [活动独立奖池与 V8 切换](docs/activity-prize-pool.md)
 - [抽奖请求幂等](docs/draw-request-idempotency.md)
-- [Kafka 消息状态与 CAS](docs/kafka-mq-state-cas.md)
+- [历史 Kafka 消息状态与 CAS](docs/kafka-mq-state-cas.md)
 - [正确性与 E2E 验证](docs/final-correctness-e2e.md)
 - [性能测试与优化报告](doc/performance/optimization-report.md)

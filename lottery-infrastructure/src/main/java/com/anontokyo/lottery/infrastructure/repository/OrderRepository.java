@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 @Component
 public class OrderRepository implements IOrderRepository {
@@ -37,6 +38,7 @@ public class OrderRepository implements IOrderRepository {
     @Resource
     private RedisStockReservations reservations;
 
+    private static final long RESERVATION_RETRY_DELAY_MS = TimeUnit.MINUTES.toMillis(1);
     private static final Logger logger = LoggerFactory.getLogger(OrderRepository.class);
 
     @Override
@@ -128,8 +130,13 @@ public class OrderRepository implements IOrderRepository {
             try {
                 reconcileReservation(marker);
             } catch (RuntimeException e) {
+                try {
+                    // 只后移失败项的扫描时间；原预扣和参与索引仍可供原请求恢复。
+                    reservations.deferReconciliation(marker, System.currentTimeMillis() + RESERVATION_RETRY_DELAY_MS);
+                } catch (RuntimeException deferFailure) {
+                    e.addSuppressed(deferFailure);
+                }
                 logger.error("库存预扣对账未完成 marker:{}", marker, e);
-                // 保留原预扣记录，下轮扫描继续检查。
             }
         }
     }
@@ -196,12 +203,15 @@ public class OrderRepository implements IOrderRepository {
     }
 
     @Override
-    public boolean updateStockSettlementEventStatus(String uId, Long orderId, Integer stockSettlementEventStatus) {
-        DrawOrder drawOrderRow = new DrawOrder();
-        drawOrderRow.setuId(uId);
-        drawOrderRow.setOrderId(orderId);
-        drawOrderRow.setStockSettlementEventStatus(stockSettlementEventStatus);
-        return drawOrderDao.updateStockSettlementEventStatus(drawOrderRow) == 1;
+    public boolean completeStockSettlement(String uId, Long orderId) {
+        if (drawOrderDao.completeStockSettlement(uId, orderId) == 1) {
+            return true;
+        }
+        // 未进入终态不能确认消费，否则缺账本的订单会被当成幂等成功。
+        if (!isStockSettlementTerminal(queryOrder(uId, orderId))) {
+            throw new IllegalStateException("订单无法凭账本完成库存结算，uId=" + uId + " orderId=" + orderId);
+        }
+        return false;
     }
 
     @Override
@@ -216,11 +226,14 @@ public class OrderRepository implements IOrderRepository {
             return;
         }
         // 零行可能是并发结算成功或重复 BLOCKED；必须回读事实而非默认成功。
-        DrawOrder current = queryOrder(uId, orderId);
-        if (current == null || (!Constants.StockSettlementEventStatus.COMPLETE.getCode().equals(current.getStockSettlementEventStatus())
-                && !Constants.StockSettlementEventStatus.BLOCKED.getCode().equals(current.getStockSettlementEventStatus()))) {
+        if (!isStockSettlementTerminal(queryOrder(uId, orderId))) {
             throw new IllegalStateException("库存分歧未持久化，uId=" + uId + " orderId=" + orderId);
         }
+    }
+
+    private boolean isStockSettlementTerminal(DrawOrder order) {
+        return order != null && (Constants.StockSettlementEventStatus.COMPLETE.getCode().equals(order.getStockSettlementEventStatus())
+                || Constants.StockSettlementEventStatus.BLOCKED.getCode().equals(order.getStockSettlementEventStatus()));
     }
 
     @Override
@@ -278,7 +291,7 @@ public class OrderRepository implements IOrderRepository {
         if (drawOrderRow == null) {
             return null;
         }
-        // 结果回放读取订单快照，同时保留计划时间和实际发放时间。
+        // 结果回放读取订单快照及实际发放时间。
         DrawOrderVO order = new DrawOrderVO();
         BeanUtils.copyProperties(drawOrderRow, order);
         return order;

@@ -8,7 +8,7 @@
 
 TX2 取得参与行锁后，[RedisStockReservations.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/utils/RedisStockReservations.java) 在同一 Lua 中检查活动奖品库存、登记参与和订单的待对账索引、扣减库存。缺键抛异常并保留未消费参与，只有真实售罄才提交未中奖。串联 MySQL 行锁与 Redis Lua 的协议要求同一 Redis 实例持有库存和预扣索引。
 
-补偿在参与行锁内读取订单，有订单清除索引，无订单按原标记归还一次库存。库存缺键时保留未完成标记并记录异常。同一参与重试先处理其遗留标记。运行期不能用 MySQL 滞后余额直接回填库存。
+补偿在参与行锁内读取订单，有订单清除索引，无订单按原标记归还一次库存。库存缺键时保留未完成标记并记录异常。定时扫描将失败成员延后一分钟，不修改参与索引或库存。Redis 必须支持 ZADD XX GT（当前使用 Redis 7.2）；已解决的标记不能被重新插入。同一参与重试先处理其遗留标记。运行期不能用 MySQL 滞后余额直接回填库存。
 
 warmupAwardStockForActivity 仅允许 READY 活动，与启动共用活动行锁。READY→RUNNING 锁内检查 begin <= now < end，只以本活动 MySQL 奖品余额 SETNX。RUNNING/CLOSED 禁止预热，缺键必须对账；一个活动的库存缺键不影响其他奖池。部分预热成功可在 READY 重试，保留现存余额。见 [V8 契约](../../../docs/activity-prize-pool.md)。
 

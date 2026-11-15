@@ -47,12 +47,14 @@ public class FulfillmentEventStatusCasManualIT {
         jdbc = new JdbcTemplate(source);
         // 列与生产订单字段对应，保留 InnoDB 行锁及实际 MySQL 时间函数。
         jdbc.execute("CREATE TABLE draw_order (id BIGINT AUTO_INCREMENT PRIMARY KEY,"
-                + "u_id VARCHAR(32), order_id BIGINT, take_id BIGINT, activity_id BIGINT,"
-                + "fulfilled_at DATETIME, award_fulfillment_status INT, award_id VARCHAR(64), award_type INT,"
+                + "u_id VARCHAR(32) COLLATE utf8mb4_bin, order_id BIGINT UNIQUE, take_id BIGINT, activity_id BIGINT,"
+                + "fulfilled_at DATETIME, award_fulfillment_status INT, award_id VARCHAR(64) COLLATE utf8mb4_bin, award_type INT,"
                 + "award_name VARCHAR(64), award_content VARCHAR(128),"
                 + "fulfillment_event_status INT, stock_settlement_event_status INT, stock_retry_at DATETIME(3),"
                 + "fulfillment_retry_at DATETIME(3), stock_settled_at DATETIME(3),"
                 + "create_time DATETIME(3), update_time DATETIME) ENGINE=InnoDB");
+        jdbc.execute("CREATE TABLE award_stock_settlement (order_id BIGINT NOT NULL PRIMARY KEY,"
+                + "u_id VARCHAR(32), activity_id BIGINT NOT NULL, award_id VARCHAR(64) NOT NULL) ENGINE=InnoDB");
         SqlSessionFactoryBean factory = new SqlSessionFactoryBean();
         factory.setDataSource(source);
         // 执行生产 XML，不复制状态更新 SQL 到测试里。
@@ -77,29 +79,62 @@ public class FulfillmentEventStatusCasManualIT {
     public void order() {
         // 清理的是本测试 schema 的临时表，避免用例共享状态。
         jdbc.update("DELETE FROM draw_order");
+        jdbc.update("DELETE FROM award_stock_settlement");
         jdbc.update("INSERT INTO draw_order (u_id,order_id,activity_id,award_id,award_type,award_fulfillment_status,"
                 + "stock_settlement_event_status,fulfillment_event_status,stock_retry_at,create_time,update_time) VALUES ('mq-test',1,10001,'C',3,0,0,0,NOW(3),NOW(),NOW())");
     }
 
     @Test
-    public void stockCompletionRegistersOnlyOneFulfillmentObligation() {
-        assertTrue(repository.updateStockSettlementEventStatus("mq-test", 1L, 1));
-        assertFalse(repository.updateStockSettlementEventStatus("mq-test", 1L, 1));
-        assertNotNull(jdbc.queryForObject("SELECT fulfillment_retry_at FROM draw_order", java.sql.Timestamp.class));
+    public void pendingStockCannotCompleteWithoutMatchingLedger() {
+        assertThrows(IllegalStateException.class, () -> repository.completeStockSettlement("mq-test", 1L));
+        insertLedger("wrong-award");
+        assertThrows(IllegalStateException.class, () -> repository.completeStockSettlement("mq-test", 1L));
+        assertEquals(Integer.valueOf(0), jdbc.queryForObject("SELECT stock_settlement_event_status FROM draw_order", Integer.class));
+        assertNull(jdbc.queryForObject("SELECT fulfillment_retry_at FROM draw_order", java.sql.Timestamp.class));
+        assertFalse(repository.scanOutbox(OutboxKind.STOCK, 10).isEmpty());
+    }
+
+    @Test
+    public void concurrentStockCompletionRegistersOnlyOneFulfillmentObligation() throws Exception {
+        insertLedger("C");
+        ExecutorService pool = Executors.newFixedThreadPool(8);
+        try {
+            List<Callable<Boolean>> contenders = new ArrayList<>();
+            for (int i = 0; i < 8; i++) {
+                contenders.add(() -> repository.completeStockSettlement("mq-test", 1L));
+            }
+            int won = 0;
+            for (Future<Boolean> result : pool.invokeAll(contenders)) {
+                if (result.get()) won++;
+            }
+            assertEquals(1, won);
+        } finally {
+            pool.shutdownNow();
+        }
+        java.sql.Timestamp firstRetry = jdbc.queryForObject("SELECT fulfillment_retry_at FROM draw_order", java.sql.Timestamp.class);
+        assertNotNull(firstRetry);
+        assertFalse(repository.completeStockSettlement("mq-test", 1L));
+        assertEquals(firstRetry, jdbc.queryForObject("SELECT fulfillment_retry_at FROM draw_order", java.sql.Timestamp.class));
         assertNull(jdbc.queryForObject("SELECT stock_retry_at FROM draw_order", java.sql.Timestamp.class));
         assertTrue(repository.scanOutbox(OutboxKind.STOCK, 10).isEmpty());
     }
 
+    private static void insertLedger(String awardId) {
+        jdbc.update("INSERT INTO award_stock_settlement(order_id,u_id,activity_id,award_id) VALUES (1,'mq-test',10001,?)",
+                awardId);
+    }
+
     @Test
     public void blockedOrderRequiresExplicitReconciliation() {
+        insertLedger("C");
         repository.markStockSettlementFailed("mq-test", 1L);
         repository.markStockSettlementFailed("mq-test", 1L);
-        assertFalse(repository.updateStockSettlementEventStatus("mq-test", 1L, 1));
+        assertFalse(repository.completeStockSettlement("mq-test", 1L));
         assertFalse(repository.claimOutbox(OutboxKind.STOCK, 1L, 600));
         assertTrue(repository.scanOutbox(OutboxKind.STOCK, 10).isEmpty());
         jdbc.update("UPDATE draw_order SET stock_settlement_event_status=0, stock_retry_at=NOW(3)");
         assertEquals(1, repository.scanOutbox(OutboxKind.STOCK, 10).size());
-        assertTrue(repository.updateStockSettlementEventStatus("mq-test", 1L, 1));
+        assertTrue(repository.completeStockSettlement("mq-test", 1L));
     }
 
     @Test
@@ -123,10 +158,11 @@ public class FulfillmentEventStatusCasManualIT {
 
     @Test
     public void fulfillmentRequiresStockCompletionAndIsIdempotent() {
+        insertLedger("C");
         assertThrows(IllegalStateException.class, () -> repository.markUserAwardGranted("mq-test", 1L, "C"));
         repository.updateFulfillmentEventStatus("mq-test", 1L, 1);
         assertEquals(Integer.valueOf(0), jdbc.queryForObject("SELECT fulfillment_event_status FROM draw_order", Integer.class));
-        assertTrue(repository.updateStockSettlementEventStatus("mq-test", 1L, 1));
+        assertTrue(repository.completeStockSettlement("mq-test", 1L));
         assertTrue(repository.markUserAwardGranted("mq-test", 1L, "C"));
         assertFalse(repository.markUserAwardGranted("mq-test", 1L, "C"));
         assertEquals(Integer.valueOf(1), jdbc.queryForObject("SELECT fulfillment_event_status FROM draw_order", Integer.class));

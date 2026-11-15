@@ -49,14 +49,16 @@
         WHERE u_id = #{uId} AND order_id = #{orderId}
           AND #{fulfillmentEventStatus}=1 AND award_fulfillment_status=1 AND fulfillment_event_status=0
     </update>
-    <update id="updateStockSettlementEventStatus">
-        <!-- 结算 CAS 同时登记发奖义务，进程在发奖发送前退出时可恢复。 -->
-        UPDATE draw_order SET stock_settlement_event_status = 1, update_time = NOW(), stock_retry_at = NULL,
+    <update id="completeStockSettlement">
+        <!-- 只有已提交的 TX3 账本才能推进订单，并在同一更新中登记发奖义务。 -->
+        UPDATE draw_order o SET stock_settlement_event_status = 1, update_time = NOW(), stock_retry_at = NULL,
             stock_settled_at = NOW(3),
             fulfillment_retry_at = CASE WHEN COALESCE(award_fulfillment_status,0) != 1
                 THEN TIMESTAMPADD(SECOND,5,NOW(3)) ELSE NULL END
-        WHERE u_id = #{uId} AND order_id = #{orderId}
-          AND #{stockSettlementEventStatus}=1 AND stock_settlement_event_status=0
+        WHERE o.u_id = #{uId} AND o.order_id = #{orderId} AND o.stock_settlement_event_status = 0
+          AND EXISTS (SELECT 1 FROM award_stock_settlement s
+                      WHERE s.order_id = o.order_id AND s.u_id = o.u_id
+                        AND s.activity_id = o.activity_id AND s.award_id = o.award_id)
     </update>
     <update id="markStockSettlementFailed">
         <!-- 库存分歧由人工核对库存和账本后释放。 -->

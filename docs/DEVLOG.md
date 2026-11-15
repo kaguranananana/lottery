@@ -124,3 +124,10 @@
 - 本机 JDK 17 重启 WAR 复现 `NoSuchMethodError: javax.annotation.Resource.lookup()`，实际加载了 RocketMQ 间接引入的 Tomcat 6 注解类。应用依赖排除旧注解，domain 统一使用 Spring Boot 的 1.3.x 注解包。检查 WAR 中 `Resource.class` 只来自一个兼容包，JDK 17 实际启动通过。
 - Java 8 `mvn clean package` 通过 53 项默认测试。Chrome 在 390×760、560×720、1280×720 实测首屏同时看到账号、额度、奖品和按钮。真实回放已有中奖请求，页面显示原奖品，额度保持一致。
 - 本机启动脚本改用多账户模式，新 WAR 已部署在 8080，沿用原活动和开发库。删除 56 个旧 Lottery 容器及 9 个闲置实验网络，保留当前 MySQL、Redis、RocketMQ NameServer、Broker 和数据卷。
+
+## 2026-11-15 · 八桶回归与库存约束
+
+- `FinalBusinessE2eManualIT` 改为默认八桶，停止消费者后制造 BLOCKED，真实消息恢复后核对只扣一次额度、一个参与和订单、一条账本、Redis/MySQL 都剩 9，以及模拟发奖终态。新增 `mq-e2e/verify.sh`；测试 Broker 改用隔离端口 19911。
+- `OrderRepository` 与 `RedisStockReservations` 实测复现并修复预扣扫描饥饿。失败项延后一分钟，原参与仍可立即核对，已清理成员不复活。库存完成 CAS 要求匹配的已提交账本，并原子登记发奖义务；验证 TX3 已提交、CAS 失败后的 Broker 重放。
+- 活动不存在返回 D010 且无抽奖状态写入；只读查询复用活动仓储，默认门禁检查 Web 不直接引用 DAO/PO 和现行规范链接。删除无调用的更新空实现和已被生产链路覆盖的手写库存测试。
+- 实际通过：Java 8 `mvn clean package` 55 项、隔离中间件 44 项、SQL 专项 31 项；三项快速回归含在 44 项内。首轮整套因 Broker 重启的长轮询跨测试残留超时，保留原阈值并修好测试隔离后通过。命令和边界见[验证记录](validation/engineering-quality-20261115.md)。

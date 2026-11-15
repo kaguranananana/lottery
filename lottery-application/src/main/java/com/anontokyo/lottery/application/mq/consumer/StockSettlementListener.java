@@ -53,8 +53,7 @@ public class StockSettlementListener {
         }
 
         // 只有推进库存终态的消费者取得发奖首发资格，并在同一 SQL 中登记补偿时间。
-        if (orderRepository.updateStockSettlementEventStatus(order.getuId(), order.getOrderId(),
-                StockSettlementEventStatus.COMPLETE.getCode())
+        if (orderRepository.completeStockSettlement(order.getuId(), order.getOrderId())
                 && !AwardFulfillmentStatus.COMPLETE.getCode().equals(order.getAwardFulfillmentStatus())) {
             AwardFulfillmentEvent award = new AwardFulfillmentEvent();
             BeanUtils.copyProperties(order, award);

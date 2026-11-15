@@ -8,21 +8,21 @@ domain 定义 Repository，infrastructure 实现 VO/PO 转换与 DAO 调用；My
 
 ## 实际物理布局
 
-活动、奖品、活动奖品、额度、参与、订单和结算账本共用单一 MySQL 库。Spring Boot 装配一个 Hikari 数据源供 MyBatis 和事务管理使用。表结构见 [完整 Schema](../../../docs/sql/lottery-schema.sql)。
+活动、奖品、活动奖品、库存桶、额度、参与、订单和结算账本共用单一 MySQL 库。Spring Boot 装配一个 Hikari 数据源供 MyBatis 和事务管理使用。表结构见 [完整 Schema](../../../docs/sql/lottery-schema.sql)。
 
 ## 事务与幂等
 
 [DrawParticipationRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/DrawParticipationRepository.java) 的 takeParticipation 在 TX1 本地事务内扣剩余次数并插入 take；先普通读取确认次数行，只有不存在才 initializeCount，再使用 left_count>0 的条件 UPDATE，零影响行数与唯一冲突会回滚。普通读取仅判断存在性，不将读取的余量用于覆盖写回。无变化 upsert 在 MySQL 8.0.46/RR 可使不同已有用户竞争 PRIMARY supremum；真实复现与测试见[独立优化契约](./performance-optimization.md)。[OrderRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java) 的 saveDrawOrderWithTakeLock 在 Half Message 确认后执行 TX2，通过 state=0 条件消费 take、持锁登记 Redis 预扣并插入订单。库存首发由事务消息提交触发。
 
-[ActivityPrizeRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityPrizeRepository.java) 的 settleAwardStock 在 TX3 本地事务中插入 UNIQUE(order_id) 的账本并条件扣减活动奖品库存；重复账本返回已处理，库存不足回滚本次账本插入。[ActivityPrize_Mapper.xml](../../../lottery-interfaces/src/main/resources/mybatis/mapper/ActivityPrize_Mapper.xml) 的扣减条件包含 award_surplus_count > 0，不能改成查询后无条件写回。
+[ActivityPrizeRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/ActivityPrizeRepository.java) 的 settleAwardStock 在 TX3 本地事务中插入 UNIQUE(order_id) 的账本并条件扣减活动奖品库存；重复账本返回已处理，库存不足回滚本次账本插入。有桶奖品扣减桶内余量，存量单行仍条件扣减父行。订单完成 CAS 要求账本的订单、用户、活动和奖品匹配，并同一 SQL 登记发奖义务。
 
 requestId 用于参与记录查询与唯一约束，takeId 关联抽奖结果，orderId 用于库存结算和发奖关联。Redis marker 不能替代数据库约束。DuplicateKeyException 只在已有契约的唯一冲突分支处理，不能把全部 SQL 异常解释成重复成功。
 
-订单仓储经 StockReservationTransactions 观察实际事务结束状态，处理 SQL 异常时的 Redis 预扣回补；不能凭异常类型猜测提交是否成功。正常非成功业务码仍由原调用方回补，避免重复归还。触发条件、错误矩阵与集成断言见[错误处理](./error-handling.md)。
+订单仓储在参与行锁内按订单持久事实处理 Redis 预扣，不能凭异常类型猜测已回滚。触发条件和集成断言见[错误处理](./error-handling.md)。
 
 ## SQL 迁移现状
 
-[lottery-schema.sql](../../../docs/sql/lottery-schema.sql) 从空实例创建单库七表。旧库完成 V5、V6、V7 后按 [V8 迁移](../../../docs/activity-prize-pool.md) 旁路升级；账本通过订单获取活动归属，禁止拆分共享奖池。
+[lottery-schema.sql](../../../docs/sql/lottery-schema.sql) 从空实例创建当前单库与库存余额视图。旧库完成 V5、V6、V7 后按 [V8 迁移](../../../docs/activity-prize-pool.md) 旁路升级；账本通过订单获取活动归属，禁止拆分共享奖池。
 
 参与表按字节比较 `request_id`，`UNIQUE(u_id,activity_id,request_id)` 保留请求身份。生成列 `UNIQUE(u_id,unfinished_activity_id)` 限制每用户活动最多一条 state=0 记录。订单和账本分别保留各自的 `order_id` 唯一键，订单非空 `take_id` 全库唯一。已完成发奖的时间写 `fulfilled_at`。
 

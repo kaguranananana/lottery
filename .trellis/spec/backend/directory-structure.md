@@ -16,7 +16,7 @@
 
 ## 职责与依赖边界
 
-业务判定放在 domain，用例步骤与 Kafka/定时任务放在 application。domain 定义 Repository 和 Guard 接口，infrastructure 提供实现。Controller 负责输入、DTO 转换和调用用例，不直接操作 DAO、库存或发奖。
+业务判定放在 domain，用例步骤与 RocketMQ/定时任务放在 application。domain 定义 Repository 和 Guard 接口，infrastructure 提供实现。Controller 负责输入、DTO 转换和调用用例，不直接操作 DAO、库存或发奖。
 
 新业务逻辑通过领域接口访问存储，避免 application/domain 直接导入 infrastructure 的 PO 或 DAO。事务和同库 SQL 边界以 [OrderRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/OrderRepository.java) 和 [DrawParticipationRepository.java](../../../lottery-infrastructure/src/main/java/com/anontokyo/lottery/infrastructure/repository/DrawParticipationRepository.java) 为参考。
 

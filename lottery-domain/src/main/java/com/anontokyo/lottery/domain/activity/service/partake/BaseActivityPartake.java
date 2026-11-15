@@ -33,6 +33,9 @@ public abstract class BaseActivityPartake extends ActivityPartakeSupport impleme
         }
 
         ActivityBillVO activityBillVO = super.queryActivityBill(req);
+        if (activityBillVO == null) {
+            return buildPartakeResult(null, Constants.ResponseCode.ACTIVITY_NOT_FOUND);
+        }
         Result checkResult = this.checkActivityBill(req, activityBillVO);
         if (!Constants.ResponseCode.SUCCESS.getCode().equals(checkResult.getCode())) {
             return new PartakeResult(checkResult.getCode(), checkResult.getInfo());

@@ -96,7 +96,7 @@ public class MqCallbackStateTest {
         IActivityPrizeRepository config = mock(IActivityPrizeRepository.class);
         stockListener(config).onMessage(stockRecord());
         verify(orders).markStockSettlementFailed("mq-test", 1L);
-        verify(orders, never()).updateStockSettlementEventStatus(anyString(), anyLong(), anyInt());
+        verify(orders, never()).completeStockSettlement(anyString(), anyLong());
     }
 
     @Test
@@ -119,7 +119,7 @@ public class MqCallbackStateTest {
     public void onlyStockTransitionWinnerQueuesFulfillment() {
         DrawOrderVO pending = order(0, 0, 0);
         when(orders.findOrder("mq-test", 1L)).thenReturn(pending);
-        when(orders.updateStockSettlementEventStatus("mq-test", 1L, 1)).thenReturn(true, false);
+        when(orders.completeStockSettlement("mq-test", 1L)).thenReturn(true, false);
         IActivityPrizeRepository config = mock(IActivityPrizeRepository.class);
         when(config.settleAwardStock(any())).thenReturn(true);
         // 两次消费都读到旧状态，只有赢得库存 CAS 的消费者能触发发奖首发。
