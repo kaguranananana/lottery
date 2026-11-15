@@ -352,3 +352,50 @@ a { color: inherit; }
 @media (prefers-reduced-motion: reduce) {
     .draw-button:active:enabled { transform: none; }
 }
+
+/* 次数和奖品延用深色面板与铜金强调色，窄屏下奖品卡自动折行。 */
+.quota dl {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    margin: 0;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: var(--field);
+    text-align: center;
+}
+
+.quota dl div { padding: 7px 4px; }
+.quota dl div + div { border-inline-start: 1px solid var(--line); }
+.quota dt { color: var(--muted); font-size: 12px; }
+.quota dd { margin: 1px 0 0; font-size: 19px; font-weight: 650; font-variant-numeric: tabular-nums; }
+#quota-remaining { color: var(--gold); }
+
+.prizes { margin-top: 22px; }
+.prizes .field__note { margin: 0; }
+.prizes .field__note:empty { display: none; }
+
+.prize-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 178px), 1fr));
+    gap: 10px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+}
+
+.prize-card {
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--field);
+    overflow-wrap: anywhere;
+}
+
+.prize-card h3 { margin: 0 0 2px; font-size: 15px; }
+.prize-card__type { color: var(--gold); font-size: 12px; }
+.prize-card p { margin: 5px 0 0; color: var(--muted); font-size: 13px; }
+
+@media (max-width: 770px) {
+    .prizes { margin-top: 14px; }
+}

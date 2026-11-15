@@ -30,4 +30,13 @@
         FROM user_activity_quota
         WHERE u_id = #{uId} AND activity_id = #{activityId}
     </select>
+    <!-- 单条读取语句使用相同快照；首次参与前取活动初始次数。 -->
+    <select id="queryEffectiveQuota" parameterType="com.anontokyo.lottery.infrastructure.po.UserActivityQuota" resultMap="userActivityQuotaMap">
+        SELECT a.activity_id,
+               CASE WHEN q.activity_id IS NULL THEN a.take_count ELSE q.total_count END AS total_count,
+               CASE WHEN q.activity_id IS NULL THEN a.take_count ELSE q.left_count END AS left_count
+        FROM activity a
+        LEFT JOIN user_activity_quota q ON q.activity_id = a.activity_id AND q.u_id = #{uId}
+        WHERE a.activity_id = #{activityId}
+    </select>
 </mapper>

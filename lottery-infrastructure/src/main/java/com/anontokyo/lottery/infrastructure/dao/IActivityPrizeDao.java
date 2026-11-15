@@ -1,6 +1,7 @@
 package com.anontokyo.lottery.infrastructure.dao;
 
 import com.anontokyo.lottery.infrastructure.po.ActivityPrize;
+import com.anontokyo.lottery.infrastructure.po.Award;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -17,6 +18,9 @@ public interface IActivityPrizeDao {
 
     List<ActivityPrize> queryActivityPrizeList(Long activityId);
 
+
+    /** 读取活动对应的公开奖品信息。 */
+    List<Award> queryPublicPrizes(Long activityId);
 
     /** 只在同一活动的库存仍大于零时扣减。 */
     int deductStock(ActivityPrize req);

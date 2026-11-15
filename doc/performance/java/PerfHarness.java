@@ -1,3 +1,4 @@
+import org.springframework.beans.factory.annotation.Value;
 import com.anontokyo.lottery.LotteryApplication;
 import com.anontokyo.lottery.interfaces.web.DrawAdmission;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
@@ -76,9 +77,13 @@ public class PerfHarness {
     }
 
     @Bean
-    public FilterRegistrationBean<Filter> perfIdentity() {
+    public FilterRegistrationBean<Filter> perfIdentity(
+            @Value("${lottery.draw.local-demo-enabled:false}") boolean demoEnabled,
+            @Value("${lottery.draw.local-demo-user:}") String fixedDemoUser) {
         // 仅独立 loopback 压测进程装配，模拟已经认证的 Servlet Principal。
         FilterRegistrationBean<Filter> registration = new FilterRegistrationBean<>();
+        // 演示时身份必须由会话或固定账户提供，压测头不能绕过白名单。
+        registration.setEnabled(!demoEnabled && fixedDemoUser.isEmpty());
         registration.setFilter((request, response, chain) -> {
             HttpServletRequest http = (HttpServletRequest) request;
             String user = http.getHeader("X-Perf-Principal");

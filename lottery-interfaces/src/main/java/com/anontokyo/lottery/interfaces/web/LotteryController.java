@@ -10,23 +10,22 @@ import com.anontokyo.lottery.interfaces.web.dto.DrawRequest;
 import com.anontokyo.lottery.interfaces.web.dto.DrawResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import javax.annotation.PostConstruct;
 import javax.annotation.Resource;
-import java.security.Principal;
-import java.util.Collections;
-import java.util.Map;
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 /**
  * HTTP 入口。只做参数校验、DTO 转换和 use case 调用，业务规则都在 application/domain。
@@ -44,32 +43,29 @@ public class LotteryController {
     @Resource
     private DrawAdmission drawAdmission;
 
-    @Value("${lottery.draw.local-demo-user:}")
-    private String localDemoUser = "";
-
-    @Value("${server.address:}")
-    private String serverAddress = "";
-
-    @PostConstruct
-    void validateDemoBinding() {
-        if (!localDemoUser.isEmpty() && !"127.0.0.1".equals(serverAddress)) {
-            throw new IllegalStateException("抽奖演示账户要求应用显式绑定 127.0.0.1");
-        }
-    }
+    @Resource
+    private DrawIdentity drawIdentity;
 
     @GetMapping("/draw/identity")
-    public ResponseEntity<Map<String, String>> drawIdentity(Principal principal) {
-        String userId = currentUser(principal);
+    public ResponseEntity<Map<String, Object>> drawIdentity(HttpServletRequest request) {
+        String userId = drawIdentity.currentUser(request);
         if (userId.isEmpty()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
-        return ResponseEntity.ok(Collections.singletonMap("userId", userId));
+        return drawIdentity.response(request, userId);
+    }
+
+    @PutMapping(value = "/draw/identity", consumes = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> switchDemoUser(@RequestBody Map<String, String> identity,
+                                                              HttpServletRequest request) {
+        String userId = drawIdentity.switchDemoUser(request, identity.get("userId"));
+        return drawIdentity.response(request, userId);
     }
 
     @PostMapping("/draw")
-    public ResponseEntity<DrawResponse> draw(@Validated @RequestBody DrawRequest request, Principal principal) {
-        // 保留请求字段用于身份匹配，实际业务只使用已认证身份或固定的本机演示账户。
-        String userId = currentUser(principal);
+    public ResponseEntity<DrawResponse> draw(@Validated @RequestBody DrawRequest request, HttpServletRequest http) {
+        // 保留请求字段用于身份匹配，业务只使用 Principal 或受限的本机演示身份。
+        String userId = drawIdentity.currentUser(http);
         if (userId.isEmpty()) {
             return reject(request, HttpStatus.UNAUTHORIZED, "A001", "请先登录");
         }
@@ -112,10 +108,6 @@ public class LotteryController {
             // 业务异常、限流拒绝及 Redis 故障都归还本机许可。
             drawAdmission.release();
         }
-    }
-
-    private String currentUser(Principal principal) {
-        return principal == null ? localDemoUser : principal.getName();
     }
 
     private ResponseEntity<DrawResponse> reject(DrawRequest request, HttpStatus status, String code, String info) {

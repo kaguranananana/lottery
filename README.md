@@ -169,17 +169,17 @@ mvn clean package
 本地单实例的 Snowflake 节点默认 `LOTTERY_WORKER_ID=0`、`LOTTERY_DATACENTER_ID=1`。多实例部署必须给同一数据中心内每个实例分配不同的 0..31 worker-id；节点号不再从 IP 推导，也没有自动注册分配。
 
 ```bash
-java -jar lottery-interfaces/target/Lottery.war --server.address=127.0.0.1 --lottery.draw.local-demo-user=u1
+java -jar lottery-interfaces/target/Lottery.war --server.address=127.0.0.1 --lottery.draw.local-demo-enabled=true
 ```
 
-以上启动参数启用固定本机演示账户。正式部署由身份集成为请求建立 Servlet Principal。浏览器可打开 [http://localhost:8080/](http://localhost:8080/) 参与抽奖。也可直接调用 HTTP 接口：
+浏览器打开 [http://127.0.0.1:8080/](http://127.0.0.1:8080/) 后，可从「当前账户」切换 `demo-a`、`demo-b` 和 `demo-c`，查看所选活动的奖品及个人次数。正式部署由身份集成为请求建立 Servlet Principal。空环境设置与固定账户参数见 [本地演示指南](docs/web-demo.md)。默认账户也可直接调用 HTTP 接口：
 
 ```bash
-curl http://localhost:8080/api/v1/activities
+curl http://127.0.0.1:8080/api/v1/activities
 
-curl -X POST http://localhost:8080/api/v1/draw \
+curl -X POST http://127.0.0.1:8080/api/v1/draw \
   -H 'Content-Type: application/json' \
-  -d '{"userId":"u1","activityId":100001,"requestId":"example-draw-001"}'
+  -d '{"userId":"demo-a","activityId":100001,"requestId":"example-draw-001"}'
 ```
 
 示例 `activityId` 和 `userId` 须替换为当前测试库中已配置并满足参与条件的数据；同一次抽奖重试应保留原 `requestId`。仓库的性能测试环境、数据准备及完整复现步骤另见 [性能测试指南](doc/performance/README.md)。

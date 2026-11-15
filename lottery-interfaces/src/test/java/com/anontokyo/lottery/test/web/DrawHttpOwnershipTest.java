@@ -4,6 +4,7 @@ import com.anontokyo.lottery.application.process.draw.IActivityDrawProcess;
 import com.anontokyo.lottery.application.process.draw.res.DrawProcessResult;
 import com.anontokyo.lottery.common.Constants;
 import com.anontokyo.lottery.interfaces.web.DrawAdmission;
+import com.anontokyo.lottery.interfaces.web.DrawIdentity;
 import com.anontokyo.lottery.interfaces.web.LotteryController;
 import org.junit.Before;
 import org.junit.Test;
@@ -28,6 +29,7 @@ public class DrawHttpOwnershipTest {
         process = mock(IActivityDrawProcess.class);
         LotteryController controller = new LotteryController();
         ReflectionTestUtils.setField(controller, "activityDrawProcess", process);
+        ReflectionTestUtils.setField(controller, "drawIdentity", new DrawIdentity(false, "", ""));
         admission = mock(DrawAdmission.class);
         when(admission.tryAcquire()).thenReturn(true);
         when(admission.checkBuckets("u1", 1L)).thenReturn(DrawAdmission.Decision.ADMITTED);

@@ -17,6 +17,9 @@ public interface IUserActivityQuotaDao {
      */
     UserActivityQuota queryUserActivityQuota(UserActivityQuota userActivityQuotaReq);
 
+    /** 读取已有额度或活动初始额度，不写入额度行。 */
+    UserActivityQuota queryEffectiveQuota(UserActivityQuota scope);
+
     /** 在参与事务中初始化或锁定用户活动次数行。 */
     void initializeCount(UserActivityQuota userActivityQuota);
 

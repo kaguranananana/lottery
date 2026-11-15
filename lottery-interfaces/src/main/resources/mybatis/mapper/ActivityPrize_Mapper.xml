@@ -31,6 +31,16 @@
         WHERE p.activity_id = #{activityId}
     </select>
 
+    <!-- 仅公开文字奖品的描述，兑换码、券码等发奖内容不进入列表。 -->
+    <select id="queryPublicPrizes" resultType="com.anontokyo.lottery.infrastructure.po.Award">
+        SELECT a.award_id, a.award_name, a.award_type,
+               CASE WHEN a.award_type = 1 THEN a.award_content END AS award_content
+        FROM activity_prize p
+        JOIN award a ON a.award_id = p.award_id
+        WHERE p.activity_id = #{activityId}
+        ORDER BY p.id
+    </select>
+
     <!-- READY 活动启动前验证分桶布局，禁止缺桶/总量不守恒时预热 Redis。 -->
     <select id="countInvalidBucketLayouts" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM (

@@ -25,11 +25,18 @@
 | 429 | L003 | 本机并发许可已用完 |
 | 503 | L004 | Redis 准入检查失败 |
 
-生产部署需要身份集成建立可信 Servlet Principal。接口不读取客户端身份头。身份查询返回当前用户 ID，本机演示必须显式绑定 127.0.0.1 并配置固定账户。通过身份校验后，依次尝试 Semaphore 与单次 Redis Lua。任一桶耗尽时两个桶都不扣令牌，拒绝在 MySQL 查询之前返回。本机许可在 finally 归还。三个拒绝分支可按 HTTP 业务码及累计计数区分。限流开关、全局与用户速率/容量、单机许可均由 `lottery.draw.admission` 配置，关闭限流仍要求有效身份。
+生产部署需要身份集成建立可信 Servlet Principal，接口身份从 Principal 取得。本地演示身份只在对应显式开关或固定账户配置有效时解析，详见下文。通过身份校验后，依次尝试 Semaphore 与单次 Redis Lua。任一桶耗尽时两个桶都不扣令牌，拒绝在 MySQL 查询之前返回。本机许可在 finally 归还。三个拒绝分支可按 HTTP 业务码及累计计数区分。限流开关、全局与用户速率/容量、单机许可均由 `lottery.draw.admission` 配置，关闭限流仍要求有效身份。
 
 429、503 会回显请求号，客户端等候后继续同一请求号。原请求可能已在更早的一次调用中完成，客户端不得以临时拒绝推断该逻辑抽奖从未发生。
 
 [DrawRequestIdempotencyTest.java](../../../lottery-interfaces/src/test/java/com/anontokyo/lottery/test/domain/DrawRequestIdempotencyTest.java) 验证编排回放，不覆盖 HTTP 校验、序列化或错误状态码。[ApiManualIT.java](../../../lottery-interfaces/src/test/java/com/anontokyo/lottery/test/manual/ApiManualIT.java) 属手工环境验证，不能将编排单测视为 HTTP 端到端验证。
+
+## 演示会话与只读活动数据
+
+- `lottery.draw.local-demo-enabled=true` 要求应用配置 `server.address=127.0.0.1` 并从该本机地址接入。GET /api/v1/draw/identity 返回会话用户及演示白名单 `demoAccounts`。PUT 同一路径接受 JSON `{"userId":"demo-b"}`，非法账户返回 400，模式关闭或请求带可信 Principal 时返回 404。客户端身份头不参与解析。仅设置 `lottery.draw.local-demo-user` 时仍使用传统固定账户，返回原有身份响应。
+- GET /api/v1/activities/{activityId}/quota 返回当前身份的 `userId`、`totalCount`、`usedCount`、`remainingCount`。无身份返回 401，活动不存在返回 404。尚无额度行时取活动的初始次数，查询不创建额度行；身份和个人额度响应使用 `Cache-Control: no-store`。
+- GET /api/v1/activities/{activityId}/prizes 从指定活动的奖池返回 `awardId`、`awardName`、`awardType`、`description`，无匹配奖品时返回空列表。现有 `award_content` 可能存放发奖内容，只有文字奖品类型（1）可公开该字段作为描述。
+- 页面按账号和活动保存待恢复请求。账户切换和抽奖提交互斥，额度、奖品查询仅允许最新响应更新其展示区域。同一浏览器的多个标签页共享账号会话，各标签页单独保存待恢复请求。
 
 ## 请求恢复
 

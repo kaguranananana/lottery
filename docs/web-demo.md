@@ -1,36 +1,48 @@
 # 本地演示幸运转盘
 
-如果后端已启动、库里有处于运行状态且尚未结束的活动，直接打开 [http://localhost:8080/](http://localhost:8080/)。使用已认证账户或固定本机演示账户，选择活动后点击「开始抽奖」。前端随 `Lottery.war` 打包，与 `/api/v1/activities` 和 `/api/v1/draw` 同源，不需要 Node 或单独的前端服务。
+已有 MySQL、Redis、RocketMQ 和运行中的活动时，在仓库根目录执行：
 
-## 从空环境准备一场演示
+```bash
+mvn package
+java -jar lottery-interfaces/target/Lottery.war --server.address=127.0.0.1 --lottery.draw.local-demo-enabled=true
+```
 
-下列步骤复用仓库已有的独立压测环境，应用和中间件只绑定本机。需要 Docker Compose、JDK 17、Maven 和 Python 3。普通本地服务用 `8080`，演示环境用 `18190`。
+打开 [http://127.0.0.1:8080/](http://127.0.0.1:8080/)，默认账户为 `demo-a`。在「当前账户」下拉框选择 `demo-b` 或 `demo-c`。同一浏览器中的标签页共享会话，隐身窗口或独立浏览器配置可以同时演示另一账户。
 
-在仓库根目录执行：
+演示模式只能在明确绑定 `127.0.0.1` 的应用中使用。只设置 `--lottery.draw.local-demo-user=demo` 和本机绑定时，页面沿用固定账户。两项一起设置时使用多账户模式。正式部署的身份由 Servlet Principal 提供。保持演示开关和固定账户参数关闭，并且不要把本机演示端口转发给外部访问者。
+
+## 从空环境准备活动
+
+下列步骤复用仓库的独立压测栈。需要 Docker Compose、JDK 17、Maven 和 Python 3。应用监听 `127.0.0.1:18190`。
 
 ```bash
 python3 doc/performance/environment.py up
-# 只在首次启动的空库执行；已初始化的演示环境跳过 init。
+bash lottery-interfaces/src/test/resources/mq-e2e/create-topics.sh lottery-rocketmq-perf-broker-1 20911
+# 仅首次启动的空库执行，从当前 Schema 初始化。
 python3 doc/performance/environment.py init
 bash doc/performance/build.sh
-bash doc/performance/start.sh /tmp/lottery-web-demo --lottery.draw.local-demo-user=demo
+bash doc/performance/start.sh /tmp/lottery-web-demo --lottery.draw.local-demo-enabled=true
 ```
 
-已用旧表结构初始化的演示库请先按 [升级说明](single-database.md) 处理。首次初始化会创建单库和八张业务表。
+本功能不需要数据库迁移。若已有环境仍在 V8 Schema，启动当前库存分桶版本前应按 [V9 迁移说明](stock-bucket-rollout-20261115.md) 升级一次。
 
-应用启动后，在另一个终端创建一场活动。演示账户有 8 次机会；五种模拟券的总中奖概率为 70%。命令会调用现有的活动创建与启动服务，在活动进入运行状态前预热 Redis 奖品库存。
+另开一个终端，创建两个独立奖池的活动。命令使用现有活动服务在启动活动时预热奖品库存。
 
 ```bash
 curl --fail-with-body http://127.0.0.1:18190/__perf/setup \
-  --data 'id=720101&stock=30&quota=8&users=0&prefix=demo-&awardRate=0.14' \
-  --data-urlencode 'name=好运体验场' \
-  --data-urlencode 'description=演示账户有 8 次机会，奖品为模拟券。'
+  --data 'id=720101&stock=30&quota=2&users=0&prefix=demo-&awardRate=0.14' \
+  --data-urlencode 'name=好运体验场'
+curl --fail-with-body http://127.0.0.1:18190/__perf/setup \
+  --data 'id=720102&stock=30&quota=4&users=0&prefix=demo-&awardKinds=2&awardRate=0.30' \
+  --data-urlencode 'name=周末体验场'
 ```
 
-打开 [http://127.0.0.1:18190/](http://127.0.0.1:18190/)，点击「开始抽奖」。活动持续 24 小时；到期后可用尚未占用的新 `id` 创建另一场。`/__perf/setup` 仅在独立演示启动器中提供。结束演示时，在运行应用的终端按 `Ctrl+C`，再运行 `python3 doc/performance/environment.py stop`，下次可保留数据继续使用。
+打开 [http://127.0.0.1:18190/](http://127.0.0.1:18190/)。先用 `demo-a` 在好运体验场抽两次，再切到 `demo-b` 查看其完整额度。切回 `demo-a` 后，页面会显示已用完。切换到周末体验场，可看到另一组奖品和独立的活动额度。
+
+活动持续 24 小时。需要新活动时换一个未使用的 `id`。结束演示时，在应用终端按 `Ctrl+C`，再执行 `python3 doc/performance/environment.py stop`。
 
 ## 页面上的结果
 
-- 中奖表示已创建中奖订单；模拟发奖由后台处理。
-- 请求超时或结果未知时，页面会提示「恢复抽奖」。同一标签页刷新后仍会保留原用户、活动和请求号，点击恢复不会开启新一轮。
-- 「暂无活动」表示当前没有可参与的活动；「活动加载失败」表示暂时取不到列表。两种情况都可点击「刷新活动」。
+- 奖品卡显示所选活动的奖品名称、类型和可公开的描述。兑换码或券码作为发奖内容保存。转盘只用于揭晓，实际结果由抽奖接口决定。
+- 中奖表示已创建订单，模拟发奖由后台处理。参与成功扣减次数后，即使结果还在处理，已使用次数也会反映这次参与。
+- 请求超时或结果未知时，页面提示「恢复抽奖」。同一标签页刷新或切换回原账户和原活动后，会继续使用原请求号。

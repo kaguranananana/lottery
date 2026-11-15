@@ -6,6 +6,16 @@ const ui = {
     activityEnd: document.querySelector("#activity-end"),
     refresh: document.querySelector("#refresh-activities"),
     user: document.querySelector("#user-id"),
+    accountLabel: document.querySelector("#account-label"),
+    accountSwitch: document.querySelector("#account-switch"),
+    account: document.querySelector("#account"),
+    accountNote: document.querySelector("#account-note"),
+    quotaTotal: document.querySelector("#quota-total"),
+    quotaUsed: document.querySelector("#quota-used"),
+    quotaRemaining: document.querySelector("#quota-remaining"),
+    quotaNote: document.querySelector("#quota-note"),
+    prizeList: document.querySelector("#prize-list"),
+    prizeNote: document.querySelector("#prize-note"),
     draw: document.querySelector("#draw-button"),
     drawLabel: document.querySelector("#draw-button-label"),
     wheel: document.querySelector("#wheel-face"),
@@ -23,14 +33,19 @@ const session = JSON.parse(sessionStorage.getItem(sessionKey)) ?? {
 const dateFormat = new Intl.DateTimeFormat("zh-CN", {dateStyle: "medium", timeStyle: "short"});
 let activities = [];
 let activityState = "loading";
+let identity = null;
 let drawing = false;
+let switching = false;
+let quotaVersion = 0;
+let prizeVersion = 0;
 let wheelAngle = 0;
+const prizeTypes = {1: "文字奖品", 2: "兑换码", 3: "优惠券", 4: "实物奖品"};
 
 function newRequestId() {
     return Array.from(crypto.getRandomValues(new Uint8Array(16)), byte => byte.toString(16).padStart(2, "0")).join("");
 }
 
-function currentUser() { return ui.user.value; }
+function currentUser() { return identity?.userId ?? ""; }
 function contextKey() { return `${ui.activity.value}/${currentUser()}`; }
 function pendingDraw() { return session.pending[contextKey()]; }
 function selectedActivity() { return activities.find(item => String(item.activityId) === ui.activity.value); }
@@ -65,10 +80,11 @@ function showContextResult() {
 
 function renderControls() {
     const pending = pendingDraw();
-    const loading = activityState === "loading";
-    ui.refresh.disabled = drawing || loading;
-    ui.activity.disabled = drawing || loading || !ui.activity.value;
-    ui.draw.disabled = drawing || loading || !currentUser() || (!pending && !selectedActivity());
+    const busy = drawing || switching || activityState === "loading";
+    ui.refresh.disabled = busy;
+    ui.account.disabled = busy;
+    ui.activity.disabled = busy || !ui.activity.value;
+    ui.draw.disabled = busy || !currentUser() || (!pending && !selectedActivity());
     ui.drawLabel.textContent = drawing ? "正在抽奖…" : pending ? "恢复抽奖" : "开始抽奖";
 }
 
@@ -87,6 +103,8 @@ function renderActivityDetails() {
         ui.activityNote.textContent = "原活动当前不可选，仍可恢复这一轮抽奖。";
     } else if (activityState === "error") {
         ui.activityNote.textContent = "活动列表加载失败，请点击「刷新活动」重试。";
+    } else if (ui.activity.value) {
+        ui.activityNote.textContent = "原活动当前不可参与。";
     } else if (activityState === "ready") {
         ui.activityNote.textContent = "当前没有进行中的活动，可稍后刷新。";
     } else {
@@ -115,8 +133,10 @@ async function fetchJson(path, options) {
     const timer = setTimeout(() => timeout.abort(), 12000);
     try {
         const response = await fetch(`./api/v1/${path}`, {...options, cache: "no-store", signal: timeout.signal});
-        if (!response.ok && !(path === "draw" && [429, 503].includes(response.status))) {
-            throw new Error(`${path}: HTTP ${response.status}`);
+        if (!response.ok && !(path === "draw" && [401, 403, 429, 503].includes(response.status))) {
+            const error = new Error(`${path}: HTTP ${response.status}`);
+            error.status = response.status;
+            throw error;
         }
         return await response.json();
     } finally {
@@ -124,35 +144,181 @@ async function fetchJson(path, options) {
     }
 }
 
+function renderIdentity(nextIdentity, note = "") {
+    identity = nextIdentity;
+    const accounts = identity?.demoAccounts ?? [];
+    ui.user.value = currentUser();
+    ui.user.hidden = accounts.length > 0;
+    ui.accountSwitch.hidden = !ui.user.hidden;
+    ui.accountLabel.htmlFor = ui.user.hidden ? "account" : "user-id";
+    ui.account.replaceChildren(...accounts.map(user => new Option(user, user)));
+    ui.account.value = currentUser();
+    ui.accountNote.textContent = note;
+}
+
+function showQuota(note, quota) {
+    ui.quotaTotal.textContent = quota?.totalCount ?? "—";
+    ui.quotaUsed.textContent = quota?.usedCount ?? "—";
+    ui.quotaRemaining.textContent = quota?.remainingCount ?? "—";
+    ui.quotaNote.textContent = note;
+}
+
+async function refreshQuota() {
+    // 账户或活动改变时清掉旧次数，只允许最新查询更新页面。
+    const version = ++quotaVersion;
+    const activityId = ui.activity.value;
+    const userId = currentUser();
+    showQuota(activityId && userId ? "正在读取次数…" : "");
+    if (!activityId || !userId) return;
+
+    try {
+        const quota = await fetchJson(`activities/${activityId}/quota`);
+        if (version !== quotaVersion) return;
+        // Cookie 在同一浏览器的标签页间共享。另一标签页已换号时，不能显示其额度。
+        if (quota.userId !== userId) {
+            markIdentityChanged();
+            return;
+        }
+        showQuota("", quota);
+    } catch (error) {
+        if (version !== quotaVersion) return;
+        if (error.status === 401) {
+            markIdentityChanged();
+            return;
+        }
+        console.error("加载抽奖次数失败", error);
+        showQuota("次数读取失败，请刷新活动重试。");
+    }
+}
+
+function prizeCard(prize) {
+    const card = document.createElement("li");
+    card.className = "prize-card";
+    const name = document.createElement("h3");
+    name.textContent = prize.awardName || prize.awardId;
+    card.append(name);
+    const type = prizeTypes[prize.awardType];
+    if (type) {
+        const label = document.createElement("span");
+        label.className = "prize-card__type";
+        label.textContent = type;
+        card.append(label);
+    }
+    if (prize.description) {
+        const description = document.createElement("p");
+        description.textContent = prize.description;
+        card.append(description);
+    }
+    return card;
+}
+
+async function refreshPrizes() {
+    // 活动切换立即清空奖品。即使旧请求最后返回，也只能由最新查询渲染。
+    const version = ++prizeVersion;
+    const activityId = ui.activity.value;
+    ui.prizeList.replaceChildren();
+    ui.prizeList.hidden = true;
+    ui.prizeNote.textContent = activityId ? "正在加载奖品…" : "选择活动后查看奖品。";
+    if (!activityId) return;
+
+    try {
+        const prizes = await fetchJson(`activities/${activityId}/prizes`);
+        if (version !== prizeVersion) return;
+        ui.prizeList.replaceChildren(...prizes.map(prizeCard));
+        ui.prizeList.hidden = !prizes.length;
+        ui.prizeNote.textContent = prizes.length ? "" : "该活动暂无奖品。";
+    } catch (error) {
+        if (version !== prizeVersion) return;
+        console.error("加载活动奖品失败", error);
+        ui.prizeNote.textContent = "奖品加载失败，请刷新活动重试。";
+    }
+}
+
+function markIdentityChanged() {
+    renderIdentity(null, "账户会话已变化，请刷新活动确认当前账户。");
+    showResult("error", "请重新确认当前账户", "刷新后可在原账户继续恢复待确认的抽奖。");
+    refreshQuota();
+    renderControls();
+}
+
 async function loadActivities() {
     const previousContext = contextKey();
-    // 身份由服务端提供，刷新后仍按原账户恢复待确认请求。
-    const identity = fetchJson("draw/identity").then(result => {
-        ui.user.value = result.userId;
-    }).catch(error => {
-        console.error("加载抽奖身份失败", error);
-        ui.user.value = "";
-    });
     const preferredId = ui.activity.value || session.activityId;
     activityState = "loading";
     renderControls();
-    try {
-        const items = await fetchJson("activities");
-        // Java Long 超出 JS 整数精度时不能把舍入后的 ID 发给抽奖接口。
-        if (items.some(item => !Number.isSafeInteger(item.activityId))) throw new Error("活动 ID 超出浏览器整数精度");
-        activities = items;
+    ++quotaVersion;
+    ++prizeVersion;
+    showQuota("");
+    ui.prizeList.replaceChildren();
+    ui.prizeList.hidden = true;
+    ui.prizeNote.textContent = "正在加载活动…";
+
+    const [account, list] = await Promise.allSettled([
+        fetchJson("draw/identity"),
+        fetchJson("activities").then(items => {
+            // 不把 Java Long 舍入后的值作为活动 ID 发送给服务端。
+            if (items.some(item => !Number.isSafeInteger(item.activityId))) throw new Error("活动 ID 超出浏览器整数精度");
+            return items;
+        }),
+    ]);
+
+    if (account.status === "fulfilled") {
+        renderIdentity(account.value);
+    } else if (account.reason.status === 401) {
+        renderIdentity(null, "请登录后再参加抽奖。");
+    } else {
+        console.error("加载抽奖身份失败", account.reason);
+        renderIdentity(null, "账户读取失败，请刷新活动重试。");
+    }
+
+    if (list.status === "fulfilled") {
+        activities = list.value;
         activityState = "ready";
-    } catch (error) {
-        console.error("加载活动列表失败", error);
+    } else {
+        console.error("加载活动列表失败", list.reason);
         activities = [];
         activityState = "error";
     }
-    await identity;
+
     renderActivities(preferredId);
     if (!currentUser()) {
-        showResult("error", "当前未登录", "请登录后再参加抽奖。");
+        showResult("error", "当前账户不可用", ui.accountNote.textContent);
     } else if (contextKey() !== previousContext) {
         showContextResult();
+    }
+    refreshQuota();
+    refreshPrizes();
+}
+
+async function switchAccount() {
+    if (ui.account.disabled || ui.account.value === currentUser()) return;
+    const activityId = ui.activity.value;
+    switching = true;
+    renderControls();
+    ++quotaVersion;
+    showQuota("");
+    ui.accountNote.textContent = "正在切换账户…";
+    showResult("idle", "正在切换账户", "");
+
+    try {
+        // 等待服务端确认会话再启用抽奖，切换过程中不会提交第二次切换或抽奖。
+        const nextIdentity = await fetchJson("draw/identity", {
+            method: "PUT",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({userId: ui.account.value}),
+        });
+        renderIdentity(nextIdentity);
+        renderActivities(activityId);
+        showContextResult();
+    } catch (error) {
+        console.error("切换账户失败", error);
+        // 切换请求超时后会话可能已更新，确认身份前暂停抽奖。
+        markIdentityChanged();
+    } finally {
+        switching = false;
+        renderControls();
+        refreshQuota();
+        if (ui.activity.value !== activityId) refreshPrizes();
     }
 }
 
@@ -171,6 +337,11 @@ function spinWheel() {
 function revealResult(result, draw, key) {
     if (result.requestId !== draw.requestId || typeof result.code !== "string") {
         throw new Error("响应缺少业务码或请求号不匹配");
+    }
+    if (result.code === "A001" || result.code === "A002") {
+        // 身份拒绝没有确认原请求状态，保留原账户的待恢复记录。
+        markIdentityChanged();
+        return;
     }
     if (result.code !== "D008") delete draw.blocked;
     // 中奖和未中奖都结束本轮。明确拒绝也不需要恢复；其他异常继续使用旧请求号。
@@ -234,6 +405,8 @@ async function submitDraw(event) {
     session.pending[key] = draw;
     rememberSelection();
     drawing = true;
+    // 抽奖完成后重新读取，阻止提交前的额度查询覆盖提交后的状态。
+    ++quotaVersion;
     renderControls();
     showResult("busy", "正在揭晓", "等一等，马上揭晓这一轮的结果。");
     const animation = spinWheel();
@@ -255,18 +428,22 @@ async function submitDraw(event) {
         // 保留待恢复的记录，或持久化已经结束的本轮状态。
         rememberSelection();
         drawing = false;
-        renderActivities();
+        renderActivityDetails();
+        renderControls();
+        refreshQuota();
     }
 }
 
 ui.form.addEventListener("submit", submitDraw);
 ui.refresh.addEventListener("click", loadActivities);
+ui.account.addEventListener("change", switchAccount);
 ui.activity.addEventListener("change", () => {
+    if (ui.activity.disabled) return;
     rememberSelection();
     renderActivityDetails();
     renderControls();
     showContextResult();
+    refreshQuota();
+    refreshPrizes();
 });
-renderActivities(session.activityId);
-showContextResult();
 loadActivities();

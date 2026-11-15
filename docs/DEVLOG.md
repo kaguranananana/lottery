@@ -109,3 +109,11 @@
 - RocketMqProducer 先发送库存 Half Message，再由 OrderRepository 在 TX2 锁参与、登记 Redis Lua 预扣并写订单。回查看订单、截止时间和参与锁。移除 Kafka 运行时依赖、库存应用首发、发送回写和代数；保留库存到期核对、发奖义务、BLOCKED 和账本/CAS。
 - Java 8 clean package、45 项默认单测、56 项真实集成通过。首次进程演练发现生产者启动未向 Broker 注册，修复后真实 SIGKILL 两处复演。提交前持锁回查 Unknown，重启约 1.97 秒回滚并回补；提交后重启约 1.83 秒回查 Commit 并完成原订单。
 - JMeter 40/80/120/150 RPS 持续窗口分别为 190/190/190/300 秒，全部通过原门槛，96,539 单逐笔对账。150 RPS 实际 149.83/s、HTTP P99 538 ms、库存和发奖 P95 上界 907/926 ms、4.50 秒排空。旧库、其他工作区和 Kafka 历史结果保留。对照边界与证据见 [重构报告](rocketmq-transactional-report.md)。
+
+## 2026-11-15 · 演示账户、抽奖次数与活动奖品
+
+- `DrawIdentity.java`、`LotteryController.java` 使用 Servlet 会话保存白名单账号，现有 Principal 优先。多账户开关要求绑定 `127.0.0.1`，固定账户参数保留。演示启动时关闭 `PerfHarness.java` 的压测身份头注入。
+- `ActivityDetailsController.java` 和两个 Mapper 新增额度与奖品只读查询。首次查询读取活动初始额度。奖品从指定活动关联奖品配置，只公开文字奖品描述，券码和兑换码留在发奖内容字段。页面切换时刷新数据，待恢复请求沿用账号和活动隔离。沿用现有数据库结构。
+- Java 8 `mvn clean package` 通过 53 项默认测试。隔离 MySQL、Redis、RocketMQ 上定向运行 `DemoAccountsManualIT`、`DrawAdmissionRedisManualIT` 和 `FinalBusinessE2eManualIT` 的多用户、D007 恢复、并发耗尽用例，共 8 项通过。确认读取额度及奖品不写额度、参与、订单或账本，也不改动 MySQL 和 Redis 存量。
+- Chrome 自动实测 1365px 桌面和 390px 手机，覆盖两个独立 Cookie 会话和同一浏览器跨标签换号、非法账户、伪造请求体及压测头、迟到的额度和奖品响应、奖品空态及 HTTP 500、切换响应丢失与抽奖响应实际超时。A 在 2 次额度中用完，B 抽一次后仍剩 1 次，A 原请求回放只计一次。浏览器产生 3 笔参与和中奖订单，3 笔均实际结算并完成本地模拟发奖，库存初始 10、MySQL 和 Redis 各剩 7。
+- 打包 WAR 实测默认模式无 Principal 返回 401、演示切换返回 404，固定账户照常可用，非 loopback 绑定开启演示会拒绝启动。验收使用独立测试实例。

@@ -88,8 +88,24 @@
                     </div>
 
                     <div class="field">
-                        <label for="user-id">当前账户</label>
-                        <input id="user-id" type="text" readonly>
+                        <label id="account-label" for="user-id">当前账户</label>
+                        <input id="user-id" type="text" readonly aria-describedby="account-note">
+                        <div class="select-wrap" id="account-switch" hidden>
+                            <select id="account" disabled aria-describedby="account-note"></select>
+                            <svg viewBox="0 0 16 16" width="16" height="16" fill="none" aria-hidden="true">
+                                <path d="m4 6 4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </div>
+                        <p class="field__note" id="account-note" role="status"></p>
+                    </div>
+
+                    <div id="quota" class="quota" aria-live="polite" aria-atomic="true">
+                        <dl>
+                            <div><dt>总次数</dt><dd id="quota-total">—</dd></div>
+                            <div><dt>已使用</dt><dd id="quota-used">—</dd></div>
+                            <div><dt>剩余次数</dt><dd id="quota-remaining">—</dd></div>
+                        </dl>
+                        <p class="field__note" id="quota-note"></p>
                     </div>
 
                     <button class="draw-button" id="draw-button" type="submit" disabled>
@@ -110,6 +126,12 @@
                 <noscript><p class="field__note">请启用 JavaScript 后参与抽奖。</p></noscript>
             </section>
         </div>
+
+        <section class="panel prizes" aria-labelledby="prizes-title">
+            <div class="panel__heading"><h2 id="prizes-title">当前活动奖品</h2></div>
+            <p class="field__note" id="prize-note" role="status"></p>
+            <ul class="prize-list" id="prize-list" hidden></ul>
+        </section>
 
         <footer class="footer">Lottery 项目演示 · 奖品为模拟发放</footer>
     </main>
