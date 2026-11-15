@@ -72,6 +72,20 @@ def analyze(directory):
         assert int(initial)==seeded,'奖品总量与fixture不符'
         assert seeded-int(left)==ledger.get(award,0)==order_counts[award],'奖品数据库、账本和订单不符'
         assert int(left)==int(audit['redisAwards'][award]),'奖品Redis与MySQL未收敛'
+    # 既检查业务总库存，也逐奖品校验桶数、初始容量与剩余容量。
+    if 'bucketLayout' in audit:
+        expected_buckets=params.get('stock_buckets', 0)
+        for line in audit['bucketLayout'].splitlines():
+            award,configured,actual,initial_sum,left_sum,parent_left=line.split('\t')
+            configured=int(configured); actual=int(actual)
+            assert configured==expected_buckets,'库存分桶持久化模式与测试参数不一致'
+            if configured:
+                assert actual==configured,'部分分桶丢失'
+                assert int(initial_sum)==seeded,'桶初始库存之和与奖品总量不符'
+                assert 0<=int(left_sum)<=int(initial_sum),'分桶库存超出范围'
+                assert int(left_sum)==int(audit['redisAwards'][award]),'分桶汇总与Redis不一致'
+            else:
+                assert actual==0,'单行模式不应存在库存桶'
     if (directory/'initial-stock.tsv').exists():
         # 初始化快照可直接证明起始库存，后续对账不能只依赖计划中的数字。
         for line in (directory/'initial-stock.tsv').read_text().splitlines():

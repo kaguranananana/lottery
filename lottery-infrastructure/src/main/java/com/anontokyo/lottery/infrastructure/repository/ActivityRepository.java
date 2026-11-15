@@ -15,8 +15,10 @@ import com.anontokyo.lottery.infrastructure.utils.RedisUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.annotation.Transactional;
 import javax.annotation.Resource;
 import java.util.ArrayList;
 import java.util.Date;
@@ -47,6 +49,13 @@ public class ActivityRepository implements IActivityRepository {
     private IActivityPrizeDao activityPrizeDao;
 
     @Resource
+    private IAwardStockBucketDao awardStockBucketDao;
+
+    /** 只影响新创建的奖品，存量奖品采用 DB 持久化的 stock_bucket_count。 */
+    @Value("${lottery.stock.bucket-count:0}")
+    private int stockBucketCount;
+
+    @Resource
     private RedisUtil redisUtil;
 
     @Resource
@@ -75,16 +84,30 @@ public class ActivityRepository implements IActivityRepository {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void addActivityPrizeList(List<ActivityPrizeVO> activityPrizeList) {
         List<ActivityPrize> req = new ArrayList<>();
         Set<Long> activityIds = new HashSet<>();
         for (ActivityPrizeVO activityPrizeVO : activityPrizeList) {
             ActivityPrize activityPrize = new ActivityPrize();
             BeanUtils.copyProperties(activityPrizeVO, activityPrize);
+            if (stockBucketCount < 0 || stockBucketCount > 64) {
+                throw new IllegalArgumentException("stock bucket-count must be between 0 and 64");
+            }
+            activityPrize.setStockBucketCount(stockBucketCount);
             req.add(activityPrize);
             activityIds.add(activityPrizeVO.getActivityId());
         }
         activityPrizeDao.insertList(req);
+        if (stockBucketCount > 0) {
+            List<AwardStockBucket> buckets = new ArrayList<>();
+            for (ActivityPrize prize : req) {
+                buckets.addAll(StockBucketLayout.allocate(prize.getActivityId(),
+                        prize.getAwardId(), prize.getAwardCount(), stockBucketCount));
+            }
+            // 与奖品创建处在同一业务事务内：任何桶初始化失败，奖品也回滚。
+            awardStockBucketDao.insertList(buckets);
+        }
         for (Long activityId : activityIds) {
             twoLevelCacheService.evictActivityPrizeSnapshotCache(
                     Constants.RedisKey.KEY_LOTTERY_CACHE_ACTIVITY_PRIZE_SNAPSHOT(activityId));
@@ -182,6 +205,12 @@ public class ActivityRepository implements IActivityRepository {
 
     private int warmupAwardStock(Long activityId) {
         // 调用方持有活动行锁并已确认 READY；RUNNING 和 CLOSED 永远不从 MySQL 回填。
+        // 校验必须先于任何 Redis SETNX，否则缺桶/少库存可能被永久预热为错误余额。
+        int invalidLayouts = activityPrizeDao.countInvalidBucketLayouts(activityId);
+        if (invalidLayouts > 0) {
+            throw new IllegalStateException("activity prize stock bucket layout invalid, activityId="
+                    + activityId + ", invalidAwards=" + invalidLayouts);
+        }
         List<ActivityPrize> prizes = activityPrizeDao.queryActivityPrizeList(activityId);
         if (prizes.isEmpty()) {
             throw new IllegalStateException("活动奖池不能为空，activityId=" + activityId);

@@ -32,6 +32,10 @@ spring:
         min-idle: 8
 
 lottery:
+  stock:
+    # 仅对新建奖品生效；0=兼容原单行库存。启用前先执行 V9__stock_buckets.sql。
+    # 已有活动库存模式存储在 MySQL，不受后续配置调整影响。
+    bucket-count: ${LOTTERY_STOCK_BUCKET_COUNT:0}
   scheduling:
     activity-delay-ms: 10000
     stock-delay-ms: 10000
@@ -59,7 +63,7 @@ lottery:
     producer-group: ${LOTTERY_ROCKETMQ_PRODUCER_GROUP:lottery-order-tx}
     stock-group: ${LOTTERY_ROCKETMQ_STOCK_GROUP:lottery-stock}
     fulfillment-group: ${LOTTERY_ROCKETMQ_FULFILLMENT_GROUP:lottery-fulfillment}
-    consumer-threads: 4
+    consumer-threads: ${LOTTERY_ROCKETMQ_CONSUMER_THREADS:4}
   cache:
     draw-inflight-redis-ttl-seconds: 3
     no-consumed-order-redis-ttl-seconds: 1800

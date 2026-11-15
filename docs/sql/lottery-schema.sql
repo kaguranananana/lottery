@@ -39,7 +39,8 @@ CREATE TABLE `activity_prize` (
   `activity_id` bigint NOT NULL COMMENT '活动ID',
   `award_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL COMMENT '奖品ID',
   `award_count` int NOT NULL COMMENT '奖品库存',
-  `award_surplus_count` int NOT NULL COMMENT '奖品剩余库存',
+  `award_surplus_count` int NOT NULL COMMENT '单行库存模式的实际剩余库存；分桶模式不再更新本字段',
+  `stock_bucket_count` smallint unsigned NOT NULL DEFAULT 0 COMMENT '0单行库存，正数按库存桶结算',
   `award_rate` decimal(7,6) NOT NULL COMMENT '中奖概率',
   `create_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `update_time` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '修改时间',
@@ -49,8 +50,29 @@ CREATE TABLE `activity_prize` (
   CONSTRAINT `fk_activity_prize_activity` FOREIGN KEY (`activity_id`) REFERENCES `activity` (`activity_id`),
   CONSTRAINT `fk_activity_prize_award` FOREIGN KEY (`award_id`) REFERENCES `award` (`award_id`),
   CONSTRAINT `ck_activity_prize_rate` CHECK (`award_rate` BETWEEN 0 AND 1),
-  CONSTRAINT `ck_activity_prize_stock` CHECK (`award_surplus_count` BETWEEN 0 AND `award_count`)
+  CONSTRAINT `ck_activity_prize_stock` CHECK (`award_surplus_count` BETWEEN 0 AND `award_count`),
+  CONSTRAINT `ck_activity_prize_bucket_count` CHECK (`stock_bucket_count` BETWEEN 0 AND 64)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_bin COMMENT='活动奖品、概率及独立库存';
+
+CREATE TABLE `award_stock_bucket` (
+  `activity_id` bigint NOT NULL,
+  `award_id` varchar(64) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NOT NULL,
+  `bucket_id` smallint unsigned NOT NULL,
+  `initial_count` int NOT NULL,
+  `remaining_count` int NOT NULL,
+  PRIMARY KEY (`activity_id`,`award_id`,`bucket_id`),
+  CONSTRAINT `fk_bucket_prize` FOREIGN KEY (`activity_id`,`award_id`) REFERENCES `activity_prize` (`activity_id`,`award_id`),
+  CONSTRAINT `ck_bucket_stock` CHECK (`remaining_count` BETWEEN 0 AND `initial_count`),
+  CONSTRAINT `ck_bucket_id` CHECK (`bucket_id` < 64)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='奖品库存分桶';
+
+CREATE OR REPLACE VIEW v_activity_prize_stock_balance AS
+SELECT p.activity_id, p.award_id, p.award_count, p.stock_bucket_count,
+       CASE WHEN p.stock_bucket_count = 0 THEN p.award_surplus_count
+            ELSE (SELECT SUM(b.remaining_count) FROM award_stock_bucket b
+                  WHERE b.activity_id = p.activity_id AND b.award_id = p.award_id)
+       END AS remaining_count
+FROM activity_prize p;
 
 CREATE TABLE `award_stock_settlement` (
   `id` bigint NOT NULL AUTO_INCREMENT COMMENT '自增ID',

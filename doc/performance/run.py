@@ -45,6 +45,7 @@ def snapshot(id):
     return dict(zip(fields,map(int,sql(query).split())))
 
 def audit(id, directory):
+    award_kinds = json.loads((directory/'parameters.json').read_text()).get('award_kinds',5)
     # 导出关联ID，随后逐项与所有 HTTP 样本核对，不能只比较总量。
     data=sql(orders_query(id)+';')
     (directory/'orders.tsv').write_text('user\tactivity\torder\ttake\taward\tstockState\tmqState\tgrantState\tdoneMs\tcreatedMs\tstockDoneMs\tgrantDoneMs\n'+data)
@@ -55,13 +56,14 @@ def audit(id, directory):
         ('quota', f'SELECT COUNT(*),COALESCE(SUM(total_count-left_count),0),COALESCE(SUM(left_count<0),0) FROM lottery.user_activity_quota WHERE activity_id={id}'),
         ('takes', f'SELECT COUNT(*),SUM(state=0),COUNT(*)-COUNT(DISTINCT take_id) FROM ({take_query}) t'),
         ('duplicateOrders',f'SELECT COUNT(*)-COUNT(DISTINCT order_id),COUNT(*)-COUNT(DISTINCT take_id) FROM ({orders_query(id)}) o'),
-        ('stock',f'SELECT award_id,award_count,award_surplus_count FROM lottery.activity_prize WHERE activity_id={id} ORDER BY award_id'),
+        ('stock',f'''SELECT p.award_id,p.award_count,CASE WHEN p.stock_bucket_count=0 THEN p.award_surplus_count ELSE (SELECT SUM(b.remaining_count) FROM lottery.award_stock_bucket b WHERE b.activity_id=p.activity_id AND b.award_id=p.award_id) END FROM lottery.activity_prize p WHERE p.activity_id={id} ORDER BY p.award_id'''),
+        ('bucketLayout',f'''SELECT p.award_id,p.stock_bucket_count,COUNT(b.bucket_id),COALESCE(SUM(b.initial_count),0),COALESCE(SUM(b.remaining_count),0),p.award_surplus_count FROM lottery.activity_prize p LEFT JOIN lottery.award_stock_bucket b ON b.activity_id=p.activity_id AND b.award_id=p.award_id WHERE p.activity_id={id} GROUP BY p.activity_id,p.award_id,p.stock_bucket_count,p.award_surplus_count ORDER BY p.award_id'''),
         ('ledger',f'SELECT award_id,COUNT(*) FROM lottery.award_stock_settlement WHERE activity_id={id} GROUP BY award_id'),
         ('activity',f'SELECT state,take_count FROM lottery.activity WHERE activity_id={id}'),
     ]
     result={name:sql(query+';').strip() for name,query in queries}
     result['pending']=snapshot(id)
-    result['redisAwards']={f'p{id}_{i}':redis('GET',f'lottery_activity_prize_stock_count_{id}_p{id}_{i}').strip() for i in range(5)}
+    result['redisAwards']={f'p{id}_{i}':redis('GET',f'lottery_activity_prize_stock_count_{id}_p{id}_{i}').strip() for i in range(award_kinds)}
     # 每轮额外核对 Redis 中没有本活动残留的预扣。索引成员包含订单、参与和活动号。
     pending_reservations = redis('ZRANGE', 'lottery_stock_reservations', '0', '-1').splitlines()
     result['pendingReservations'] = sum(marker.split(':', 3)[2] == str(id)
@@ -119,14 +121,19 @@ def monitor(stop, directory, id):
         stop.set()
 
 def run(args):
+    if args.award_kinds < 1 or 1_000_000 % args.award_kinds:
+        raise ValueError('等概率100%中奖的奖品种类数必须正数且整除1000000，以避免误引入未中奖概率')
     verify()
     directory=BASE/'results'/args.session/args.name
     directory.mkdir(parents=True,exist_ok=False)
     prefix=args.name.replace('-','')[:12]+'_'
-    setup=http('/__perf/setup',dict(id=args.id,stock=args.stock,quota=args.quota,users=1 if args.single_user else args.users,prefix=prefix,awardStock=args.award_stock))
+    setup=http('/__perf/setup',dict(id=args.id,stock=args.stock,quota=args.quota,users=1 if args.single_user else args.users,prefix=prefix,awardStock=args.award_stock,awardKinds=args.award_kinds,awardRate=f'{1/args.award_kinds:.8f}'))
     write(directory/'setup.json',setup)
+    configured=sql(f'SELECT DISTINCT stock_bucket_count FROM lottery.activity_prize WHERE activity_id={args.id};').strip()
+    if configured!=str(args.stock_buckets):
+        raise RuntimeError(f'奖品库存模式不匹配：数据库={configured} 预期={args.stock_buckets}; 检查启动器 --lottery.stock.bucket-count')
     (directory/'initial-stock.tsv').write_text(sql(f'SELECT award_id,award_count,award_surplus_count FROM lottery.activity_prize WHERE activity_id={args.id} ORDER BY award_id;'))
-    write(directory/'initial-redis.json',{'awards':{f'p{args.id}_{i}':redis('GET',f'lottery_activity_prize_stock_count_{args.id}_p{args.id}_{i}').strip() for i in range(5)}})
+    write(directory/'initial-redis.json',{'awards':{f'p{args.id}_{i}':redis('GET',f'lottery_activity_prize_stock_count_{args.id}_p{args.id}_{i}').strip() for i in range(args.award_kinds)}})
     write(directory/'parameters.json',vars(args))
     digest(directory/'sql-before.tsv')
     (directory/'slow-before.tsv').write_text(slow_queries())
@@ -198,6 +205,8 @@ if __name__=='__main__':
     p.add_argument('--jmeter',default=os.environ.get('JMETER_BIN','/tmp/apache-jmeter-5.6.3/bin/jmeter'))
     p.add_argument('--target-rps',type=float,default=0)
     p.add_argument('--ramp',type=int,default=5)
+    p.add_argument('--award-kinds',type=int,default=5,help='奖池奖品种类数，取1、5、50等精确等概率场景')
+    p.add_argument('--stock-buckets',type=int,default=0,help='验证启动器实际创建的桶数；0=原单行库存')
     p.add_argument('--quota',type=int,default=10)
     p.add_argument('--single-user',action='store_true')
     p.add_argument('--slow-ms',type=int,default=0)

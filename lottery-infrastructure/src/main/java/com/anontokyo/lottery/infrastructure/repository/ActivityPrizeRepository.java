@@ -9,6 +9,7 @@ import com.anontokyo.lottery.domain.draw.repository.IActivityPrizeRepository;
 import com.anontokyo.lottery.domain.draw.service.snapshot.ActivityPrizeSnapshotFactory;
 import com.anontokyo.lottery.infrastructure.cache.TwoLevelCacheService;
 import com.anontokyo.lottery.infrastructure.dao.IAwardStockSettlementDao;
+import com.anontokyo.lottery.infrastructure.dao.IAwardStockBucketDao;
 import com.anontokyo.lottery.infrastructure.dao.IAwardDao;
 import com.anontokyo.lottery.infrastructure.dao.IActivityPrizeDao;
 import com.anontokyo.lottery.infrastructure.po.AwardStockSettlement;
@@ -40,6 +41,9 @@ public class ActivityPrizeRepository implements IActivityPrizeRepository {
 
     @Resource
     private IAwardStockSettlementDao awardStockSettlementDao;
+
+    @Resource
+    private IAwardStockBucketDao awardStockBucketDao;
 
     @Resource
     private TransactionTemplate transactionTemplate;
@@ -87,7 +91,13 @@ public class ActivityPrizeRepository implements IActivityPrizeRepository {
                 return true;
             }
 
-            boolean deducted = deductStock(settlement.getActivityId(), settlement.getAwardId());
+            Integer bucketCount = activityPrizeDao.queryStockBucketCount(settlement.getActivityId(), settlement.getAwardId());
+            if (bucketCount == null) {
+                throw new IllegalStateException("missing activity prize for settlement order " + settlement.getOrderId());
+            }
+            boolean deducted = bucketCount == 0
+                    ? deductStock(settlement.getActivityId(), settlement.getAwardId())
+                    : deductBucketStock(settlement, bucketCount);
             if (!deducted) {
                 status.setRollbackOnly();
                 return false;
@@ -95,6 +105,21 @@ public class ActivityPrizeRepository implements IActivityPrizeRepository {
             return true;
         });
         return Boolean.TRUE.equals(settled);
+    }
+
+    /** 按 orderId 均匀选择起始桶；目标桶耗尽时依次探测其他桶。 */
+    private boolean deductBucketStock(AwardStockSettlementVO settlement, int bucketCount) {
+        if (bucketCount < 1 || bucketCount > 64) {
+            throw new IllegalStateException("invalid persisted bucket count " + bucketCount);
+        }
+        int first = StockBucketLayout.firstBucket(settlement.getOrderId(), bucketCount);
+        for (int offset = 0; offset < bucketCount; offset++) {
+            int bucket = (first + offset) % bucketCount;
+            int updated = awardStockBucketDao.deductOne(settlement.getActivityId(), settlement.getAwardId(), bucket);
+            if (updated == 1) return true;
+        }
+        // 全桶耗尽：本地事务同时回滚本次新插入的唯一账本。
+        return false;
     }
 
     private List<ActivityPrizeBriefVO> toActivityPrizeVOList(List<ActivityPrize> list) {

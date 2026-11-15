@@ -3,7 +3,7 @@
 <mapper namespace="com.anontokyo.lottery.infrastructure.dao.IActivityPrizeDao">
     <insert id="insertList" parameterType="java.util.List">
         INSERT INTO activity_prize(activity_id, award_id, award_count, award_surplus_count,
-        award_rate, create_time, update_time)
+        stock_bucket_count, award_rate, create_time, update_time)
         VALUES
         <foreach collection="list" item="item" index="index" separator=",">
             (
@@ -11,6 +11,7 @@
             #{item.awardId},
             #{item.awardCount},
             #{item.awardSurplusCount},
+            #{item.stockBucketCount},
             #{item.awardRate},
             NOW(),
             NOW()
@@ -19,9 +20,36 @@
     </insert>
 
     <select id="queryActivityPrizeList" parameterType="java.lang.Long" resultType="com.anontokyo.lottery.infrastructure.po.ActivityPrize">
-        SELECT id, activity_id, award_id, award_count, award_rate, award_surplus_count, create_time, update_time
-        FROM activity_prize
-        WHERE activity_id = #{activityId}
+        SELECT p.id, p.activity_id, p.award_id, p.award_count, p.award_rate,
+               p.stock_bucket_count,
+               CASE WHEN p.stock_bucket_count = 0 THEN p.award_surplus_count
+               ELSE (SELECT SUM(b.remaining_count) FROM award_stock_bucket b
+                     WHERE b.activity_id = p.activity_id AND b.award_id = p.award_id)
+               END AS award_surplus_count,
+               p.create_time, p.update_time
+        FROM activity_prize p
+        WHERE p.activity_id = #{activityId}
+    </select>
+
+    <!-- READY 活动启动前验证分桶布局，禁止缺桶/总量不守恒时预热 Redis。 -->
+    <select id="countInvalidBucketLayouts" resultType="java.lang.Integer">
+        SELECT COUNT(*) FROM (
+            SELECT p.activity_id, p.award_id
+            FROM activity_prize p
+            LEFT JOIN award_stock_bucket b ON b.activity_id = p.activity_id AND b.award_id = p.award_id
+            WHERE p.activity_id = #{activityId} AND p.stock_bucket_count > 0
+            GROUP BY p.activity_id, p.award_id, p.stock_bucket_count, p.award_count
+            HAVING COUNT(b.bucket_id) != p.stock_bucket_count
+               OR COALESCE(MIN(b.bucket_id), -1) != 0
+               OR COALESCE(MAX(b.bucket_id), -1) != p.stock_bucket_count - 1
+               OR COALESCE(SUM(b.initial_count), 0) != p.award_count
+               OR COALESCE(SUM(b.remaining_count), 0) > p.award_count
+        ) invalid_layouts
+    </select>
+
+    <select id="queryStockBucketCount" resultType="java.lang.Integer">
+        SELECT stock_bucket_count FROM activity_prize
+        WHERE activity_id = #{activityId} AND award_id = #{awardId}
     </select>
 
     <update id="deductStock" parameterType="com.anontokyo.lottery.infrastructure.po.ActivityPrize">

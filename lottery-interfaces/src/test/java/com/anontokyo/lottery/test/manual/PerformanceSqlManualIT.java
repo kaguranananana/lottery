@@ -46,6 +46,7 @@ public class PerformanceSqlManualIT {
             s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".draw_participation LIKE lottery.draw_participation");
             s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".activity_prize LIKE lottery.activity_prize");
             s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".award_stock_settlement LIKE lottery.award_stock_settlement");
+            s.execute("CREATE TABLE IF NOT EXISTS " + SCHEMA + ".award_stock_bucket LIKE lottery.award_stock_bucket");
         }
         // 事务仓储回归使用当前生产连接参数，验证会话缓存下的次数、账本及库存原子性。
         datasource = new DriverManagerDataSource(url + SCHEMA + "?useSSL=false&allowPublicKeyRetrieval=true&useLocalSessionState=true", "root", "perf-only");
@@ -65,6 +66,7 @@ public class PerformanceSqlManualIT {
         strategies = new ActivityPrizeRepository();
         ReflectionTestUtils.setField(strategies, "activityPrizeDao", session.getMapper(IActivityPrizeDao.class));
         ReflectionTestUtils.setField(strategies, "awardStockSettlementDao", session.getMapper(IAwardStockSettlementDao.class));
+        ReflectionTestUtils.setField(strategies, "awardStockBucketDao", session.getMapper(IAwardStockBucketDao.class));
         ReflectionTestUtils.setField(strategies, "transactionTemplate", transaction);
     }
 
@@ -74,6 +76,7 @@ public class PerformanceSqlManualIT {
         execute("TRUNCATE draw_participation");
         execute("TRUNCATE activity_prize");
         execute("TRUNCATE award_stock_settlement");
+        execute("TRUNCATE award_stock_bucket");
     }
 
     private static void execute(String sql) throws Exception {
@@ -169,6 +172,151 @@ public class PerformanceSqlManualIT {
         assertEquals(0, number("SELECT award_surplus_count FROM activity_prize"));
         assertEquals(1, number("SELECT COUNT(*) FROM award_stock_settlement"));
     }
+    @Test public void bucketsHandleEmptyStartingBucketDuplicateDeliveryAndRollback() throws Exception {
+        execute("INSERT INTO activity_prize(activity_id,award_id,award_count,award_surplus_count,award_rate,stock_bucket_count) VALUES (5,'A',3,3,1,8)");
+        StringBuilder values = new StringBuilder();
+        for (int i = 0; i < 8; i++) {
+            if (i > 0) values.append(',');
+            int left = i < 3 ? 1 : 0;
+            values.append("(5,'A',").append(i).append(',').append(left).append(',').append(left).append(')');
+        }
+        execute("INSERT INTO award_stock_bucket(activity_id,award_id,bucket_id,initial_count,remaining_count) VALUES " + values);
+        for (long order = 1; order <= 3; order++) {
+            assertTrue("all available stock must remain reachable", strategies.settleAwardStock(settlement(order)));
+            assertTrue("duplicate MQ delivery should not deduct twice", strategies.settleAwardStock(settlement(order)));
+        }
+        assertFalse("fourth settlement must fail and rollback ledger", strategies.settleAwardStock(settlement(4L)));
+        assertEquals(3, number("SELECT COUNT(*) FROM award_stock_settlement"));
+        assertEquals(0, number("SELECT SUM(remaining_count) FROM award_stock_bucket"));
+        // 分桶模式下父记录仅保留创建时的基数；真实读模型使用桶的 SUM。
+        assertEquals(3, number("SELECT award_surplus_count FROM activity_prize"));
+    }
+
+    @Test public void concurrentBucketDepletionNeverOversells() throws Exception {
+        execute("INSERT INTO activity_prize(activity_id,award_id,award_count,award_surplus_count,award_rate,stock_bucket_count) VALUES (5,'A',8,8,1,8)");
+        StringBuilder rows = new StringBuilder();
+        for (int bucket = 0; bucket < 8; bucket++) {
+            if (bucket > 0) rows.append(',');
+            rows.append("(5,'A',").append(bucket).append(",1,1)");
+        }
+        execute("INSERT INTO award_stock_bucket(activity_id,award_id,bucket_id,initial_count,remaining_count) VALUES " + rows);
+        ExecutorService workers = Executors.newFixedThreadPool(8);
+        CountDownLatch go = new CountDownLatch(1);
+        List<Future<Boolean>> results = new ArrayList<>();
+        try {
+            for (long order = 101; order <= 132; order++) {
+                final long id = order;
+                results.add(workers.submit(() -> {
+                    go.await();
+                    for (int attempt = 0; attempt < 6; attempt++) {
+                        try {
+                            return strategies.settleAwardStock(settlement(id));
+                        } catch (org.springframework.dao.TransientDataAccessException retriable) {
+                            // 模拟 RocketMQ 重新投递同一订单。瞬态死锁不能导致重复账本。
+                            Thread.sleep((attempt + 1) * 20L);
+                        }
+                    }
+                    throw new IllegalStateException("bucket retry budget exhausted for " + id);
+                }));
+            }
+            go.countDown();
+            int admitted = 0;
+            for (Future<Boolean> f : results) if (f.get(30, TimeUnit.SECONDS)) admitted++;
+            assertEquals("cannot allocate more than available stock", 8, admitted);
+        } finally {
+            workers.shutdownNow();
+            assertTrue(workers.awaitTermination(30, TimeUnit.SECONDS));
+        }
+        assertEquals(8, number("SELECT COUNT(*) FROM award_stock_settlement"));
+        assertEquals(0, number("SELECT SUM(remaining_count) FROM award_stock_bucket"));
+    }
+
+
+    @Test public void invalidBucketLayoutMustBlockWarmupBeforeRedisIsTouched() throws Exception {
+        execute("INSERT INTO activity_prize(activity_id,award_id,award_count,award_surplus_count,award_rate,stock_bucket_count) VALUES (5,'A',8,8,1,8)");
+        execute("INSERT INTO award_stock_bucket(activity_id,award_id,bucket_id,initial_count,remaining_count)"
+                + " VALUES (5,'A',0,3,3),(5,'A',1,3,3)");
+        IActivityPrizeDao dao = session.getMapper(IActivityPrizeDao.class);
+        assertEquals(1, dao.countInvalidBucketLayouts(5L));
+        ActivityRepository activity = new ActivityRepository();
+        ReflectionTestUtils.setField(activity, "activityPrizeDao", dao);
+        // 未注入 RedisUtil：缺桶必须在任何 Redis 调用之前抛出。
+        try {
+            ReflectionTestUtils.invokeMethod(activity, "warmupAwardStock", 5L);
+            fail("READY activity must never warmup with missing buckets");
+        } catch (IllegalStateException expected) {
+            assertTrue(expected.getMessage().contains("layout invalid"));
+        }
+        execute("INSERT INTO award_stock_bucket(activity_id,award_id,bucket_id,initial_count,remaining_count)"
+                + " VALUES (5,'A',2,1,1),(5,'A',3,1,1),(5,'A',4,1,1),(5,'A',5,1,1),"
+                + " (5,'A',6,0,0),(5,'A',7,0,0)");
+        // 桶数足够，但初始库存总和 10 != 8，一样禁止预热。
+        assertEquals(1, dao.countInvalidBucketLayouts(5L));
+        execute("UPDATE award_stock_bucket SET initial_count=0,remaining_count=0"
+                + " WHERE activity_id=5 AND award_id='A' AND bucket_id IN (4,5)");
+        assertEquals(0, dao.countInvalidBucketLayouts(5L));
+        // 8 个桶都存在，但编号从 0..7 被错误替换成 0..6、8，也必须阻止启动。
+        execute("UPDATE award_stock_bucket SET bucket_id=8 WHERE activity_id=5 AND award_id='A' AND bucket_id=7");
+        assertEquals(1, dao.countInvalidBucketLayouts(5L));
+        execute("UPDATE award_stock_bucket SET bucket_id=7 WHERE activity_id=5 AND award_id='A' AND bucket_id=8");
+        assertEquals(0, dao.countInvalidBucketLayouts(5L));
+        assertEquals(8, dao.queryActivityPrizeList(5L).get(0).getAwardSurplusCount().intValue());
+    }
+
+    @Test public void parentPrizeAndBucketsRollbackTogether() throws Exception {
+        ActivityRepository activity = new ActivityRepository();
+        ReflectionTestUtils.setField(activity, "activityPrizeDao", session.getMapper(IActivityPrizeDao.class));
+        ReflectionTestUtils.setField(activity, "awardStockBucketDao", session.getMapper(IAwardStockBucketDao.class));
+        ReflectionTestUtils.setField(activity, "stockBucketCount", 8);
+        ReflectionTestUtils.setField(activity, "twoLevelCacheService", mock(TwoLevelCacheService.class));
+        ActivityPrizeVO prize = new ActivityPrizeVO();
+        prize.setActivityId(5L); prize.setAwardId("A");
+        prize.setAwardCount(19); prize.setAwardSurplusCount(19);
+        prize.setAwardRate(java.math.BigDecimal.ONE);
+        try {
+            transaction.execute(status -> {
+                activity.addActivityPrizeList(Collections.singletonList(prize));
+                throw new IllegalStateException("simulate failure after both writes");
+            });
+            fail("must propagate failure");
+        } catch (IllegalStateException expected) {
+            assertEquals("simulate failure after both writes", expected.getMessage());
+        }
+        assertEquals(0, number("SELECT COUNT(*) FROM activity_prize"));
+        assertEquals(0, number("SELECT COUNT(*) FROM award_stock_bucket"));
+    }
+
+
+    @Test public void existingSingleRowAwardAndNewBucketedAwardCanCoexist() throws Exception {
+        execute("INSERT INTO activity_prize(activity_id,award_id,award_count,award_surplus_count,award_rate,stock_bucket_count)"
+                + " VALUES (5,'A',2,2,0.5,0),(5,'B',2,2,0.5,8)");
+        StringBuilder buckets = new StringBuilder();
+        for (int i = 0; i < 8; i++) {
+            if (i > 0) buckets.append(',');
+            int left = i < 2 ? 1 : 0;
+            buckets.append("(5,'B',").append(i).append(',').append(left).append(',').append(left).append(')');
+        }
+        execute("INSERT INTO award_stock_bucket(activity_id,award_id,bucket_id,initial_count,remaining_count) VALUES " + buckets);
+        assertEquals(0, session.getMapper(IActivityPrizeDao.class).countInvalidBucketLayouts(5L));
+        AwardStockSettlementVO oldAward = settlement(201L);
+        AwardStockSettlementVO newAward = settlement(202L);
+        newAward.setAwardId("B");
+        assertTrue(strategies.settleAwardStock(oldAward));
+        assertTrue(strategies.settleAwardStock(newAward));
+        assertTrue(strategies.settleAwardStock(newAward));
+        assertEquals(1, number("SELECT award_surplus_count FROM activity_prize WHERE award_id='A'"));
+        assertEquals(2, number("SELECT award_surplus_count FROM activity_prize WHERE award_id='B'"));
+        assertEquals(1, number("SELECT SUM(remaining_count) FROM award_stock_bucket WHERE award_id='B'"));
+        assertEquals(2, number("SELECT COUNT(*) FROM award_stock_settlement"));
+        java.util.Map<String,Integer> stock = new java.util.HashMap<>();
+        for (com.anontokyo.lottery.infrastructure.po.ActivityPrize p :
+                session.getMapper(IActivityPrizeDao.class).queryActivityPrizeList(5L)) {
+            stock.put(p.getAwardId(), p.getAwardSurplusCount());
+        }
+        assertEquals(Integer.valueOf(1), stock.get("A"));
+        assertEquals(Integer.valueOf(1), stock.get("B"));
+    }
+
     private static AwardStockSettlementVO settlement(long order) {
         AwardStockSettlementVO vo = new AwardStockSettlementVO();
         vo.setOrderId(order); vo.setuId("settlementUser"); vo.setActivityId(5L); vo.setAwardId("A");

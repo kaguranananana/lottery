@@ -25,6 +25,12 @@ public class ActivityPrize {
     // 奖品剩余数量
     private Integer awardSurplusCount;
 
+    // 0 走原单行库存；正数走分桶库存，创建后不可更改。
+    private Integer stockBucketCount;
+
+    public Integer getStockBucketCount() { return stockBucketCount; }
+    public void setStockBucketCount(Integer stockBucketCount) { this.stockBucketCount = stockBucketCount; }
+
     // 中奖概率
     private BigDecimal awardRate;
 

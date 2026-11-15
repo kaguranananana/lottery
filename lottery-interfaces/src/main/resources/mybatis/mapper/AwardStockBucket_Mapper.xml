@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.anontokyo.lottery.infrastructure.dao.IAwardStockBucketDao">
+    <insert id="insertList">
+        INSERT INTO award_stock_bucket(activity_id,award_id,bucket_id,initial_count,remaining_count)
+        VALUES
+        <foreach collection="rows" item="row" separator=",">
+            (#{row.activityId},#{row.awardId},#{row.bucketId},#{row.initialCount},#{row.remainingCount})
+        </foreach>
+    </insert>
+    <update id="deductOne">
+        UPDATE award_stock_bucket
+        SET remaining_count = remaining_count - 1
+        WHERE activity_id = #{activityId}
+          AND award_id = #{awardId}
+          AND bucket_id = #{bucketId}
+          AND remaining_count > 0
+    </update>
+</mapper>
