@@ -7,7 +7,7 @@ mvn package
 java -jar lottery-interfaces/target/Lottery.war --server.address=127.0.0.1 --lottery.draw.local-demo-enabled=true
 ```
 
-打开 [http://127.0.0.1:8080/](http://127.0.0.1:8080/)，默认账户为 `demo-a`。在「当前账户」下拉框选择 `demo-b` 或 `demo-c`。同一浏览器中的标签页共享会话，隐身窗口或独立浏览器配置可以同时演示另一账户。
+打开 [http://127.0.0.1:8080/](http://127.0.0.1:8080/)，默认账户为 `demo-a`。在「当前账户」下拉框选择 `demo-b` 或 `demo-c`。抽奖按钮上方会一起显示当前账户的总次数、已用次数、剩余次数和本活动奖品。同一浏览器中的标签页共享会话，隐身窗口或独立浏览器配置可以同时演示另一账户。
 
 演示模式只能在明确绑定 `127.0.0.1` 的应用中使用。只设置 `--lottery.draw.local-demo-user=demo` 和本机绑定时，页面沿用固定账户。两项一起设置时使用多账户模式。正式部署的身份由 Servlet Principal 提供。保持演示开关和固定账户参数关闭，并且不要把本机演示端口转发给外部访问者。
 

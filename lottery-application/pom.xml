@@ -27,6 +27,13 @@
             <groupId>org.apache.rocketmq</groupId>
             <artifactId>rocketmq-client</artifactId>
             <version>5.3.4</version>
+            <!-- RocketMQ 传入的 Tomcat 6 注解缺少 Resource.lookup()，与 Spring 的注解冲突。 -->
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.tomcat</groupId>
+                    <artifactId>annotations-api</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
 

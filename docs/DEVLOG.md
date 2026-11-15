@@ -117,3 +117,10 @@
 - Java 8 `mvn clean package` 通过 53 项默认测试。隔离 MySQL、Redis、RocketMQ 上定向运行 `DemoAccountsManualIT`、`DrawAdmissionRedisManualIT` 和 `FinalBusinessE2eManualIT` 的多用户、D007 恢复、并发耗尽用例，共 8 项通过。确认读取额度及奖品不写额度、参与、订单或账本，也不改动 MySQL 和 Redis 存量。
 - Chrome 自动实测 1365px 桌面和 390px 手机，覆盖两个独立 Cookie 会话和同一浏览器跨标签换号、非法账户、伪造请求体及压测头、迟到的额度和奖品响应、奖品空态及 HTTP 500、切换响应丢失与抽奖响应实际超时。A 在 2 次额度中用完，B 抽一次后仍剩 1 次，A 原请求回放只计一次。浏览器产生 3 笔参与和中奖订单，3 笔均实际结算并完成本地模拟发奖，库存初始 10、MySQL 和 Redis 各剩 7。
 - 打包 WAR 实测默认模式无 Principal 返回 401、演示切换返回 404，固定账户照常可用，非 loopback 绑定开启演示会拒绝启动。验收使用独立测试实例。
+
+## 2026-11-15 · 演示首屏、WAR 启动与 Docker 清理
+
+- `index.html`、`styles.css` 将账户、额度和奖品集中到抽奖按钮上方，窄屏先显示参与面板。版本化静态资源 URL，使刷新后浏览器请求新版样式和脚本。
+- 本机 JDK 17 重启 WAR 复现 `NoSuchMethodError: javax.annotation.Resource.lookup()`，实际加载了 RocketMQ 间接引入的 Tomcat 6 注解类。应用依赖排除旧注解，domain 统一使用 Spring Boot 的 1.3.x 注解包。检查 WAR 中 `Resource.class` 只来自一个兼容包，JDK 17 实际启动通过。
+- Java 8 `mvn clean package` 通过 53 项默认测试。Chrome 在 390×760、560×720、1280×720 实测首屏同时看到账号、额度、奖品和按钮。真实回放已有中奖请求，页面显示原奖品，额度保持一致。
+- 本机启动脚本改用多账户模式，新 WAR 已部署在 8080，沿用原活动和开发库。删除 56 个旧 Lottery 容器及 9 个闲置实验网络，保留当前 MySQL、Redis、RocketMQ NameServer、Broker 和数据卷。
